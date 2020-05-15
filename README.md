@@ -1,4 +1,4 @@
-[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0) [![Build status](https://ci.appveyor.com/api/projects/status/efytavqgb7nm64hk?svg=true)](https://ci.appveyor.com/project/BHoMBot/ladybugtools-toolkit) [![Build Status](https://dev.azure.com/BHoMBot/BHoM/_apis/build/status/LadybugTools_Toolkit/LadybugTools_Toolkit.CheckCore?branchName=master)](https://dev.azure.com/BHoMBot/BHoM/_build/latest?definitionId=219&branchName=master)
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0) [![Build status](https://ci.appveyor.com/api/projects/status/efytavqgb7nm64hk/branch/master?svg=true)](https://ci.appveyor.com/project/BHoMBot/ladybugtools-toolkit/branch/master) [![Build Status](https://dev.azure.com/BHoMBot/BHoM/_apis/build/status/LadybugTools_Toolkit/LadybugTools_Toolkit.CheckCore?branchName=master)](https://dev.azure.com/BHoMBot/BHoM/_build/latest?definitionId=219&branchName=master)
 
 # LadybugTools_Toolkit 
 
