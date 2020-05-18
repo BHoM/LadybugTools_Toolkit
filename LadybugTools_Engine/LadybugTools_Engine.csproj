@@ -96,6 +96,9 @@
       <HintPath>..\..\BHoM_Engine\Build\Reflection_Engine.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Reflection_oM">
+      <HintPath>..\..\BHoM\Build\Reflection_oM.dll</HintPath>
+    </Reference>
     <Reference Include="Rhinoceros_Engine">
       <HintPath>..\..\Rhinoceros_Toolkit\Build\Rhinoceros_Engine.dll</HintPath>
       <Private>False</Private>
