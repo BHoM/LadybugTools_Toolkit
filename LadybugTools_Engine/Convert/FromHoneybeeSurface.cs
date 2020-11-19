@@ -51,7 +51,7 @@ namespace BH.Engine.LadybugTools
             IGeometry geometry = null;
             try
             {
-                geometry = BH.Engine.Rhinoceros.Convert.FromRhino(honeybeeSrf._geometry as dynamic);
+                geometry = BH.Engine.Rhinoceros.Convert.IFromRhino(honeybeeSrf._geometry as dynamic);
             }
             catch(Exception e)
             {
