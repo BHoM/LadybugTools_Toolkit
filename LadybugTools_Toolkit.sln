@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LadybugTools_Engine", "LadybugTools_Engine\LadybugTools_Engine.csproj", "{68AB279E-3E50-4EE3-9E9E-C5C100DF5C58}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LadybugTools_oM", "LadybugTools_oM\LadybugTools_oM.csproj", "{3778EE3E-F314-4EB5-B99F-CF4A8C254E80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LadybugTools_Adapter", "LadybugTools_Adapter\LadybugTools_Adapter.csproj", "{D1014F13-0D21-47D4-BE0C-0ED2779F387F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{68AB279E-3E50-4EE3-9E9E-C5C100DF5C58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68AB279E-3E50-4EE3-9E9E-C5C100DF5C58}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68AB279E-3E50-4EE3-9E9E-C5C100DF5C58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3778EE3E-F314-4EB5-B99F-CF4A8C254E80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3778EE3E-F314-4EB5-B99F-CF4A8C254E80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3778EE3E-F314-4EB5-B99F-CF4A8C254E80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3778EE3E-F314-4EB5-B99F-CF4A8C254E80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1014F13-0D21-47D4-BE0C-0ED2779F387F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1014F13-0D21-47D4-BE0C-0ED2779F387F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1014F13-0D21-47D4-BE0C-0ED2779F387F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1014F13-0D21-47D4-BE0C-0ED2779F387F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
