@@ -20,23 +20,15 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base;
+using System.Collections.Generic;
 using System.ComponentModel;
-using BH.oM.Reflection.Attributes;
 
-
-namespace BH.Adapter.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public class EnergyPlusResult : BHoMObject
     {
-        [Description("Produces an LadybugTools Adapter to allow interoperability with Ladybug and the BHoM.")]
-        [Output("adapter", "Adapter to a LadybugTools object.")]
-        public LadybugToolsAdapter()
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
-
-            return;
-        }
-
+        [Description("A list of JSON results collections")]
+        public virtual List<string> Results { get; set; } = new List<string>();
     }
 }
-
