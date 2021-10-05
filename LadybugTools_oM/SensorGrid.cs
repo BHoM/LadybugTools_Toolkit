@@ -20,23 +20,26 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base;
+using BH.oM.Geometry;
+
+using System.Collections.Generic;
 using System.ComponentModel;
-using BH.oM.Reflection.Attributes;
 
-
-namespace BH.Adapter.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public class SensorGrid : BHoMObject
     {
-        [Description("Produces an LadybugTools Adapter to allow interoperability with Ladybug and the BHoM.")]
-        [Output("adapter", "Adapter to a LadybugTools object.")]
-        public LadybugToolsAdapter()
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
+        [Description("Sensor locations.")]
+        public virtual List<Point> Positions { get; set; } = new List<Point>();
+        
+        [Description("Sensor vectors.")]
+        public virtual List<Vector> Directions { get; set; } = new List<Vector>();
 
-            return;
-        }
+        [Description("An optional mesh that aligns with the sensors.")]
+        public virtual Mesh3D Mesh { get; set; } = null;
 
+        [Description("An optional brep for the geometry used to make the sensor grid.")]
+        public virtual IGeometry BaseGeo { get; set; } = null;
     }
 }
-

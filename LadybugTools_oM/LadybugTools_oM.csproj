@@ -54,8 +54,9 @@
     <Reference Include="BHoM">
       <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\BHoM.dll</HintPath>
     </Reference>
-    <Reference Include="BuildingEnvironments_oM">
-      <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\BuildingEnvironments_oM.dll</HintPath>
+    <Reference Include="Environment_oM, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\Environment_oM.dll</HintPath>
     </Reference>
     <Reference Include="Geometry_oM">
       <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\Geometry_oM.dll</HintPath>
@@ -73,8 +74,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AnnualRadianceResult.cs" />
-    <Compile Include="SQLiteFile.cs" />
+    <Compile Include="Results\PointInTimeRadianceResult.cs" />
+    <Compile Include="SensorGrid.cs" />
+    <Compile Include="Results\AnnualRadianceResult.cs" />
+    <Compile Include="Results\EnergyPlusResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

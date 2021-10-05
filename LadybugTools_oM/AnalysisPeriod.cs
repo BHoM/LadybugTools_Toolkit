@@ -20,23 +20,38 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base;
+using BH.oM.Geometry;
+using LadybugTools_oM.Enums;
+using System.Collections.Generic;
 using System.ComponentModel;
-using BH.oM.Reflection.Attributes;
 
-
-namespace BH.Adapter.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public class AnalysisPeriod : BHoMObject
     {
-        [Description("Produces an LadybugTools Adapter to allow interoperability with Ladybug and the BHoM.")]
-        [Output("adapter", "Adapter to a LadybugTools object.")]
-        public LadybugToolsAdapter()
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
+        [Description("Start month (1-12).")]
+        public virtual int StartMonth { get; set; } = 1;
 
-            return;
-        }
+        [Description("Start day (1-31).")]
+        public virtual int StartDay { get; set; } = 1;
 
+        [Description("Start hour (0-23).")]
+        public virtual int StartHour { get; set; } = 0;
+
+        [Description("End month (1-12).")]
+        public virtual int EndMonth { get; set; } = 12;
+
+        [Description("End day (1-31).")]
+        public virtual int EndDay { get; set; } = 31;
+
+        [Description("End hour (0-23).")]
+        public virtual int EndHour { get; set; } = 23;
+
+        [Description("An integer number for the number of time steps per hours. Acceptable inputs include: [1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60].")]
+        public virtual int Timestep { get; set; } = 1;
+
+        [Description("A boolean to indicate whether the AnalysisPeriod represents a leap year.")]
+        public virtual bool IsLeapYear { get; set; } = false;
     }
 }
-
