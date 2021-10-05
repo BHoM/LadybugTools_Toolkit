@@ -20,24 +20,38 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Base;
-using BH.oM.Reflection;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 
-namespace BH.oM.Adapters.LadybugTools
+namespace LadybugTools_oM.Enums
 {
-    public class SQLLiteFile : BHoMObject
+    public enum DataType
     {
-        [Description("Path of the SQL file output from an EnerygPlus simulation run via LadybugTools.")]
-        public virtual string FilePath { get; set; } = "";
-
-        [Description("Results header attribute")]
-        public virtual List<string> ResultsAttribute { get; set; } = new List<string>();
-
-        [Description("Results values")]
-        public virtual List<List<double>> ResultsValues { get; set; } = new List<List<double>>();
+        Undefined,
+        Angle,
+        Area,
+        Current,
+        Distance,
+        Energy,
+        EnergyFlux,
+        EnergyIntensity,
+        Fraction,
+        Illuminance,
+        Luminance,
+        Mass,
+        MassFlowRate,
+        Power,
+        Pressure,
+        RValue,
+        SpecificEnergy,
+        Speed,
+        Temperature,
+        TemperatureDelta,
+        TemperatureTime,
+        ThermalCondition,
+        Time,
+        UValue,
+        Voltage,
+        Volume,
+        VolumeFlowRate,
+        VolumeFlowRateIntensity
     }
 }
-

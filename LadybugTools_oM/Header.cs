@@ -22,26 +22,24 @@
 
 using BH.oM.Base;
 using BH.oM.Geometry;
-using BH.oM.Reflection;
-using System;
+using LadybugTools_oM.Enums;
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace BH.oM.Adapters.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public class AnnualRadianceResult : BHoMObject
+    public class Header : BHoMObject
     {
-        [Description("Directory where the Annual Radiance Result is stored.")]
-        public virtual string Directory { get; set; } = "";
-
-        [Description("Sensor locations - one list of points per grid.")]
-        public virtual List<List<Point>> Points { get; set; } = new List<List<Point>>();
+        [Description("Data type.")]
+        public virtual DataType DataType { get; set; } = DataType.Undefined;
         
-        [Description("Sensor vectors - one list of vectors per grid.")]
-        public virtual List<List<Vector>> Vectors { get; set; } = new List<List<Vector>>();
+        [Description("Unit.")]
+        public virtual string UnitType { get; set; } = "";
 
-        [Description("Results values - one per grid, per time-step, per Point.")]
-        public virtual List<List<List<double>>> Results { get; set; } = new List<List<List<double>>>();
+        [Description("Analysis period.")]
+        public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
+
+        [Description("Optional meta-data to be associated with the Header.")]
+        public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
     }
 }
-

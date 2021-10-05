@@ -20,23 +20,46 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using System.ComponentModel;
+using BH.oM.LadybugTools;
+using BH.oM.Geometry;
 using BH.oM.Reflection.Attributes;
 
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
 
-namespace BH.Adapter.LadybugTools
+namespace BH.Engine.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public static partial class Query
     {
-        [Description("Produces an LadybugTools Adapter to allow interoperability with Ladybug and the BHoM.")]
-        [Output("adapter", "Adapter to a LadybugTools object.")]
-        public LadybugToolsAdapter()
+        [Description("Create a Honeybee-Radiance SensorGrid object from a file containing Positions and Vectors.")]
+        [Input("ptsFile", "A files containing Points and Vectors, used in a Radiance simulation.")]
+        [Output("sensorGrid", "A BHoM-HBRadiance SensorGrid.")]
+        public static SensorGrid SensorGrid(string ptsFile)
         {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
+            SensorGrid sensorGrid = new SensorGrid
+            {
+                Name = Path.GetFileNameWithoutExtension(ptsFile)
+            };
 
-            return;
+            foreach (string ptString in File.ReadLines(ptsFile).ToList())
+            {
+                string[] attrs = ptString.Split(null);
+                sensorGrid.Positions.Add(
+                    new Point() { 
+                        X = System.Convert.ToDouble(attrs[0]), 
+                        Y = System.Convert.ToDouble(attrs[1]), 
+                        Z = System.Convert.ToDouble(attrs[2])
+                    });
+                sensorGrid.Directions.Add(
+                    new Vector() { 
+                        X = System.Convert.ToDouble(attrs[3]), 
+                        Y = System.Convert.ToDouble(attrs[4]), 
+                        Z = System.Convert.ToDouble(attrs[5])
+                    });
+            }
+
+            return sensorGrid;
         }
-
     }
 }
-
