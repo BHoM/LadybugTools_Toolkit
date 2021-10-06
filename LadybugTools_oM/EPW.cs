@@ -30,6 +30,49 @@ namespace BH.oM.LadybugTools
 {
     public class EPW : BHoMObject
     {
-        // TODO- create object
+        [Description("Location")]
+        public virtual Location Location { get; set; } = new Location();
+
+        [Description("DataCollections")]
+        public virtual List<HourlyContinuousCollection> DataCollections { get; set; } = new List<HourlyContinuousCollection>();
+
+        [Description("Metadata")]
+        public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
+
+        [Description("HeatingDict")]
+        public virtual Dictionary<string, string> HeatingDict { get; set; } = new Dictionary<string, string>();
+
+        [Description("CoolingDict")]
+        public virtual Dictionary<string, string> CoolingDict { get; set; } = new Dictionary<string, string>();
+
+        [Description("ExtremesDict")]
+        public virtual Dictionary<string, string> ExtremesDict { get; set; } = new Dictionary<string, string>();
+
+        [Description("ExtremeHotWeeks")]
+        public virtual Dictionary<string, AnalysisPeriod> ExtremeHotWeeks { get; set; } = new Dictionary<string, AnalysisPeriod>();
+
+        [Description("ExtremeColdWeeks")]
+        public virtual Dictionary<string, AnalysisPeriod> ExtremeColdWeeks { get; set; } = new Dictionary<string, AnalysisPeriod>();
+
+        [Description("TypicalWeeks")]
+        public virtual Dictionary<string, AnalysisPeriod> TypicalWeeks { get; set; } = new Dictionary<string, AnalysisPeriod>();
+
+        [Description("MonthlyGroundTemps")]
+        public virtual Dictionary<string, MonthlyCollection> MonthlyGroundTemps { get; set; } = new Dictionary<string, MonthlyCollection>();
+
+        [Description("IsIp")]
+        public virtual bool IsIp { get; set; } = false;
+
+        [Description("IsLeapYear")]
+        public virtual bool IsLeapYear { get; set; } = false;
+
+        [Description("DaylightSavingsStart")]
+        public virtual string DaylightSavingsStart { get; set; } = "0";
+
+        [Description("DaylightSavingsEnd")]
+        public virtual string DaylightSavingsEnd { get; set; } = "0";
+
+        [Description("Comments")]
+        public virtual List<string> Comments { get; set; } = new List<string>();
     }
 }
