@@ -21,20 +21,20 @@
  */
 
 using BH.oM.Base;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class HourlyContinuousCollection : BHoMObject
+    public class MonthlyCollection : BHoMObject
     {
         [Description("Header.")]
-        [JsonProperty("header")]
         public virtual Header Header { get; set; } = new Header();
-        
+
         [Description("Values.")]
-        [JsonProperty("values")]
         public virtual List<dynamic> Values { get; set; } = new List<dynamic>();
+
+        [Description("Datetimes.")]
+        public virtual List<int> Datetimes { get; set; } = new List<int>();
     }
 }

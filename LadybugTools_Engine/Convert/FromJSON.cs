@@ -41,33 +41,33 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Convert
     {
-        [Description("Converts a JSON string to the LadybugTools version of that object.")]
-        [Input("jsonStr", "A JSON string.")]
-        [Output("header", "LadybugTools Header object.")]
-        public static Header FromJSON(string jsonStr)
-        {
-            // TODO - finish method
-            return new Header();
-        }
+        //[Description("Converts a JSON string to the LadybugTools version of that object.")]
+        //[Input("jsonStr", "A JSON string.")]
+        //[Output("header", "LadybugTools Header object.")]
+        //public static Header FromJSON(string jsonStr)
+        //{
+        //    // TODO - finish method
+        //    return new Header();
+        //}
 
-        [Description("Converts a JSON string to the LadybugTools version of that object.")]
-        [Input("jsonStr", "A JSON string.")]
-        [Output("analysisPeriod", "LadybugTools AnalysisPeriod object.")]
-        public static AnalysisPeriod FromJSON(string jsonStr)
-        {
-            // TODO - finish method
-            return new AnalysisPeriod();
-        }
+        //[Description("Converts a JSON string to the LadybugTools version of that object.")]
+        //[Input("jsonStr", "A JSON string.")]
+        //[Output("analysisPeriod", "LadybugTools AnalysisPeriod object.")]
+        //public static AnalysisPeriod FromJSON(string jsonStr)
+        //{
+        //    // TODO - finish method
+        //    return new AnalysisPeriod();
+        //}
 
-        [Description("Converts a JSON string to the LadybugTools version of that object.")]
-        [Input("jsonStr", "A JSON string.")]
-        [Output("hourlyContinuousCollection", "LadybugTools HourlyContinuousCollection object.")]
+        //[Description("Converts a JSON string to the LadybugTools version of that object.")]
+        //[Input("jsonStr", "A JSON string.")]
+        //[Output("hourlyContinuousCollection", "LadybugTools HourlyContinuousCollection object.")]
 
-        public static HourlyContinuousCollection FromJSON(string jsonStr)
-        {
-            // TODO - finish method
-            return new HourlyContinuousCollection();
-        }
+        //public static HourlyContinuousCollection FromJSON(string jsonStr)
+        //{
+        //    // TODO - finish method
+        //    return new HourlyContinuousCollection();
+        //}
     }
 }
 

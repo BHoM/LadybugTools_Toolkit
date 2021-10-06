@@ -21,53 +21,21 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-
-using BH.oM.Geometry;
-using BH.oM.Environment;
-using BH.oM.Environment.Elements;
-
-using BH.Engine.Geometry;
-using BH.Engine.Environment;
-
-using BH.oM.Reflection.Attributes;
-using System.ComponentModel;
 using BH.oM.LadybugTools;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Convert
     {
-        [Description("Converts a Ladybug style object to a JSON serialised version of that object.")]
-        [Input("header", "LadybugTools Header object.")]
-        [Output("json", "A JSON string.")]
-        public static string ToJSON(this Header header)
+        public static string ToJson(this ILadybugObject ladybugObject)
         {
-            // TODO - finish method
-            return "";
-        }
-
-        [Description("Converts a Ladybug style object to a JSON serialised version of that object.")]
-        [Input("analysisPeriod", "LadybugTools AnalysisPeriod object.")]
-        [Output("json", "A JSON string.")]
-        public static string ToJSON(this AnalysisPeriod analysisPeriod)
-        {
-            // TODO - finish method
-            return "";
-        }
-
-        
-
-        [Description("Converts a Ladybug style object to a JSON serialised version of that object.")]
-        [Input("hourlyContinuousCollection", "LadybugTools HourlyContinuousCollection object.")]
-        [Output("json", "A JSON string.")]
-        public static string ToJSON(this HourlyContinuousCollection hourlyContinuousCollection)
-        {
-            // TODO - finish method
-            return "";
+            string json = JsonConvert.SerializeObject(ladybugObject, Formatting.Indented);
+            JObject rss = JObject.Parse(json);
+            rss.Add("type", ladybugObject.GetType().Name);
+            return rss.ToString();
         }
     }
 }
