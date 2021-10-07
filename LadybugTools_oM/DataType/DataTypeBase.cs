@@ -25,58 +25,18 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class DataTypeBase : ILadybugObject
+    public interface DataTypeBase : ILadybugObject
     {
-        [Description("Name")]
+        [Description("The name of this data type.")]
         [JsonProperty("name")]
-        public virtual string Name { get; set; } = null;
+        string Name { get; set; }
 
-        [Description("Units")]
-        [JsonProperty("units")]
-        public virtual string Units { get; set; } = null;
+        [Description("The data type.")]
+        [JsonProperty("data_type")]
+        string DataType { get; set; }
 
-        [Description("SiUnits")]
-        [JsonProperty("si_units")]
-        public virtual string SiUnits { get; set; } = null;
-
-        [Description("IpUnits")]
-        [JsonProperty("ip_units")]
-        public virtual string IpUnits { get; set; } = null;
-
-        [Description("Min")]
-        [JsonProperty("min")]
-        public virtual string Min { get; set; } = null;
-
-        [Description("Max")]
-        [JsonProperty("max")]
-        public virtual string Max { get; set; } = null;
-
-        [Description("Abbreviation")]
-        [JsonProperty("abbreviation")]
-        public virtual string Abbreviation { get; set; } = null;
-
-        [Description("UnitDescr")]
-        [JsonProperty("unit_descr")]
-        public virtual string UnitDescr { get; set; } = null;
-
-        [Description("PointInTime")]
-        [JsonProperty("point_in_time")]
-        public virtual string PointInTime { get; set; } = null;
-
-        [Description("Cumulative")]
-        [JsonProperty("cumulative")]
-        public virtual string Cumulative { get; set; } = null;
-
-        [Description("NormalizedType")]
-        [JsonProperty("normalized_type")]
-        public virtual string NormalizedType { get; set; } = null;
-
-        [Description("TimeAggregatedType")]
-        [JsonProperty("time_aggregated_type")]
-        public virtual string TimeAggregatedType { get; set; } = null;
-
-        [Description("TimeAggregatedFactor")]
-        [JsonProperty("time_aggregated_factor")]
-        public virtual string TimeAggregatedFactor { get; set; } = null;
+        [Description("The unit associated with this data type.")]
+        [JsonProperty("base_unit")]
+        string BaseUnit { get; set; }
     }
 }

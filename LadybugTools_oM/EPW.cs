@@ -23,56 +23,76 @@
 using BH.oM.Base;
 using BH.oM.Geometry;
 using LadybugTools_oM.Enums;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class EPW : BHoMObject
+    public class EPW : ILadybugObject
     {
-        [Description("Location")]
+        [Description("A Location object.")]
+        [JsonProperty("location")]
         public virtual Location Location { get; set; } = new Location();
 
         [Description("DataCollections")]
+        [JsonProperty("data_collections")]
         public virtual List<HourlyContinuousCollection> DataCollections { get; set; } = new List<HourlyContinuousCollection>();
 
-        [Description("Metadata")]
+        [Description("Dictionary of metadata written to DataCollection headers.\n\nKeys typically include 'source', 'country', and 'city').")]
+        [JsonProperty("metadata")]
         public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
 
-        [Description("HeatingDict")]
+        [Description("Dictionary with ASHRAE HOF Climate Design Data for heating conditions.")]
+        [JsonProperty("heating_dict")]
         public virtual Dictionary<string, string> HeatingDict { get; set; } = new Dictionary<string, string>();
 
-        [Description("CoolingDict")]
+        [Description("Dictionary with ASHRAE HOF Climate Design Data for cooling conditions.")]
+        [JsonProperty("cooling_dict")]
         public virtual Dictionary<string, string> CoolingDict { get; set; } = new Dictionary<string, string>();
 
-        [Description("ExtremesDict")]
+        [Description("Dictionary with ASHRAE HOF Climate Design Data for extreme conditions.")]
+        [JsonProperty("extremes_dict")]
         public virtual Dictionary<string, string> ExtremesDict { get; set; } = new Dictionary<string, string>();
 
-        [Description("ExtremeHotWeeks")]
+        [Description("A dictionary with AnalysisPeriods for the hottest weeks within the EPW.")]
+        [JsonProperty("extreme_hot_weeks")]
         public virtual Dictionary<string, AnalysisPeriod> ExtremeHotWeeks { get; set; } = new Dictionary<string, AnalysisPeriod>();
 
-        [Description("ExtremeColdWeeks")]
+        [Description("A dictionary with AnalysisPeriods for the coldest weeks within the EPW.")]
+        [JsonProperty("extreme_cold_weeks")]
         public virtual Dictionary<string, AnalysisPeriod> ExtremeColdWeeks { get; set; } = new Dictionary<string, AnalysisPeriod>();
 
-        [Description("TypicalWeeks")]
+        [Description("A dictionary with AnalysisPeriods for the typical weeks within the EPW.")]
+        [JsonProperty("typical_weeks")]
         public virtual Dictionary<string, AnalysisPeriod> TypicalWeeks { get; set; } = new Dictionary<string, AnalysisPeriod>();
 
-        [Description("MonthlyGroundTemps")]
+        [Description("A dictionary of Monthly Data collections.\n\nThe keys of this dictionary are the depths at which each set of temperatures occurs.")]
+        [JsonProperty("monthly_ground_temps")]
         public virtual Dictionary<string, MonthlyCollection> MonthlyGroundTemps { get; set; } = new Dictionary<string, MonthlyCollection>();
 
-        [Description("IsIp")]
+        [Description("Boolean to denote whether the EPW is in IP units or not.")]
+        [JsonProperty("is_ip")]
         public virtual bool IsIp { get; set; } = false;
 
-        [Description("IsLeapYear")]
+        [Description("Boolean to denote whether the EPW is a leap year or not.")]
+        [JsonProperty("is_leap_year")]
         public virtual bool IsLeapYear { get; set; } = false;
 
-        [Description("DaylightSavingsStart")]
+        [Description("Signify when daylight savings starts (hour integer in year).")]
+        [JsonProperty("daylight_savings_start")]
         public virtual string DaylightSavingsStart { get; set; } = "0";
 
-        [Description("DaylightSavingsEnd")]
+        [Description("Signify when daylight savings ends (hour integer in year).")]
+        [JsonProperty("daylight_savings_end")]
         public virtual string DaylightSavingsEnd { get; set; } = "0";
 
-        [Description("Comments")]
-        public virtual List<string> Comments { get; set; } = new List<string>();
+        [Description("Comments associated with this EPW.")]
+        [JsonProperty("comments_1")]
+        public virtual string Comments1 { get; set; } = "";
+
+        [Description("Comments associated with this EPW.")]
+        [JsonProperty("comments_2")]
+        public virtual string Comments2 { get; set; } = "";
     }
 }

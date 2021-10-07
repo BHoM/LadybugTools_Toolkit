@@ -117,11 +117,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Convert\FromJSON.cs" />
+    <Compile Include="Convert\FromJson.cs" />
     <Compile Include="Convert\ToJson.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Query\DateTimes.cs" />
     <Compile Include="Query\EnergyPlusResult.cs" />
     <Compile Include="Query\AnnualRadianceResult.cs" />
     <Compile Include="Query\PointInTimeRadianceResult.cs" />
