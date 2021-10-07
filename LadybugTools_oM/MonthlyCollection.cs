@@ -26,7 +26,7 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class MonthlyCollection : BHoMObject
+    public class MonthlyCollection : ILadybugObject
     {
         [Description("Header.")]
         public virtual Header Header { get; set; } = new Header();

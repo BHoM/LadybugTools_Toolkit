@@ -23,23 +23,28 @@
 using BH.oM.Base;
 using BH.oM.Geometry;
 using LadybugTools_oM.Enums;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class Header : BHoMObject
+    public class Header : ILadybugObject
     {
-        [Description("Data type.")]
-        public virtual DataType DataType { get; set; } = DataType.Undefined;
+        [Description("A DataType object. (e.g. Temperature).")]
+        [JsonProperty("data_type")]
+        public virtual DataTypeBase DataType { get; set; } = null;
         
-        [Description("Unit.")]
+        [Description("The unit associated with the DataType unit.")]
+        [JsonProperty("unit")]
         public virtual string UnitType { get; set; } = "";
 
-        [Description("Analysis period.")]
+        [Description("An AnalysisPeriod object.")]
+        [JsonProperty("analysis_period")]
         public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
 
-        [Description("Optional meta-data to be associated with the Header.")]
+        [Description("Optional dictionary of additional metadata, containing information such as 'source', 'city', or 'zone'.")]
+        [JsonProperty("metadata")]
         public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
     }
 }
