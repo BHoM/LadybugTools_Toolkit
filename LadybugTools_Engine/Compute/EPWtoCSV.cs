@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2021, the respective contributors. All rights reserved.
  *
@@ -29,19 +29,19 @@ using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Convert
+    public static partial class Compute
     {
-        [Description("Convert an EPW file into a BHoM CustomObject.")]
+        [Description("Convert an EPW file into a time-indexed CSV version.")]
         [Input("epwFile", "An EPW file.")]
-        [Output("customObject", "A BHoM CustomObject.")]
-        public static CustomObject FromEPW(string epwFile)
+        [Output("csvFile", "The resultant CSV file path.")]
+        public static string EPWtoCSV(string epwFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_json.py";
+            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_csv.py";
             string pythonExecutable = Path.Combine(Python.Query.EmbeddedPythonHome(), "python.exe");
 
             // Run the Python code
             Process p = new Process();
-            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            p.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.FileName = "cmd.exe";
@@ -52,13 +52,8 @@ namespace BH.Engine.LadybugTools
             string output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
 
-            // Replace "Infinity" values in JSON to avoid issues with Serialiser.Engine
-            output = output.Trim().Replace("Infinity", "0");
-
             //return output;
-            // convert output into a CustomObject
-            // TODO - Convert CustomObject into a BHoM serialisable object to enable bi-directional conversion
-            return Serialiser.Convert.FromJson(output) as CustomObject;
+            return output;
         }
     }
 }
