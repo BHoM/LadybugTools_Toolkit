@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\SQLite.3.13.0\build\net45\SQLite.props" Condition="Exists('..\packages\SQLite.3.13.0\build\net45\SQLite.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -71,30 +70,6 @@
       <HintPath>C:\ProgramData\BHoM\Assemblies\Geometry_oM.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="IronPython, Version=2.7.11.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <HintPath>..\packages\IronPython.2.7.11\lib\net45\IronPython.dll</HintPath>
-    </Reference>
-    <Reference Include="IronPython.Modules, Version=2.7.11.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <HintPath>..\packages\IronPython.2.7.11\lib\net45\IronPython.Modules.dll</HintPath>
-    </Reference>
-    <Reference Include="IronPython.SQLite, Version=2.7.11.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <HintPath>..\packages\IronPython.2.7.11\lib\net45\IronPython.SQLite.dll</HintPath>
-    </Reference>
-    <Reference Include="IronPython.Wpf, Version=2.7.11.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <HintPath>..\packages\IronPython.2.7.11\lib\net45\IronPython.Wpf.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Dynamic, Version=1.3.0.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <HintPath>..\packages\DynamicLanguageRuntime.1.3.0\lib\net45\Microsoft.Dynamic.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Scripting, Version=1.3.0.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <HintPath>..\packages\DynamicLanguageRuntime.1.3.0\lib\net45\Microsoft.Scripting.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Scripting.Metadata, Version=1.3.0.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <HintPath>..\packages\DynamicLanguageRuntime.1.3.0\lib\net45\Microsoft.Scripting.Metadata.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="Python_Engine">
       <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\Python_Engine.dll</HintPath>
     </Reference>
@@ -119,9 +94,6 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -130,10 +102,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Convert\FromEPW.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
+    <Content Include="Extensions\enthalpy.py" />
+    <Content Include="Extensions\epw_to_dataframe.py" />
+    <Content Include="Extensions\hourlycontinuouscollection_to_series.py" />
+    <Content Include="Extensions\get_location_str.py" />
+    <Content Include="Extensions\get_title_str.py" />
     <Compile Include="InstallLadybugTools.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Content Include="Extensions\humidity_ratio.py" />
+    <Content Include="Extensions\psychrometrics_collections.py" />
+    <Content Include="Extensions\psychrometrics_dataframe.py" />
+    <Content Include="Extensions\sun_position_collections.py" />
+    <Content Include="Extensions\sun_position_dataframe.py" />
+    <Content Include="Extensions\wet_bulb_temperature.py" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -148,6 +132,12 @@
   <ItemGroup>
     <Folder Include="Query\" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Extensions\epw_to_csv.py" />
+    <Content Include="Extensions\epw_to_json.py" />
+    <Content Include="Extensions\index_from_leap_year_bool.py" />
+    <Content Include="Extensions\__init__.py" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -155,20 +145,10 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets'))" />
-    <Error Condition="!Exists('..\packages\SQLite.3.13.0\build\net45\SQLite.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SQLite.3.13.0\build\net45\SQLite.props'))" />
   </Target>
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /Y
 
-xcopy "$(TargetDir)Microsoft.Dynamic.dll"  "C:\ProgramData\BHoM\Assemblies" /Y
-xcopy "$(TargetDir)Microsoft.Scripting.dll"  "C:\ProgramData\BHoM\Assemblies" /Y
-xcopy "$(TargetDir)Microsoft.Scripting.Metadata.dll"  "C:\ProgramData\BHoM\Assemblies" /Y
-
-xcopy "$(TargetDir)IronPython.dll"  "C:\ProgramData\BHoM\Assemblies" /Y
-xcopy "$(TargetDir)IronPython.Modules.dll"  "C:\ProgramData\BHoM\Assemblies" /Y
-xcopy "$(TargetDir)IronPython.SQLite.dll"  "C:\ProgramData\BHoM\Assemblies" /Y
-xcopy "$(TargetDir)IronPython.Wpf.dll"  "C:\ProgramData\BHoM\Assemblies" /Y
-
-xcopy "$(TargetDir)System.Core.dll"  "C:\ProgramData\BHoM\Assemblies" /Y</PostBuildEvent>
+xcopy /E /Y  /I "$(ProjectDir)Extensions" "C:\\ProgramData\\BHoM\\Extensions\\LadybugTools"</PostBuildEvent>
   </PropertyGroup>
 </Project>
