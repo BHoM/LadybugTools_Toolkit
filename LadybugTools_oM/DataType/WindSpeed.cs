@@ -21,20 +21,18 @@
  */
 
 using BH.oM.Base;
+using BH.oM.Geometry;
+using LadybugTools_oM.Enums;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class HourlyContinuousCollection : ILadybugObject
+    public class WindSpeed : DataTypeBase
     {
-        [Description("A Header object. Note that this header must have an AnalysisPeriod on it that aligns with the list of values.")]
-        [JsonProperty("header")]
-        public virtual Header Header { get; set; } = new Header();
-        
-        [Description("A list of values. Note that the length of this list must align with the AnalysisPeriod on the header.")]
-        [JsonProperty("values")]
-        public virtual List<dynamic> Values { get; set; } = new List<dynamic>();
+        public virtual string Name { get; set; } = "Wind Speed";
+        public virtual string DataType { get; set; } = "WindSpeed";
+        public virtual string BaseUnit { get; set; } = "m/s";
     }
 }

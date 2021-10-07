@@ -23,26 +23,16 @@
 using BH.oM.Base;
 using BH.oM.Geometry;
 using LadybugTools_oM.Enums;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class LBDateTime : BHoMObject
+    public class DryBulbTemperature : DataTypeBase
     {
-        [Description("Month.")]
-        public virtual int Month { get; set; } = 1;
-        
-        [Description("Day.")]
-        public virtual int Day { get; set; } = 1;
-
-        [Description("Hour.")]
-        public virtual int Hour { get; set; } = 0;
-
-        [Description("Minute.")]
-        public virtual int Minute { get; set; } = 0;
-
-        [Description("LeapYear.")]
-        public virtual bool LeapYear { get; set; } = false;
+        public virtual string Name { get; set; } = "Dry Bulb Temperature";
+        public virtual string DataType { get; set; } = "DryBulbTemperature";
+        public virtual string BaseUnit { get; set; } = "C";
     }
 }

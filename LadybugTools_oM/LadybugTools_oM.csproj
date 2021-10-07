@@ -77,6 +77,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataType\DryBulbTemperature.cs" />
+    <Compile Include="DataType\WindSpeed.cs" />
+    <Compile Include="DataType\WindDirection.cs" />
     <Compile Include="ILadybugObject.cs" />
     <Compile Include="Enums\DataType.cs" />
     <Compile Include="Enums\EnergyPlusResultType.cs" />
@@ -84,7 +87,6 @@
     <Compile Include="MonthlyCollection.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="EPW.cs" />
-    <Compile Include="LBDateTime.cs" />
     <Compile Include="HourlyContinuousCollection.cs" />
     <Compile Include="Header.cs" />
     <Compile Include="Results\PointInTimeRadianceResult.cs" />

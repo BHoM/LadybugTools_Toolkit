@@ -20,54 +20,23 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using BH.oM.Geometry;
-using BH.oM.Environment;
-using BH.oM.Environment.Elements;
-
-using BH.Engine.Geometry;
-using BH.Engine.Environment;
-
 using BH.oM.Reflection.Attributes;
 using System.ComponentModel;
 using BH.oM.LadybugTools;
+using Newtonsoft.Json.Linq;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Convert
     {
-        //[Description("Converts a JSON string to the LadybugTools version of that object.")]
-        //[Input("jsonStr", "A JSON string.")]
-        //[Output("header", "LadybugTools Header object.")]
-        //public static Header FromJSON(string jsonStr)
-        //{
-        //    // TODO - finish method
-        //    return new Header();
-        //}
-
-        //[Description("Converts a JSON string to the LadybugTools version of that object.")]
-        //[Input("jsonStr", "A JSON string.")]
-        //[Output("analysisPeriod", "LadybugTools AnalysisPeriod object.")]
-        //public static AnalysisPeriod FromJSON(string jsonStr)
-        //{
-        //    // TODO - finish method
-        //    return new AnalysisPeriod();
-        //}
-
-        //[Description("Converts a JSON string to the LadybugTools version of that object.")]
-        //[Input("jsonStr", "A JSON string.")]
-        //[Output("hourlyContinuousCollection", "LadybugTools HourlyContinuousCollection object.")]
-
-        //public static HourlyContinuousCollection FromJSON(string jsonStr)
-        //{
-        //    // TODO - finish method
-        //    return new HourlyContinuousCollection();
-        //}
+        [Description("Converts a JSON string representation of a Ladybug object into a BHoM Ladybug object.")]
+        [Input("jsonString", "The JSON string representation of the Ladybug object.")]
+        [Output("ladybugObject", "A BHoM Ladybug object.")]
+        public static ILadybugObject FromJson(this string jsonString)
+        {
+            ILadybugObject a = (ILadybugObject)JObject.Parse(jsonString);
+            return a;
+        }
     }
 }
 
