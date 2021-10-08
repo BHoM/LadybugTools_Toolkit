@@ -48,7 +48,7 @@
     </Reference>
     <Reference Include="Data_oM, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\Data_oM.dll</HintPath>
+      <HintPath>C:\ProgramData\BHoM\Assemblies\Data_oM.dll</HintPath>
     </Reference>
     <Reference Include="Dimensional_oM">
       <HintPath>C:\ProgramData\BHoM\Assemblies\Dimensional_oM.dll</HintPath>
@@ -71,7 +71,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Python_Engine">
-      <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\Python_Engine.dll</HintPath>
+      <HintPath>C:\ProgramData\BHoM\Assemblies\Python_Engine.dll</HintPath>
     </Reference>
     <Reference Include="Reflection_Engine">
       <HintPath>C:\ProgramData\BHoM\Assemblies\Reflection_Engine.dll</HintPath>
@@ -89,7 +89,7 @@
       <HintPath>..\packages\RhinoCommon.5.12.50810.13095\lib\net35\RhinoCommon.dll</HintPath>
     </Reference>
     <Reference Include="Serialiser_Engine">
-      <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\Serialiser_Engine.dll</HintPath>
+      <HintPath>C:\ProgramData\BHoM\Assemblies\Serialiser_Engine.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -102,22 +102,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
-    <Compile Include="Convert\FromEPW.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
-    <Content Include="Extensions\enthalpy.py" />
-    <Content Include="Extensions\epw_to_dataframe.py" />
-    <Content Include="Extensions\hourlycontinuouscollection_to_series.py" />
-    <Content Include="Extensions\get_location_str.py" />
-    <Content Include="Extensions\get_title_str.py" />
     <Compile Include="InstallLadybugTools.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Content Include="Extensions\humidity_ratio.py" />
-    <Content Include="Extensions\psychrometrics_collections.py" />
-    <Content Include="Extensions\psychrometrics_dataframe.py" />
-    <Content Include="Extensions\sun_position_collections.py" />
-    <Content Include="Extensions\sun_position_dataframe.py" />
-    <Content Include="Extensions\wet_bulb_temperature.py" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -133,9 +122,10 @@
     <Folder Include="Query\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Extensions\epw_to_csv.py" />
-    <Content Include="Extensions\epw_to_json.py" />
-    <Content Include="Extensions\index_from_leap_year_bool.py" />
+    <Content Include="Extensions\datacollection.py" />
+    <Content Include="Extensions\epw.py" />
+    <Content Include="Extensions\EPWtoCSV.py" />
+    <Content Include="Extensions\EPWtoJSON.py" />
     <Content Include="Extensions\__init__.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -20,7 +20,6 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Base;
 using BH.oM.Reflection.Attributes;
 
 using System.ComponentModel;
@@ -31,12 +30,13 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Convert an EPW file into a time-indexed CSV version.")]
+        [Description("Convert an EPW file into a time-indexed CSV version of that file.")]
         [Input("epwFile", "An EPW file.")]
-        [Output("csvFile", "The resultant CSV file path.")]
-        public static string EPWtoCSV(string epwFile)
+        [Input("csvFile", "The output CSV file.")]
+        [Output("csvFile", "The resulting CSV file path.")]
+        public static string EPWtoCSV(string epwFile, string csvFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_csv.py";
+            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\EPWtoCSV.py";
             string pythonExecutable = Path.Combine(Python.Query.EmbeddedPythonHome(), "python.exe");
 
             // Run the Python code
@@ -45,14 +45,13 @@ namespace BH.Engine.LadybugTools
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.FileName = "cmd.exe";
-            p.StartInfo.Arguments = $"/c {pythonExecutable} {scriptPath} \"{epwFile}\"";
+            p.StartInfo.Arguments = $"/c {pythonExecutable} {scriptPath} \"{epwFile}\" \"{csvFile}\"";
             p.Start();
 
             // To avoid deadlocks, always read the output stream first and then wait.  
             string output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
 
-            //return output;
             return output;
         }
     }
