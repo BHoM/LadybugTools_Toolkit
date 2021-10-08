@@ -22,11 +22,10 @@
 
 using BH.oM.Reflection;
 using BH.oM.Reflection.Attributes;
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
-using System.Linq;
 
 namespace BH.Engine.LadybugTools
 {
@@ -50,8 +49,8 @@ namespace BH.Engine.LadybugTools
                 return new Output<bool, List<string>> { Item1 = success, Item2 = installedPackages };
 
             // install the python toolkit if necessary
-            if (!BH.Engine.Python.Query.IsPythonInstalled())
-                BH.Engine.Python.Compute.InstallPythonToolkit(run, force);
+            if (!Python.Query.IsPythonInstalled())
+                Python.Compute.InstallPythonToolkit(run, force);
 
             // install from specific package/s
             Dictionary<string, string> packages = new Dictionary<string, string>()
@@ -73,7 +72,7 @@ namespace BH.Engine.LadybugTools
                 Python.Compute.PipInstall(kvp.Key);  // Version info being ignored for now to prevent dependency issues between contained packages, letting Pip determine which sub-packages work with each other
             }
 
-            // TODO - add checks to see if modules installed correctly here! For now the list of packages are just being returned, which is dangerous. Also, LB packages are installed differently to other Python packages, meaning the usual checks don't work to see if they exist. Also a success/failure flag is retured by Pip which should be used rather than seeing if the module exists on file - that would be way more effective and prevent multiple stages!
+            // TODO - add checks to see if modules installed correctly here! For now the list of packages are just being returned, which is dangerous. Also, LB packages are installed differently to other Python packages, meaning the usual checks don't work to see if they exist. Also a success/failure flag is returned by Pip which should be used rather than seeing if the module exists on file - that would be way more effective and prevent multiple stages!
 
             return new Output<bool, List<string>>() { Item1 = true, Item2 = installedPackages };
         }
