@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2021, the respective contributors. All rights reserved.
  *
@@ -34,9 +34,9 @@ namespace BH.Engine.LadybugTools
         [Description("Convert an EPW file into a BHoM CustomObject.")]
         [Input("epwFile", "An EPW file.")]
         [Output("customObject", "A BHoM CustomObject.")]
-        public static CustomObject FromEPW(string epwFile)
+        public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_json.py";
+            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\EPWtoJSON.py";
             string pythonExecutable = Path.Combine(Python.Query.EmbeddedPythonHome(), "python.exe");
 
             // Run the Python code
@@ -55,7 +55,6 @@ namespace BH.Engine.LadybugTools
             // Replace "Infinity" values in JSON to avoid issues with Serialiser.Engine
             output = output.Trim().Replace("Infinity", "0");
 
-            //return output;
             // convert output into a CustomObject
             // TODO - Convert CustomObject into a BHoM serialisable object to enable bi-directional conversion
             return Serialiser.Convert.FromJson(output) as CustomObject;

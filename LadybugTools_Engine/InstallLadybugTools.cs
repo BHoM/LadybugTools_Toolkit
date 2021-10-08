@@ -62,7 +62,9 @@ namespace BH.Engine.LadybugTools
                 { "virtualenv", "20.8.1"},
                 { "pandas", "1.3.3" },
                 { "numpy", "1.21.2" },
-                { "matplotlib", "3.4.3" }
+                { "matplotlib", "3.4.3" },
+                { "ipykernel", "6.4.1" },
+                { "black", "21.9b0" }
             };
 
             Console.WriteLine("Installing required packages...");
