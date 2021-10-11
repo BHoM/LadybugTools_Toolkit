@@ -36,12 +36,12 @@ namespace BH.Engine.LadybugTools
         [Output("customObject", "A BHoM CustomObject.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\EPWtoJSON.py";
-            string pythonExecutable = Path.Combine(Python.Query.EmbeddedPythonHome(), "python.exe");
+            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_json.py";
+            string pythonExecutable = Python.Query.VirtualenvExecutable(Compute.VIRTUALENV_NAME);
 
             // Run the Python code
             Process p = new Process();
-            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.FileName = "cmd.exe";
@@ -55,6 +55,7 @@ namespace BH.Engine.LadybugTools
             // Replace "Infinity" values in JSON to avoid issues with Serialiser.Engine
             output = output.Trim().Replace("Infinity", "0");
 
+            //return output;
             // convert output into a CustomObject
             // TODO - Convert CustomObject into a BHoM serialisable object to enable bi-directional conversion
             return Serialiser.Convert.FromJson(output) as CustomObject;

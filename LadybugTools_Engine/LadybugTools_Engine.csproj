@@ -105,7 +105,7 @@
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
-    <Compile Include="InstallLadybugTools.cs" />
+    <Compile Include="CreateVirtualenv.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

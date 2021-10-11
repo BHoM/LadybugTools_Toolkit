@@ -20,38 +20,39 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base;
 using BH.oM.Reflection.Attributes;
-
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Convert an EPW file into a time-indexed CSV version.")]
-        [Input("epwFile", "An EPW file.")]
-        [Output("csvFile", "The resultant CSV file path.")]
-        public static string EPWtoCSV(string epwFile)
+        [Description("Create the virtualenv associated with this toolkit.")]
+        [Input("run", "Run the installer for the toolkits Python virtualenv.")]
+        [Output("executable", "The path to the virtualenv's Python executable.")]
+        public static string CreateVirtualenv(bool run = false)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_csv.py";
-            string pythonExecutable = Python.Query.VirtualenvExecutable(VIRTUALENV_NAME);
+            // set the packages and versions to be installed
+            List<string> packages = new List<string>()
+            {
+                "lbt-dragonfly",
+                "queenbee-local",
+                "lbt-recipes",
+                "pandas",
+                "numpy",
+                "matplotlib",
+            };
 
-            // Run the Python code
-            Process p = new Process();
-            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.FileName = "cmd.exe";
-            p.StartInfo.Arguments = $"/c {pythonExecutable} {scriptPath} \"{epwFile}\"";
-            p.Start();
+            // create the environment
+            Python.Compute.CreateVirtualenv(VIRTUALENV_NAME, packages, run);
 
-            // To avoid deadlocks, always read the output stream first and then wait.  
-            string output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            //return output;
-            return output;
+            return Python.Query.VirtualenvExecutable(VIRTUALENV_NAME);
         }
+
+        public const string VIRTUALENV_NAME = "ladybugtools";
     }
 }
