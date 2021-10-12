@@ -29,30 +29,20 @@ using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Compute
+    public static partial class Query
     {
-        [Description("Create the virtualenv associated with this toolkit.")]
-        [Input("run", "Run the installer for the toolkits Python virtualenv.")]
-        [Output("executable", "The path to the virtualenv's Python executable.")]
-        public static string CreateVirtualenv(bool run = false)
+        [Description("Create the virtual environment associated with this toolkit.")]
+        [Input("force", "Force the recreation of the environment.")]
+        [Input("run", "Run the installer for this toolkits Python virtual environment.")]
+        [Output("executable", "The path to the virtual environment's Python executable.")]
+        public static bool CheckVirtualEnvironmentInstalled()
         {
-            // set the packages and versions to be installed
-            List<string> packages = new List<string>()
+            if (!File.Exists(Python.Query.VirtualEnvironmentExecutable(Compute.VIRTUALENV_NAME)))
             {
-                "lbt-dragonfly",
-                "queenbee-local",
-                "lbt-recipes",
-                "pandas",
-                "numpy",
-                "matplotlib",
-            };
-
-            // create the environment
-            Python.Compute.CreateVirtualenv(VIRTUALENV_NAME, packages, run);
-
-            return Python.Query.VirtualenvExecutable(VIRTUALENV_NAME);
+                BH.Engine.Reflection.Compute.RecordError("It looks like the LadybugTools virtual environment hasn't been installed.");
+                return false;
+            }
+            return true;
         }
-
-        public const string VIRTUALENV_NAME = "ladybugtools";
     }
 }
