@@ -22,47 +22,38 @@
 
 using BH.oM.Base;
 using BH.oM.Reflection.Attributes;
-
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Convert
+    public static partial class Compute
     {
-        [Description("Convert an EPW file into a BHoM CustomObject.")]
-        [Input("epwFile", "An EPW file.")]
-        [Output("customObject", "A BHoM CustomObject.")]
-        public static CustomObject EPWtoCustomObject(string epwFile)
+        [Description("Create the virtual environment associated with this toolkit.")]
+        [Input("force", "Force the recreation of the environment.")]
+        [Input("run", "Run the installer for this toolkits Python virtual environment.")]
+        [Output("executable", "The path to the virtual environment's Python executable.")]
+        public static string CreateVirtualEnvironment(bool force = false, bool run = false)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_json.py";
-            if (!Query.CheckVirtualEnvironmentInstalled())
+            // set the packages and versions to be installed
+            List<string> packages = new List<string>()
             {
-                return null;
-            }
+                "lbt-dragonfly",
+                "queenbee-local",
+                "lbt-recipes",
+                "pandas",
+                "numpy",
+                "matplotlib",
+            };
 
-            // Run the Python code
-            Process p = new Process();
-            p.StartInfo.CreateNoWindow = true;
-            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.FileName = "cmd.exe";
-            p.StartInfo.Arguments = $"/c {Python.Query.VirtualEnvironmentExecutable(Compute.VIRTUALENV_NAME)} {scriptPath} \"{epwFile}\"";
-            p.Start();
+            // create the environment
+            Python.Compute.CreateVirtualEnvironment(VIRTUALENV_NAME, packages, force, run);
 
-            // To avoid deadlocks, always read the output stream first and then wait.  
-            string output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            // Replace "Infinity" values in JSON to avoid issues with Serialiser.Engine
-            output = output.Trim().Replace("Infinity", "0");
-
-            //return output;
-            // convert output into a CustomObject
-            // TODO - Convert CustomObject into a BHoM serialisable object to enable bi-directional conversion
-            return Serialiser.Convert.FromJson(output) as CustomObject;
+            return Python.Query.VirtualEnvironmentExecutable(VIRTUALENV_NAME);
         }
+
+        public const string VIRTUALENV_NAME = "ladybugtools";
     }
 }
