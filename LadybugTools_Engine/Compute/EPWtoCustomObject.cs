@@ -36,7 +36,7 @@ namespace BH.Engine.LadybugTools
         [Output("customObject", "A BHoM CustomObject.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_json.py";
+            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\EPWtoJSON.py";
             string output = Python.Compute.RunCommand(VIRTUALENV_NAME, scriptPath, new List<string>() { epwFile });
 
             // Replace "Infinity" values in JSON to avoid issues with Serialiser.Engine
