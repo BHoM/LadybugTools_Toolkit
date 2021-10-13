@@ -105,7 +105,6 @@
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
-    <Compile Include="Query\CheckVirtualEnvironmentInstalled.cs" />
     <Compile Include="CreateVirtualEnvironment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -118,7 +117,9 @@
       <Name>LadybugTools_oM</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Query\" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="Extensions\datacollection.py" />
     <Content Include="Extensions\epw.py" />
