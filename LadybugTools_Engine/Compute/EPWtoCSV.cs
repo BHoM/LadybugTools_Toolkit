@@ -35,7 +35,7 @@ namespace BH.Engine.LadybugTools
         [Output("csvFile", "The resultant CSV file path.")]
         public static string EPWtoCSV(string epwFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_csv.py";
+            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\EPWtoCSV.py";
             return Python.Compute.RunCommand(VIRTUALENV_NAME, scriptPath, new List<string>() { epwFile });
         }
     }
