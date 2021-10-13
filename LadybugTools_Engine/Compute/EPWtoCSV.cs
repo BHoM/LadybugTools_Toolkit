@@ -21,7 +21,7 @@
  */
 
 using BH.oM.Reflection.Attributes;
-
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -36,27 +36,7 @@ namespace BH.Engine.LadybugTools
         public static string EPWtoCSV(string epwFile)
         {
             string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_csv.py";
-            if (!Query.CheckVirtualEnvironmentInstalled())
-            {
-                return null;
-            }
-
-            // Run the Python code
-            Process p = new Process();
-            p.StartInfo.CreateNoWindow = true;
-            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.FileName = "cmd.exe";
-            p.StartInfo.Arguments = $"/c {Python.Query.VirtualEnvironmentExecutable(VIRTUALENV_NAME)} {scriptPath} \"{epwFile}\"";
-            p.Start();
-
-            // To avoid deadlocks, always read the output stream first and then wait.  
-            string output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            //return output;
-            return output;
+            return Python.Compute.RunCommand(VIRTUALENV_NAME, scriptPath, new List<string>() { epwFile });
         }
     }
 }

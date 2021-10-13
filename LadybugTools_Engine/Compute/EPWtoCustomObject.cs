@@ -22,14 +22,14 @@
 
 using BH.oM.Base;
 using BH.oM.Reflection.Attributes;
-
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Convert
+    public static partial class Compute
     {
         [Description("Convert an EPW file into a BHoM CustomObject.")]
         [Input("epwFile", "An EPW file.")]
@@ -37,24 +37,7 @@ namespace BH.Engine.LadybugTools
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
             string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\epw_to_json.py";
-            if (!Query.CheckVirtualEnvironmentInstalled())
-            {
-                return null;
-            }
-
-            // Run the Python code
-            Process p = new Process();
-            p.StartInfo.CreateNoWindow = true;
-            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.FileName = "cmd.exe";
-            p.StartInfo.Arguments = $"/c {Python.Query.VirtualEnvironmentExecutable(Compute.VIRTUALENV_NAME)} {scriptPath} \"{epwFile}\"";
-            p.Start();
-
-            // To avoid deadlocks, always read the output stream first and then wait.  
-            string output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
+            string output = Python.Compute.RunCommand(VIRTUALENV_NAME, scriptPath, new List<string>() { epwFile });
 
             // Replace "Infinity" values in JSON to avoid issues with Serialiser.Engine
             output = output.Trim().Replace("Infinity", "0");
