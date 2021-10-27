@@ -73,6 +73,9 @@
     <Reference Include="Python_Engine">
       <HintPath>C:\ProgramData\BHoM\Assemblies\Python_Engine.dll</HintPath>
     </Reference>
+    <Reference Include="Python_oM">
+      <HintPath>..\..\..\..\..\..\..\ProgramData\BHoM\Assemblies\Python_oM.dll</HintPath>
+    </Reference>
     <Reference Include="Reflection_Engine">
       <HintPath>C:\ProgramData\BHoM\Assemblies\Reflection_Engine.dll</HintPath>
       <Private>False</Private>
@@ -102,10 +105,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compute\EPWtoCustomObject.cs" />
+    <Compile Include="Compute\InstallPythonEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
+    <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
-    <Compile Include="CreateVirtualEnvironment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -123,8 +126,7 @@
   <ItemGroup>
     <Content Include="Extensions\datacollection.py" />
     <Content Include="Extensions\epw.py" />
-    <Content Include="Extensions\EPWtoCSV.py" />
-    <Content Include="Extensions\EPWtoJSON.py" />
+    <Content Include="Extensions\excludedFiles.txt" />
     <Content Include="Extensions\__init__.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -138,6 +140,6 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /Y
 
-xcopy /E /Y  /I "$(ProjectDir)Extensions" "C:\ProgramData\BHoM\Extensions\LadybugTools"</PostBuildEvent>
+xcopy "$(ProjectDir)Extensions" "C:\ProgramData\BHoM\Extensions\LadybugTools" /E /Y  /I /EXCLUDE:$(ProjectDir)Extensions\excludedFiles.txt</PostBuildEvent>
   </PropertyGroup>
 </Project>
