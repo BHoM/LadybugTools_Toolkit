@@ -20,23 +20,44 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Python;
 using BH.oM.Reflection.Attributes;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Convert an EPW file into a time-indexed CSV version.")]
+        [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
         [Input("epwFile", "An EPW file.")]
-        [Output("csvFile", "The resultant CSV file path.")]
+        [Output("csv", "The generated CSV file.")]
         public static string EPWtoCSV(string epwFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\EPWtoCSV.py";
-            return Python.Compute.RunCommand(VIRTUALENV_NAME, scriptPath, new List<string>() { epwFile });
+            PythonEnvironment pythonEnvironment = Python.Query.PythonEnvironment("LadybugTools_Toolkit");
+            if (pythonEnvironment == null)
+            {
+                BH.Engine.Reflection.Compute.RecordError("Install the LadybugTools_Toolkit Python environment before running this method (using LadybugTools_Toolkit.Compute.InstallPythonEnvironment).");
+                return null;
+            }
+
+            string pythonScript = String.Join("\n", new List<string>() 
+            {
+                "from pathlib import Path",
+                "import sys",
+                "sys.path.append(r'C:/ProgramData/BHoM/Extensions')",
+                "from LadybugTools.epw import BH_EPW",
+                "",
+                $"epw_path = Path(r'{epwFile}')",
+                "csv_path = epw_path.with_suffix('.csv')",
+                "BH_EPW(epw_path.as_posix()).to_csv(csv_path.as_posix())",
+                "print(csv_path)",
+            });
+
+            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
+
+            return output;
         }
     }
 }

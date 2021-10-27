@@ -20,7 +20,9 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.Engine.Python;
 using BH.oM.Base;
+using BH.oM.Python;
 using BH.oM.Reflection.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -31,20 +33,29 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Convert an EPW file into a BHoM CustomObject.")]
+        [Description("Convert an EPW file into a time-indexed CSV version.")]
         [Input("epwFile", "An EPW file.")]
-        [Output("customObject", "A BHoM CustomObject.")]
+        [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            string scriptPath = @"C:\ProgramData\BHoM\Extensions\LadybugTools\EPWtoJSON.py";
-            string output = Python.Compute.RunCommand(VIRTUALENV_NAME, scriptPath, new List<string>() { epwFile });
+            PythonEnvironment pythonEnvironment = Python.Query.PythonEnvironment("LadybugTools_Toolkit");
+            if (pythonEnvironment == null)
+            {
+                BH.Engine.Reflection.Compute.RecordError("Install the LadybugTools_Toolkit Python environment before running this method (using LadybugTools_Toolkit.Compute.InstallPythonEnvironment).");
+                return null;
+            }
 
-            // Replace "Infinity" values in JSON to avoid issues with Serialiser.Engine
-            output = output.Trim().Replace("Infinity", "0");
+            string pythonScript = string.Join("\n", new List<string>()
+            {
+                "import sys",
+                "sys.path.append(r'C:/ProgramData/BHoM/Extensions')",
+                "from LadybugTools.epw import BH_EPW",
+                "",
+                $"print(BH_EPW(r'{epwFile}').to_json())",
+            });
 
-            //return output;
-            // convert output into a CustomObject
-            // TODO - Convert CustomObject into a BHoM serialisable object to enable bi-directional conversion
+            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim().Replace("Infinity", "0");
+
             return Serialiser.Convert.FromJson(output) as CustomObject;
         }
     }
