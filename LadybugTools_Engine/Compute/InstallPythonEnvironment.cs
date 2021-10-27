@@ -19,41 +19,39 @@
  * You should have received a copy of the GNU Lesser General Public License     
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
-
-using BH.oM.Base;
-using BH.oM.Reflection.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
+using BH.Engine.Python;
+using BH.oM.Python;
+using BH.oM.Reflection;
+using BH.oM.Reflection.Attributes;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Create the virtual environment associated with this toolkit.")]
-        [Input("force", "Force the recreation of the environment.")]
-        [Input("run", "Run the installer for this toolkits Python virtual environment.")]
-        [Output("executable", "The path to the virtual environment's Python executable.")]
-        public static string CreateVirtualEnvironment(bool force = false, bool run = false)
+        [Description("Method used to create the Python environment used to run all Python scripts within this toolkit.")]
+        [Input("run", "Starts the installation of the toolkit if true. Stays idle otherwise.")]
+        [Input("force", "Forces re-installation of the toolkits Python environment if true. This is used when the environment has been updated or package versions have changed.")]
+        [MultiOutput(0, "pythonEnvironment", "The LadybugTools_Toolkit Python environment.")]
+        [MultiOutput(1, "packages", "The list of successfully installed packages.")]
+        public static Output<PythonEnvironment, List<string>> InstallPythonEnvironment(bool run = false, bool force = false)
         {
-            // set the packages and versions to be installed
+            if (!run)
+                return new Output<PythonEnvironment, List<string>>();
+
             List<string> packages = new List<string>()
             {
-                "lbt-dragonfly",
-                "queenbee-local",
-                "lbt-recipes",
-                "pandas",
-                "numpy",
-                "matplotlib",
+                "lbt-dragonfly==0.7.255",
+                "queenbee-local==0.3.13",
+                "lbt-recipes==0.11.8",
+                "pandas==1.2.4",
+                "numpy==1.20.3",
+                "matplotlib==3.4.2",
             };
+            PythonEnvironment pythonEnvironment = Python.Create.PythonEnvironment("LadybugTools_Toolkit", "3.7.3", packages, force);
 
-            // create the environment
-            Python.Compute.CreateVirtualEnvironment(VIRTUALENV_NAME, packages, force, run);
-
-            return Python.Query.VirtualEnvironmentExecutable(VIRTUALENV_NAME);
+            return new Output<PythonEnvironment, List<string>>() { Item1 = pythonEnvironment, Item2 = pythonEnvironment.InstalledPackages() };
         }
-
-        public const string VIRTUALENV_NAME = "ladybugtools";
     }
 }
