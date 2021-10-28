@@ -124,10 +124,9 @@
     <Folder Include="Query\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Extensions\datacollection.py" />
-    <Content Include="Extensions\epw.py" />
-    <Content Include="Extensions\excludedFiles.txt" />
-    <Content Include="Extensions\__init__.py" />
+    <Content Include="Python\datacollection.py" />
+    <Content Include="Python\epw.py" />
+    <Content Include="Python\__init__.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets')" />
@@ -140,6 +139,8 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /Y
 
-xcopy "$(ProjectDir)Extensions" "C:\ProgramData\BHoM\Extensions\LadybugTools" /E /Y  /I /EXCLUDE:$(ProjectDir)Extensions\excludedFiles.txt</PostBuildEvent>
+:: Move Python code over to toolkit extensions folder, redirecting output to temp log file to silence it
+robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /s /purge /xf "*.pyc" /xd "\__pycache__\" &gt; output.log
+del output.log</PostBuildEvent>
   </PropertyGroup>
 </Project>

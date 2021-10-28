@@ -48,8 +48,8 @@ namespace BH.Engine.LadybugTools
             string pythonScript = string.Join("\n", new List<string>()
             {
                 "import sys",
-                "sys.path.append(r'C:/ProgramData/BHoM/Extensions')",
-                "from LadybugTools.epw import BH_EPW",
+                "sys.path.append(r'C:/ProgramData/BHoM/Extensions/PythonCode')",
+                "from LadybugTools_Toolkit.epw import BH_EPW",
                 "",
                 $"print(BH_EPW(r'{epwFile}').to_json())",
             });
