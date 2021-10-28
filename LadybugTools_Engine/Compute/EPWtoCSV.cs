@@ -46,8 +46,8 @@ namespace BH.Engine.LadybugTools
             {
                 "from pathlib import Path",
                 "import sys",
-                "sys.path.append(r'C:/ProgramData/BHoM/Extensions')",
-                "from LadybugTools.epw import BH_EPW",
+                "sys.path.append(r'C:/ProgramData/BHoM/Extensions/PythonCode')",
+                "from LadybugTools_Toolkit.epw import BH_EPW",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",
