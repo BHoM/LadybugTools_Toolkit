@@ -110,6 +110,7 @@
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Query\ToolkitName.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -120,9 +121,7 @@
       <Name>LadybugTools_oM</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Query\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="Python\datacollection.py" />
     <Content Include="Python\epw.py" />

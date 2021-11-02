@@ -38,8 +38,8 @@ namespace BH.Engine.LadybugTools
         [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            PythonEnvironment pythonEnvironment = Python.Query.PythonEnvironment("LadybugTools_Toolkit");
-            if (pythonEnvironment == null)
+            PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
+            if (!pythonEnvironment.IsInstalled())
             {
                 BH.Engine.Reflection.Compute.RecordError("Install the LadybugTools_Toolkit Python environment before running this method (using LadybugTools_Toolkit.Compute.InstallPythonEnvironment).");
                 return null;
@@ -48,8 +48,8 @@ namespace BH.Engine.LadybugTools
             string pythonScript = string.Join("\n", new List<string>()
             {
                 "import sys",
-                "sys.path.append(r'C:/ProgramData/BHoM/Extensions/PythonCode')",
-                "from LadybugTools_Toolkit.epw import BH_EPW",
+                $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
+                "from epw import BH_EPW",
                 "",
                 $"print(BH_EPW(r'{epwFile}').to_json())",
             });
