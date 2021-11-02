@@ -21,37 +21,36 @@
  */
 using System.Collections.Generic;
 using System.ComponentModel;
+
 using BH.Engine.Python;
 using BH.oM.Python;
-using BH.oM.Reflection;
 using BH.oM.Reflection.Attributes;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Method used to create the Python environment used to run all Python scripts within this toolkit.")]
+        [Description("LadybugTools_Toolkit\nMethod used to create the Python environment used to run all Python scripts within this toolkit.")]
         [Input("run", "Starts the installation of the toolkit if true. Stays idle otherwise.")]
         [Input("force", "Forces re-installation of the toolkits Python environment if true. This is used when the environment has been updated or package versions have changed.")]
-        [MultiOutput(0, "pythonEnvironment", "The LadybugTools_Toolkit Python environment.")]
-        [MultiOutput(1, "packages", "The list of successfully installed packages.")]
-        public static Output<PythonEnvironment, List<string>> InstallPythonEnvironment(bool run = false, bool force = false)
+        [Output("pythonEnvironment", "The LadybugTools_Toolkit Python environment.")]
+        public static PythonEnvironment InstallPythonEnvironment(bool run = false, bool force = false)
         {
-            if (!run)
-                return new Output<PythonEnvironment, List<string>>();
+            oM.Python.Enums.PythonVersion version = oM.Python.Enums.PythonVersion.v3_7_3;
 
-            List<string> packages = new List<string>()
+            List<PythonPackage> packages = new List<PythonPackage>()
             {
-                "lbt-dragonfly==0.7.255",
-                "queenbee-local==0.3.13",
-                "lbt-recipes==0.11.8",
-                "pandas==1.2.4",
-                "numpy==1.20.3",
-                "matplotlib==3.4.2",
+                new PythonPackage(){Name="lbt-dragonfly", Version="0.7.255" },
+                new PythonPackage(){Name="queenbee-local", Version="0.3.13" },
+                new PythonPackage(){Name="lbt-recipes", Version="0.11.8" },
+                new PythonPackage(){Name="pandas", Version="1.2.4" },
+                new PythonPackage(){Name="numpy", Version="1.20.3" },
+                new PythonPackage(){Name="matplotlib", Version="3.4.2" },
             };
-            PythonEnvironment pythonEnvironment = Python.Create.PythonEnvironment("LadybugTools_Toolkit", "3.7.3", packages, force);
 
-            return new Output<PythonEnvironment, List<string>>() { Item1 = pythonEnvironment, Item2 = pythonEnvironment.InstalledPackages() };
+            PythonEnvironment pythonEnvironment = Create.PythonEnvironment(Query.ToolkitName(), version, packages);
+
+            return Python.Compute.InstallPythonEnvironment(pythonEnvironment, force, run);
         }
     }
 }

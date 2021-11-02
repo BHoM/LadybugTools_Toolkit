@@ -20,6 +20,7 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.Engine.Python;
 using BH.oM.Python;
 using BH.oM.Reflection.Attributes;
 using System;
@@ -35,10 +36,10 @@ namespace BH.Engine.LadybugTools
         [Output("csv", "The generated CSV file.")]
         public static string EPWtoCSV(string epwFile)
         {
-            PythonEnvironment pythonEnvironment = Python.Query.PythonEnvironment("LadybugTools_Toolkit");
-            if (pythonEnvironment == null)
+            PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
+            if (!pythonEnvironment.IsInstalled())
             {
-                BH.Engine.Reflection.Compute.RecordError("Install the LadybugTools_Toolkit Python environment before running this method (using LadybugTools_Toolkit.Compute.InstallPythonEnvironment).");
+                BH.Engine.Reflection.Compute.RecordError($"Install the {Query.ToolkitName()} Python environment before running this method (using {Query.ToolkitName()}.Compute.InstallPythonEnvironment).");
                 return null;
             }
 
@@ -46,8 +47,8 @@ namespace BH.Engine.LadybugTools
             {
                 "from pathlib import Path",
                 "import sys",
-                "sys.path.append(r'C:/ProgramData/BHoM/Extensions/PythonCode')",
-                "from LadybugTools_Toolkit.epw import BH_EPW",
+                $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
+                "from epw import BH_EPW",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",
