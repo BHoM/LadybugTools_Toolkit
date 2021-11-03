@@ -138,7 +138,10 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /Y
 
-:: Move Python code over to toolkit extensions folder, redirecting output to temp log file to silence it
+:: remove any existing within target directory for current toolkits Python code
+if exist "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" rmdir "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /S /Q
+
+:: move Python code over to toolkit extensions folder, redirecting output to temp log file to silence it
 robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /s /purge /xf "*.pyc" /xd "\__pycache__\" &gt; output.log
 del output.log</PostBuildEvent>
   </PropertyGroup>
