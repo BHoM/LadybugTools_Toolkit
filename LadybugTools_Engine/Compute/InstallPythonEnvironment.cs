@@ -40,12 +40,14 @@ namespace BH.Engine.LadybugTools
 
             List<PythonPackage> packages = new List<PythonPackage>()
             {
-                new PythonPackage(){Name="lbt-dragonfly", Version="0.7.255" },
-                new PythonPackage(){Name="queenbee-local", Version="0.3.13" },
-                new PythonPackage(){Name="lbt-recipes", Version="0.11.8" },
-                new PythonPackage(){Name="pandas", Version="1.2.4" },
-                new PythonPackage(){Name="numpy", Version="1.20.3" },
-                new PythonPackage(){Name="matplotlib", Version="3.4.2" },
+                new PythonPackage(){ Name="lbt-dragonfly", Version="0.7.255" },
+                new PythonPackage(){ Name="queenbee-local", Version="0.3.13" },
+                new PythonPackage(){ Name="lbt-recipes", Version="0.11.8" },
+                new PythonPackage(){ Name="pandas", Version="1.2.4" },
+                new PythonPackage(){ Name="numpy", Version="1.20.3" },
+                new PythonPackage(){ Name="matplotlib", Version="3.4.2" },
+                new PythonPackage(){ Name="fortranformat", Version="0.2.5" },
+                new PythonPackage(){ Name="scipy", Version="1,7,1" },
             };
 
             PythonEnvironment pythonEnvironment = Create.PythonEnvironment(Query.ToolkitName(), version, packages);
