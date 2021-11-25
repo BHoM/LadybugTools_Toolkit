@@ -97,23 +97,6 @@ class BH_EPW(EPW):
         save: bool = False,
     ) -> BH_EPW:
 
-        warnings.warn(
-            f"\n\nThis forecast method does not transform the following attributes of the EPW object:\n"
-            "- Extraterrestrial Horizontal Radiation\n"
-            "- Extraterrestrial Direct Normal Radiation\n"
-            "- Wind Direction\n"
-            "- Visibility\n"
-            "- Ceiling Height\n"
-            "- Present Weather Observation\n"
-            "- Present Weather Codes\n"
-            "- Aerosol Optical Depth\n"
-            "- Snow Depth\n"
-            "- Days Since Last Snowfall\n"
-            "- Albedo\n\n"
-            "The header information is modified where feasible, but heating and cooling design days are not yet modified so please use this file with caution when using this file in EnergyPlus for sizing load calculations.\n",
-            stacklevel=2,
-        )
-
         # load data
         forecast_scenario = ForecastScenario(emissions_scenario, forecast_year)
 
@@ -423,11 +406,7 @@ class BH_EPW(EPW):
 
     @property
     def sun_position(self) -> BH_HourlyContinuousCollection:
-        """Calculate a set of Sun positions for each hour of the year
-
-        Returns:
-            BH_HourlyContinuousCollection: A data collection containing sun positions for each hour of the year.
-        """
+        """Calculate a set of Sun positions for each hour of the year."""
         sunpath = Sunpath.from_location(self.location)
 
         return BH_HourlyContinuousCollection(
@@ -442,11 +421,7 @@ class BH_EPW(EPW):
 
     @property
     def datetime(self) -> BH_HourlyContinuousCollection:
-        """Get a list of datetimes for each hour of the year.
-
-        Returns:
-            BH_HourlyContinuousCollection: A collection of datetimes for each hour of the year.
-        """
+        """Get a list of datetimes for each hour of the year."""
         n_hours = 8784 if self.is_leap_year else 8760
         year = 2020 if self.is_leap_year else 2021
         return BH_HourlyContinuousCollection(
@@ -461,11 +436,7 @@ class BH_EPW(EPW):
 
     @property
     def solar_time(self) -> BH_HourlyContinuousCollection:
-        """Calculate solar time for each hour of the year.
-
-        Returns:
-            BH_HourlyContinuousCollection: A collection of solar time datetimes for each hour of the year.
-        """
+        """Calculate solar time for each hour of the year."""
 
         st = []
         for dt in self.datetime:
@@ -498,11 +469,7 @@ class BH_EPW(EPW):
 
     @property
     def solar_time_in_hours(self) -> BH_HourlyContinuousCollection:
-        """Calculate solar time for each hour of the year
-
-        Returns:
-            BH_HourlyContinuousCollection: A collection of solar time hours for each hour of the year.
-        """
+        """Calculate solar time for each hour of the year."""
         solar_time = self.solar_time
 
         return BH_HourlyContinuousCollection(
@@ -519,11 +486,7 @@ class BH_EPW(EPW):
 
     @property
     def solar_azimuth(self) -> BH_HourlyContinuousCollection:
-        """Calculate annual hourly solar azimuth angles.
-
-        Returns:
-            BH_HourlyContinuousCollection: Annual hourly solar azimuth positions.
-        """
+        """Calculate annual hourly solar azimuth angle."""
         return BH_HourlyContinuousCollection(
             Header(
                 data_type=Angle(
@@ -538,11 +501,7 @@ class BH_EPW(EPW):
 
     @property
     def solar_azimuth_in_radians(self) -> BH_HourlyContinuousCollection:
-        """Calculate annual hourly solar azimuth angles.
-
-        Returns:
-            BH_HourlyContinuousCollection: Annual hourly solar azimuth positions.
-        """
+        """Calculate annual hourly solar azimuth angle in radians."""
         return BH_HourlyContinuousCollection(
             Header(
                 data_type=Angle(
@@ -557,11 +516,7 @@ class BH_EPW(EPW):
 
     @property
     def solar_altitude(self) -> BH_HourlyContinuousCollection:
-        """Calculate annual hourly solar altitude angles.
-
-        Returns:
-            BH_HourlyContinuousCollection: Annual hourly solar altitude positions.
-        """
+        """Calculate annual hourly solar altitude angle."""
         return BH_HourlyContinuousCollection(
             Header(
                 data_type=Angle(
@@ -576,11 +531,7 @@ class BH_EPW(EPW):
 
     @property
     def solar_altitude_in_radians(self) -> BH_HourlyContinuousCollection:
-        """Calculate annual hourly solar altitude angles.
-
-        Returns:
-            BH_HourlyContinuousCollection: Annual hourly solar altitude positions.
-        """
+        """Calculate annual hourly solar altitude angle in radians."""
         return BH_HourlyContinuousCollection(
             Header(
                 data_type=Angle(
@@ -595,11 +546,7 @@ class BH_EPW(EPW):
 
     @property
     def apparent_solar_zenith(self) -> BH_HourlyContinuousCollection:
-        """Calculate annual hourly apparent solar zenith angles.
-
-        Returns:
-            BH_HourlyContinuousCollection: Annual hourly apparent solar zenith angles.
-        """
+        """Calculate annual hourly apparent solar zenith angles."""
         return BH_HourlyContinuousCollection(
             Header(
                 data_type=GenericType(name="Apparent Solar Zenith", unit="degrees"),
@@ -612,11 +559,7 @@ class BH_EPW(EPW):
 
     @property
     def wet_bulb_temperature(self) -> BH_HourlyContinuousCollection:
-        """Calculate an annual hourly wet bulb temperature collection for a given EPW.
-
-        Returns:
-            BH_HourlyContinuousCollection: A Wet Bulb Temperature data collection.
-        """
+        """Calculate an annual hourly wet bulb temperature collection for a given EPW."""
         return BH_HourlyContinuousCollection.compute_function_aligned(
             wet_bulb_from_db_rh,
             [
@@ -630,11 +573,7 @@ class BH_EPW(EPW):
 
     @property
     def humidity_ratio(self) -> BH_HourlyContinuousCollection:
-        """Calculate an annual hourly humidity ratio collection for a given EPW.
-
-        Returns:
-            BH_HourlyContinuousCollection: A Humidity Ratio data collection.
-        """
+        """Calculate an annual hourly humidity ratio collection for a given EPW."""
         return BH_HourlyContinuousCollection.compute_function_aligned(
             humid_ratio_from_db_rh,
             [
@@ -648,11 +587,7 @@ class BH_EPW(EPW):
 
     @property
     def enthalpy(self) -> BH_HourlyContinuousCollection:
-        """Calculate an annual hourly enthalpy collection.
-
-        Returns:
-            BH_HourlyContinuousCollection: A Enthalpy data collection.
-        """
+        """Calculate an annual hourly enthalpy collection."""
         return BH_HourlyContinuousCollection.compute_function_aligned(
             enthalpy_from_db_hr,
             [
@@ -665,11 +600,7 @@ class BH_EPW(EPW):
 
     @property
     def clearness_index(self) -> BH_HourlyContinuousCollection:
-        """Return the clearness index value for each hour of the year.
-
-        Returns:
-            BH_HourlyContinuousCollection: A collection of clearness_index vlaues
-        """
+        """Return the clearness index value for each hour of the year."""
         return BH_HourlyContinuousCollection.compute_function_aligned(
             clearness_index,
             [
@@ -691,411 +622,181 @@ class BH_EPW(EPW):
 
     @property
     def dry_bulb_temperature(self) -> BH_HourlyContinuousCollection:
-        """Return annual Dry Bulb Temperature as a Ladybug Data Collection.
-
-        This is the dry bulb temperature in C at the time indicated. Note that
-        this is a full numeric field (i.e. 23.6) and not an integer representation
-        with tenths. Valid values range from -70C to 70 C. Missing value for this
-        field is 99.9.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Dry Bulb Temperature as a Ladybug Data Collection."""
         _ = self._get_data_by_field(6)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def dew_point_temperature(self) -> BH_HourlyContinuousCollection:
-        """Return annual Dew Point Temperature as a Ladybug Data Collection.
-
-        This is the dew point temperature in C at the time indicated. Note that this is
-        a full numeric field (i.e. 23.6) and not an integer representation with tenths.
-        Valid values range from -70 C to 70 C. Missing value for this field is 99.9
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Dew Point Temperature as a Ladybug Data Collection."""
         _ = self._get_data_by_field(7)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def relative_humidity(self) -> BH_HourlyContinuousCollection:
-        """Return annual Relative Humidity as a Ladybug Data Collection.
-
-        This is the Relative Humidity in percent at the time indicated. Valid values
-        range from 0% to 110%. Missing value for this field is 999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Relative Humidity as a Ladybug Data Collection."""
         _ = self._get_data_by_field(8)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def atmospheric_station_pressure(self) -> BH_HourlyContinuousCollection:
-        """Return annual Atmospheric Station Pressure as a Ladybug Data Collection.
-
-        This is the station pressure in Pa at the time indicated. Valid values range
-        from 31,000 to 120,000. (These values were chosen from the standard barometric
-        pressure for all elevations of the World). Missing value for this field is 999999
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Atmospheric Station Pressure as a Ladybug Data Collection."""
         _ = self._get_data_by_field(9)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def extraterrestrial_horizontal_radiation(self) -> BH_HourlyContinuousCollection:
-        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data Collection.
-
-        This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently
-        used in EnergyPlus calculations. It should have a minimum value of 0; missing
-        value for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data Collection."""
         _ = self._get_data_by_field(10)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def extraterrestrial_direct_normal_radiation(self) -> BH_HourlyContinuousCollection:
-        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data Collection.
-
-        This is the Extraterrestrial Direct Normal Radiation in Wh/m2. (Amount of solar
-        radiation in Wh/m2 received on a surface normal to the rays of the sun at the top
-        of the atmosphere during the number of minutes preceding the time indicated).
-        It is not currently used in EnergyPlus calculations. It should have a minimum
-        value of 0; missing value for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data Collection."""
         _ = self._get_data_by_field(11)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def horizontal_infrared_radiation_intensity(self) -> BH_HourlyContinuousCollection:
-        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data Collection.
-
-        This is the Horizontal Infrared Radiation Intensity in W/m2. If it is missing,
-        it is calculated from the Opaque Sky Cover field as shown in the following
-        explanation. It should have a minimum value of 0; missing value for this field
-        is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data Collection."""
         _ = self._get_data_by_field(12)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def global_horizontal_radiation(self) -> BH_HourlyContinuousCollection:
-        """Return annual Global Horizontal Radiation as a Ladybug Data Collection.
-
-        This is the Global Horizontal Radiation in Wh/m2. (Total amount of direct and
-        diffuse solar radiation in Wh/m2 received on a horizontal surface during the
-        number of minutes preceding the time indicated.) It is not currently used in
-        EnergyPlus calculations. It should have a minimum value of 0; missing value
-        for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Global Horizontal Radiation as a Ladybug Data Collection."""
         _ = self._get_data_by_field(13)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def direct_normal_radiation(self) -> BH_HourlyContinuousCollection:
-        """Return annual Direct Normal Radiation as a Ladybug Data Collection.
-
-        This is the Direct Normal Radiation in Wh/m2. (Amount of solar radiation in
-        Wh/m2 received directly from the solar disk on a surface perpendicular to the
-        sun's rays, during the number of minutes preceding the time indicated.) If the
-        field is missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such
-        missing values are totaled and presented at the end of the runperiod.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Direct Normal Radiation as a Ladybug Data Collection."""
         _ = self._get_data_by_field(14)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def diffuse_horizontal_radiation(self) -> BH_HourlyContinuousCollection:
-        """Return annual Diffuse Horizontal Radiation as a Ladybug Data Collection.
-
-        This is the Diffuse Horizontal Radiation in Wh/m2. (Amount of solar radiation in
-        Wh/m2 received from the sky (excluding the solar disk) on a horizontal surface
-        during the number of minutes preceding the time indicated.) If the field is
-        missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such missing
-        values are totaled and presented at the end of the runperiod
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Diffuse Horizontal Radiation as a Ladybug Data Collection."""
         _ = self._get_data_by_field(15)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def global_horizontal_illuminance(self) -> BH_HourlyContinuousCollection:
-        """Return annual Global Horizontal Illuminance as a Ladybug Data Collection.
-
-        This is the Global Horizontal Illuminance in lux. (Average total amount of
-        direct and diffuse illuminance in hundreds of lux received on a horizontal
-        surface during the number of minutes preceding the time indicated.) It is not
-        currently used in EnergyPlus calculations. It should have a minimum value of 0;
-        missing value for this field is 999999 and will be considered missing if greater
-        than or equal to 999900.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Global Horizontal Illuminance as a Ladybug Data Collection."""
         _ = self._get_data_by_field(16)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def direct_normal_illuminance(self) -> BH_HourlyContinuousCollection:
-        """Return annual Direct Normal Illuminance as a Ladybug Data Collection.
-
-        This is the Direct Normal Illuminance in lux. (Average amount of illuminance in
-        hundreds of lux received directly from the solar disk on a surface perpendicular
-        to the sun's rays, during the number of minutes preceding the time indicated.)
-        It is not currently used in EnergyPlus calculations. It should have a minimum
-        value of 0; missing value for this field is 999999 and will be considered missing
-        if greater than or equal to 999900.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Direct Normal Illuminance as a Ladybug Data Collection."""
         _ = self._get_data_by_field(17)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def diffuse_horizontal_illuminance(self) -> BH_HourlyContinuousCollection:
-        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data Collection.
-
-        This is the Diffuse Horizontal Illuminance in lux. (Average amount of illuminance
-        in hundreds of lux received from the sky (excluding the solar disk) on a
-        horizontal surface during the number of minutes preceding the time indicated.)
-        It is not currently used in EnergyPlus calculations. It should have a minimum
-        value of 0; missing value for this field is 999999 and will be considered missing
-        if greater than or equal to 999900.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data Collection."""
         _ = self._get_data_by_field(18)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def zenith_luminance(self) -> BH_HourlyContinuousCollection:
-        """Return annual Zenith Luminance as a Ladybug Data Collection.
-
-        This is the Zenith Illuminance in Cd/m2. (Average amount of luminance at
-        the sky's zenith in tens of Cd/m2 during the number of minutes preceding
-        the time indicated.) It is not currently used in EnergyPlus calculations.
-        It should have a minimum value of 0; missing value for this field is 9999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Zenith Luminance as a Ladybug Data Collection."""
         _ = self._get_data_by_field(19)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def wind_direction(self) -> BH_HourlyContinuousCollection:
-        """Return annual Wind Direction as a Ladybug Data Collection.
-
-        This is the Wind Direction in degrees where the convention is that North=0.0,
-        East=90.0, South=180.0, West=270.0. (Wind direction in degrees at the time
-        indicated. If calm, direction equals zero.) Values can range from 0 to 360.
-        Missing value is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Wind Direction as a Ladybug Data Collection."""
         _ = self._get_data_by_field(20)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def wind_speed(self) -> BH_HourlyContinuousCollection:
-        """Return annual Wind Speed as a Ladybug Data Collection.
-
-        This is the wind speed in m/sec. (Wind speed at time indicated.) Values can
-        range from 0 to 40. Missing value is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Wind Speed as a Ladybug Data Collection."""
         _ = self._get_data_by_field(21)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def total_sky_cover(self) -> BH_HourlyContinuousCollection:
-        """Return annual Total Sky Cover as a Ladybug Data Collection.
-
-        This is the value for total sky cover (tenths of coverage). (i.e. 1 is 1/10
-        covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds
-        or obscuring phenomena at the hour indicated at the time indicated.) Minimum
-        value is 0; maximum value is 10; missing value is 99.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Total Sky Cover as a Ladybug Data Collection."""
         _ = self._get_data_by_field(22)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def opaque_sky_cover(self) -> BH_HourlyContinuousCollection:
-        """Return annual Opaque Sky Cover as a Ladybug Data Collection.
-
-        This is the value for opaque sky cover (tenths of coverage). (i.e. 1 is 1/10
-        covered. 10 is total coverage). (Amount of sky dome in tenths covered by
-        clouds or obscuring phenomena that prevent observing the sky or higher cloud
-        layers at the time indicated.) This is not used unless the field for Horizontal
-        Infrared Radiation Intensity is missing and then it is used to calculate
-        Horizontal Infrared Radiation Intensity. Minimum value is 0; maximum value is
-        10; missing value is 99.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Opaque Sky Cover as a Ladybug Data Collection."""
         _ = self._get_data_by_field(23)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def visibility(self) -> BH_HourlyContinuousCollection:
-        """Return annual Visibility as a Ladybug Data Collection.
-
-        This is the value for visibility in km. (Horizontal visibility at the time
-        indicated.) It is not currently used in EnergyPlus calculations. Missing
-        value is 9999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Visibility as a Ladybug Data Collection."""
         _ = self._get_data_by_field(24)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def ceiling_height(self) -> BH_HourlyContinuousCollection:
-        """Return annual Ceiling Height as a Ladybug Data Collection.
-
-        This is the value for ceiling height in m. (77777 is unlimited ceiling height.
-        88888 is cirroform ceiling.) It is not currently used in EnergyPlus calculations.
-        Missing value is 99999
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Ceiling Height as a Ladybug Data Collection."""
         _ = self._get_data_by_field(25)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def present_weather_observation(self) -> BH_HourlyContinuousCollection:
-        """Return annual Present Weather Observation as a Ladybug Data Collection.
-
-        If the value of the field is 0, then the observed weather codes are taken from
-        the following field. If the value of the field is 9, then "missing" weather is
-        assumed. Since the primary use of these fields (Present Weather Observation and
-        Present Weather Codes) is for rain/wet surfaces, a missing observation field or
-        a missing weather code implies no rain.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Present Weather Observation as a Ladybug Data Collection."""
         _ = self._get_data_by_field(26)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def present_weather_codes(self) -> BH_HourlyContinuousCollection:
-        """Return annual Present Weather Codes as a Ladybug Data Collection.
-
-        The present weather codes field is assumed to follow the TMY2 conventions for
-        this field. Note that though this field may be represented as numeric (e.g. in
-        the CSV format), it is really a text field of 9 single digits. This convention
-        along with values for each "column" (left to right) is presented in Table 16.
-        Note that some formats (e.g. TMY) does not follow this convention - as much as
-        possible, the present weather codes are converted to this convention during
-        WeatherConverter processing. Also note that the most important fields are those
-        representing liquid precipitation - where the surfaces of the building would be
-        wet. EnergyPlus uses "Snow Depth" to determine if snow is on the ground.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Present Weather Codes as a Ladybug Data Collection."""
         _ = self._get_data_by_field(27)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def precipitable_water(self) -> BH_HourlyContinuousCollection:
-        """Return annual Precipitable Water as a Ladybug Data Collection.
-
-        This is the value for Precipitable Water in mm. (This is not rain - rain is
-        inferred from the PresWeathObs field but a better result is from the Liquid
-        Precipitation Depth field). It is not currently used in EnergyPlus calculations
-        (primarily due to the unreliability of the reporting of this value). Missing
-        value is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Precipitable Water as a Ladybug Data Collection."""
         _ = self._get_data_by_field(28)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def aerosol_optical_depth(self) -> BH_HourlyContinuousCollection:
-        """Return annual Aerosol Optical Depth as a Ladybug Data Collection.
-
-        This is the value for Aerosol Optical Depth in thousandths. It is not currently
-        used in EnergyPlus calculations. Missing value is .999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Aerosol Optical Depth as a Ladybug Data Collection."""
         _ = self._get_data_by_field(29)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def snow_depth(self) -> BH_HourlyContinuousCollection:
-        """Return annual Snow Depth as a Ladybug Data Collection.
-
-        This is the value for Snow Depth in cm. This field is used to tell when snow
-        is on the ground and, thus, the ground reflectance may change. Missing value
-        is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Snow Depth as a Ladybug Data Collection."""
         _ = self._get_data_by_field(30)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def days_since_last_snowfall(self) -> BH_HourlyContinuousCollection:
-        """Return annual Days Since Last Snow Fall as a Ladybug Data Collection.
-
-        This is the value for Days Since Last Snowfall. It is not currently used in
-        EnergyPlus calculations. Missing value is 99.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Days Since Last Snow Fall as a Ladybug Data Collection."""
         _ = self._get_data_by_field(31)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def albedo(self) -> BH_HourlyContinuousCollection:
-        """Return annual Albedo values as a Ladybug Data Collection.
-
-        The ratio (unitless) of reflected solar irradiance to global horizontal
-        irradiance. It is not currently used in EnergyPlus.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Albedo values as a Ladybug Data Collection."""
         _ = self._get_data_by_field(32)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def liquid_precipitation_depth(self) -> BH_HourlyContinuousCollection:
-        """Return annual liquid precipitation depth as a Ladybug Data Collection.
-
-        The amount of liquid precipitation (mm) observed at the indicated time for the
-        period indicated in the liquid precipitation quantity field. If this value is
-        not missing, then it is used and overrides the "precipitation" flag as rainfall.
-        Conversely, if the precipitation flag shows rain and this field is missing or
-        zero, it is set to 1.5 (mm).
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual liquid precipitation depth as a Ladybug Data Collection."""
         _ = self._get_data_by_field(33)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def liquid_precipitation_quantity(self) -> BH_HourlyContinuousCollection:
-        """Return annual Liquid Precipitation Quantity as a Ladybug Data Collection.
-
-        The period of accumulation (hr) for the liquid precipitation depth field.
-        It is not currently used in EnergyPlus.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
-        """
+        """Return annual Liquid Precipitation Quantity as a Ladybug Data Collection."""
         _ = self._get_data_by_field(34)
         return BH_HourlyContinuousCollection(_.header, _.values)
 
     @property
     def sky_temperature(self) -> BH_HourlyContinuousCollection:
-        """Return annual Sky Temperature as a Ladybug Data Collection.
-
-        This value in degrees Celsius is derived from the Horizontal Infrared
-        Radiation Intensity in Wh/m2. It represents the long wave radiant
-        temperature of the sky
-        Read more at: https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/climate-calculations.html#energyplus-sky-temperature-calculation
-        """
+        """Return annual Sky Temperature as a Ladybug Data Collection."""
         # create sky temperature header
         sky_temp_header = Header(
             data_type=SkyTemperature(),
@@ -1111,9 +812,7 @@ class BH_EPW(EPW):
 
     @property
     def monthly_ground_temperature(self) -> Dict[float, BH_MonthlyCollection]:
-        """Return a dictionary of Monthly Data collections.
-        The keys of this dictionary are the depths at which each set
-        of temperatures occurs."""
+        """Return a dictionary of Monthly Data collections."""
         self._load_header_check()
 
         modified_dict = {}
