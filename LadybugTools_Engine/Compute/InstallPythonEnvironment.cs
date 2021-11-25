@@ -46,13 +46,11 @@ namespace BH.Engine.LadybugTools
                 new PythonPackage(){ Name="pandas", Version="1.2.4" },
                 new PythonPackage(){ Name="numpy", Version="1.20.3" },
                 new PythonPackage(){ Name="matplotlib", Version="3.4.2" },
-                new PythonPackage(){ Name="fortranformat", Version="0.2.5" },
-                new PythonPackage(){ Name="scipy", Version="1,7,1" },
             };
 
             PythonEnvironment pythonEnvironment = Create.PythonEnvironment(Query.ToolkitName(), version, packages);
 
-            return Python.Compute.InstallPythonEnvironment(pythonEnvironment, force, run);
+            return Python.Compute.InstallToolkitPythonEnvironment(pythonEnvironment, force, run);
         }
     }
 }
