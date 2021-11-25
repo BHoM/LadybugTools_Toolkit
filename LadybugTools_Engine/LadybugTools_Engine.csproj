@@ -105,7 +105,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compute\ForecastEPW.cs" />
     <Compile Include="Compute\InstallPythonEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
