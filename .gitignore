@@ -201,3 +201,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# VSCode User File #
+####################
+.vscode/
