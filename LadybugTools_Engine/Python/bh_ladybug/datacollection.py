@@ -9,11 +9,11 @@ T = TypeVar("T")
 
 from ladybug.datacollection import (HourlyContinuousCollection,
                                     MonthlyCollection)
-from ladybug.header import Header
+from header import BH_Header
 
 
 class BH_HourlyContinuousCollection(HourlyContinuousCollection):
-    def __init__(self, header: Header, values: List[T]):
+    def __init__(self, header: BH_Header, values: List[T]):
         super().__init__(header, values)
 
     def _type(self):
@@ -84,7 +84,7 @@ class BH_HourlyContinuousCollection(HourlyContinuousCollection):
 
 
 class BH_MonthlyCollection(MonthlyCollection):
-    def __init__(self, header: Header, values: List[T], datetimes: List[int]):
+    def __init__(self, header: BH_Header, values: List[T], datetimes: List[int]):
         super().__init__(header=header, values=values, datetimes=datetimes)
 
     def _type(self):
