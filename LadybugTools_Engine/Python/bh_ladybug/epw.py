@@ -30,10 +30,11 @@ class BH_EPW(EPW):
     def __init__(self, file_path):
         super().__init__(file_path)
         __slots__ = super().__slots__
+        self.metadata = {"anything_here": "No"}
 
-    def __repr__(self):
-        """EPW representation."""
-        return "EPW file Data for [%s]" % self.location.city
+    # def __repr__(self):
+    #     """EPW representation."""
+    #     return "EPW file Data for [%s]" % self.location.city
 
     def to_dataframe(self, include_location: bool = False) -> pd.DataFrame:
         """Create a Pandas DataFrame from the EPW object.
