@@ -33,7 +33,7 @@ using BH.oM.Environment.Elements;
 using BH.Engine.Geometry;
 using BH.Engine.Environment;
 
-using BH.oM.Reflection.Attributes;
+using BH.oM.Base.Attributes;
 using System.ComponentModel;
 
 namespace BH.Engine.LadybugTools
@@ -55,13 +55,13 @@ namespace BH.Engine.LadybugTools
             }
             catch(Exception e)
             {
-                BH.Engine.Reflection.Compute.RecordError("Could not convert that Honeybee Surface to an Environments Panel - recorded error was: " + e.ToString());
+                BH.Engine.Base.Compute.RecordError("Could not convert that Honeybee Surface to an Environments Panel - recorded error was: " + e.ToString());
                 return null;
             }
 
             if(geometry == null)
             {
-                BH.Engine.Reflection.Compute.RecordError("Honeybee Surface does not contain any valid geometry");
+                BH.Engine.Base.Compute.RecordError("Honeybee Surface does not contain any valid geometry");
                 return null;
             }
 
@@ -75,13 +75,13 @@ namespace BH.Engine.LadybugTools
             }
             catch(Exception e)
             {
-                BH.Engine.Reflection.Compute.RecordError("Honeybee Surface geometry could not be converted successfully - recorded error was: " + e.ToString());
+                BH.Engine.Base.Compute.RecordError("Honeybee Surface geometry could not be converted successfully - recorded error was: " + e.ToString());
                 return null;
             }
 
             if(boundary == null)
             {
-                BH.Engine.Reflection.Compute.RecordError("Honeybee Surface geometry could not be converted to BHoM Geometry");
+                BH.Engine.Base.Compute.RecordError("Honeybee Surface geometry could not be converted to BHoM Geometry");
                 return null;
             }
 
@@ -92,11 +92,11 @@ namespace BH.Engine.LadybugTools
             }
             catch(Exception e)
             {
-                BH.Engine.Reflection.Compute.RecordWarning("Honeybee Surface does not contain a valid panel type. Using PanelType.ExternalWall instead. Recorded error was: " + e.ToString());
+                BH.Engine.Base.Compute.RecordWarning("Honeybee Surface does not contain a valid panel type. Using PanelType.ExternalWall instead. Recorded error was: " + e.ToString());
             }
 
             if(panelType == string.Empty)
-                BH.Engine.Reflection.Compute.RecordWarning("Honeybee Surface does not contain a valid panel type. Using PanelType.ExternalWall instead");
+                BH.Engine.Base.Compute.RecordWarning("Honeybee Surface does not contain a valid panel type. Using PanelType.ExternalWall instead");
 
             if (panelType.EndsWith("Window"))
                 return ToOpening(boundary.ToEdges());

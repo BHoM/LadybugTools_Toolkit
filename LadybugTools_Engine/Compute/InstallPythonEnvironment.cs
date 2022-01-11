@@ -24,7 +24,7 @@ using System.ComponentModel;
 
 using BH.Engine.Python;
 using BH.oM.Python;
-using BH.oM.Reflection.Attributes;
+using BH.oM.Base.Attributes;
 
 namespace BH.Engine.LadybugTools
 {
