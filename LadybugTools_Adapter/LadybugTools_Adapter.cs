@@ -21,7 +21,7 @@
  */
 
 using System.ComponentModel;
-using BH.oM.Reflection.Attributes;
+using BH.oM.Base.Attributes;
 
 
 namespace BH.Adapter.LadybugTools
