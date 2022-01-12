@@ -5,6 +5,8 @@ from datetime import datetime, time, timedelta
 from typing import Dict
 
 import numpy as np
+from ladybug.datatype import temperature
+from ladybug.designday import DesignDay
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype.angle import Angle
@@ -23,40 +25,43 @@ from ladybug.psychrometrics import (
 from ladybug.skymodel import calc_sky_temperature, clearness_index
 from ladybug.sunpath import Sunpath
 
-from datacollection import BH_HourlyContinuousCollection, BH_MonthlyCollection
+from .analysisperiod import BH_AnalysisPeriod
+
+from .header import BH_Header
+
+from .datacollection import BH_HourlyContinuousCollection, BH_MonthlyCollection
+from .location import BH_Location
 
 
 class BH_EPW(EPW):
-    def __init__(self, file_path):
+    def __init__(self, file_path) -> BH_EPW:
         super().__init__(file_path)
         __slots__ = super().__slots__
-        self.metadata = {"anything_here": "No"}
 
     # def __repr__(self):
     #     """EPW representation."""
     #     return "EPW file Data for [%s]" % self.location.city
 
-    def to_dataframe(self, include_location: bool = False) -> pd.DataFrame:
-        """Create a Pandas DataFrame from the EPW object.
+    def _type(self) -> str:
+        return self.__class__.__name__
 
-        Args:
-            include_location (bool, optional): Include the EPW location as an additional column index level. Defaults to False.
-
-        Returns:
-            pd.DataFrame: A Pandas DataFrame.
-        """
+    def to_dataframe(self) -> pd.DataFrame:
+        """Create a Pandas DataFrame from the EPW object."""
 
         all_series = []
         for p in dir(self):
             try:
-                all_series.append(getattr(self, p).series)
-            except (AttributeError, TypeError) as e:
+                all_series.append(getattr(self, p).to_series())
+            except (AttributeError, TypeError, ZeroDivisionError) as e:
                 pass
 
-        df = pd.concat(all_series, axis=1)
+        for k, v in self.monthly_ground_temperature.items():
+            hourly_collection = v.to_hourly()
+            hourly_series = hourly_collection.to_series()
+            hourly_series.name = f"{hourly_series.name} at {k}m"
+            all_series.append(hourly_series)
 
-        if not include_location:
-            df.columns = df.columns.droplevel(0)
+        df = pd.concat(all_series, axis=1).sort_index(axis=1)
 
         return df
 
@@ -497,3 +502,95 @@ class BH_EPW(EPW):
                 collection.header, collection.values, collection.datetimes
             )
         return modified_dict
+
+    @property
+    def location(self) -> BH_Location:
+        """Return location data."""
+        _ = self._location
+        return BH_Location(
+            _.city,
+            _.state,
+            _.country,
+            _.latitude,
+            _.longitude,
+            _.time_zone,
+            _.elevation,
+            _.station_id,
+            _.source,
+        )
+
+    def _import_header(self, header_lines):
+        """Set EPW design days, typical weeks, and ground temperatures from header lines.
+        Modified to enable parsing of EPWs within missing header data and incorrect number of fields.
+        """
+        # parse the heating, cooling and extreme design conditions.
+        dday_data = header_lines[1].strip().split(",")
+        if len(dday_data) >= 2 and int(dday_data[1]) == 1:
+            if dday_data[4] == "Heating":
+                for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
+                    self._heating_dict[key] = val
+            if dday_data[20] == "Cooling":
+                for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
+                    self._cooling_dict[key] = val
+            if dday_data[53] == "Extremes":
+                for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
+                    self._extremes_dict[key] = val
+
+        # parse typical and extreme periods into analysis periods.
+        week_data = header_lines[2].split(",")
+        try:
+            num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
+        except ValueError:
+            num_weeks = 0
+        st_ind = 2
+        for _ in range(num_weeks):
+            week_dat = week_data[st_ind : st_ind + 4]
+            st_ind += 4
+            st = [int(num) for num in week_dat[2].split("/")]
+            end = [int(num) for num in week_dat[3].split("/")]
+            if len(st) == 3:
+                a_per = BH_AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
+            elif len(st) == 2:
+                a_per = BH_AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
+            if "Max" in week_dat[0] and week_dat[1] == "Extreme":
+                self._extreme_hot_weeks[week_dat[0]] = a_per
+            elif "Min" in week_dat[0] and week_dat[1] == "Extreme":
+                self._extreme_cold_weeks[week_dat[0]] = a_per
+            elif week_dat[1] == "Typical":
+                self._typical_weeks[week_dat[0]] = a_per
+
+        # parse the monthly ground temperatures in the header.
+        grnd_data = header_lines[3].strip().split(",")
+        try:
+            num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
+        except ValueError:
+            num_depths = 0
+        st_ind = 2
+        for _ in range(num_depths):
+            header_meta = dict(self._metadata)  # copying the metadata dictionary
+            header_meta["depth"] = float(grnd_data[st_ind])
+            header_meta["soil conductivity"] = grnd_data[st_ind + 1]
+            header_meta["soil density"] = grnd_data[st_ind + 2]
+            header_meta["soil specific heat"] = grnd_data[st_ind + 3]
+            grnd_header = BH_Header(
+                temperature.GroundTemperature(), "C", AnalysisPeriod(), header_meta
+            )
+            grnd_vals = [float(x) for x in grnd_data[st_ind + 4 : st_ind + 16]]
+            self._monthly_ground_temps[float(grnd_data[st_ind])] = BH_MonthlyCollection(
+                grnd_header, grnd_vals, list(range(12))
+            )
+            st_ind += 16
+
+        # parse leap year, daylight savings and comments.
+        leap_dl_sav = header_lines[4].strip().split(",")
+        self._is_leap_year = True if leap_dl_sav[1] == "Yes" else False
+        self.daylight_savings_start = leap_dl_sav[2]
+        self.daylight_savings_end = leap_dl_sav[3]
+        comments_1 = header_lines[5].strip().split(",")
+        if len(comments_1) > 0:
+            self.comments_1 = ",".join(comments_1[1:])
+        comments_2 = header_lines[6].strip().split(",")
+        if len(comments_2) > 0:
+            self.comments_2 = ",".join(comments_2[1:])
+
+        self._is_header_loaded = True
