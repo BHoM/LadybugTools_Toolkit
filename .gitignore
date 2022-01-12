@@ -205,3 +205,6 @@ cython_debug/
 # VSCode User File #
 ####################
 .vscode/
+
+# Testing files
+.ipynb
