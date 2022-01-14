@@ -38,15 +38,38 @@ namespace BH.Engine.LadybugTools
         {
             oM.Python.Enums.PythonVersion version = oM.Python.Enums.PythonVersion.v3_7_3;
 
+            // NOTE: Ladybug code version below based on V1.4 Grasshopper release
             List<PythonPackage> packages = new List<PythonPackage>()
             {
-                new PythonPackage(){ Name="lbt-dragonfly", Version="0.7.255" },
-                new PythonPackage(){ Name="queenbee-local", Version="0.3.13" },
-                new PythonPackage(){ Name="lbt-recipes", Version="0.11.8" },
                 new PythonPackage(){ Name="pandas", Version="1.2.4" },
                 new PythonPackage(){ Name="numpy", Version="1.20.3" },
                 new PythonPackage(){ Name="matplotlib", Version="3.4.2" },
-                new PythonPackage(){ Name="scipy", Version="1.7.3" },
+
+                new PythonPackage(){ Name="dragonfly-core", Version="1.31.0" },
+                new PythonPackage(){ Name="dragonfly-energy", Version="1.15.58" },
+                new PythonPackage(){ Name="dragonfly-schema", Version="1.6.59" },
+                new PythonPackage(){ Name="dragonfly-uwg", Version="0.5.145" },
+                new PythonPackage(){ Name="honeybee-core", Version="1.49.5" },
+                new PythonPackage(){ Name="honeybee-energy", Version="1.85.3" },
+                new PythonPackage(){ Name="honeybee-energy-standards", Version="2.2.1" },
+                new PythonPackage(){ Name="honeybee-radiance", Version="1.50.32" },
+                new PythonPackage(){ Name="honeybee-radiance-command", Version="1.20.3" },
+                new PythonPackage(){ Name="honeybee-radiance-folder", Version="2.8.0" },
+                new PythonPackage(){ Name="honeybee-schema", Version="1.47.2" },
+                new PythonPackage(){ Name="honeybee-standards", Version="2.0.5" },
+                new PythonPackage(){ Name="ladybug-comfort", Version="0.13.8" },
+                new PythonPackage(){ Name="ladybug-core", Version="0.39.37" },
+                new PythonPackage(){ Name="ladybug-geometry", Version="1.23.26" },
+                new PythonPackage(){ Name="ladybug-geometry-polyskel", Version="1.3.47" },
+                new PythonPackage(){ Name="ladybug-rhino", Version="1.33.3" },
+                new PythonPackage(){ Name="lbt-dragonfly", Version="0.8.367" },
+                new PythonPackage(){ Name="lbt-honeybee", Version="0.5.270" },
+                new PythonPackage(){ Name="lbt-ladybug", Version="0.25.111" },
+                new PythonPackage(){ Name="lbt-recipes", Version="0.19.4" },
+                new PythonPackage(){ Name="pollination-handlers", Version="0.8.4" },
+                new PythonPackage(){ Name="queenbee", Version="1.26.5" },
+                new PythonPackage(){ Name="queenbee-local", Version="0.3.18" },
+                new PythonPackage(){ Name="uwg", Version="5.8.9" },
             };
 
             PythonEnvironment pythonEnvironment = Create.PythonEnvironment(Query.ToolkitName(), version, packages);
