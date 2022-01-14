@@ -1,20 +1,14 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from typing import Dict
 
 import numpy as np
-from ladybug.datatype import temperature
-from ladybug.designday import DesignDay
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datatype.angle import Angle
-from ladybug.datatype.fraction import Fraction, HumidityRatio
-from ladybug.datatype.generic import GenericType
-from ladybug.datatype.specificenergy import Enthalpy
-from ladybug.datatype.temperature import SkyTemperature, WetBulbTemperature
-from ladybug.datatype.time import Time
+from ladybug import datatype
+from ladybug.designday import DesignDay
 from ladybug.epw import EPW
 from ladybug.header import Header
 from ladybug.psychrometrics import (
@@ -26,10 +20,8 @@ from ladybug.skymodel import calc_sky_temperature, clearness_index
 from ladybug.sunpath import Sunpath
 
 from .analysisperiod import BH_AnalysisPeriod
-
-from .header import BH_Header
-
 from .datacollection import BH_HourlyContinuousCollection, BH_MonthlyCollection
+from .header import BH_Header
 from .location import BH_Location
 
 
@@ -38,9 +30,84 @@ class BH_EPW(EPW):
         super().__init__(file_path)
         __slots__ = super().__slots__
 
-    # def __repr__(self):
-    #     """EPW representation."""
-    #     return "EPW file Data for [%s]" % self.location.city
+    def _import_header(self, header_lines):
+        """Set EPW design days, typical weeks, and ground temperatures from header lines.
+        Modified to enable parsing of EPWs within missing header data and incorrect number of fields.
+        """
+        # parse the heating, cooling and extreme design conditions.
+        dday_data = header_lines[1].strip().split(",")
+        if len(dday_data) >= 2 and int(dday_data[1]) == 1:
+            if dday_data[4] == "Heating":
+                for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
+                    self._heating_dict[key] = val
+            if dday_data[20] == "Cooling":
+                for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
+                    self._cooling_dict[key] = val
+            if dday_data[53] == "Extremes":
+                for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
+                    self._extremes_dict[key] = val
+
+        # parse typical and extreme periods into analysis periods.
+        week_data = header_lines[2].split(",")
+        try:
+            num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
+        except ValueError:
+            num_weeks = 0
+        st_ind = 2
+        for _ in range(num_weeks):
+            week_dat = week_data[st_ind : st_ind + 4]
+            st_ind += 4
+            st = [int(num) for num in week_dat[2].split("/")]
+            end = [int(num) for num in week_dat[3].split("/")]
+            if len(st) == 3:
+                a_per = BH_AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
+            elif len(st) == 2:
+                a_per = BH_AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
+            if "Max" in week_dat[0] and week_dat[1] == "Extreme":
+                self._extreme_hot_weeks[week_dat[0]] = a_per
+            elif "Min" in week_dat[0] and week_dat[1] == "Extreme":
+                self._extreme_cold_weeks[week_dat[0]] = a_per
+            elif week_dat[1] == "Typical":
+                self._typical_weeks[week_dat[0]] = a_per
+
+        # parse the monthly ground temperatures in the header.
+        grnd_data = header_lines[3].strip().split(",")
+        try:
+            num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
+        except ValueError:
+            num_depths = 0
+        st_ind = 2
+        for _ in range(num_depths):
+            header_meta = dict(self._metadata)  # copying the metadata dictionary
+            header_meta["depth"] = float(grnd_data[st_ind])
+            header_meta["soil conductivity"] = grnd_data[st_ind + 1]
+            header_meta["soil density"] = grnd_data[st_ind + 2]
+            header_meta["soil specific heat"] = grnd_data[st_ind + 3]
+            grnd_header = BH_Header(
+                datatype.temperature.GroundTemperature(),
+                "C",
+                AnalysisPeriod(),
+                header_meta,
+            )
+            grnd_vals = [float(x) for x in grnd_data[st_ind + 4 : st_ind + 16]]
+            self._monthly_ground_temps[float(grnd_data[st_ind])] = BH_MonthlyCollection(
+                grnd_header, grnd_vals, list(range(12))
+            )
+            st_ind += 16
+
+        # parse leap year, daylight savings and comments.
+        leap_dl_sav = header_lines[4].strip().split(",")
+        self._is_leap_year = True if leap_dl_sav[1] == "Yes" else False
+        self.daylight_savings_start = leap_dl_sav[2]
+        self.daylight_savings_end = leap_dl_sav[3]
+        comments_1 = header_lines[5].strip().split(",")
+        if len(comments_1) > 0:
+            self.comments_1 = ",".join(comments_1[1:])
+        comments_2 = header_lines[6].strip().split(",")
+        if len(comments_2) > 0:
+            self.comments_2 = ",".join(comments_2[1:])
+
+        self._is_header_loaded = True
 
     def _type(self) -> str:
         return self.__class__.__name__
@@ -85,34 +152,20 @@ class BH_EPW(EPW):
         """
         return json.dumps(self.to_dict()).replace("Infinity", "0")
 
-    @property
     def sun_position(self) -> BH_HourlyContinuousCollection:
         """Calculate a set of Sun positions for each hour of the year."""
         sunpath = Sunpath.from_location(self.location)
 
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=GenericType(name="Sun Position", unit="sun_position"),
+                data_type=datatype.generic.GenericType(
+                    name="Sun Position", unit="sun_position"
+                ),
                 unit="sun_position",
                 analysis_period=AnalysisPeriod(),
                 metadata=self.dry_bulb_temperature.header.metadata,
             ),
             [sunpath.calculate_sun_from_hoy(i) for i in range(8760)],
-        )
-
-    @property
-    def datetime(self) -> BH_HourlyContinuousCollection:
-        """Get a list of datetimes for each hour of the year."""
-        n_hours = 8784 if self.is_leap_year else 8760
-        year = 2020 if self.is_leap_year else 2021
-        return BH_HourlyContinuousCollection(
-            Header(
-                data_type=GenericType(name="Datetime", unit="datetime"),
-                unit="datetime",
-                analysis_period=AnalysisPeriod(),
-                metadata=self.dry_bulb_temperature.header.metadata,
-            ),
-            list(pd.date_range(f"{year}-01-01 00:30:00", freq="60T", periods=n_hours)),
         )
 
     @property
@@ -136,11 +189,15 @@ class BH_EPW(EPW):
             )
             time_offset = equation_of_time + 4 * self.location.longitude
             tst = dt.hour * 60 + dt.minute + dt.second / 60 + time_offset
-            st.append(datetime.combine(dt.date(), time(0)) + timedelta(minutes=tst))
+            st.append(
+                datetime.combine(dt.date(), datatype.time(0)) + timedelta(minutes=tst)
+            )
 
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=GenericType(name="Solar Time", unit="datetime"),
+                data_type=datatype.generic.GenericType(
+                    name="Solar Time", unit="datetime"
+                ),
                 unit="datetime",
                 analysis_period=AnalysisPeriod(),
                 metadata=self.dry_bulb_temperature.header.metadata,
@@ -155,7 +212,7 @@ class BH_EPW(EPW):
 
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=Time(
+                data_type=datatype.time.Time(
                     name="Solar Time",
                 ),
                 unit="hr",
@@ -170,14 +227,14 @@ class BH_EPW(EPW):
         """Calculate annual hourly solar azimuth angle."""
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=Angle(
+                data_type=datatype.angle.Angle(
                     name="Solar Azimuth",
                 ),
                 unit="degrees",
                 analysis_period=AnalysisPeriod(),
                 metadata=self.dry_bulb_temperature.header.metadata,
             ),
-            [i.azimuth_in_radians for i in self.sun_position.values],
+            [i.azimuth_in_radians for i in self.sun_position().values],
         )
 
     @property
@@ -185,14 +242,14 @@ class BH_EPW(EPW):
         """Calculate annual hourly solar azimuth angle in radians."""
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=Angle(
+                data_type=datatype.angle.Angle(
                     name="Solar Azimuth",
                 ),
                 unit="radians",
                 analysis_period=AnalysisPeriod(),
                 metadata=self.dry_bulb_temperature.header.metadata,
             ),
-            [i.azimuth_in_radians for i in self.sun_position.values],
+            [i.azimuth_in_radians for i in self.sun_position().values],
         )
 
     @property
@@ -200,14 +257,14 @@ class BH_EPW(EPW):
         """Calculate annual hourly solar altitude angle."""
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=Angle(
+                data_type=datatype.angle.Angle(
                     name="Solar Altitude",
                 ),
                 unit="degrees",
                 analysis_period=AnalysisPeriod(),
                 metadata=self.dry_bulb_temperature.header.metadata,
             ),
-            [i.altitude for i in self.sun_position.values],
+            [i.altitude for i in self.sun_position().values],
         )
 
     @property
@@ -215,14 +272,14 @@ class BH_EPW(EPW):
         """Calculate annual hourly solar altitude angle in radians."""
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=Angle(
+                data_type=datatype.angle.Angle(
                     name="Solar Altitude",
                 ),
                 unit="radians",
                 analysis_period=AnalysisPeriod(),
                 metadata=self.dry_bulb_temperature.header.metadata,
             ),
-            [i.altitude_in_radians for i in self.sun_position.values],
+            [i.altitude_in_radians for i in self.sun_position().values],
         )
 
     @property
@@ -230,7 +287,9 @@ class BH_EPW(EPW):
         """Calculate annual hourly apparent solar zenith angles."""
         return BH_HourlyContinuousCollection(
             Header(
-                data_type=GenericType(name="Apparent Solar Zenith", unit="degrees"),
+                data_type=datatype.generic.GenericType(
+                    name="Apparent Solar Zenith", unit="degrees"
+                ),
                 unit="degrees",
                 analysis_period=AnalysisPeriod(),
                 metadata=self.dry_bulb_temperature.header.metadata,
@@ -248,7 +307,7 @@ class BH_EPW(EPW):
                 self.relative_humidity,
                 self.atmospheric_station_pressure,
             ],
-            WetBulbTemperature(),
+            datatype.temperature.WetBulbTemperature(),
             "C",
         )
 
@@ -262,7 +321,7 @@ class BH_EPW(EPW):
                 self.relative_humidity,
                 self.atmospheric_station_pressure,
             ],
-            HumidityRatio(),
+            datatype.fraction.HumidityRatio(),
             "fraction",
         )
 
@@ -275,7 +334,7 @@ class BH_EPW(EPW):
                 self.dry_bulb_temperature,
                 self.humidity_ratio,
             ],
-            Enthalpy(),
+            datatype.specificenergy.Enthalpy(),
             "kJ/kg",
         )
 
@@ -289,7 +348,7 @@ class BH_EPW(EPW):
                 self.solar_altitude,
                 self.extraterrestrial_direct_normal_radiation,
             ],
-            Fraction(
+            datatype.fraction.Fraction(
                 name="Clearness Index",
             ),
             "fraction",
@@ -480,7 +539,7 @@ class BH_EPW(EPW):
         """Return annual Sky Temperature as a Ladybug Data Collection."""
         # create sky temperature header
         sky_temp_header = Header(
-            data_type=SkyTemperature(),
+            data_type=datatype.temperature.SkyTemperature(),
             unit="C",
             analysis_period=AnalysisPeriod(),
             metadata=self._metadata,
@@ -518,79 +577,3 @@ class BH_EPW(EPW):
             _.station_id,
             _.source,
         )
-
-    def _import_header(self, header_lines):
-        """Set EPW design days, typical weeks, and ground temperatures from header lines.
-        Modified to enable parsing of EPWs within missing header data and incorrect number of fields.
-        """
-        # parse the heating, cooling and extreme design conditions.
-        dday_data = header_lines[1].strip().split(",")
-        if len(dday_data) >= 2 and int(dday_data[1]) == 1:
-            if dday_data[4] == "Heating":
-                for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
-                    self._heating_dict[key] = val
-            if dday_data[20] == "Cooling":
-                for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
-                    self._cooling_dict[key] = val
-            if dday_data[53] == "Extremes":
-                for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
-                    self._extremes_dict[key] = val
-
-        # parse typical and extreme periods into analysis periods.
-        week_data = header_lines[2].split(",")
-        try:
-            num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
-        except ValueError:
-            num_weeks = 0
-        st_ind = 2
-        for _ in range(num_weeks):
-            week_dat = week_data[st_ind : st_ind + 4]
-            st_ind += 4
-            st = [int(num) for num in week_dat[2].split("/")]
-            end = [int(num) for num in week_dat[3].split("/")]
-            if len(st) == 3:
-                a_per = BH_AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
-            elif len(st) == 2:
-                a_per = BH_AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
-            if "Max" in week_dat[0] and week_dat[1] == "Extreme":
-                self._extreme_hot_weeks[week_dat[0]] = a_per
-            elif "Min" in week_dat[0] and week_dat[1] == "Extreme":
-                self._extreme_cold_weeks[week_dat[0]] = a_per
-            elif week_dat[1] == "Typical":
-                self._typical_weeks[week_dat[0]] = a_per
-
-        # parse the monthly ground temperatures in the header.
-        grnd_data = header_lines[3].strip().split(",")
-        try:
-            num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
-        except ValueError:
-            num_depths = 0
-        st_ind = 2
-        for _ in range(num_depths):
-            header_meta = dict(self._metadata)  # copying the metadata dictionary
-            header_meta["depth"] = float(grnd_data[st_ind])
-            header_meta["soil conductivity"] = grnd_data[st_ind + 1]
-            header_meta["soil density"] = grnd_data[st_ind + 2]
-            header_meta["soil specific heat"] = grnd_data[st_ind + 3]
-            grnd_header = BH_Header(
-                temperature.GroundTemperature(), "C", AnalysisPeriod(), header_meta
-            )
-            grnd_vals = [float(x) for x in grnd_data[st_ind + 4 : st_ind + 16]]
-            self._monthly_ground_temps[float(grnd_data[st_ind])] = BH_MonthlyCollection(
-                grnd_header, grnd_vals, list(range(12))
-            )
-            st_ind += 16
-
-        # parse leap year, daylight savings and comments.
-        leap_dl_sav = header_lines[4].strip().split(",")
-        self._is_leap_year = True if leap_dl_sav[1] == "Yes" else False
-        self.daylight_savings_start = leap_dl_sav[2]
-        self.daylight_savings_end = leap_dl_sav[3]
-        comments_1 = header_lines[5].strip().split(",")
-        if len(comments_1) > 0:
-            self.comments_1 = ",".join(comments_1[1:])
-        comments_2 = header_lines[6].strip().split(",")
-        if len(comments_2) > 0:
-            self.comments_2 = ",".join(comments_2[1:])
-
-        self._is_header_loaded = True

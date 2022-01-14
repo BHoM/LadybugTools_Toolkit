@@ -48,7 +48,7 @@ namespace BH.Engine.LadybugTools
                 "from pathlib import Path",
                 "import sys",
                 $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-                "from epw import BH_EPW",
+                "from bh_ladybug.epw import BH_EPW",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",

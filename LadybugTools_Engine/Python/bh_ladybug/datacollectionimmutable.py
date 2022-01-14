@@ -7,13 +7,13 @@ import pandas as pd
 
 T = TypeVar("T")
 
-from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
+from ladybug.datacollectionimmutable import HourlyContinuousCollectionImmutable, MonthlyCollectionImmutable
 
 from .header import BH_Header
 
 
-class BH_HourlyContinuousCollection(HourlyContinuousCollection):
-    def __init__(self, header: BH_Header, values: List[T]) -> BH_HourlyContinuousCollection:
+class BH_HourlyContinuousCollectionImmutable(HourlyContinuousCollectionImmutable):
+    def __init__(self, header: BH_Header, values: List[T]) -> BH_HourlyContinuousCollectionImmutable:
         super().__init__(header, values)
 
     def _type(self) -> str:
@@ -22,16 +22,13 @@ class BH_HourlyContinuousCollection(HourlyContinuousCollection):
     @property
     def header(self) -> BH_Header:
         """Return header."""
-        h = self.header
-        h.__class__ = BH_Header
-        return h
-        # _ = self._header
-        # return BH_Header(
-        #     _.data_type,
-        #     _.unit,
-        #     _.analysis_period,
-        #     _.metadata,
-        # )
+        _ = self._header
+        return BH_Header(
+            _.data_type,
+            _.unit,
+            _.analysis_period,
+            _.metadata,
+        )
 
 
     def to_series(self) -> pd.Series:
@@ -60,8 +57,8 @@ class BH_HourlyContinuousCollection(HourlyContinuousCollection):
         return np.array(self.values)
 
 
-class BH_MonthlyCollection(MonthlyCollection):
-    def __init__(self, header: BH_Header, values: List[T], datetimes: List[int]) -> BH_MonthlyCollection:
+class BH_MonthlyCollectionImmutable(MonthlyCollectionImmutable):
+    def __init__(self, header: BH_Header, values: List[T], datetimes: List[int]) -> BH_MonthlyCollectionImmutable:
         super().__init__(header=header, values=values, datetimes=datetimes)
 
     def _type(self) -> str:
@@ -92,7 +89,7 @@ class BH_MonthlyCollection(MonthlyCollection):
 
         return np.array(self.values)
     
-    def to_hourly(self, method: str = None) -> BH_HourlyContinuousCollection:
+    def to_hourly(self, method: str = None) -> BH_HourlyContinuousCollectionImmutable:
         """Convert a Ladybug MonthlyContinuousCollection object into a Ladybug HourlyContinuousCollection object.
         
         Args:
@@ -118,7 +115,7 @@ class BH_MonthlyCollection(MonthlyCollection):
             values = series_annual.interpolate(method="linear").values
         else:
             raise ValueError("Invalid method.")
-        return BH_HourlyContinuousCollection(
+        return BH_HourlyContinuousCollectionImmutable(
             header=self.header,
             values=values,
         )

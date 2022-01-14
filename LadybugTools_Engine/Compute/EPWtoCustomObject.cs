@@ -49,7 +49,7 @@ namespace BH.Engine.LadybugTools
             {
                 "import sys",
                 $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-                "from epw import BH_EPW",
+                "from bh_ladybug.epw import BH_EPW",
                 "",
                 $"print(BH_EPW(r'{epwFile}').to_json())",
             });
