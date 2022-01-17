@@ -122,12 +122,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Python\bh_ladybug\__pycache__\analysisperiod.cpython-37.pyc" />
-    <None Include="Python\bh_ladybug\__pycache__\datacollection.cpython-37.pyc" />
-    <None Include="Python\bh_ladybug\__pycache__\epw.cpython-37.pyc" />
-    <None Include="Python\bh_ladybug\__pycache__\header.cpython-37.pyc" />
-    <None Include="Python\bh_ladybug\__pycache__\location.cpython-37.pyc" />
-    <None Include="Python\bh_ladybug\__pycache__\__init__.cpython-37.pyc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_oM\LadybugTools_oM.csproj">
@@ -138,12 +132,11 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="Python\bh_ladybug\analysisperiod.py" />
-    <Content Include="Python\bh_ladybug\datacollection.py" />
-    <Content Include="Python\bh_ladybug\epw.py" />
-    <Content Include="Python\bh_ladybug\header.py" />
-    <Content Include="Python\bh_ladybug\location.py" />
-    <Content Include="Python\bh_ladybug\__init__.py" />
+    <Content Include="Python\extension\analysis_period.py" />
+    <Content Include="Python\extension\datacollection.py" />
+    <Content Include="Python\extension\epw.py" />
+    <Content Include="Python\extension\header.py" />
+    <Content Include="Python\extension\__init__.py" />
     <Content Include="Python\__init__.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -48,11 +48,12 @@ namespace BH.Engine.LadybugTools
                 "from pathlib import Path",
                 "import sys",
                 $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-                "from bh_ladybug.epw import BH_EPW",
+                "from ladybug_extension.epw import to_dataframe",
+                "from ladybug.epw import EPW",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",
-                "BH_EPW(epw_path.as_posix()).to_csv(csv_path.as_posix())",
+                "to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
                 "print(csv_path)",
             });
 
