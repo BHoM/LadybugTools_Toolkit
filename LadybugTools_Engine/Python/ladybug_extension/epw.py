@@ -10,6 +10,7 @@ from ladybug.psychrometrics import (
     wet_bulb_from_db_rh,
 )
 from ladybug.sunpath import Sunpath
+from ladybug.skymodel import clearness_index
 from ladybug.wea import Wea
 
 from .datacollection import to_datetimes, to_hourly, to_series
@@ -278,6 +279,7 @@ def to_dataframe(
     solar_azimuth = get_solar_azimuth(epw, sun_position)
     solar_azimuth_in_radians = get_solar_azimuth_in_radians(epw, sun_position)
     apparent_solar_zenith = get_apparent_solar_zenith(epw, solar_altitude)
+    clearness_index =get_clearness_index(epw, sun_position)
 
     # Calculate additional psychrometric properties
     humidity_ratio = get_humidity_ratio(epw)
@@ -578,4 +580,26 @@ def get_enthalpy(
         ],
         datatype.specificenergy.Enthalpy(),
         "kJ/kg",
+    )
+
+def get_clearness_index(epw: EPW, sun_position: HourlyContinuousCollection = None) -> HourlyContinuousCollection:
+    """Calculate the clearness index value for each hour of the year."""
+
+    if not sun_position:
+        sun_position = get_sun_position(epw)
+    
+    ci = []
+    for i, j, k in list(zip(*[epw.global_horizontal_radiation, get_solar_altitude(epw, sun_position), epw.extraterrestrial_direct_normal_radiation])):
+        try:
+            ci.append(clearness_index(i, j, k))
+        except ZeroDivisionError:
+            ci.append(0)
+
+    return HourlyContinuousCollection(
+        header=Header(
+            data_type=datatype.fraction.Fraction(name="Clearness Index"),
+            unit="fraction",
+            analysis_period=AnalysisPeriod(),
+        ),
+        values=ci,
     )
