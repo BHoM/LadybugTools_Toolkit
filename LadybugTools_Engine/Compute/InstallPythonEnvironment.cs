@@ -36,15 +36,18 @@ namespace BH.Engine.LadybugTools
         [Output("pythonEnvironment", "The LadybugTools_Toolkit Python environment.")]
         public static PythonEnvironment InstallPythonEnvironment(bool run = false, bool force = false)
         {
-            oM.Python.Enums.PythonVersion version = oM.Python.Enums.PythonVersion.v3_7_3;
-
-            // NOTE: Ladybug code version below based on V1.4 Grasshopper release
+            oM.Python.Enums.PythonVersion version = oM.Python.Enums.PythonVersion.v3_7_9;
+            
             List<PythonPackage> packages = new List<PythonPackage>()
             {
-                new PythonPackage(){ Name="pandas", Version="1.2.4" },
-                new PythonPackage(){ Name="numpy", Version="1.20.3" },
-                new PythonPackage(){ Name="matplotlib", Version="3.4.2" },
+                new PythonPackage(){ Name="ipykernel", Version="6.7.0" },
+                new PythonPackage(){ Name="matplotlib", Version="3.5.1" },
+                new PythonPackage(){ Name="numpy", Version="1.21.5" },
+                new PythonPackage(){ Name="pandas", Version="1.3.5" },
+                new PythonPackage(){ Name="scipy", Version="1.7.3" },
+                
 
+                // NOTE: Ladybug code version below based on V1.4 Grasshopper release
                 new PythonPackage(){ Name="dragonfly-core", Version="1.31.0" },
                 new PythonPackage(){ Name="dragonfly-energy", Version="1.15.58" },
                 new PythonPackage(){ Name="dragonfly-schema", Version="1.6.59" },

@@ -49,12 +49,13 @@ namespace BH.Engine.LadybugTools
             {
                 "import sys",
                 $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-                "from bh_ladybug.epw import BH_EPW",
+                "from ladybug.epw import EPW",
+                "import json",
                 "",
-                $"print(BH_EPW(r'{epwFile}').to_json())",
+                $"print(json.dumps(EPW(r'{epwFile}').to_dict()))",
             });
 
-            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim().Replace("Infinity", "0");
+            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();//.Replace("Infinity", "0");
 
             return Serialiser.Convert.FromJson(output) as CustomObject;
         }
