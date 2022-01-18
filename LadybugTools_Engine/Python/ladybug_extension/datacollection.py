@@ -3,7 +3,7 @@ import pandas as pd
 from ladybug._datacollectionbase import BaseCollection
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 
-from .analysis_period import to_datetimes
+from .analysisperiod import to_datetimes
 from .header import from_string, to_string
 
 

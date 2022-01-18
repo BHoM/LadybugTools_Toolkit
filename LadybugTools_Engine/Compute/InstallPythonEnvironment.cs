@@ -45,6 +45,7 @@ namespace BH.Engine.LadybugTools
                 new PythonPackage(){ Name="numpy", Version="1.21.5" },
                 new PythonPackage(){ Name="pandas", Version="1.3.5" },
                 new PythonPackage(){ Name="scipy", Version="1.7.3" },
+                new PythonPackage(){ Name="fortranformat", Version="1.1.1" },
                 
 
                 // NOTE: Ladybug code version below based on V1.4 Grasshopper release
