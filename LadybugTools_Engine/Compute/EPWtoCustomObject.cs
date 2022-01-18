@@ -55,7 +55,7 @@ namespace BH.Engine.LadybugTools
                 $"print(json.dumps(EPW(r'{epwFile}').to_dict()))",
             });
 
-            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();//.Replace("Infinity", "0");
+            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
 
             return Serialiser.Convert.FromJson(output) as CustomObject;
         }

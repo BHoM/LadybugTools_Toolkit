@@ -132,11 +132,11 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="Python\extension\analysis_period.py" />
-    <Content Include="Python\extension\datacollection.py" />
-    <Content Include="Python\extension\epw.py" />
-    <Content Include="Python\extension\header.py" />
-    <Content Include="Python\extension\__init__.py" />
+    <Content Include="Python\ladybug_extension\analysis_period.py" />
+    <Content Include="Python\ladybug_extension\datacollection.py" />
+    <Content Include="Python\ladybug_extension\epw.py" />
+    <Content Include="Python\ladybug_extension\header.py" />
+    <Content Include="Python\ladybug_extension\__init__.py" />
     <Content Include="Python\__init__.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
