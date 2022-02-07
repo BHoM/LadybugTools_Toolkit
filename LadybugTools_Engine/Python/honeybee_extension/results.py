@@ -25,7 +25,7 @@ def _load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
         err_str = f"There are duplicate filenames in the list of input files for {func.__name__}. This may cause issues when trying to reference specific results sets!"
         warnings.warn(err_str)
 
-    return pd.concat([func(i) for i in files], axis=1)
+    return pd.concat([func(i) for i in files], axis=1).sort_index(axis=1)
 
 
 def _load_sun_up_hours_file(
@@ -65,9 +65,10 @@ def _make_annual(df: pd.DataFrame) -> pd.DataFrame:
 
     year = df.index[0].year
     freq = f"{(df.index[1] - df.index[0]).total_seconds():0.0f}S"
+    minutes_of_hour = df.index.minute.unique()
     df2 = pd.DataFrame(
         index=pd.date_range(
-            f"{year}-01-01 00:00:00", f"{year + 1}-01-01 00:00:00", freq=freq
+            f"{year}-01-01 00:{minutes_of_hour.min()}:00", f"{year + 1}-01-01 00:{minutes_of_hour.min()}:00", freq=freq
         )[:-1]
     )
     df_reindexed = pd.concat([df2, df], axis=1)
