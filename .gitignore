@@ -207,4 +207,4 @@ cython_debug/
 .vscode/
 
 # Testing files
-.ipynb
+*.ipynb
