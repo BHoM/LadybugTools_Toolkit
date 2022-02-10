@@ -113,7 +113,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compute\InstallPythonEnvironment.cs" />
+    <Compile Include="Compute\InstallLadybugToolsPythonEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
@@ -122,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Python\LadybugTools_Toolkit.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_oM\LadybugTools_oM.csproj">
@@ -152,11 +153,20 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /Y
 
-:: remove any existing within target directory for current toolkits Python code
+:: remove any old versions within target directory for current toolkits Python code
+if exist "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" rmdir "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /S /Q
+
+:: remove any old versions within target directory for current toolkits Python code
 if exist "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" rmdir "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /S /Q
 
 :: move Python code over to toolkit extensions folder, redirecting output to temp log file to silence it
-robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /s /purge /xf "*.pyc" "*.ipynb" /xd "\__pycache__\" "\.ipynb_checkpoints\" &gt; output.log
+robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /s /purge /xf "*.pyc" /xd "\__pycache__\" &gt; output.log
+
+:: copy local Python config JSON to BHoM/Settings/Python
+if not exist "C:\ProgramData\BHoM\Settings\Python" mkdir "C:\ProgramData\BHoM\Settings\Python"
+robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Settings\Python" "$(SolutionName).json" &gt; output.log
+
+:: remove temporary log file
 del output.log</PostBuildEvent>
   </PropertyGroup>
 </Project>

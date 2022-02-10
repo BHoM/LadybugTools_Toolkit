@@ -1,0 +1,57 @@
+﻿{
+    "Version": "3.9.10",
+    "Packages": [
+        {
+            "Name": "lbt-ladybug",
+            "Version": "0.25.125"
+        },
+        {
+            "Name": "lbt-honeybee",
+            "Version": "0.5.325"
+        },
+        {
+            "Name": "lbt-dragonfly",
+            "Version": "0.8.435"
+        },
+        {
+            "Name": "lbt-recipes",
+            "Version": "0.19.11"
+        },
+        {
+            "Name": "queenbee",
+            "Version": "1.26.5"
+        },
+        {
+            "Name": "queenbee-local",
+            "Version": "0.3.18"
+        },
+        {
+            "Name": "pandas",
+            "Version": "1.4.0"
+        },
+        {
+            "Name": "tables",
+            "Version": "3.7.0"
+        },
+        {
+            "Name": "numpy",
+            "Version": "1.22.2"
+        },
+        {
+            "Name": "matplotlib",
+            "Version": "3.5.1"
+        },
+        {
+            "Name": "scipy",
+            "Version": "1.7.3"
+        },
+        {
+            "Name": "fortranformat",
+            "Version": "1.1.1"
+        },
+        {
+            "Name": "ipykernel",
+            "Version": "6.7.0"
+        }
+    ]
+}

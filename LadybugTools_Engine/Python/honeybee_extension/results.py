@@ -205,7 +205,7 @@ def load_ill(ill_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFram
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .ill files.
     """
-    return _make_annual(_load_files(_load_ill_file, ill_files))
+    return _load_files(_load_ill_file, ill_files)
 
 
 def load_sql(sql_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
