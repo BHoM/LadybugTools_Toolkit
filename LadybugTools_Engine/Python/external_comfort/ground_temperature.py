@@ -1,57 +1,14 @@
 import inspect
-from warnings import warn
+from logging import warning
 
 import numpy as np
 import pandas as pd
-from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
+from honeybee_energy.material.opaque import EnergyMaterial
+from ladybug.datacollection import (HourlyContinuousCollection,
+                                    MonthlyCollection)
 from ladybug.epw import EPW
-from ladybug_extension.datacollection import from_series, to_hourly, to_series
-
-
-def monthly_ground_temperature(
-    epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
-) -> MonthlyCollection:
-    """Return the monthly ground temperature values from the EPW file, or approximate these if not available.
-
-    Args:
-        epw (EPW): The EPW file to extract ground temperature data from.
-        depth (float, optional): The depth of the soil in meters. Defaults to 0.5 meters.
-        soil_diffusivity (float, optional): The soil diffusivity in m2/s. Defaults to 0.31e-6 m2/s.
-
-    Returns:
-        MonthlyCollection: A data collection containing ground temperature values at the depth specified.
-    """
-
-    try:
-        return epw.monthly_ground_temperature[depth]
-    except KeyError:
-        warn(
-            f"The input EPW doesn't contain any monthly ground temperatures at {depth}m. An approximation method will be used to determine ground temperature at that depth based on ambient dry-bulb."
-        )
-        return ground_temperature_at_depth(
-            epw, depth, soil_diffusivity
-        ).average_monthly()
-
-
-def hourly_ground_temperature(
-    epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
-) -> HourlyContinuousCollection:
-    """Return the hourly ground temperature values from the EPW file (upsampled from any available montly values), or approximate these if not available.
-
-    Args:
-        epw (EPW): The EPW file to extract ground temperature data from.
-        depth (float, optional): The depth of the soil in meters. Defaults to 0.5 meters.
-        soil_diffusivity (float, optional): The soil diffusivity in m2/s. Defaults to 0.31e-6 m2/s.
-
-    Returns:
-        MonthlyCollection: A data collection containing ground temperature values at the depth specified.
-    """
-
-    try:
-        return to_hourly(epw.monthly_ground_temperature[depth])
-    except KeyError:
-        return ground_temperature_at_depth(epw, depth, soil_diffusivity)
-
+from ladybug_extension.datacollection import to_series, from_series, to_hourly
+# TODO - fix the dodgy relative import here
 
 def ground_temperature_at_depth(
     epw: EPW, depth: float, soil_diffusivity: float = 0.31e-6
@@ -97,50 +54,68 @@ def ground_temperature_at_depth(
         HourlyContinuousCollection: A data collection containing ground temperature values.
     """
 
+    dbt = to_series(epw.dry_bulb_temperature)
+
+    dbt_range = dbt.max() - dbt.min()
+    dbt_mean = dbt.mean()
+    day_count = len(dbt.index.dayofyear.unique())
+
+    coldest_day = dbt.resample("D").min().values.argmin()
+    days_since_coldest_day = []
+    for i in range(day_count):
+        if i <= coldest_day:
+            days_since_coldest_day.append(day_count - (coldest_day - i))
+        else:
+            days_since_coldest_day.append(i - coldest_day)
+
+    annual_profile = 2 * np.pi / day_count
+    annual_profile_factored = np.sqrt(2 * soil_diffusivity * 86400 / annual_profile)
+    gnd_temp_daily = (
+        pd.Series(
+            [
+                dbt_mean
+                - (dbt_range / 2)
+                * np.exp(-depth / annual_profile_factored)
+                * np.cos((annual_profile * i) - (depth / annual_profile_factored))
+                for i in days_since_coldest_day
+            ],
+            index=dbt.resample("D").min().index,
+        )
+        .resample("60T")
+        .mean()
+        .interpolate()
+        .values
+    )
+    gnd_temp_hourly = list(gnd_temp_daily) + list(gnd_temp_daily[0:23])
+    gnd_temp_hourly = pd.Series(gnd_temp_hourly, index=dbt.index)
+
+    return from_series(gnd_temp_hourly)
+
+
+def monthly_ground_temperature(
+    epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
+) -> MonthlyCollection:
+    try:
+        return epw.monthly_ground_temperature[depth]
+    except KeyError:
+        warning(
+            f"The input EPW doesn't contain any monthly ground temperatures at {depth}m. An approximation method will be used to determine ground temperature at that depth based on ambient dry-bulb."
+        )
+        return ground_temperature_at_depth(
+            epw, depth, soil_diffusivity
+        ).average_monthly()
+
+
+def annual_ground_temperature(
+    epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
+) -> HourlyContinuousCollection:
     try:
         return to_hourly(epw.monthly_ground_temperature[depth])
-    except (KeyError, ValueError) as e:
-        dbt = to_series(epw.dry_bulb_temperature)
-
-        dbt_range = dbt.max() - dbt.min()
-        dbt_mean = dbt.mean()
-        day_count = len(dbt.index.dayofyear.unique())
-
-        coldest_day = dbt.resample("D").min().values.argmin()
-        days_since_coldest_day = []
-        for i in range(day_count):
-            if i <= coldest_day:
-                days_since_coldest_day.append(day_count - (coldest_day - i))
-            else:
-                days_since_coldest_day.append(i - coldest_day)
-
-        annual_profile = 2 * np.pi / day_count
-        annual_profile_factored = np.sqrt(2 * soil_diffusivity * 86400 / annual_profile)
-        gnd_temp_daily = (
-            pd.Series(
-                [
-                    dbt_mean
-                    - (dbt_range / 2)
-                    * np.exp(-depth / annual_profile_factored)
-                    * np.cos((annual_profile * i) - (depth / annual_profile_factored))
-                    for i in days_since_coldest_day
-                ],
-                index=dbt.resample("D").min().index,
-            )
-            .resample("60T")
-            .mean()
-            .interpolate()
-            .values
-        )
-        gnd_temp_hourly = list(gnd_temp_daily) + list(gnd_temp_daily[0:23])
-        gnd_temp_hourly = pd.Series(
-            gnd_temp_hourly, index=dbt.index, name="Ground Temperature (C)"
-        )
-
-        return from_series(gnd_temp_hourly)
+    except KeyError:
+        return ground_temperature_at_depth(epw, depth, soil_diffusivity)
 
 
-def energyplus_strings(epw: EPW) -> str:
+def energyplus_ground_temperature_strings(epw: EPW) -> str:
     """Generate strings to add into EnergyPlus simulation for more accurate ground surface temperature results.
 
     Args:
@@ -154,7 +129,7 @@ def energyplus_strings(epw: EPW) -> str:
 
     ground_temperature_str = inspect.cleandoc(
         f"""
-            Site:GroundTemperature:BuildingSurface,
+            Site:GroundTemperature:Shallow,
                 {monthly_ground_temperatures[0]}, !- January Surface Ground Temperature {{C}}
                 {monthly_ground_temperatures[1]}, !- February Surface Ground Temperature {{C}}
                 {monthly_ground_temperatures[2]}, !- March Surface Ground Temperature {{C}}
@@ -171,3 +146,21 @@ def energyplus_strings(epw: EPW) -> str:
     )
 
     return ground_temperature_str
+
+if __name__ =="__main__":
+    
+    ground_material = EnergyMaterial(
+        identifier="gnd_material",
+        roughness="Rough",
+        thickness=0.5,
+        conductivity=3.0,
+        density=1250.0,
+        specific_heat=1250.0,
+        thermal_absorptance=0.9,
+        solar_absorptance=0.7,
+        visible_absorptance=0.7,
+    )
+
+    epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
+
+    print(energyplus_ground_temperature_strings(epw))
