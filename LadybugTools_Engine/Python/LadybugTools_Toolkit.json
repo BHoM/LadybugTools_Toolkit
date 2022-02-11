@@ -52,6 +52,10 @@
         {
             "Name": "ipykernel",
             "Version": "6.7.0"
+        },
+        {
+            "Name": "black",
+            "Version":  "22.1.0"
         }
     ]
 }
