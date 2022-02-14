@@ -1,4 +1,5 @@
 from typing import List, Union
+import uuid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
 from honeybee.model import Model, Room, Face, Shade
 from honeybee_energy.construction.opaque import OpaqueConstruction
@@ -6,6 +7,7 @@ from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegeta
 from honeybee.facetype import face_types
 from honeybee.boundarycondition import boundary_conditions
 from honeybee_radiance.sensorgrid import SensorGrid, Sensor
+import uuid
 
 _WIDTH = 10
 _DEPTH = 10
@@ -219,7 +221,7 @@ def create_model(
     shaded_grid.move(displacement_vector)
 
     model = Model(
-        identifier="EXTERNAL_COMFORT_MODEL",
+        identifier=f"external_comfort_{uuid.uuid4()}",
         rooms=[ground_zone_unshaded, ground_zone_shaded, shade_zone],
         orphaned_shades=shades,
     )
