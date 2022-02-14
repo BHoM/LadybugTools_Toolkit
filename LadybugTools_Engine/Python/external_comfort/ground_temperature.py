@@ -3,12 +3,11 @@ from logging import warning
 
 import numpy as np
 import pandas as pd
-from honeybee_energy.material.opaque import EnergyMaterial
-from ladybug.datacollection import (HourlyContinuousCollection,
-                                    MonthlyCollection)
+from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
+from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybug.epw import EPW
 from ladybug_extension.datacollection import to_series, from_series, to_hourly
-# TODO - fix the dodgy relative import here
+
 
 def ground_temperature_at_depth(
     epw: EPW, depth: float, soil_diffusivity: float = 0.31e-6
@@ -54,47 +53,80 @@ def ground_temperature_at_depth(
         HourlyContinuousCollection: A data collection containing ground temperature values.
     """
 
-    dbt = to_series(epw.dry_bulb_temperature)
+    try:
+        return to_hourly(epw.monthly_ground_temperature[depth])
+    except ValueError as e:
+        dbt = to_series(epw.dry_bulb_temperature)
 
-    dbt_range = dbt.max() - dbt.min()
-    dbt_mean = dbt.mean()
-    day_count = len(dbt.index.dayofyear.unique())
+        dbt_range = dbt.max() - dbt.min()
+        dbt_mean = dbt.mean()
+        day_count = len(dbt.index.dayofyear.unique())
 
-    coldest_day = dbt.resample("D").min().values.argmin()
-    days_since_coldest_day = []
-    for i in range(day_count):
-        if i <= coldest_day:
-            days_since_coldest_day.append(day_count - (coldest_day - i))
-        else:
-            days_since_coldest_day.append(i - coldest_day)
+        coldest_day = dbt.resample("D").min().values.argmin()
+        days_since_coldest_day = []
+        for i in range(day_count):
+            if i <= coldest_day:
+                days_since_coldest_day.append(day_count - (coldest_day - i))
+            else:
+                days_since_coldest_day.append(i - coldest_day)
 
-    annual_profile = 2 * np.pi / day_count
-    annual_profile_factored = np.sqrt(2 * soil_diffusivity * 86400 / annual_profile)
-    gnd_temp_daily = (
-        pd.Series(
-            [
-                dbt_mean
-                - (dbt_range / 2)
-                * np.exp(-depth / annual_profile_factored)
-                * np.cos((annual_profile * i) - (depth / annual_profile_factored))
-                for i in days_since_coldest_day
-            ],
-            index=dbt.resample("D").min().index,
+        annual_profile = 2 * np.pi / day_count
+        annual_profile_factored = np.sqrt(2 * soil_diffusivity * 86400 / annual_profile)
+        gnd_temp_daily = (
+            pd.Series(
+                [
+                    dbt_mean
+                    - (dbt_range / 2)
+                    * np.exp(-depth / annual_profile_factored)
+                    * np.cos((annual_profile * i) - (depth / annual_profile_factored))
+                    for i in days_since_coldest_day
+                ],
+                index=dbt.resample("D").min().index,
+            )
+            .resample("60T")
+            .mean()
+            .interpolate()
+            .values
         )
-        .resample("60T")
-        .mean()
-        .interpolate()
-        .values
-    )
-    gnd_temp_hourly = list(gnd_temp_daily) + list(gnd_temp_daily[0:23])
-    gnd_temp_hourly = pd.Series(gnd_temp_hourly, index=dbt.index)
+        gnd_temp_hourly = list(gnd_temp_daily) + list(gnd_temp_daily[0:23])
+        gnd_temp_hourly = pd.Series(
+            gnd_temp_hourly, index=dbt.index, name="Ground Temperature (C)"
+        )
 
-    return from_series(gnd_temp_hourly)
+        return from_series(gnd_temp_hourly)
+
+
+def ground_temperature_from_material(
+    epw: EPW, material: _EnergyMaterialOpaqueBase, depth: float = 0.5
+) -> HourlyContinuousCollection:
+    """Estimates ground temperature from a material and climate dataset.
+
+    Args:
+        epw: An EPW data collection.
+        material: An EnergyMaterialOpaqueBase object.
+        depth: The depth of the ground in meters.
+
+    Returns:
+        HourlyContinuousCollection: A data collection containing ground temperature values.
+    """
+
+    raise NotImplementedError()
 
 
 def monthly_ground_temperature(
     epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
 ) -> MonthlyCollection:
+    """Return the monthly ground temperature values from the EPW file, or approximate these if not available.
+
+    Args:
+        epw (EPW): The EPW file to extract ground temperature data from.
+        depth (float, optional): The depth of the soil in meters. Defaults to 0.5 meters.
+        soil_diffusivity (float, optional): The soil diffusivity in m2/s. Defaults to 0.31e-6 m2/s.
+
+    Returns:
+        MonthlyCollection: A data collection containing ground temperature values at the depth specified.
+    """
+
     try:
         return epw.monthly_ground_temperature[depth]
     except KeyError:
@@ -106,9 +138,20 @@ def monthly_ground_temperature(
         ).average_monthly()
 
 
-def annual_ground_temperature(
+def hourly_ground_temperature(
     epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
 ) -> HourlyContinuousCollection:
+    """Return the hourly ground temperature values from the EPW file (upsampled from any available montly values), or approximate these if not available.
+
+    Args:
+        epw (EPW): The EPW file to extract ground temperature data from.
+        depth (float, optional): The depth of the soil in meters. Defaults to 0.5 meters.
+        soil_diffusivity (float, optional): The soil diffusivity in m2/s. Defaults to 0.31e-6 m2/s.
+
+    Returns:
+        MonthlyCollection: A data collection containing ground temperature values at the depth specified.
+    """
+
     try:
         return to_hourly(epw.monthly_ground_temperature[depth])
     except KeyError:
@@ -147,20 +190,21 @@ def energyplus_ground_temperature_strings(epw: EPW) -> str:
 
     return ground_temperature_str
 
-if __name__ =="__main__":
-    
-    ground_material = EnergyMaterial(
-        identifier="gnd_material",
-        roughness="Rough",
-        thickness=0.5,
-        conductivity=3.0,
-        density=1250.0,
-        specific_heat=1250.0,
-        thermal_absorptance=0.9,
-        solar_absorptance=0.7,
-        visible_absorptance=0.7,
-    )
 
-    epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
+if __name__ == "__main__":
+    pass
+    # ground_material = EnergyMaterial(
+    #     identifier="gnd_material",
+    #     roughness="Rough",
+    #     thickness=0.5,
+    #     conductivity=3.0,
+    #     density=1250.0,
+    #     specific_heat=1250.0,
+    #     thermal_absorptance=0.9,
+    #     solar_absorptance=0.7,
+    #     visible_absorptance=0.7,
+    # )
 
-    print(energyplus_ground_temperature_strings(epw))
+    # epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
+
+    # print(energyplus_ground_temperature_strings(epw))
