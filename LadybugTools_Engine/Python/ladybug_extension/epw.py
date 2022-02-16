@@ -13,7 +13,7 @@ from ladybug.sunpath import Sunpath
 from ladybug.skymodel import clearness_index
 from ladybug.wea import Wea
 
-from .datacollection import to_datetimes, to_hourly, to_series
+from ladybug_extension.datacollection import to_datetimes, to_hourly, to_series
 
 
 def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:

@@ -2,10 +2,10 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, List
-import uuid
+
 from lbt_recipes.recipe import Recipe
 from honeybee.model import Model
-from honeybee.config import folders
+from honeybee.config import folders as hb_folders
 from ladybug.epw import EPW, HourlyContinuousCollection, AnalysisPeriod
 from ladybug.wea import Wea
 from honeybee_energy.simulation.parameter import (
@@ -17,28 +17,29 @@ from honeybee_energy.simulation.parameter import (
 )
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
 import numpy as np
-from honeybee_extension.results import load_sql, load_ill, _make_annual
 from ladybug_comfort.collection.solarcal import HorizontalSolarCal
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
 
-from ladybug_extension.datacollection import from_series
 
+from honeybee_extension.results import load_sql, load_ill, _make_annual
+from ladybug_extension.datacollection import from_series
+from external_comfort import QUEENBEE_EXE
+from external_comfort.ground_temperature import energyplus_ground_temperature_strings
 
 def _run_energyplus(
-    model: Model, epw: EPW, additional_strings: List[str]
+    model: Model, epw: EPW
 ) -> Dict[str, HourlyContinuousCollection]:
     """Run EnergyPlus on a model and return the results.
 
     Args:
         model (Model): A honeybee Model to be run through EnergyPlus.
         epw (EPW): An EPW object to be used for the simulation.
-        additional_strings (List[str]): A list of additional strings to be added to the IDF.
 
     Returns:
         A dictionary containing ground and shade (below and above) surface temperature values.
     """
 
-    working_directory = Path(folders.default_simulation_folder) / f"{model.identifier}"
+    working_directory = Path(hb_folders.default_simulation_folder) / f"{model.identifier}"
     working_directory.mkdir(exist_ok=True, parents=True)
 
     # Write model JSON
@@ -95,12 +96,11 @@ def _run_energyplus(
     # Convert workflow to IDF file
     _, idf = run_osw(osw, silent=False)
 
-    # Append additional strings to end of IDF file
-    if additional_strings:
-        with open(idf, "r") as fp:
-            temp = fp.readlines()
-        with open(idf, "w") as fp:
-            fp.writelines(temp + [additional_strings])
+    # Add ground temperature strings to IDF
+    with open(idf, "r") as fp:
+        temp = fp.readlines()
+    with open(idf, "w") as fp:
+        fp.writelines(temp + [energyplus_ground_temperature_strings(epw)])
 
     # Simulate IDF
     sql, _, _, _, _ = run_idf(idf, epw.file_path, silent=False)
@@ -141,7 +141,7 @@ def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollectio
         A dictionary containing radiation values.
     """
 
-    working_directory = Path(folders.default_simulation_folder) / f"{model.identifier}"
+    working_directory = Path(hb_folders.default_simulation_folder) / f"{model.identifier}"
     working_directory.mkdir(exist_ok=True, parents=True)
 
     wea = Wea.from_epw_file(epw.file_path)
@@ -149,26 +149,18 @@ def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollectio
     recipe = Recipe("annual-irradiance")
     recipe.input_value_by_name("model", model)
     recipe.input_value_by_name("wea", wea)
-    recipe.input_value_by_name("radiance-parameters", "-ab 2 -ad 128 -lw 2e-05")
+    # recipe.input_value_by_name("radiance-parameters", "-ab 2 -ad 128 -lw 2e-05")
+    # recipe.default_project_folder = str(working_directory)
 
-    results = recipe.run()
+    results = recipe.run(queenbee_path=QUEENBEE_EXE)
 
     total_directory = Path(results) / "annual_irradiance/results/total"
     direct_directory = Path(results) / "annual_irradiance/results/direct"
 
-    shaded_total = _make_annual(load_ill(total_directory / "SHADED.ill"))
     unshaded_total = _make_annual(load_ill(total_directory / "UNSHADED.ill"))
-    shaded_direct = _make_annual(load_ill(direct_directory / "SHADED.ill"))
     unshaded_direct = _make_annual(load_ill(direct_directory / "UNSHADED.ill"))
-    shaded_diffuse = shaded_total - shaded_direct
     unshaded_diffuse = unshaded_total - unshaded_direct
 
-    shaded_total = (
-        _make_annual(load_ill(total_directory / "SHADED.ill"))
-        .fillna(0)
-        .sum(axis=1)
-        .rename("GlobalHorizontalRadiation (Wh/m2)")
-    )
     unshaded_total = (
         _make_annual(load_ill(total_directory / "UNSHADED.ill"))
         .fillna(0)
@@ -176,12 +168,6 @@ def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollectio
         .rename("GlobalHorizontalRadiation (Wh/m2)")
     )
 
-    shaded_direct = (
-        _make_annual(load_ill(direct_directory / "SHADED.ill"))
-        .fillna(0)
-        .sum(axis=1)
-        .rename("DirectNormalRadiation (Wh/m2)")
-    )
     unshaded_direct = (
         _make_annual(load_ill(direct_directory / "SHADED.ill"))
         .fillna(0)
@@ -189,17 +175,12 @@ def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollectio
         .rename("DirectNormalRadiation (Wh/m2)")
     )
 
-    shaded_diffuse = (shaded_total - shaded_direct).rename(
-        "DiffuseHorizontalRadiation (Wh/m2)"
-    )
     unshaded_diffuse = (unshaded_total - unshaded_direct).rename(
         "DiffuseHorizontalRadiation (Wh/m2)"
     )
 
     return {
-        "shaded_direct_radiation": from_series(shaded_direct),
         "unshaded_direct_radiation": from_series(unshaded_direct),
-        "shaded_diffuse_radiation": from_series(shaded_diffuse),
         "unshaded_diffuse_radiation": from_series(unshaded_diffuse),
     }
 
@@ -261,3 +242,6 @@ def _convert_radiation_to_mean_radiant_temperature(
     mrt = solar_mrt_obj.mean_radiant_temperature
 
     return mrt
+
+if __name__ == "__main__":
+    pass

@@ -5,6 +5,7 @@ from typing import Callable, List, Union
 
 import pandas as pd
 from ladybug.sql import SQLiteResult
+
 from ladybug_extension.datacollection import to_series
 
 
@@ -218,3 +219,6 @@ def load_sql(sql_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFram
         pd.DataFrame: A DataFrame containing the data from the input .sql files.
     """
     return _load_files(_load_sql_file, sql_files)
+
+if __name__ == "__main__":
+    pass
