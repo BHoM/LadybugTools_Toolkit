@@ -216,20 +216,22 @@ def create_model(
     shades = create_shade_valence()
     [i.move(displacement_vector) for i in shades]
 
-    shaded_grid = sensor_grid.duplicate()
-    shaded_grid.identifier = "SHADED"
-    shaded_grid.move(displacement_vector)
-
     model = Model(
         identifier=f"external_comfort_{uuid.uuid4()}",
         rooms=[ground_zone_unshaded, ground_zone_shaded, shade_zone],
         orphaned_shades=shades,
     )
 
-    model.properties.radiance.sensor_grids = [unshaded_grid, shaded_grid]
+    model.properties.radiance.sensor_grids = [unshaded_grid]
 
     return model
 
+
+def model_from_json(ground_material: Union[EnergyMaterial, EnergyMaterialVegetation],
+    shade_material: Union[EnergyMaterial, EnergyMaterialVegetation]) -> Model:
+    model = create_model(ground_material, shade_material)
+    model_dict = model.to_dict()
+    return Model.from_dict(model_dict)
 
 if __name__ == "__main__":
     pass
