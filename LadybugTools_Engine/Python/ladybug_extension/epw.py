@@ -19,6 +19,7 @@ from ladybug.skymodel import clearness_index
 from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 
+<<<<<<< HEAD
 from ladybug_extension.analysis_period import to_datetimes
 from ladybug_extension.datacollection import to_hourly, to_series
 
@@ -548,6 +549,9 @@ def sun_altitude(epw: EPW) -> List[float]:
     """
     suns = sun_position(epw)
     return [sun.altitude for sun in suns]
+=======
+from ladybug_extension.datacollection import to_datetimes, to_hourly, to_series
+>>>>>>> eb8687a (interim - not working)
 
 
 def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:

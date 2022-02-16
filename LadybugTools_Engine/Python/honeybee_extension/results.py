@@ -5,6 +5,7 @@ from typing import Callable, List, Union
 
 import pandas as pd
 from ladybug.sql import SQLiteResult
+
 from ladybug_extension.datacollection import to_series
 
 
@@ -228,15 +229,7 @@ def load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input files.
     """
-    if isinstance(files, (str, Path)):
-        files = [files]
+    return _load_files(_load_sql_file, sql_files)
 
-    if len(files) == 0:
-        raise FileNotFoundError("No files of the specified type were found.")
-
-    filenames = [Path(i).stem for i in files]
-    if len(set(filenames)) != len(filenames):
-        err_str = f"There are duplicate filenames in the list of input files for {func.__name__}. This may cause issues when trying to reference specific results sets!"
-        warnings.warn(err_str)
-
-    return pd.concat([func(i) for i in files], axis=1).sort_index(axis=1)
+if __name__ == "__main__":
+    pass
