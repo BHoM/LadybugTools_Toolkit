@@ -3,8 +3,8 @@ import pandas as pd
 from ladybug._datacollectionbase import BaseCollection
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 
-from .analysisperiod import to_datetimes
-from .header import from_string, to_string
+from ladybug_extension.analysisperiod import to_datetimes
+from ladybug_extension.header import from_string, to_string
 
 
 def to_series(collection: BaseCollection) -> pd.Series:
