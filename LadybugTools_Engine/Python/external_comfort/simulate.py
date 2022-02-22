@@ -3,9 +3,8 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
-from lbt_recipes.recipe import Recipe
+from lbt_recipes.recipe import Recipe, RecipeSettings
 from honeybee.model import Model
-from honeybee.config import folders as hb_folders
 from ladybug.epw import EPW, HourlyContinuousCollection, AnalysisPeriod
 from ladybug.wea import Wea
 from honeybee_energy.simulation.parameter import (
@@ -23,7 +22,7 @@ from ladybug_comfort.parameter.solarcal import SolarCalParameter
 
 from honeybee_extension.results import load_sql, load_ill, _make_annual
 from ladybug_extension.datacollection import from_series
-from external_comfort import QUEENBEE_EXE
+from external_comfort import QUEENBEE_EXE, hb_folders
 from external_comfort.ground_temperature import energyplus_ground_temperature_strings
 
 def _run_energyplus(
@@ -149,10 +148,8 @@ def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollectio
     recipe = Recipe("annual-irradiance")
     recipe.input_value_by_name("model", model)
     recipe.input_value_by_name("wea", wea)
-    # recipe.input_value_by_name("radiance-parameters", "-ab 2 -ad 128 -lw 2e-05")
-    # recipe.default_project_folder = str(working_directory)
-
-    results = recipe.run(queenbee_path=QUEENBEE_EXE)
+    recipe_settings = RecipeSettings()
+    results = recipe.run(settings=recipe_settings, queenbee_path=QUEENBEE_EXE, radiance_check=True, debug_folder=working_directory / "debug")
 
     total_directory = Path(results) / "annual_irradiance/results/total"
     direct_directory = Path(results) / "annual_irradiance/results/direct"
