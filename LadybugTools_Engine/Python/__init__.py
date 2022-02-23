@@ -1,3 +1,5 @@
-﻿import sys
+﻿from pathlib import Path
 
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+TOOLKIT_ENVIRONMENT = Path(
+    "C:/ProgramData/BHoM/Extensions/PythonEnvironments/LadybugTools_Toolkit"
+)

@@ -1,17 +1,10 @@
 from __future__ import annotations
-
 import sys
-
-import pandas as pd
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
-
-
-
-from audioop import add
+from .. import TOOLKIT_ENVIRONMENT
+sys.path.insert(0, TOOLKIT_ENVIRONMENT)
 from pathlib import Path
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
-from ladybug.epw import EPW, HourlyContinuousCollection, AnalysisPeriod, Header
-from ladybug.datatype.energyflux import Radiation
+from ladybug.epw import EPW, HourlyContinuousCollection
 
 from external_comfort.model import create_model
 from external_comfort.material import MATERIALS
@@ -30,6 +23,16 @@ class Openfield:
         ground_material: _EnergyMaterialOpaqueBase,
         shade_material: _EnergyMaterialOpaqueBase,
     ) -> Openfield:
+        """An Openfield object containing the inputs and results for an outdoor radiant temperature simulation.
+
+        Args:
+            epw (EPW): An EPW object containing the weather data for the simulation.
+            ground_material (_EnergyMaterialOpaqueBase): An EnergyMaterialOpaqueBase object for the ground.
+            shade_material (_EnergyMaterialOpaqueBase): An EnergyMaterialOpaqueBase object for the shade.
+
+        Returns:
+            Openfield: An Openfield object containing the inputs and results for an outdoor radiant temperature simulation.
+        """
         self.epw = epw
         self.ground_material = ground_material
         self.shade_material = shade_material
@@ -37,24 +40,31 @@ class Openfield:
 
         self.shaded_ground_temperature: HourlyContinuousCollection = None
         self.shaded_shade_temperature: HourlyContinuousCollection = None
+        self.shaded_direct_radiation: HourlyContinuousCollection = None
+        self.shaded_diffuse_radiation: HourlyContinuousCollection = None
         self.shaded_longwave_mean_radiant_temperature: HourlyContinuousCollection = None
         self.shaded_mean_radiant_temperature: HourlyContinuousCollection = None
 
         self.unshaded_ground_temperature: HourlyContinuousCollection = None
+        self.unshaded_sky_temperature: HourlyContinuousCollection = self.epw.sky_temperature
         self.unshaded_direct_radiation: HourlyContinuousCollection = None
         self.unshaded_diffuse_radiation: HourlyContinuousCollection = None
         self.unshaded_longwave_mean_radiant_temperature: HourlyContinuousCollection = None
         self.unshaded_mean_radiant_temperature: HourlyContinuousCollection = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         gm = f"{self.ground_material.identifier.title().replace('_', ' ')} ground"
         sm = f"{self.shade_material.identifier.title().replace('_', ' ')} shade"
         return f"<{self.__class__.__name__}: {Path(self.epw.file_path).name}, {gm} and {sm}>"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def simulate_mean_radiant_temperature(self) -> Openfield:
+    def simulate(self) -> Openfield:
+
+        if self.shaded_mean_radiant_temperature and self.unshaded_mean_radiant_temperature:
+            print(f"MRT simulation already completed for {str(self)}")
+            return self
 
         print(f"Simulating MRT for {str(self)}")
         results = {
@@ -62,7 +72,6 @@ class Openfield:
             **_run_radiance(self.model, self.epw),
         }
 
-        # Assign simulation results to object
         self.shaded_ground_temperature = results["shaded_ground_temperature"]
         self.shaded_shade_temperature = results["shade_temperature"]
         self.shaded_direct_radiation = results["shaded_direct_radiation"]
@@ -106,6 +115,6 @@ if __name__ == "__main__":
     model = create_model(ground_material, shade_material, "external_comfort_testing")
 
     of = Openfield(epw, ground_material, shade_material)
-    of.simulate_mean_radiant_temperature()
+    of.simulate()
     
-    print(of.__dict__)
+    print(of.shaded_mean_radiant_temperature)

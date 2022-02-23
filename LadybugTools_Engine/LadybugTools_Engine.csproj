@@ -114,9 +114,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compute\SpatialComfort.cs" />
-    <Compile Include="Compute\ExternalComfortTypology.cs" />
-    <Compile Include="Compute\ExternalComfort.cs" />
+    <Compile Include="Compute\DownloadRepoGithub.cs" />
+    <Compile Include="Query\StandardsDirectory.cs" />
+    <Compile Include="Query\GemDirectory.cs" />
+    <Compile Include="Compute\UnzipFile.cs" />
+    <Compile Include="Compute\DownloadFileByName.cs" />
+    <Compile Include="Compute\CopyFileTree.cs" />
+    <Compile Include="Compute\NukeDirectory.cs" />
+    <Compile Include="Compute\PrepareDirectory.cs" />
     <Compile Include="Compute\InstallLadybugToolsPythonEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
