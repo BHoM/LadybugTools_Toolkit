@@ -1,3 +1,8 @@
+import sys
+
+import pandas as pd
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 import json
 import os
 from pathlib import Path
@@ -14,6 +19,7 @@ from honeybee_energy.simulation.parameter import (
     SimulationOutput,
     SimulationParameter,
 )
+from ladybug.datatype.temperature import Temperature
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
 import numpy as np
 from ladybug_comfort.collection.solarcal import HorizontalSolarCal
@@ -21,9 +27,10 @@ from ladybug_comfort.parameter.solarcal import SolarCalParameter
 
 
 from honeybee_extension.results import load_sql, load_ill, _make_annual
-from ladybug_extension.datacollection import from_series
+from ladybug_extension.datacollection import from_series, to_series
 from external_comfort import QUEENBEE_EXE, hb_folders
 from external_comfort.ground_temperature import energyplus_ground_temperature_strings
+from external_comfort.material import MATERIALS
 
 def _run_energyplus(
     model: Model, epw: EPW
@@ -112,7 +119,7 @@ def _run_energyplus(
 
     # Return results
     df = load_sql(sql)
-    return {
+    d = {
         "shaded_ground_temperature": from_series(
             df.filter(regex="GROUND_ZONE_UP_SHADED")
             .droplevel([0, 1, 2], axis=1)
@@ -127,6 +134,7 @@ def _run_energyplus(
             df.filter(regex="SHADE_ZONE_DOWN").droplevel([0, 1, 2], axis=1).squeeze()
         ),
     }
+    return d
 
 
 def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
@@ -149,53 +157,49 @@ def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollectio
     recipe.input_value_by_name("model", model)
     recipe.input_value_by_name("wea", wea)
     recipe_settings = RecipeSettings()
-    results = recipe.run(settings=recipe_settings, queenbee_path=QUEENBEE_EXE, radiance_check=True, debug_folder=working_directory / "debug")
+    results = recipe.run(settings=recipe_settings, queenbee_path=QUEENBEE_EXE, radiance_check=True)
 
     total_directory = Path(results) / "annual_irradiance/results/total"
     direct_directory = Path(results) / "annual_irradiance/results/direct"
+    
+    unshaded_total = _make_annual(load_ill(total_directory / "UNSHADED.ill")).fillna(0).sum(axis=1).rename("GlobalHorizontalRadiation (Wh/m2)")
+    unshaded_direct = _make_annual(load_ill(direct_directory / "UNSHADED.ill")).fillna(0).sum(axis=1).rename("DirectNormalRadiation (Wh/m2)")
+    unshaded_diffuse = (unshaded_total - unshaded_direct).rename("DiffuseHorizontalRadiation (Wh/m2)")
 
-    unshaded_total = _make_annual(load_ill(total_directory / "UNSHADED.ill"))
-    unshaded_direct = _make_annual(load_ill(direct_directory / "UNSHADED.ill"))
-    unshaded_diffuse = unshaded_total - unshaded_direct
-
-    unshaded_total = (
-        _make_annual(load_ill(total_directory / "UNSHADED.ill"))
-        .fillna(0)
-        .sum(axis=1)
-        .rename("GlobalHorizontalRadiation (Wh/m2)")
-    )
-
-    unshaded_direct = (
-        _make_annual(load_ill(direct_directory / "SHADED.ill"))
-        .fillna(0)
-        .sum(axis=1)
-        .rename("DirectNormalRadiation (Wh/m2)")
-    )
-
-    unshaded_diffuse = (unshaded_total - unshaded_direct).rename(
-        "DiffuseHorizontalRadiation (Wh/m2)"
-    )
-
-    return {
+    d = {
         "unshaded_direct_radiation": from_series(unshaded_direct),
         "unshaded_diffuse_radiation": from_series(unshaded_diffuse),
+        "shaded_direct_radiation": from_series(pd.Series([0] * 8760, index=unshaded_total.index, name="DirectNormalRadiation (Wh/m2)")),
+        "shaded_diffuse_radiation": from_series(pd.Series([0] * 8760, index=unshaded_total.index, name="DiffuseHorizontalRadiation (Wh/m2)")),
     }
+    return d
+
+
+def _radiant_temperature_from_collections(collections: List[HourlyContinuousCollection], view_factors: List[float]) -> HourlyContinuousCollection:
+    assert len(collections) == len(view_factors), \
+        "The number of collections and view factors must be the same."
+    assert sum(view_factors) == 1, \
+        "The sum of view factors must be 1."
+    
+    mrt_series = np.power((np.power(pd.concat([to_series(i) for i in collections], axis=1) + 273.15, 4) * view_factors).sum(axis=1), 0.25) - 273.15
+    mrt_series.name = "Temperature (C)"
+    return from_series(mrt_series)
 
 
 def _mean_radiant_temperature_from_surfaces(
-    temperatures: List[float], view_factors: List[float]
+    surface_temperatures: List[float], view_factors: List[float]
 ) -> float:
     """Calculate Mean Radiant Temperature from a list of surface temperature and view factors to those surfaces.
 
     Args:
-        temperatures (List[float]): A list of surface temperatures.
+        surface_temperatures (List[float]): A list of surface temperatures.
         view_factors (List[float]): A list of view-factors (one per surface)
 
     Returns:
         float: A value describing resultant radiant temperature.
     """
     resultant_temperature = 0
-    for i, temp in enumerate(temperatures):
+    for i, temp in enumerate(surface_temperatures):
         temperature_kelvin = temp + 273.15
         resultant_temperature = (
             resultant_temperature + np.pow(temperature_kelvin, 4) * view_factors[i]
@@ -225,6 +229,9 @@ def _convert_radiation_to_mean_radiant_temperature(
     fract_body_exp = 0
     ground_reflectivity = 0
 
+    if not isinstance(surface_temperature.header.data_type, Temperature):
+        surface_temperature.header.data_type = Temperature
+
     solar_body_par = SolarCalParameter()
     solar_mrt_obj = HorizontalSolarCal(
         epw.location,
@@ -241,4 +248,12 @@ def _convert_radiation_to_mean_radiant_temperature(
     return mrt
 
 if __name__ == "__main__":
+    from external_comfort.model import create_model
+    from ladybug.epw import EPW
+    epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
+    model = create_model(MATERIALS["ASPHALT"], MATERIALS["FABRIC"], "external_comfort_testing")
+
+    # _run_radiance(model, epw)
+    _run_energyplus(model, epw)
+
     pass
