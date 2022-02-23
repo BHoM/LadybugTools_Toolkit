@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 from typing import List, Union
 import uuid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
@@ -176,12 +179,14 @@ def create_shade_valence() -> List[Shade]:
 def create_model(
     ground_material: Union[EnergyMaterial, EnergyMaterialVegetation],
     shade_material: Union[EnergyMaterial, EnergyMaterialVegetation],
+    identifier: str = None,
 ) -> Model:
     """Create a model containing geometry describing a shaded and unshaded external comfort scenario, including sensor grids for simulation.
 
     Args:
         ground_material (Union[EnergyMaterial, EnergyMaterialVegetation]): A surface material for the ground zones topmost face.
         shade_material (Union[EnergyMaterial, EnergyMaterialVegetation]): A surface material for the shade zones faces.
+        identifier (str, optional): A unique identifier for the model. Defaults to None which will generate a unique identifier. This is usefuil for testing purposes!
 
     Returns:
         Model: A model containing geometry describing a shaded and unshaded external comfort scenario, including sensor grids for simulation.
@@ -216,8 +221,11 @@ def create_model(
     shades = create_shade_valence()
     [i.move(displacement_vector) for i in shades]
 
+    if identifier is None:
+        identifier = f"external_comfort_{uuid.uuid4()}"
+
     model = Model(
-        identifier=f"external_comfort_{uuid.uuid4()}",
+        identifier=identifier,
         rooms=[ground_zone_unshaded, ground_zone_shaded, shade_zone],
         orphaned_shades=shades,
     )
@@ -227,13 +235,30 @@ def create_model(
     return model
 
 
-def model_from_json(ground_material: Union[EnergyMaterial, EnergyMaterialVegetation],
-    shade_material: Union[EnergyMaterial, EnergyMaterialVegetation]) -> Model:
+def model_from_json(ground_material: Union[EnergyMaterial, EnergyMaterialVegetation], shade_material: Union[EnergyMaterial, EnergyMaterialVegetation]) -> Model:
+    json_str = """
+    
+    """
     model = create_model(ground_material, shade_material)
     model_dict = model.to_dict()
     return Model.from_dict(model_dict)
 
+
+def create_box_model() -> Model:
+    room = Room.from_box("box_room")
+    room.wall_apertures_by_ratio(0.25)
+    grid = SensorGrid.from_position_and_direction("box_room", [Point3D(1.5, 1.5, 0.6)], [Vector3D(0, 0, 1)])
+    model = Model(
+        identifier=f"box_model",
+        rooms=[room],
+    )
+    model.properties.radiance.sensor_grids = [grid]
+    return model
+
+
 if __name__ == "__main__":
+    # model = create_box_model()
+    # model.to_hbjson(folder=r"C:\Users\tgerrish\simulation", indent=4)
     pass
     # ground_material = EnergyMaterial(
     #     identifier="gnd_material",
