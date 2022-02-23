@@ -1,7 +1,5 @@
-import sys
 
 import pandas as pd
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 import json
 import os
@@ -28,7 +26,7 @@ from ladybug_comfort.parameter.solarcal import SolarCalParameter
 
 from honeybee_extension.results import load_sql, load_ill, _make_annual
 from ladybug_extension.datacollection import from_series, to_series
-from external_comfort import QUEENBEE_EXE, hb_folders
+from external_comfort import hb_folders
 from external_comfort.ground_temperature import energyplus_ground_temperature_strings
 from external_comfort.material import MATERIALS
 
@@ -157,7 +155,7 @@ def _run_radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollectio
     recipe.input_value_by_name("model", model)
     recipe.input_value_by_name("wea", wea)
     recipe_settings = RecipeSettings()
-    results = recipe.run(settings=recipe_settings, queenbee_path=QUEENBEE_EXE, radiance_check=True)
+    results = recipe.run(settings=recipe_settings, radiance_check=True)
 
     total_directory = Path(results) / "annual_irradiance/results/total"
     direct_directory = Path(results) / "annual_irradiance/results/direct"
