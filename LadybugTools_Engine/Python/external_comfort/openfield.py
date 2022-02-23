@@ -1,4 +1,12 @@
 from __future__ import annotations
+
+import sys
+
+import pandas as pd
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
+
+
 from audioop import add
 from pathlib import Path
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
@@ -9,6 +17,7 @@ from external_comfort.model import create_model
 from external_comfort.material import MATERIALS
 from external_comfort.simulate import (
     _convert_radiation_to_mean_radiant_temperature,
+    _radiant_temperature_from_collections,
     _run_energyplus,
     _run_radiance
 )
@@ -53,46 +62,50 @@ class Openfield:
             **_run_radiance(self.model, self.epw),
         }
 
-        # # Assign simulation results to object
-        # self.shaded_ground_temperature = results["shaded_ground_temperature"]
-        # self.shaded_shade_temperature = results["shade_temperature"]
-        # self.shaded_longwave_mean_radiant_temperature = (
-        #     results["shaded_ground_temperature"] + results["shade_temperature"]
-        # ) / 2
-        # self.shaded_mean_radiant_temperature = (
-        #     _convert_radiation_to_mean_radiant_temperature(
-        #         self.epw,
-        #         self.shaded_longwave_mean_radiant_temperature,
-        #         self.shaded_direct_radiation,
-        #         self.shaded_diffuse_radiation,
-        #     )
-        # )
+        # Assign simulation results to object
+        self.shaded_ground_temperature = results["shaded_ground_temperature"]
+        self.shaded_shade_temperature = results["shade_temperature"]
+        self.shaded_direct_radiation = results["shaded_direct_radiation"]
+        self.shaded_diffuse_radiation = results["shaded_diffuse_radiation"]
+        self.shaded_longwave_mean_radiant_temperature = _radiant_temperature_from_collections(
+            [results["shaded_ground_temperature"], results["shade_temperature"]],
+            [0.5, 0.5]
+        )
+        self.shaded_mean_radiant_temperature = (
+            _convert_radiation_to_mean_radiant_temperature(
+                self.epw,
+                self.shaded_longwave_mean_radiant_temperature,
+                self.shaded_direct_radiation,
+                self.shaded_diffuse_radiation,
+            )
+        )
 
-        # self.unshaded_ground_temperature = results["unshaded_ground_temperature"]
-        # self.unshaded_direct_radiation = results["unshaded_direct_radiation"]
-        # self.unshaded_diffuse_radiation = results["unshaded_diffuse_radiation"]
-        # self._unshaded_longwave_mean_radiant_temperature = (
-        #     results["unshaded_ground_temperature"] + self.epw.sky_temperature
-        # ) / 2
-        # self.unshaded_mean_radiant_temperature = (
-        #     _convert_radiation_to_mean_radiant_temperature(
-        #         self.epw,
-        #         self._unshaded_longwave_mean_radiant_temperature,
-        #         self.unshaded_direct_radiation,
-        #         self.unshaded_diffuse_radiation,
-        #     )
-        # )
+        self.unshaded_ground_temperature = results["unshaded_ground_temperature"]
+        self.unshaded_direct_radiation = results["unshaded_direct_radiation"]
+        self.unshaded_diffuse_radiation = results["unshaded_diffuse_radiation"]
+        self.unshaded_longwave_mean_radiant_temperature = _radiant_temperature_from_collections(
+            [results["unshaded_ground_temperature"], self.epw.sky_temperature],
+            [0.5, 0.5]
+        )
+        self.unshaded_mean_radiant_temperature = (
+            _convert_radiation_to_mean_radiant_temperature(
+                self.epw,
+                self.unshaded_longwave_mean_radiant_temperature,
+                self.unshaded_direct_radiation,
+                self.unshaded_diffuse_radiation,
+            )
+        )
 
-        return results
+        return self
 
 if __name__ == "__main__":
     epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
     ground_material = MATERIALS["ASPHALT"]
     shade_material = MATERIALS["FABRIC"]
 
-    model = create_model(ground_material, shade_material)
+    model = create_model(ground_material, shade_material, "external_comfort_testing")
 
-    results = {
-        **_run_energyplus(model, epw),
-        **_run_radiance(model, epw),
-    }
+    of = Openfield(epw, ground_material, shade_material)
+    of.simulate_mean_radiant_temperature()
+    
+    print(of.__dict__)
