@@ -21,7 +21,8 @@
  */
 
 using BH.oM.Base.Attributes;
-
+using BH.oM.Python;
+using BH.Engine.Python;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Compression;
@@ -31,17 +32,12 @@ namespace BH.Engine.LadybugTools
     public static partial class Compute
     {
         [Description("Download a file from a URL to a directory.")]
-        [Input("sourceFile", "The zip file to be unzipped.")]
-        [Input("destinationDirectory", "The target directory.")]
-        [Output("success", "True if the file has been downloaded successfully!")]
-        public static bool UnzipFile(string sourceFile, string destinationDirectory)
+        [Input("environment", "The BHoM Python environment in which the package will be updated.")]
+        [Input("package", "The package (and it's target version) to be installed/updated.")]
+        public static string UpdatePythonPackage(PythonEnvironment environment, PythonPackage package)
         {
-            if (!Directory.Exists(destinationDirectory))
-                Directory.CreateDirectory(destinationDirectory);
-
-            ZipFile.ExtractToDirectory(sourceFile, destinationDirectory);
-
-            return true;
+            string cmd = $"{environment.PythonExecutable()} -m pip install --upgrade {package.Name}=={package.Version}";
+            return BH.Engine.Python.Compute.RunCommandStdout(cmd);
         }
     }
 }

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2022, the respective contributors. All rights reserved.
  *
@@ -20,29 +20,40 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Base.Attributes;
+
+using BH.oM.Base;
 
 using System.ComponentModel;
-using System.IO;
-using System.IO.Compression;
 
-namespace BH.Engine.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public static partial class Compute
+    public class LadybugToolsVersions : BHoMObject
     {
-        [Description("Download a file from a URL to a directory.")]
-        [Input("sourceFile", "The zip file to be unzipped.")]
-        [Input("destinationDirectory", "The target directory.")]
-        [Output("success", "True if the file has been downloaded successfully!")]
-        public static bool UnzipFile(string sourceFile, string destinationDirectory)
-        {
-            if (!Directory.Exists(destinationDirectory))
-                Directory.CreateDirectory(destinationDirectory);
+        [Description("The most recent version of lbt-dragonfly.")]
+        public virtual string LbtDragonfly { get; set; } = "0.8.367";
 
-            ZipFile.ExtractToDirectory(sourceFile, destinationDirectory);
+        [Description("The most recent version of lbt-recipes")]
+        public virtual string LbtRecipes { get; set; } = "0.19.4";
 
-            return true;
-        }
+        [Description("The most recent version of ladybug-rhino")]
+        public virtual string LadybugRhino { get; set; } = "1.33.3";
+
+        [Description("The most recent version of lbt-grasshopper")]
+        public virtual string LbtGrasshopper { get; set; } = "1.4.0";
+
+        [Description("The most recent version of ladybug-grasshopper-dotnet.")]
+        public virtual string LadybugGrasshopperDotnet { get; set; } = "1.1.3";
+
+        [Description("The most recent version of honeybee-openstudio-gem.")]
+        public virtual string HoneybeeOpenstudioGem { get; set; } = "2.28.6";
+
+        [Description("The most recent version of lbt-measures.")]
+        public virtual string LbtMeasures { get; set; } = "0.2.0";
+
+        [Description("The most recent version of honeybee-standards.")]
+        public virtual string HoneybeeStandards { get; set; } = "2.0.5";
+
+        [Description("The most recent version of honeybee-energy-standards.")]
+        public virtual string HoneybeeEnergyStandards { get; set; } = "2.2.4";
     }
 }
-

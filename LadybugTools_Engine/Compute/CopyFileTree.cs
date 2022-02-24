@@ -33,8 +33,8 @@ namespace BH.Engine.LadybugTools
         [Input("sourceDirectory", "The source directory.")]
         [Input("destinationDirectory", "The destination directory.")]
         [Input("overwrite", "Set to true to overwrite files in the target directory if they already exist.")]
-        [Output("success", "True if the destination directory now contains the files from the source directory!")]
-        public static bool CopyFileTree(string sourceDirectory, string destinationDirectory, bool overwrite = true)
+        [Output("destinationDirectory", "The destination directory if it now contains the files from the source directory, otherwise an empty string.")]
+        public static string CopyFileTree(string sourceDirectory, string destinationDirectory, bool overwrite = true)
         {
             PrepareDirectory(destinationDirectory, false);
 
@@ -53,7 +53,9 @@ namespace BH.Engine.LadybugTools
                 File.Copy(file, Path.Combine(destinationDirectory, Path.GetFileName(file)), overwrite);
             }
 
-            return true;
+            // TODO - implement directory comparison to check that each file in source is presetn in destination
+
+            return destinationDirectory;
         }
     }
 }
