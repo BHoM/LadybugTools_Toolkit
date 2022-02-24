@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 import pandas as pd
 
@@ -246,12 +248,4 @@ def _convert_radiation_to_mean_radiant_temperature(
     return mrt
 
 if __name__ == "__main__":
-    from external_comfort.model import create_model
-    from ladybug.epw import EPW
-    epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
-    model = create_model(MATERIALS["ASPHALT"], MATERIALS["FABRIC"], "external_comfort_testing")
-
-    # _run_radiance(model, epw)
-    _run_energyplus(model, epw)
-
     pass
