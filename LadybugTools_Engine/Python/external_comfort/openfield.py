@@ -1,7 +1,7 @@
 from __future__ import annotations
 import sys
-from .. import TOOLKIT_ENVIRONMENT
-sys.path.insert(0, TOOLKIT_ENVIRONMENT)
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 from pathlib import Path
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 from ladybug.epw import EPW, HourlyContinuousCollection
@@ -108,13 +108,9 @@ class Openfield:
         return self
 
 if __name__ == "__main__":
-    epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
-    ground_material = MATERIALS["ASPHALT"]
+    epw = EPW(r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw")
+    ground_material = MATERIALS["CONCRETE_LIGHTWEIGHT"]
     shade_material = MATERIALS["FABRIC"]
-
-    model = create_model(ground_material, shade_material, "external_comfort_testing")
-
-    of = Openfield(epw, ground_material, shade_material)
-    of.simulate()
-    
-    print(of.shaded_mean_radiant_temperature)
+    openfield = Openfield(epw, ground_material, shade_material)
+    openfield.simulate()
+    print(openfield.unshaded_mean_radiant_temperature, openfield.shaded_mean_radiant_temperature)

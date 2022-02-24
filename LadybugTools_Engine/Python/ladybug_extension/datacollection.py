@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 import numpy as np
 import pandas as pd
 from ladybug._datacollectionbase import BaseCollection
@@ -102,3 +105,6 @@ def to_hourly(
         )
     except KeyError as e:
         raise e
+
+if __name__ == "__main__":
+    pass

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 import copy
 from typing import Dict
 
@@ -58,3 +61,6 @@ def get_evaporative_cooled_dbt_rh(
     }
 
     return {"dry_bulb_temperature": dbt_adjusted, "relative_humidity": rh_adjusted}
+
+if __name__ == "__main__":
+    pass

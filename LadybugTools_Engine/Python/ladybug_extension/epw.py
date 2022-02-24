@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 import numpy as np
 import pandas as pd
 from ladybug import datatype
@@ -603,3 +606,7 @@ def get_clearness_index(epw: EPW, sun_position: HourlyContinuousCollection = Non
         ),
         values=ci,
     )
+
+if __name__ == "__main__":
+    epw = EPW(r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw")
+    print(to_dataframe(epw))

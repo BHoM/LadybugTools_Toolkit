@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 import inspect
 from logging import warning
 
@@ -193,18 +196,3 @@ def energyplus_ground_temperature_strings(epw: EPW) -> str:
 
 if __name__ == "__main__":
     pass
-    # ground_material = EnergyMaterial(
-    #     identifier="gnd_material",
-    #     roughness="Rough",
-    #     thickness=0.5,
-    #     conductivity=3.0,
-    #     density=1250.0,
-    #     specific_heat=1250.0,
-    #     thermal_absorptance=0.9,
-    #     solar_absorptance=0.7,
-    #     visible_absorptance=0.7,
-    # )
-
-    # epw = EPW(r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\FIN_SO_Alajarvi.Moksy.027870_TMYx.2004-2018.epw")
-
-    # print(energyplus_ground_temperature_strings(epw))
