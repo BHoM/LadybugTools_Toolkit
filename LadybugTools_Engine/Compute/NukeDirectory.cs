@@ -32,24 +32,48 @@ namespace BH.Engine.LadybugTools
         [Description("Delete all the files inside a target directory.")]
         [Input("targetDirectory", "The target directory.")]
         [Input("removeDirectory", "Set to true to also remove the target directory.")]
-        [Output("success", "True if the target directory has been nuked!")]
-        public static bool NukeDirectory(string targetDirectory, bool removeDirectory = false)
+        public static void NukeDirectory(string targetDirectory, bool removeDirectory = false)
         {
-            // protected directories and locations where nuking is not allowed!
+            // TODO - Should probably put some protections in here to stop users from nuking system32!
 
             DirectoryInfo di = new DirectoryInfo(targetDirectory);
+
             foreach (FileInfo file in di.EnumerateFiles())
             {
-                file.Delete();
+                try
+                {
+                    file.Delete();
+                }
+                catch (System.Exception ex)
+                {
+                    BH.Engine.Base.Compute.RecordError($"{file.FullName} not deleted due to {ex}");
+                }
+                
             }
+
             foreach (DirectoryInfo dir in di.EnumerateDirectories())
             {
+                try
+                {
+                    dir.Delete(true);
+                }
+                catch (System.Exception ex)
+                {
+                    BH.Engine.Base.Compute.RecordError($"{dir.FullName} not deleted due to {ex}");
+                }
                 dir.Delete(true);
             }
-            if (removeDirectory)
-                di.Delete();
 
-            return true;
+            if (removeDirectory)
+                try
+                {
+                    di.Delete();
+                }
+                catch (System.Exception ex)
+                {
+                    BH.Engine.Base.Compute.RecordError($"{di.FullName} not deleted due to {ex}");
+                }
+                
         }
     }
 }

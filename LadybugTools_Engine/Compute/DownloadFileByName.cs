@@ -34,8 +34,8 @@ namespace BH.Engine.LadybugTools
         [Input("url", "A valid URL string to a file.")]
         [Input("targetFile", "The path to the target file.")]
         [Input("mkdir", "Set to True to create the directory to contain the target file if doesn't exist.")]
-        [Output("success", "True if the file has been downloaded successfully!")]
-        public static bool DownloadFileByName(string url, string targetFile, bool mkdir = true)
+        [Output("targetFile", "The path to the downloaded file, if it has been downloaded successfully.")]
+        public static string DownloadFileByName(string url, string targetFile, bool mkdir = true)
         {
 
             if (mkdir)
@@ -43,13 +43,20 @@ namespace BH.Engine.LadybugTools
 
             using (WebClient client = new WebClient())
             {
-                client.DownloadFile(url, targetFile);
+                try
+                {
+                    client.DownloadFile(url, targetFile);
+                }
+                catch (System.Exception ex)
+                {
+                    BH.Engine.Base.Compute.RecordError($"{url} not downloaded due to {ex}");
+                }
             }
 
             if (File.Exists(targetFile))
-                return true;
-
-            return false;
+                return targetFile;
+            else
+                return string.Empty;
         }
     }
 }
