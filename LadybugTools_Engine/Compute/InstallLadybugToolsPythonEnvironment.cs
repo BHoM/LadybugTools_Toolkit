@@ -39,14 +39,9 @@ namespace BH.Engine.LadybugTools
         [Output("pythonEnvironment", "The LadybugTools_Toolkit Python environment.")]
         public static PythonEnvironment InstallLadybugToolsPythonEnvironment(bool run = false, bool force = false)
         {
-            // Installation of this environment uses versions of the ladybug_tools code per the latest release according to versions listed in the
-            // https://github.com/ladybug-tools/lbt-grasshopper *requirements.txt files
-
-            // TODO - Add means of installing/updating the versions of code from GitHub so that the most recent version used by ladybug-grasshopper is the 
-            // one that is installed on people machines. This includes adding the various Ruby honeybee-openstudio-gem files necessary for model translation.
-
             PythonEnvironment pythonEnvironment = BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json");
 
+            // set up the %USER%\ladybug_tools folder in the same way as ladybug/honeybee would using teh GH installer/updater component.
 
 
             //// Set-up the %USER%\ladybug_tools folder to contain necessary referenced code/tools

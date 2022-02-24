@@ -32,24 +32,26 @@ namespace BH.Engine.LadybugTools
         [Description("Prepare a folder for files to be written into it.")]
         [Input("targetDirectory", "The target directory.")]
         [Input("removeContent", "Remove any existing content within the target directory.")]
-        [Output("success", "True if the target directory has been prepared.")]
-        public static bool PrepareDirectory(string targetDirectory, bool removeContent = true)
+        [Output("targetDirectory", "The target directory, if it has been prepared, or an empty string if not.")]
+        public static string PrepareDirectory(string targetDirectory, bool removeContent = true)
         {
             if (Directory.Exists(targetDirectory))
             {
                 if (removeContent)
                 {
                     NukeDirectory(targetDirectory, false);
-                    return true;
+                    return targetDirectory;
                 }
             }
             else
             {
                 Directory.CreateDirectory(targetDirectory);
-                return true;
+                return targetDirectory;
             }
 
-            return false;
+            BH.Engine.Base.Compute.RecordError($"{targetDirectory} not prepared");
+
+            return string.Empty;
         }
     }
 }
