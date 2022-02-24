@@ -24,24 +24,24 @@ using BH.oM.Base.Attributes;
 
 using System.ComponentModel;
 using System.IO;
-using System.IO.Compression;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Download a file from a URL to a directory.")]
-        [Input("sourceFile", "The zip file to be unzipped.")]
-        [Input("destinationDirectory", "The target directory.")]
-        [Output("success", "True if the file has been downloaded successfully!")]
-        public static bool UnzipFile(string sourceFile, string destinationDirectory)
+        [Description("Delete all the files inside a target directory ending with .dist-info.")]
+        [Input("directory", "The target directory.")]
+        public static void RemoveDistInfoFiles(string directory)
         {
-            if (!Directory.Exists(destinationDirectory))
-                Directory.CreateDirectory(destinationDirectory);
+            DirectoryInfo di = new DirectoryInfo(directory);
 
-            ZipFile.ExtractToDirectory(sourceFile, destinationDirectory);
-
-            return true;
+            foreach (FileInfo fi in di.EnumerateFiles())
+            {
+                if (fi.Extension == ".dist-info")
+                {
+                    fi.Delete();
+                }
+            }
         }
     }
 }
