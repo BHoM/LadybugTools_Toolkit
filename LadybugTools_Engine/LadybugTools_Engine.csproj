@@ -114,14 +114,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compute\DownloadRepoGithub.cs" />
-    <Compile Include="Query\StandardsDirectory.cs" />
-    <Compile Include="Query\GemDirectory.cs" />
-    <Compile Include="Compute\UnzipFile.cs" />
-    <Compile Include="Compute\DownloadFileByName.cs" />
-    <Compile Include="Compute\CopyFileTree.cs" />
-    <Compile Include="Compute\NukeDirectory.cs" />
-    <Compile Include="Compute\PrepareDirectory.cs" />
     <Compile Include="Compute\InstallLadybugToolsPythonEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
@@ -132,6 +124,7 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="Python\LadybugTools_Toolkit.json" />
+    <None Include="Python\test\GBR_London.Gatwick.037760_IWEC.epw" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_oM\LadybugTools_oM.csproj">
@@ -142,6 +135,14 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Content Include="Python\external_comfort\evaporative_cooling.py" />
+    <Content Include="Python\external_comfort\ground_temperature.py" />
+    <Content Include="Python\external_comfort\material.py" />
+    <Content Include="Python\external_comfort\model.py" />
+    <Content Include="Python\external_comfort\openfield.py" />
+    <Content Include="Python\external_comfort\simulate.py" />
+    <Content Include="Python\external_comfort\wind_speed.py" />
+    <Content Include="Python\external_comfort\__init__.py" />
     <Content Include="Python\honeybee_extension\results.py" />
     <Content Include="Python\honeybee_extension\__init__.py" />
     <Content Include="Python\ladybug_extension\analysisperiod.py" />

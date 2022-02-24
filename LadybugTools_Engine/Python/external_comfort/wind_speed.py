@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 from ladybug.epw import EPW
 from ladybug.datacollection import HourlyContinuousCollection
 import numpy as np
@@ -57,3 +60,6 @@ def wind_speed_at_height(
         return reference_wind_speed * (
             np.pow((target_height / reference_height), windShearExponent)
         )
+
+if __name__ == "__main__":
+    pass

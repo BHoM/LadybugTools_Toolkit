@@ -1,11 +1,15 @@
-
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 from typing import List, Union
 import uuid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
 from honeybee.model import Model, Room, Face, Shade
 from honeybee_energy.construction.opaque import OpaqueConstruction
-from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
+from honeybee_energy.material.opaque import (
+    _EnergyMaterialOpaqueBase, 
+    EnergyMaterial,
+)
 from honeybee.facetype import face_types
 from honeybee.boundarycondition import boundary_conditions
 from honeybee_radiance.sensorgrid import SensorGrid, Sensor
@@ -20,12 +24,12 @@ _SENSOR_HEIGHT_ABOVE_GROUND = 1.2
 
 
 def create_ground_zone(
-    material: Union[EnergyMaterial, EnergyMaterialVegetation], shaded: bool = False
+    material: _EnergyMaterialOpaqueBase, shaded: bool = False
 ) -> Room:
     """Create a ground zone with boudnary conditions and face identifiers named per external comfort workflow.
 
     Args:
-        material (Union[EnergyMaterial, EnergyMaterialVegetation]): A surface material for the ground zones topmost face.
+        material (_EnergyMaterialOpaqueBase): A surface material for the ground zones topmost face.
         shaded (bool, optional): A flag to describe whether this zone is shaded. Defaults to False.
 
     Returns:
@@ -86,12 +90,12 @@ def create_ground_zone(
 
 
 def create_shade_zone(
-    material: Union[EnergyMaterial, EnergyMaterialVegetation]
+    material: _EnergyMaterialOpaqueBase
 ) -> Room:
     """Create a shade zone with boundary conditions and face identifiers named per external comfort workflow.
 
     Args:
-        material (Union[EnergyMaterial, EnergyMaterialVegetation]): A surface material for the shade zones faces.
+        material (_EnergyMaterialOpaqueBase): A surface material for the shade zones faces.
 
     Returns:
         Room: A zone representing a massive shade above a person.
@@ -176,15 +180,15 @@ def create_shade_valence() -> List[Shade]:
 
 
 def create_model(
-    ground_material: Union[EnergyMaterial, EnergyMaterialVegetation],
-    shade_material: Union[EnergyMaterial, EnergyMaterialVegetation],
+    ground_material: _EnergyMaterialOpaqueBase,
+    shade_material: _EnergyMaterialOpaqueBase,
     identifier: str = None,
 ) -> Model:
     """Create a model containing geometry describing a shaded and unshaded external comfort scenario, including sensor grids for simulation.
 
     Args:
-        ground_material (Union[EnergyMaterial, EnergyMaterialVegetation]): A surface material for the ground zones topmost face.
-        shade_material (Union[EnergyMaterial, EnergyMaterialVegetation]): A surface material for the shade zones faces.
+        ground_material (_EnergyMaterialOpaqueBase): A surface material for the ground zones topmost face.
+        shade_material (_EnergyMaterialOpaqueBase): A surface material for the shade zones faces.
         identifier (str, optional): A unique identifier for the model. Defaults to None which will generate a unique identifier. This is usefuil for testing purposes!
 
     Returns:
@@ -233,55 +237,5 @@ def create_model(
 
     return model
 
-
-def model_from_json(ground_material: Union[EnergyMaterial, EnergyMaterialVegetation], shade_material: Union[EnergyMaterial, EnergyMaterialVegetation]) -> Model:
-    json_str = """
-    
-    """
-    model = create_model(ground_material, shade_material)
-    model_dict = model.to_dict()
-    return Model.from_dict(model_dict)
-
-
-def create_box_model() -> Model:
-    room = Room.from_box("box_room")
-    room.wall_apertures_by_ratio(0.25)
-    grid = SensorGrid.from_position_and_direction("box_room", [Point3D(1.5, 1.5, 0.6)], [Vector3D(0, 0, 1)])
-    model = Model(
-        identifier=f"box_model",
-        rooms=[room],
-    )
-    model.properties.radiance.sensor_grids = [grid]
-    return model
-
-
 if __name__ == "__main__":
-    # model = create_box_model()
-    # model.to_hbjson(folder=r"C:\Users\tgerrish\simulation", indent=4)
     pass
-    # ground_material = EnergyMaterial(
-    #     identifier="gnd_material",
-    #     roughness="Rough",
-    #     thickness=0.5,
-    #     conductivity=3.0,
-    #     density=1250.0,
-    #     specific_heat=1250.0,
-    #     thermal_absorptance=0.9,
-    #     solar_absorptance=0.7,
-    #     visible_absorptance=0.7,
-    # )
-
-    # shade_material = EnergyMaterial(
-    #     identifier="shd_material",
-    #     roughness="Rough",
-    #     thickness=0.5,
-    #     conductivity=3.0,
-    #     density=1250.0,
-    #     specific_heat=1250.0,
-    #     thermal_absorptance=0.9,
-    #     solar_absorptance=0.7,
-    #     visible_absorptance=0.7,
-    # )
-
-    # model = create_model(ground_material, shade_material)
-    # model.to_hbjson(folder=r"C:\Users\tgerrish\simulation", indent=4)
