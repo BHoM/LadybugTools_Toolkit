@@ -22,7 +22,6 @@
 
 using System.ComponentModel;
 using System.IO;
-using System.Collections.Generic;
 
 using BH.oM.Python;
 using BH.oM.Base.Attributes;
@@ -37,27 +36,21 @@ namespace BH.Engine.LadybugTools
         [Output("pythonEnvironment", "The LadybugTools_Toolkit Python environment.")]
         public static PythonEnvironment InstallLadybugToolsPythonEnvironment(bool run = false, bool force = false)
         {
-            PythonEnvironment pythonEnvironment = BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json");
+            string ladybugToolsDirectory = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), "ladybug_tools");
 
-            // set up the %USER%\ladybug_tools folder in the same way as ladybug/honeybee would using teh GH installer/updater component.
+            if (!Directory.Exists(ladybugToolsDirectory))
+                BH.Engine.Base.Compute.RecordWarning($"It looks like ladybug_tools are not installed on this machine. Code functionality for Radiance and EnergyPlus simulation will not work without a full installation. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps#optional-steps to install it for the latest version of ladybug_tools.");
 
+            if (!Directory.Exists(Path.Combine(ladybugToolsDirectory, "openstudio")))
+                BH.Engine.Base.Compute.RecordWarning($"Openstudio is not installed in {Path.Combine(ladybugToolsDirectory, "openstudio")} and any commands used that call to it will not work. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps#optional-steps to install it for the latest version of ladybug_tools.");
 
-            //// Set-up the %USER%\ladybug_tools folder to contain necessary referenced code/tools
-            //string ladybugToolsDirectory = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), "ladybug_tools");
-            //Directory.CreateDirectory(ladybugToolsDirectory);
+            if (!Directory.Exists(Path.Combine(ladybugToolsDirectory, "radiance")))
+                BH.Engine.Base.Compute.RecordWarning($"Radiance is not installed in {Path.Combine(ladybugToolsDirectory, "radiance")} and any commands used that call to it will not work. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps#optional-steps to install it for the latest version of ladybug_tools.");
 
-            //// check that simulation/processing dependencies are available
-            //if (!Directory.Exists(Path.Combine(ladybugToolsDirectory, "openstudio")))
-            //    // This if-statement Python-esque formatting is here for you Fraser
-            //    BH.Engine.Base.Compute.RecordWarning($"Openstudio is not installed in {Path.Combine(ladybugToolsDirectory, "openstudio")} and any commands used that call to it will not work. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps#optional-steps to install it.");
-
-            //if (!Directory.Exists(Path.Combine(ladybugToolsDirectory, "radiance")))
-            //    BH.Engine.Base.Compute.RecordWarning($"Radiance is not installed in {Path.Combine(ladybugToolsDirectory, "radiance")} and any commands used that call to it will not work. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps#optional-steps to install it.");
+            if (!Directory.Exists(Path.Combine(ladybugToolsDirectory, "resources", "measures", "honeybee_openstudio_gem")))
+                BH.Engine.Base.Compute.RecordWarning($"honeybee-openstudio-gem measures are not available in {Path.Combine(ladybugToolsDirectory, "resources", "measures", "honeybee_openstudio_gem")} and any commands used that call to them will not work. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps to install this for the latest version of ladybug_tools.");
             
-            //if (!Directory.Exists(Path.Combine(ladybugToolsDirectory, "resources", "measures", "honeybee_openstudio_gem")))
-            //    BH.Engine.Base.Compute.RecordWarning($"Honeybee Openstudio Gem measures are not available in {Path.Combine(ladybugToolsDirectory, "resources", "measures", "honeybee_openstudio_gem")} and any commands used that call to them will not work. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps to install it.");
-
-            return pythonEnvironment;
+            return BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json"); ;
         }
     }
 }

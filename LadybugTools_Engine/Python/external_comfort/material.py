@@ -1,7 +1,10 @@
+import sys
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 from honeybee_energy.material.opaque import (
     EnergyMaterial,
-    EnergyMaterialVegetation,
     _EnergyMaterialOpaqueBase,
+    # EnergyMaterialVegetation,
 )
 from typing import Dict
 
@@ -16,12 +19,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.93,
         solar_absorptance=0.87,
         visible_absorptance=0.87,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
     "CONCRETE_HEAVYWEIGHT": EnergyMaterial(
         identifier="CONCRETE_HEAVYWEIGHT",
@@ -33,12 +30,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.9,
         solar_absorptance=0.8,
         visible_absorptance=0.8,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
     "CONCRETE_LIGHTWEIGHT": EnergyMaterial(
         identifier="CONCRETE_LIGHTWEIGHT",
@@ -50,12 +41,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.9,
         solar_absorptance=0.8,
         visible_absorptance=0.8,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
     "DUST_DRY": EnergyMaterial(
         identifier="DUST_DRY",
@@ -67,12 +52,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.9,
         solar_absorptance=0.7,
         visible_absorptance=0.7,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
     "METAL_PAINTED": EnergyMaterial(
         identifier="METAL_PAINTED",
@@ -84,12 +63,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.9,
         solar_absorptance=0.5,
         visible_absorptance=0.5,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 0,
-        #     "saturated_moisture_content": 0,
-        #     "evapotranspiration_rate": 0,
-        # },
     ),
     "METAL_REFLECTIVE": EnergyMaterial(
         identifier="METAL_REFLECTIVE",
@@ -101,12 +74,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.75,
         solar_absorptance=0.45,
         visible_absorptance=0.6,
-        # _user_data={
-        #     "specular": True,
-        #     "moisture_content": 0,
-        #     "saturated_moisture_content": 0,
-        #     "evapotranspiration_rate": 0,
-        # },
     ),
     "MUD": EnergyMaterial(
         identifier="MUD",
@@ -118,12 +85,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.95,
         solar_absorptance=0.8,
         visible_absorptance=0.8,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
     "ROCK": EnergyMaterial(
         identifier="ROCK",
@@ -135,10 +96,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.96,
         solar_absorptance=0.55,
         visible_absorptance=0.55,
-        # specular=False,
-        # moisture_content=30,
-        # saturated_moisture_content=50,
-        # evapotranspiration_rate=0.4,
     ),
     "SAND_DRY": EnergyMaterial(
         identifier="SAND_DRY",
@@ -150,12 +107,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.85,
         solar_absorptance=0.65,
         visible_absorptance=0.65,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
     "SOIL_DAMP": EnergyMaterial(
         identifier="SOIL_DAMP",
@@ -167,12 +118,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.92,
         solar_absorptance=0.75,
         visible_absorptance=0.75,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
     "SOFTWOOD": EnergyMaterial(
         identifier="SOFTWOOD",
@@ -184,12 +129,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.9,
         solar_absorptance=0.65,
         visible_absorptance=0.65,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 40,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.5,
-        # },
     ),
     "HARDWOOD": EnergyMaterial(
         identifier="HARDWOOD",
@@ -201,12 +140,6 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.9,
         solar_absorptance=0.7,
         visible_absorptance=0.7,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.45,
-        # },
     ),
     "FABRIC": EnergyMaterial(
         identifier="FABRIC",
@@ -218,73 +151,55 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.89,
         solar_absorptance=0.5,
         visible_absorptance=0.5,
-        # _user_data={
-        #     "specular": False,
-        #     "moisture_content": 30,
-        #     "saturated_moisture_content": 50,
-        #     "evapotranspiration_rate": 0.4,
-        # },
     ),
-    "GRASS_DAMP": EnergyMaterialVegetation(
-        identifier="GRASS_DAMP",
-        roughness="MediumRough",
-        thickness=0.1,
-        conductivity=0.35,
-        density=1100,
-        specific_heat=1252,
-        soil_thermal_absorptance=0.92,
-        soil_solar_absorptance=0.7,
-        soil_visible_absorptance=0.7,
-        plant_height=0.2,
-        leaf_area_index=1.71,
-        leaf_reflectivity=0.25,
-        leaf_emissivity=0.92,
-        min_stomatal_resist=160,
-        # _user_data={
-        #     "specular": False,
-        #     "evapotranspiration_rate": 0.05,
-        # },
-    ),
-    "GRASS_DRY": EnergyMaterialVegetation(
-        identifier="GRASS_DRY",
-        roughness="Rough",
-        thickness=0.1,
-        conductivity=0.3,
-        density=1100,
-        specific_heat=1252,
-        soil_thermal_absorptance=0.89,
-        soil_solar_absorptance=0.75,
-        soil_visible_absorptance=0.75,
-        plant_height=0.2,
-        leaf_area_index=1.71,
-        leaf_reflectivity=0.19,
-        leaf_emissivity=0.95,
-        min_stomatal_resist=180,
-        # _user_data={
-        #     "specular": False,
-        #     "evapotranspiration_rate": 0.25,
-        # },
-    ),
-    "SHRUBS": EnergyMaterialVegetation(
-        identifier="GRASS_DRY",
-        roughness="Rough",
-        thickness=0.1,
-        conductivity=0.35,
-        density=1260,
-        specific_heat=1100,
-        soil_thermal_absorptance=0.9,
-        soil_solar_absorptance=0.7,
-        soil_visible_absorptance=0.7,
-        plant_height=0.2,
-        leaf_area_index=2.08,
-        leaf_reflectivity=0.21,
-        leaf_emissivity=0.95,
-        min_stomatal_resist=180,
-        # _user_data={
-        #     "specular": False,
-        #     "evapotranspiration_rate": 0.35,
-        # },
-    ),
+    # "GRASS_DAMP": EnergyMaterialVegetation(
+    #     identifier="GRASS_DAMP",
+    #     roughness="MediumRough",
+    #     thickness=0.1,
+    #     conductivity=0.35,
+    #     density=1100,
+    #     specific_heat=1252,
+    #     soil_thermal_absorptance=0.92,
+    #     soil_solar_absorptance=0.7,
+    #     soil_visible_absorptance=0.7,
+    #     plant_height=0.2,
+    #     leaf_area_index=1.71,
+    #     leaf_reflectivity=0.25,
+    #     leaf_emissivity=0.92,
+    #     min_stomatal_resist=160,
+    # ),
+    # "GRASS_DRY": EnergyMaterialVegetation(
+    #     identifier="GRASS_DRY",
+    #     roughness="Rough",
+    #     thickness=0.1,
+    #     conductivity=0.3,
+    #     density=1100,
+    #     specific_heat=1252,
+    #     soil_thermal_absorptance=0.89,
+    #     soil_solar_absorptance=0.75,
+    #     soil_visible_absorptance=0.75,
+    #     plant_height=0.2,
+    #     leaf_area_index=1.71,
+    #     leaf_reflectivity=0.19,
+    #     leaf_emissivity=0.95,
+    #     min_stomatal_resist=180,
+    # ),
+    # "SHRUBS": EnergyMaterialVegetation(
+    #     identifier="GRASS_DRY",
+    #     roughness="Rough",
+    #     thickness=0.1,
+    #     conductivity=0.35,
+    #     density=1260,
+    #     specific_heat=1100,
+    #     soil_thermal_absorptance=0.9,
+    #     soil_solar_absorptance=0.7,
+    #     soil_visible_absorptance=0.7,
+    #     plant_height=0.2,
+    #     leaf_area_index=2.08,
+    #     leaf_reflectivity=0.21,
+    #     leaf_emissivity=0.95,
+    #     min_stomatal_resist=180,
+    # ),
 }
 
 
