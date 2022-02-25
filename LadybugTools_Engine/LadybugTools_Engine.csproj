@@ -143,6 +143,7 @@
     <Content Include="Python\external_comfort\model.py" />
     <Content Include="Python\external_comfort\openfield.py" />
     <Content Include="Python\external_comfort\simulate.py" />
+    <Content Include="Python\external_comfort\utci.py" />
     <Content Include="Python\external_comfort\wind_speed.py" />
     <Content Include="Python\external_comfort\__init__.py" />
     <Content Include="Python\honeybee_extension\results.py" />
@@ -152,8 +153,7 @@
     <Content Include="Python\ladybug_extension\dt.py" />
     <Content Include="Python\ladybug_extension\epw.py" />
     <Content Include="Python\ladybug_extension\header.py" />
-    <Content Include="Python\ladybug_extension\location.py" />
-    <Content Include="Python\ladybug_extension\plot.py" />
+    <Content Include="Python\ladybug_extension\sun.py" />
     <Content Include="Python\ladybug_extension\__init__.py" />
     <Content Include="Python\__init__.py" />
   </ItemGroup>
