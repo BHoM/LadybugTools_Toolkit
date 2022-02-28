@@ -1,7 +1,11 @@
+from __future__ import annotations
 import sys
 
 import numpy as np
 import pandas as pd
+from Lexternal_comfort.shelter import Shelter2
+
+from external_comfort.shelter import Shelter
 
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
@@ -12,10 +16,10 @@ from ladybug.datatype.temperature import MeanRadiantTemperature
 from ladybug_comfort.collection.utci import UTCI
 import warnings, inspect
 
+
 from external_comfort.openfield import Openfield
 from external_comfort.evaporative_cooling import get_evaporative_cooled_dbt_rh
 from ladybug_extension.datacollection import to_series, from_series
-from ladybug_extension.sun import suns
 
 class Typology:
     def __init__(
@@ -23,54 +27,30 @@ class Typology:
         openfield: Openfield, 
         name: str = "Openfield", 
         evaporative_cooling_effectiveness: float = 0, 
-        shelter_porosity: float = 1, 
-        sheltered_azimuth_range: List[float] = [0, 0], 
-        sheltered_altitude_range: List[float] = [0, 0],
-    ):
+        shelter: Shelter2 = None,
+    ) -> Typology:
         """Class for defining a specific external comfort typology, and calculating the resultant thermal comfort values.
         
         Args:
             openfield (Openfield): An Openfield object.
             name (str, optional): A string for the name of the typology. Defaults to "Openfield".
             evaporative_cooling_effectiveness (float, optional): A float between 0 and 1 for the effectiveness of the contextual evaporative cooling modifying air temperature. Defaults to 0.
-            shelter_porosity (float, optional): A float between 0 and 1 for the transmissivity of the shade. Defaults to 1 representing full transmissivity.
-            sheltered_azimuth_range (List[float], optional): A list of two floats between 0 and 360 for the azimuth range of the shelter. Defaults to [0, 0] representing no shelter.
-            sheltered_altitude_range (List[float], optional): A list of two floats between -90 and 90 for the altitude range of the shelter. Defaults to [0, 0] representing no shelter.
+            shelter_polygon (Polygon, optional): A Polygon object defining the shelter polygon. Defaults to a shelter covering the top 1/3 of the sky.
         """
         self.name = name
         self.openfield = openfield
         self.evaporative_cooling_effectiveness = evaporative_cooling_effectiveness
-        self.shelter_porosity = shelter_porosity
-        self.sheltered_azimuth_range = sorted(sheltered_azimuth_range)
-        self.sheltered_altitude_range = sorted(sheltered_altitude_range)
+        if not shelter:
+            self.shelter = Shelter.from_shelter_range(
+                sheltered_azimuth_range = [0, 360], 
+                sheltered_altitude_range = [45, 90], 
+                shelter_porosity = 0,
+            )
 
         if not ((0 <= self.evaporative_cooling_effectiveness <= 1) or isinstance(self.evaporative_cooling_effectiveness, (int, float))):
             raise ValueError(
                 f"evaporative_cooling_effectiveness must be a number between 0 and 1"
             )
-
-        if not (0 <= self.shelter_porosity <= 1):
-            raise ValueError(f"shelter_porosity must be between 0 and 1")
-
-        if (min(self.sheltered_azimuth_range) < 0) or (
-            max(self.sheltered_azimuth_range) > 360
-        ):
-            raise ValueError(
-                f"sheltered_azimuth_range must be values between 0 and 360"
-            )
-
-        if (min(self.sheltered_altitude_range) < 0) or (
-            max(self.sheltered_altitude_range) > 90
-        ):
-            raise ValueError(
-                f"sheltered_altitude_range must be values between 0 and 90"
-            )
-
-        if len(self.sheltered_azimuth_range) != 2:
-            raise ValueError(f"sheltered_azimuth_range must be a list of length 2")
-
-        if len(self.sheltered_altitude_range) != 2:
-            raise ValueError(f"sheltered_altitude_range must be a list of length 2")
 
 #     def _shading_mask(self) -> List[bool]:
 #         return np.array(self._azimuth_mask()) & np.array(self._altitude_mask())
@@ -224,23 +204,19 @@ class Typology:
 
     def _shadedness_factor(self) -> List[float]:
         """Return a list of values which can be used to interpolate between shaded/unshaded MRT values to provide an approximate point-in-time MRT."""
-        
-        # get the proportion of the sky covered by a shade, so that overnight effects can be approximated by adjusting between shaded/unsahded per fraction when sun.alt < 0
-        radii = 1
-        lat1 = self._az_min()
-        lat2 = self._az_max()
-        lon1 = self._alt_min()
-        lon2 = self._alt_max()
-        sky_coverage_area = (np.pi/180) * radii**2 * abs(np.sin(lat1)-np.sin(lat2)) * abs(lon1-lon2)
-        
-        height = 1.2
-        
-        sky_area = 2 * np.pi * (1 + (np.sqrt(height ** 2 + 2 * radii * height) / radii * height))
-        sky_sheltered_proportion = sky_coverage_area / sky_area
 
+        sky_polygon = self._get_sky_polygon()
+        shade_polygon = self._get_shade_polygon()
+        print(sky_polygon.area(), shade_polygon.area())
+        
+        # TODO - get the proportion of the sky covered by a shade, so that overnight effects can be approximated by adjusting between shaded/unshaded per fraction when sun.alt < 0.
+        # for example, fuly shaded overnight would be 1 (shaded results) whereas unshaded wiould be 0 (unshaded results). If partially shaded, then the sky-view-factor would be used instead.
+        # and make sure to include porosity in this calculation!
+        
+        
         # print(sky_coverage_area, sky_area, sky_sheltered_proportion)
 
-        # TODO - Vary between shaded/unshaded based on sun proximity to shade centroid??/coverage?? and include shelter porosity!
+        # TODO - Vary between shaded/unshaded based on sun coverage by the shelter and include shelter porosity!
 
         sun_objects = suns(self.openfield.epw)
 
@@ -258,12 +234,13 @@ class Typology:
 
 
 if __name__ == "__main__":
+    
     from external_comfort.material import MATERIALS
 
     epw = EPW(r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw")
     ground_material = MATERIALS["CONCRETE_LIGHTWEIGHT"]
     shade_material = MATERIALS["FABRIC"]
-    openfield = Openfield(epw, ground_material, shade_material, True)
+    openfield = Openfield(epw, ground_material, shade_material, False)
     typology = Typology(
         openfield, 
         name="Example", 
@@ -272,8 +249,6 @@ if __name__ == "__main__":
         sheltered_altitude_range=[0, 90], 
         shelter_porosity=0.5
     )
+    # print(typology._mean_radiant_temperature())
 
-    # print(typology._wind_speed().average)
-    # print(typology._dry_bulb_temperature().average)
-    # print(typology._relative_humidity().average)
-    print(typology._mean_radiant_temperature())
+    print(typology._shadedness_factor())
