@@ -25,7 +25,7 @@ class Openfield:
         epw: EPW,
         ground_material: _EnergyMaterialOpaqueBase,
         shade_material: _EnergyMaterialOpaqueBase,
-        run: bool = False
+        run: bool = False,
     ) -> Openfield:
         """An Openfield object containing the inputs and results for an outdoor radiant temperature simulation.
 
@@ -42,6 +42,8 @@ class Openfield:
         self.ground_material = ground_material
         self.shade_material = shade_material
         self.model = create_model(self.ground_material, self.shade_material, "testing")
+
+        # TODO - remove "testing" from the model identifier
 
         self._shaded_below_temperature: HourlyContinuousCollection = None
         self._shaded_above_temperature: HourlyContinuousCollection = None
@@ -63,8 +65,11 @@ class Openfield:
         )
         self._unshaded_mean_radiant_temperature: HourlyContinuousCollection = None
 
+        self.energyplus_run = False
+        self.radiance_run = False
+
         if run:
-            self.__simulate()
+            self._simulate()
 
     @property
     def shaded_below_temperature(self) -> HourlyContinuousCollection:
@@ -180,6 +185,7 @@ class Openfield:
             if not isinstance(getattr(self, prop), HourlyContinuousCollection):
                 for k, v in _run_energyplus(self.model, self.epw).items():
                     setattr(self, f"_{k}", v)
+        self.energyplus_run = True
         return self
 
     def __run_radiance(self) -> Openfield:
@@ -192,20 +198,25 @@ class Openfield:
             if not isinstance(getattr(self, prop), HourlyContinuousCollection):
                 for k, v in _run_radiance(self.model, self.epw).items():
                     setattr(self, f"_{k}", v)
+        self.radiance_run = True
         return self
 
-    def __simulate(self) -> Openfield:
+    def _simulate(self) -> Openfield:
         """Run both EnergyPlus and Radiance to return contextual radiant-temperature data collections."""
+
+        if self.radiance_run & self.energyplus_run:
+            return self
 
         results = []
         with ThreadPoolExecutor(max_workers=2) as executor:
             for f in [_run_radiance, _run_energyplus]:
                 results.append(executor.submit(f, self.model, self.epw))
-            
+
         for x in results:
             for k, v in x.result().items():
                 setattr(self, f"_{k}", v)
         return self
+
 
 if __name__ == "__main__":
 
@@ -217,4 +228,7 @@ if __name__ == "__main__":
 
     openfield = Openfield(epw, ground_material, shade_material, True)
 
-    print(openfield.unshaded_mean_radiant_temperature, openfield.shaded_mean_radiant_temperature)
+    print(
+        openfield.unshaded_mean_radiant_temperature,
+        openfield.shaded_mean_radiant_temperature,
+    )
