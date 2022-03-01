@@ -142,8 +142,12 @@
     <Content Include="Python\external_comfort\material.py" />
     <Content Include="Python\external_comfort\model.py" />
     <Content Include="Python\external_comfort\openfield.py" />
+    <Content Include="Python\external_comfort\plot\colours.py" />
+    <Content Include="Python\external_comfort\plot\plot.py" />
+    <Content Include="Python\external_comfort\plot\__init__.py" />
+    <Content Include="Python\external_comfort\shelter.py" />
     <Content Include="Python\external_comfort\simulate.py" />
-    <Content Include="Python\external_comfort\utci.py" />
+    <Content Include="Python\external_comfort\typology.py" />
     <Content Include="Python\external_comfort\wind_speed.py" />
     <Content Include="Python\external_comfort\__init__.py" />
     <Content Include="Python\honeybee_extension\results.py" />
