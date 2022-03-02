@@ -165,6 +165,9 @@ def _load_sql_file(sql_file: Union[str, Path]) -> pd.DataFrame:
         elif "Zone" in collection.header.metadata.keys():
             element = "Zone"
             subelement = collection.header.metadata["Zone"]
+        else:
+            element = "Unknown"
+            subelement = "Unknown"
 
         headers.append((sql_file.as_posix(), element, subelement, f"{variable} ({unit})"))
     df = pd.concat(serieses, axis=1)
