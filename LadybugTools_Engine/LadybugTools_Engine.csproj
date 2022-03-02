@@ -147,6 +147,7 @@
     <Content Include="Python\external_comfort\plot\__init__.py" />
     <Content Include="Python\external_comfort\shelter.py" />
     <Content Include="Python\external_comfort\simulate.py" />
+    <Content Include="Python\external_comfort\spatial_comfort.py" />
     <Content Include="Python\external_comfort\typology.py" />
     <Content Include="Python\external_comfort\wind_speed.py" />
     <Content Include="Python\external_comfort\__init__.py" />
