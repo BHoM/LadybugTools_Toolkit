@@ -1,16 +1,17 @@
 from __future__ import annotations
-import inspect
+
 import sys
 
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 from ladybug.epw import EPW, HourlyContinuousCollection
 
-from external_comfort.model import create_model
 from external_comfort.material import MATERIALS
+from external_comfort.model import create_model
 from external_comfort.simulate import (
     _convert_radiation_to_mean_radiant_temperature,
     _radiant_temperature_from_collections,
@@ -176,6 +177,7 @@ class Openfield:
         return self.__str__()
 
     def __run_energyplus(self) -> Openfield:
+        """Run EnergyPlus to simulate surrounding surface temperatures."""
         for prop in [
             "_shaded_below_temperature",
             "_unshaded_below_temperature",
@@ -189,6 +191,7 @@ class Openfield:
         return self
 
     def __run_radiance(self) -> Openfield:
+        """Run EnergyPlus to simulate incident radiation."""
         for prop in [
             "_shaded_direct_radiation",
             "_unshaded_direct_radiation",

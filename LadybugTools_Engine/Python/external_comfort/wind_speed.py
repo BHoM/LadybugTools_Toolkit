@@ -1,9 +1,10 @@
 import sys
+
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
-from ladybug.epw import EPW
-from ladybug.datacollection import HourlyContinuousCollection
 import numpy as np
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.epw import EPW
 
 
 def create_windspeed_collection(
@@ -12,7 +13,7 @@ def create_windspeed_collection(
     """Create an annual hourly collection of windspeeds whose average equals the target value, translated to 10m height, using the source EPW to provide a wind-speed profile.
 
     Args:
-        epw (EPW): The source EPW from which teh wind speed profile is used to distribute wind speeds.
+        epw (EPW): The source EPW from which the wind speed profile is used to distribute wind speeds.
         target_average_wind_speed (float): The value to be translated to 10m and set as the average for the target wind-speed collection.
         target_height (float): The height at which the wind speed is translated to (this will assume the original wind speed is at 10m per EPW conventions.
 
@@ -60,6 +61,7 @@ def wind_speed_at_height(
         return reference_wind_speed * (
             np.pow((target_height / reference_height), windShearExponent)
         )
+
 
 if __name__ == "__main__":
     pass

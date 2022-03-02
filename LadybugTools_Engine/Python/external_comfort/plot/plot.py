@@ -2,34 +2,65 @@ import sys
 
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
-# TODO - method to plot UTCI 2d-histogram
-
+import calendar
+import colorsys
 import textwrap
+from typing import List, Tuple
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
-
-from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import UniversalThermalClimateIndex
-from matplotlib.figure import Figure
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from ladybug_extension.datacollection import to_series, from_series
 from external_comfort.plot.colours import (
-    UTCICategory,
-    UTCI_COLOURMAP,
-    UTCI_COLOURMAP_NORM,
     UTCI_BOUNDS,
     UTCI_CATEGORIES,
+    UTCI_COLOURMAP,
+    UTCI_COLOURMAP_NORM,
     UTCI_COLOURS,
+    UTCICategory,
 )
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datatype.temperature import UniversalThermalClimateIndex
+from ladybug_extension.datacollection import from_series, to_series
+from matplotlib import patches
+from matplotlib.colors import cnames, to_rgb
+from matplotlib.figure import Figure
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.interpolate import make_interp_spline
 
 WIDTH = 15
 HEIGHT = 5
 
 pd.plotting.register_matplotlib_converters()
+
+import re
+
+
+def _lighten_color(color: str, amount: float = 0.5) -> Tuple[float]:
+    """
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+    Input can be matplotlib color string, hex string, or RGB tuple.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    try:
+        c = cnames[color]
+    except:
+        c = color
+    c = np.array(colorsys.rgb_to_hls(*to_rgb(c)))
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
+
+
+def _camel_case_split(string: str) -> str:
+    """Add spaces between distinct words in a CamelCase formatted string."""
+    matches = re.finditer(
+        ".+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)", string
+    )
+    return " ".join([m.group(0) for m in matches])
 
 
 def utci_heatmap(
@@ -204,3 +235,126 @@ def utci_heatmap(
         )
 
     return fig
+
+
+def utci_pseudo_journey(
+    utci_collections: List[HourlyContinuousCollection],
+    month: int,
+    hour: int,
+    names: List[str] = None,
+    curve: bool = False,
+) -> Figure:
+    """Create a figure showing the pseudo-journey between different UTCI conditions at a given time of year
+
+    Args:
+        utci_collections (HourlyContinuousCollection): A list of UTCI HourlyContinuousCollection objects
+        month (int): The month of the year to plot
+        hour (int): The hour of the day to plot
+        names (List[str], optional): A list of names to label each condition with. Defaults to None.
+        curve (bool, optional): Whether to plot the pseudo-journey as a spline. Defaults to False.
+
+    Returns:
+        Figure: A matplotlib figure object
+    """
+
+    # Check that all collections are UTCI
+    for collection in utci_collections:
+        if not isinstance(collection.header.data_type, UniversalThermalClimateIndex):
+            raise ValueError(
+                "Collection data type is not UTCI and cannot be used in this plot."
+            )
+
+    if not 1 <= month <= 12:
+        raise ValueError("Month must be between 1 and 12.")
+
+    if not 0 <= hour <= 23:
+        raise ValueError("Hour must be between 0 and 23.")
+
+    if names:
+        if len(utci_collections) != len(names):
+            raise ValueError("Number of collections and names must be equal.")
+
+    # Convert collections into series and combine
+    df = pd.concat([to_series(col) for col in utci_collections], axis=1, keys=names)
+    df_pit = df[(df.index.month == month) & (df.index.hour == hour)].mean()
+
+    fig, ax = plt.subplots(figsize=(15, 3))
+    for n, (idx, val) in enumerate(df_pit.items()):
+        ax.scatter(n, val, c="white", s=400, zorder=9)
+        name = _camel_case_split(idx).replace(" ", "\n")
+        ax.text(
+            n, val, name, c="k", zorder=10, ha="center", va="center", fontsize="medium"
+        )
+
+    ylims = ax.get_ylim()
+
+    if curve:
+        # Smooth values
+        if len(utci_collections) < 3:
+            k = 1
+        else:
+            k = 2
+        x = np.arange(len(utci_collections))
+        y = df_pit.values
+        xnew = np.linspace(min(x), max(x), 300)
+        bspl = make_interp_spline(x, y, k=k)
+        ynew = bspl(xnew)
+
+        # Plot the smoothed values
+        ax.plot(xnew, ynew, c="#B30202", ls="--", zorder=3)
+
+    [ax.spines[spine].set_visible(False) for spine in ["top", "right", "bottom"]]
+    plt.tick_params(
+        axis="x",  # changes apply to the x-axis
+        which="both",  # both major and minor ticks are affected
+        bottom=False,  # ticks along the bottom edge are off
+        top=False,  # ticks along the top edge are off
+        labelbottom=False,
+    )  # labels along the bottom edge are off
+
+    # Add colors to plot
+    utci_handles = []
+    utci_labels = []
+    for low, high, color, category in list(
+        zip(
+            *[
+                UTCI_BOUNDS[0:-1],
+                UTCI_BOUNDS[1:],
+                UTCI_COLOURS,
+                UTCI_CATEGORIES,
+            ]
+        )
+    ):
+        cc = _lighten_color(color, 0.2)
+        ax.axhspan(low, high, color=cc)
+        utci_labels.append(category)
+        utci_handles.append(patches.Patch(color=cc, label=category))
+
+    ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
+    ax.set_xlim(-0.5, len(utci_collections) - 0.5)
+
+    lgd = fig.legend(
+        utci_handles,
+        utci_labels,
+        bbox_to_anchor=(1, 0.9),
+        loc="upper left",
+        ncol=1,
+        borderaxespad=0,
+        frameon=False,
+    )
+    lgd.get_frame().set_facecolor((1, 1, 1, 0))
+    [plt.setp(text, color="k") for text in lgd.get_texts()]
+
+    ax.set_title(
+        f"{calendar.month_name[month]} {hour:02d}:00", x=0, ha="left", va="bottom"
+    )
+
+    ax.set_ylim(ylims[0] - 1, ylims[1] + 1)
+
+    ax.set_ylabel("UTCI (°C)")
+    plt.tight_layout()
+
+    return fig
+
+if __name__ =="__main__":
+    pass

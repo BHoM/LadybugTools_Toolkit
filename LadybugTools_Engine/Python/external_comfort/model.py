@@ -1,19 +1,17 @@
 import sys
+
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
-from typing import List, Union
 import uuid
-from ladybug_geometry.geometry3d import Point3D, Vector3D
-from honeybee.model import Model, Room, Face, Shade
-from honeybee_energy.construction.opaque import OpaqueConstruction
-from honeybee_energy.material.opaque import (
-    _EnergyMaterialOpaqueBase, 
-    EnergyMaterial,
-)
-from honeybee.facetype import face_types
+from typing import List
+
 from honeybee.boundarycondition import boundary_conditions
-from honeybee_radiance.sensorgrid import SensorGrid, Sensor
-import uuid
+from honeybee.facetype import face_types
+from honeybee.model import Face, Model, Room, Shade
+from honeybee_energy.construction.opaque import OpaqueConstruction
+from honeybee_energy.material.opaque import EnergyMaterial, _EnergyMaterialOpaqueBase
+from honeybee_radiance.sensorgrid import Sensor, SensorGrid
+from ladybug_geometry.geometry3d import Point3D, Vector3D
 
 _WIDTH = 10
 _DEPTH = 10
@@ -89,9 +87,7 @@ def create_ground_zone(
     return ground_zone
 
 
-def create_shade_zone(
-    material: _EnergyMaterialOpaqueBase
-) -> Room:
+def create_shade_zone(material: _EnergyMaterialOpaqueBase) -> Room:
     """Create a shade zone with boundary conditions and face identifiers named per external comfort workflow.
 
     Args:
@@ -236,6 +232,7 @@ def create_model(
     model.properties.radiance.sensor_grids = [unshaded_grid]
 
     return model
+
 
 if __name__ == "__main__":
     pass
