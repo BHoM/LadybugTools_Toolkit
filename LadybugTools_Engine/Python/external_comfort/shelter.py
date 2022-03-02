@@ -1,14 +1,103 @@
 from __future__ import annotations
+
+import sys
+
+sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
 from typing import List
+
 import numpy as np
 import pandas as pd
-
-from ladybug_extension.sun import sun_positions_as_array
-from ladybug_extension.datacollection import from_series, to_series
-from ladybug_extension.sun import sun_positions
 from ladybug.epw import EPW, HourlyContinuousCollection
-
+from ladybug_extension.datacollection import from_series, to_series
+from ladybug_extension.sun import sun_positions_as_array
 from shapely.geometry.polygon import Point, Polygon
+
+
+def _cardinality(angle_from_north: float, directions: int = 16):
+    """
+    Returns the cardinal orientation of a given angle, where that angle is related to north at 0 degrees.
+
+    Args:
+        angle_from_north (float): The angle to north in degrees (+Ve is interpreted as clockwise from north at 0.0 degrees).
+        directions (int): The number of cardinal directions into which angles shall be binned (This value should be one of 4, 8, 16 or 32, and is centred about "north").
+
+    Returns:
+        int: The cardinal direction the angle represents.
+    """
+
+    if angle_from_north > 360 or angle_from_north < 0:
+        raise ValueError(
+            "The angle entered is beyond the normally expected range for an orientation in degrees."
+        )
+
+    cardinal_directions = {
+        4: ["N", "E", "S", "W"],
+        8: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+        16: [
+            "N",
+            "NNE",
+            "NE",
+            "ENE",
+            "E",
+            "ESE",
+            "SE",
+            "SSE",
+            "S",
+            "SSW",
+            "SW",
+            "WSW",
+            "W",
+            "WNW",
+            "NW",
+            "NNW",
+        ],
+        32: [
+            "N",
+            "NbE",
+            "NNE",
+            "NEbN",
+            "NE",
+            "NEbE",
+            "ENE",
+            "EbN",
+            "E",
+            "EbS",
+            "ESE",
+            "SEbE",
+            "SE",
+            "SEbS",
+            "SSE",
+            "SbE",
+            "S",
+            "SbW",
+            "SSW",
+            "SWbS",
+            "SW",
+            "SWbW",
+            "WSW",
+            "WbS",
+            "W",
+            "WbN",
+            "WNW",
+            "NWbW",
+            "NW",
+            "NWbN",
+            "NNW",
+            "NbW",
+        ],
+    }
+
+    if directions not in cardinal_directions:
+        raise ValueError(
+            f"The number of directions must be one of {list(cardinal_directions.keys())}."
+        )
+
+    val = int((angle_from_north / (360 / directions)) + 0.5)
+
+    arr = cardinal_directions[directions]
+
+    return arr[(val % directions)]
 
 
 class Shelter:
@@ -18,6 +107,16 @@ class Shelter:
         azimuth_range: List[float],
         porosity: float = 0,
     ) -> Shelter:
+        """A shelter describing the solar and wind protection affored by a specific external comfort typology.
+
+        Args:
+            altitude_range (List[float]): The range of altitudes in degrees above the horizon at which the shelter is effective.
+            azimuth_range (List[float]): The range of azimuths in degrees from north at which the shelter is effective.
+            porosity (float): The proportion of the shelter area that is exposed to the sun.
+
+        Returns:
+            Shelter: A shelter object.
+        """
 
         if not (0 <= porosity <= 1):
             raise ValueError(f"Porosity must be between 0 and 1")
@@ -48,7 +147,7 @@ class Shelter:
 
     @property
     def description(self) -> str:
-
+        """A description of the shelter."""
         min_azimuth = self.azimuth_range[0]
         max_azimuth = self.azimuth_range[1]
 
@@ -65,12 +164,18 @@ class Shelter:
             and (min_altitude == 0)
             and (max_altitude == 90)
         ):
-            return "Fully enclosed"
+            if self.porosity == 0:
+                return "Fully enclosed"
+            else:
+                return f"Fully enclosed by shelter with {self.porosity:0.0%} porosity"
 
-        return f"Sheltered between {min_azimuth}° and {max_azimuth}° degrees from North, between altitudes of {min_altitude}° and {max_altitude}°, with porosity of {self.porosity:0.0%}"
+        if self.porosity == 0:
+            return f"Sheltered between {min_azimuth}° and {max_azimuth}° degrees from North, between altitudes of {min_altitude}° and {max_altitude}°"
+        else:
+            return f"Sheltered between {min_azimuth}° and {max_azimuth}° degrees from North, between altitudes of {min_altitude}° and {max_altitude}° with {self.porosity:0.0%} porous shelter"
 
     def _shelter_vertices(self) -> List[List[List[float]]]:
-        # TODO - check ndarray dimensions and change output dtype!
+        """Returns the vertices of the shelter polygons."""
 
         if self.altitude_range[0] == self.altitude_range[1]:
             return []
@@ -111,9 +216,11 @@ class Shelter:
         return polygons
 
     def _shelter_area(self) -> float:
+        """Returns the total sky area occluded by the shelter."""
         return sum([polygon.area for polygon in self._create_polygons()])
 
     def _sky_area(self) -> float:
+        """Returns the total sky area."""
         return 360 * 90
 
     @property
@@ -258,3 +365,7 @@ class Shelter:
         adjustment_factor = self.wind_speed_factor(altitude_threshold=45)
         ws_adjusted = ws.where(~mask, ws * adjustment_factor)
         return from_series(ws_adjusted)
+
+
+if __name__ == "__main__":
+    pass

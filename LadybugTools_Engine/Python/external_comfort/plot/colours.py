@@ -83,3 +83,6 @@ UTCI_COLOURMAP = LinearSegmentedColormap.from_list("UTCI", colors=UTCI_COLOURS, 
 UTCI_CATEGORIES = [i.title for i in UTCICategory]
 UTCI_BOUNDS = np.unique(np.array([i.value_range for i in UTCICategory]).flatten())
 UTCI_COLOURMAP_NORM = BoundaryNorm(boundaries=UTCI_BOUNDS, ncolors=10)
+
+if __name__ == "__main__":
+    pass
