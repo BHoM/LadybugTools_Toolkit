@@ -288,7 +288,8 @@ def utci_pseudo_journey(
             n, val, name, c="k", zorder=10, ha="center", va="center", fontsize="medium"
         )
 
-    ylims = ax.get_ylim()
+    if ylims is None:
+        ylims = ax.get_ylim()
 
     if curve:
         # Smooth values
@@ -332,10 +333,8 @@ def utci_pseudo_journey(
         utci_labels.append(category)
         utci_handles.append(patches.Patch(color=cc, label=category))
 
-    if ylims is None:
-        ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
-    else:
-        ax.set_ylim(ylims)
+    ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
+    
     ax.set_xlim(-0.5, len(utci_collections) - 0.5)
 
     lgd = fig.legend(
