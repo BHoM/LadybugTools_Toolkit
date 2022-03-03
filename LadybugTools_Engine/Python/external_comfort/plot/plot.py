@@ -244,6 +244,9 @@ def utci_pseudo_journey(
     names: List[str] = None,
     curve: bool = False,
     ylims: List[float] = None,
+    show_legend: bool = True,
+    fig_width: float = 10,
+    fig_height: float = 5
 ) -> Figure:
     """Create a figure showing the pseudo-journey between different UTCI conditions at a given time of year
 
@@ -280,7 +283,7 @@ def utci_pseudo_journey(
     df = pd.concat([to_series(col) for col in utci_collections], axis=1, keys=names)
     df_pit = df[(df.index.month == month) & (df.index.hour == hour)].mean()
 
-    fig, ax = plt.subplots(figsize=(15, 3))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     for n, (idx, val) in enumerate(df_pit.items()):
         ax.scatter(n, val, c="white", s=400, zorder=9)
         name = _camel_case_split(idx).replace(" ", "\n")
@@ -337,17 +340,18 @@ def utci_pseudo_journey(
     
     ax.set_xlim(-0.5, len(utci_collections) - 0.5)
 
-    lgd = fig.legend(
-        utci_handles,
-        utci_labels,
-        bbox_to_anchor=(1, 0.9),
-        loc="upper left",
-        ncol=1,
-        borderaxespad=0,
-        frameon=False,
-    )
-    lgd.get_frame().set_facecolor((1, 1, 1, 0))
-    [plt.setp(text, color="k") for text in lgd.get_texts()]
+    if show_legend:
+        lgd = fig.legend(
+            utci_handles,
+            utci_labels,
+            bbox_to_anchor=(1, 0.9),
+            loc="upper left",
+            ncol=1,
+            borderaxespad=0,
+            frameon=False,
+        )
+        lgd.get_frame().set_facecolor((1, 1, 1, 0))
+        [plt.setp(text, color="k") for text in lgd.get_texts()]
 
     ax.set_title(
         f"{calendar.month_name[month]} {hour:02d}:00", x=0, ha="left", va="bottom"
