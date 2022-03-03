@@ -339,7 +339,11 @@ def utci_pseudo_journey(
         utci_labels.append(category)
         utci_handles.append(patches.Patch(color=cc, label=category))
 
-    ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
+    if len(ylims) == 1:
+        _middf = 0.5 * (df_pit.max() + df_pit.min())
+        ax.set_ylim([_middf - 1 - ylims[0], _middf + 1 +ylims[0]])
+    elif len(ylims) == 2:
+        ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
     
     ax.set_xlim(-0.5, len(utci_collections) - 0.5)
 
@@ -360,7 +364,7 @@ def utci_pseudo_journey(
         f"{calendar.month_name[month]} {hour:02d}:00", x=0, ha="left", va="bottom"
     )
 
-    ax.set_ylim(ylims[0] - 1, ylims[1] + 1)
+    #ax.set_ylim(ylims[0] - 1, ylims[1] + 1)
 
     ax.set_ylabel("UTCI (°C)")
     plt.tight_layout()
