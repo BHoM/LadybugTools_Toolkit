@@ -131,22 +131,28 @@ class SpatialComfort:
         )
 
         if shaded_utci_path.exists():
+            print(f"Loading {shaded_utci_path}")
             self.shaded_utci = from_json(shaded_utci_path)
         if unshaded_utci_path.exists():
+            print(f"Loading {unshaded_utci_path}")
             self.unshaded_utci = from_json(unshaded_utci_path)
         if shaded_ground_surface_temperature_path.exists():
+            print(f"Loading {shaded_ground_surface_temperature_path}")
             self.shaded_ground_surface_temperature = from_json(
                 shaded_ground_surface_temperature_path
             )
         if unshaded_ground_surface_temperature_path.exists():
+            print(f"Loading {unshaded_ground_surface_temperature_path}")
             self.unshaded_ground_surface_temperature = from_json(
                 unshaded_ground_surface_temperature_path
             )
         if shaded_mean_radiant_temperature_path.exists():
+            print(f"Loading {shaded_mean_radiant_temperature_path}")
             self.shaded_mean_radiant_temperature = from_json(
                 shaded_mean_radiant_temperature_path
             )
         if unshaded_mean_radiant_temperature_path.exists():
+            print(f"Loading {unshaded_mean_radiant_temperature_path}")
             self.unshaded_mean_radiant_temperature = from_json(
                 unshaded_mean_radiant_temperature_path
             )
@@ -237,6 +243,7 @@ class SpatialComfort:
         """Approximate the UTCI values for the full geometric simulation."""
         spatial_utci_path = self.simulation_directory / "utci.h5"
         if spatial_utci_path.exists():
+            print(f"Loading {spatial_utci_path}")
             return pd.read_hdf(spatial_utci_path, "df")
 
         grp = self.total_irradiance.groupby(
@@ -258,6 +265,7 @@ class SpatialComfort:
         daytime_vals = []
         nighttime_vals = []
         for i in range(8760):
+            print(f"Spatial UTCI approx: [{i:04d}/8760]")
             daytime_vals.append(interpolate.interp1d(x[i], y_day[i])(xnew[i]))
             nighttime_vals.append(interpolate.interp1d(x[i], y_night[i])(xnew[i]))
 
@@ -284,6 +292,7 @@ class SpatialComfort:
         """Approximate the mean radiant temperature values for the full geometric simulation."""
         spatial_mrt_path = self.simulation_directory / "mrt.h5"
         if spatial_mrt_path.exists():
+            print(f"Loading {spatial_mrt_path}")
             return pd.read_hdf(spatial_mrt_path, "df")
 
         grp = self.total_irradiance.groupby(
@@ -305,6 +314,7 @@ class SpatialComfort:
         daytime_vals = []
         nighttime_vals = []
         for i in range(8760):
+            print(f"Spatial MRT approx: [{i:04d}/8760]")
             daytime_vals.append(interpolate.interp1d(x[i], y_day[i])(xnew[i]))
             nighttime_vals.append(interpolate.interp1d(x[i], y_night[i])(xnew[i]))
 
@@ -331,6 +341,7 @@ class SpatialComfort:
         """Approximate the ground surface temperature values for the full geometric simulation."""
         spatial_gnd_srf_path = self.simulation_directory / "gnd_srf.h5"
         if spatial_gnd_srf_path.exists():
+            print(f"Loading {spatial_gnd_srf_path}")
             return pd.read_hdf(spatial_gnd_srf_path, "df")
 
         grp = self.total_irradiance.groupby(
@@ -352,6 +363,7 @@ class SpatialComfort:
         daytime_vals = []
         nighttime_vals = []
         for i in range(8760):
+            print(f"Spatial Ground Srf Temp approx: [{i:04d}/8760]")
             daytime_vals.append(interpolate.interp1d(x[i], y_day[i])(xnew[i]))
             nighttime_vals.append(interpolate.interp1d(x[i], y_night[i])(xnew[i]))
 
@@ -374,10 +386,27 @@ class SpatialComfort:
 
         return gnd_srf_approx
 
+    @property
+    def xlim(self) -> List[float]:
+        """Return the x-axis limits for the plot."""
+        maxima = self.points.groupby(self.points.columns.get_level_values(1), axis=1).max().max()
+        minima = self.points.groupby(self.points.columns.get_level_values(1), axis=1).min().min()
+        return [minima.x, maxima.x]
+    
+    @property
+    def ylim(self) -> List[float]:
+        """Return the y-axis limits for the plot."""
+        maxima = self.points.groupby(self.points.columns.get_level_values(1), axis=1).max().max()
+        minima = self.points.groupby(self.points.columns.get_level_values(1), axis=1).min().min()
+        return [minima.y, maxima.y]
+
+    # TODO - add method to figure out appropriate trimesh alpha value
+
+    
 
 if __name__ == "__main__":
     ec = SpatialComfort(
-        simulation_directory=r"C:\Users\tgerrish\simulation\LadybugTools_ToolkitExternalThermalComfort",
-        epw=r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw",
+        simulation_directory=r"C:\Users\tgerrish\simulation\RootBridges",
+        epw=r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\GBR_LONDON-HEATHROW-AP_037720_IW2.epw",
     )
     print(ec.utci)
