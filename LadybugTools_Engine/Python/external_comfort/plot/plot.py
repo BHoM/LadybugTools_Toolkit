@@ -243,6 +243,7 @@ def utci_pseudo_journey(
     hour: int,
     names: List[str] = None,
     curve: bool = False,
+    ylims: List[float] = None,
 ) -> Figure:
     """Create a figure showing the pseudo-journey between different UTCI conditions at a given time of year
 
@@ -252,6 +253,7 @@ def utci_pseudo_journey(
         hour (int): The hour of the day to plot
         names (List[str], optional): A list of names to label each condition with. Defaults to None.
         curve (bool, optional): Whether to plot the pseudo-journey as a spline. Defaults to False.
+        ylims (List[float], optional): A list of y-axis limits to use. Defaults to None.
 
     Returns:
         Figure: A matplotlib figure object
@@ -330,7 +332,10 @@ def utci_pseudo_journey(
         utci_labels.append(category)
         utci_handles.append(patches.Patch(color=cc, label=category))
 
-    ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
+    if ylims is None:
+        ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
+    else:
+        ax.set_ylim(ylims)
     ax.set_xlim(-0.5, len(utci_collections) - 0.5)
 
     lgd = fig.legend(
