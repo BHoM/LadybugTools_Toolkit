@@ -274,6 +274,9 @@ def utci_pseudo_journey(
 
     if not 0 <= hour <= 23:
         raise ValueError("Hour must be between 0 and 23.")
+    
+    if not isinstance(ylims, (None, list)) or len(ylims) != 2:
+        raise ValueError("ylims must be a list of length 2.")
 
     if names:
         if len(utci_collections) != len(names):
