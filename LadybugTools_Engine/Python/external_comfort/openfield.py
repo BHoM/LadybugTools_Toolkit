@@ -6,11 +6,12 @@ sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Tool
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Union
 
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 from ladybug.epw import EPW, HourlyContinuousCollection
 
-from external_comfort.material import MATERIALS
+from external_comfort.material import MATERIALS, material_from_string
 from external_comfort.model import create_model
 from external_comfort.simulate import (
     _convert_radiation_to_mean_radiant_temperature,
@@ -24,8 +25,8 @@ class Openfield:
     def __init__(
         self,
         epw: EPW,
-        ground_material: _EnergyMaterialOpaqueBase,
-        shade_material: _EnergyMaterialOpaqueBase,
+        ground_material: Union[str, _EnergyMaterialOpaqueBase],
+        shade_material: Union[str, _EnergyMaterialOpaqueBase],
         run: bool = False,
     ) -> Openfield:
         """An Openfield object containing the inputs and results for an outdoor radiant temperature simulation.
@@ -39,9 +40,9 @@ class Openfield:
         Returns:
             Openfield: An Openfield object containing the inputs and results for an outdoor radiant temperature simulation.
         """
-        self.epw = epw
-        self.ground_material = ground_material
-        self.shade_material = shade_material
+        self.epw = epw if isinstance(epw, EPW) else EPW(epw)
+        self.ground_material = ground_material if isinstance(ground_material, _EnergyMaterialOpaqueBase) else material_from_string(ground_material)
+        self.shade_material = shade_material if isinstance(shade_material, _EnergyMaterialOpaqueBase) else material_from_string(shade_material)
         self.model = create_model(self.ground_material, self.shade_material, "testing")
 
         # TODO - remove "testing" from the model identifier
