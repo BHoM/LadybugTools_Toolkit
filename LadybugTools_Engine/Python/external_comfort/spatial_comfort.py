@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 from pathlib import Path
+from scipy.interpolate import interp1d
 from typing import List, Union
 
 import numpy as np
@@ -59,332 +60,349 @@ class SpatialComfort:
         self.epw = EPW(epw) if isinstance(epw, str) else epw
         self.sun_up_bool = to_array(self.epw.global_horizontal_radiation) > 0
 
-        self.shaded_utci: HourlyContinuousCollection = None
-        self.unshaded_utci: HourlyContinuousCollection = None
-        self.shaded_ground_surface_temperature: HourlyContinuousCollection = None
-        self.unshaded_ground_surface_temperature: HourlyContinuousCollection = None
-        self.shaded_mean_radiant_temperature: HourlyContinuousCollection = None
-        self.unshaded_mean_radiant_temperature: HourlyContinuousCollection = None
+        self._total_irradiance: pd.DataFrame = None
+        self._sky_view: pd.DataFrame = None
+        self._points: pd.DataFrame = None
 
-        self._run_openfield()
+        self._shaded_utci: pd.Series = None
+        self._unshaded_utci: pd.Series = None
+        self._shaded_gnd: pd.Series = None
+        self._unshaded_gnd: pd.Series = None
+        self._shaded_mrt: pd.Series = None
+        self._unshaded_mrt: pd.Series = None
 
-        self.total_irradiance: pd.DataFrame = None
-        self.sky_view: pd.DataFrame = None
-        self.points: pd.DataFrame = None
+        self._spatial_mrt: pd.DataFrame = None
+        self._spatial_utci: pd.DataFrame = None
+        self._spatial_gnd: pd.DataFrame = None
 
-        self._load_simulation_results()
+    @property
+    def total_irradiance(self) -> pd.DataFrame:
+        """Return the irradiance results from the simulation directory, and load them into the object if they're not already loaded."""
 
-        self.utci = self._spatial_utci_approx()
-        self.mrt = self._spatial_mrt_approx()
-        self.ground_surface_temperature = self._spatial_gnd_srf_approx()
-
-    def _load_simulation_results(self) -> None:
-        """Load all simulation results from within the target simulation directory, and save these as compressed h5 files.
-        """
         total_irradiance_path = self.simulation_directory / "total_irradiance.h5"
-        sky_view_path = self.simulation_directory / "sky_view.h5"
-        points_path = self.simulation_directory / "points.h5"
+
+        if self._total_irradiance is not None:
+            return self._total_irradiance
 
         if total_irradiance_path.exists():
-            self.total_irradiance = pd.read_hdf(total_irradiance_path, "df")
-        if sky_view_path.exists():
-            self.sky_view = pd.read_hdf(sky_view_path, "df")
-        if points_path.exists():
-            self.points = pd.read_hdf(points_path, "df")
-
-        if self.total_irradiance is None:
-            self.total_irradiance = _make_annual(
-                load_ill(self._find_irradiance_files())
+            self._total_irradiance = pd.read_hdf(total_irradiance_path, "df")
+        else:
+            ill_files = list(
+                (
+                    self.simulation_directory / "annual_irradiance" / "results" / "total"
+                ).glob("*.ill")
+            )
+            self._total_irradiance = _make_annual(
+                load_ill(ill_files)
             ).fillna(0)
-            self.total_irradiance.to_hdf(
+            self._total_irradiance.to_hdf(
                 total_irradiance_path, "df", complevel=9, complib="blosc"
             )
+        return self._total_irradiance
+    
+    @property
+    def sky_view(self) -> pd.DataFrame:
+        """Return the sky view results from the simulation directory, and load them into the object if they're not already loaded."""
 
-        if self.sky_view is None:
-            self.sky_view = load_res(self._find_sky_view_files())
-            self.sky_view.to_hdf(sky_view_path, "df", complevel=9, complib="blosc")
+        sky_view_path = self.simulation_directory / "sky_view.h5"
 
-        if self.points is None:
-            self.points = load_pts(self._find_points_files())
-            self.points.to_hdf(points_path, "df", complevel=9, complib="blosc")
+        if self._sky_view is not None:
+            return self._sky_view
+        
+        if sky_view_path.exists():
+            self._sky_view = pd.read_hdf(sky_view_path, "df")
+        else:
+            if self._sky_view is None:
+                res_files = list((self.simulation_directory / "sky_view" / "results").glob("*.res"))
+                self._sky_view = load_res(res_files)
+                self._sky_view.to_hdf(sky_view_path, "df", complevel=9, complib="blosc")
 
-        return None
+        return self._sky_view
 
-    def _run_openfield(self) -> None:
+    @property
+    def points(self) -> pd.DataFrame:
+        """Return the points results from the simulation directory, and load them into the object if they're not already loaded."""
+
+        points_path = self.simulation_directory / "points.h5"
+
+        if self._points is not None:
+            return self._points
+
+        if points_path.exists():
+            self._points = pd.read_hdf(points_path, "df")
+        else:
+            points_files = list((self.simulation_directory / "sky_view" / "model" / "grid").glob("*.pts"))
+            self._points = load_pts(points_files)
+            self._points.to_hdf(points_path, "df", complevel=9, complib="blosc")
+        return self._points
+
+    @property
+    def shaded_utci(self) -> pd.Series:
+        shaded_utci_path = self.simulation_directory / "shaded.utci"
+        
+        if self._shaded_utci is not None:
+            return self._shaded_utci
+        
+        if not shaded_utci_path.exists():
+            self.__run_openfield()
+        
+        self._shaded_utci = pd.read_csv(shaded_utci_path, index_col=0, header=0, parse_dates=True)
+
+        return self._shaded_utci
+    
+    @property
+    def unshaded_utci(self) -> pd.Series:
+        unshaded_utci_path = self.simulation_directory / "unshaded.utci"
+        
+        if self._unshaded_utci is not None:
+            return self._unshaded_utci
+        
+        if not unshaded_utci_path.exists():
+            self.__run_openfield()
+        
+        self._unshaded_utci = pd.read_csv(unshaded_utci_path, index_col=0, header=0, parse_dates=True)
+
+        return self._unshaded_utci
+
+    @property
+    def shaded_mrt(self) -> pd.Series:
+        shaded_mrt_path = self.simulation_directory / "shaded.mrt"
+        
+        if self._shaded_mrt is not None:
+            return self._shaded_mrt
+        
+        if not shaded_mrt_path.exists():
+            self.__run_openfield()
+        
+        self._shaded_mrt = pd.read_csv(shaded_mrt_path, index_col=0, header=0, parse_dates=True)
+
+        return self._shaded_mrt
+    
+    @property
+    def unshaded_mrt(self) -> pd.Series:
+        unshaded_mrt_path = self.simulation_directory / "unshaded.mrt"
+        
+        if self._unshaded_mrt is not None:
+            return self._unshaded_mrt
+        
+        if not unshaded_mrt_path.exists():
+            self.__run_openfield()
+        
+        self._unshaded_mrt = pd.read_csv(unshaded_mrt_path, index_col=0, header=0, parse_dates=True)
+
+        return self._unshaded_mrt
+
+    @property
+    def shaded_gnd(self) -> pd.Series:
+        shaded_gnd_path = self.simulation_directory / "shaded.gnd"
+        
+        if self._shaded_gnd is not None:
+            return self._shaded_gnd
+        
+        if not shaded_gnd_path.exists():
+            self.__run_openfield()
+        
+        self._shaded_gnd = pd.read_csv(shaded_gnd_path, index_col=0, header=0, parse_dates=True)
+
+        return self._shaded_gnd
+    
+    @property
+    def unshaded_gnd(self) -> pd.Series:
+        unshaded_gnd_path = self.simulation_directory / "unshaded.gnd"
+        
+        if self._unshaded_gnd is not None:
+            return self._unshaded_gnd
+        
+        if not unshaded_gnd_path.exists():
+            self.__run_openfield()
+        
+        self._unshaded_gnd = pd.read_csv(unshaded_gnd_path, index_col=0, header=0, parse_dates=True)
+
+        return self._unshaded_gnd
+    
+    @property
+    def dry_bulb_temperature(self) -> pd.Series:
+        return to_series(self.epw.dry_bulb_temperature)
+    
+    @property
+    def wind_speed(self) -> pd.Series:
+        return to_series(self.epw.wind_speed)
+    
+    @property
+    def wind_direction(self) -> pd.Series:
+        return to_series(self.epw.wind_direction)
+
+    def __run_openfield(self) -> None:
         """Run the Openfield process to generate the shaded and unshaded MRT, surface temperature and UTCI values."""
-
-        shaded_utci_path = self.simulation_directory / "shaded_utci.json"
-        unshaded_utci_path = self.simulation_directory / "unshaded_utci.json"
-
-        shaded_ground_surface_temperature_path = (
-            self.simulation_directory / "shaded_ground_surface_temperature.json"
-        )
-        unshaded_ground_surface_temperature_path = (
-            self.simulation_directory / "unshaded_ground_surface_temperature.json"
+        
+        openfield = Openfield(
+            self.epw, self.ground_material, self.shade_material, run=True
         )
 
-        shaded_mean_radiant_temperature_path = (
-            self.simulation_directory / "shaded_mean_radiant_temperature.json"
+        unshaded_typology = Typology(
+            openfield,
+            name="Openfield",
+            evaporative_cooling_effectiveness=0,
+            shelter=Shelter(
+                altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1
+            ),
         )
-        unshaded_mean_radiant_temperature_path = (
-            self.simulation_directory / "unshaded_mean_radiant_temperature.json"
-        )
-
-        if shaded_utci_path.exists():
-            print(f"Loading {shaded_utci_path}")
-            self.shaded_utci = from_json(shaded_utci_path)
-        if unshaded_utci_path.exists():
-            print(f"Loading {unshaded_utci_path}")
-            self.unshaded_utci = from_json(unshaded_utci_path)
-        if shaded_ground_surface_temperature_path.exists():
-            print(f"Loading {shaded_ground_surface_temperature_path}")
-            self.shaded_ground_surface_temperature = from_json(
-                shaded_ground_surface_temperature_path
-            )
-        if unshaded_ground_surface_temperature_path.exists():
-            print(f"Loading {unshaded_ground_surface_temperature_path}")
-            self.unshaded_ground_surface_temperature = from_json(
-                unshaded_ground_surface_temperature_path
-            )
-        if shaded_mean_radiant_temperature_path.exists():
-            print(f"Loading {shaded_mean_radiant_temperature_path}")
-            self.shaded_mean_radiant_temperature = from_json(
-                shaded_mean_radiant_temperature_path
-            )
-        if unshaded_mean_radiant_temperature_path.exists():
-            print(f"Loading {unshaded_mean_radiant_temperature_path}")
-            self.unshaded_mean_radiant_temperature = from_json(
-                unshaded_mean_radiant_temperature_path
-            )
-
-        if (
-            (not self.shaded_utci)
-            and (not self.unshaded_utci)
-            and (not self.shaded_ground_surface_temperature)
-            and (not self.unshaded_ground_surface_temperature)
-            and (not self.shaded_mean_radiant_temperature)
-            and (not self.unshaded_mean_radiant_temperature)
-        ):
-            openfield = Openfield(
-                self.epw, self.ground_material, self.shade_material, run=True
-            )
-            unshaded_typology = Typology(
-                openfield,
-                name="Openfield",
-                evaporative_cooling_effectiveness=0,
-                shelter=Shelter(
-                    altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1
-                ),
-            )
-            shaded_typology = Typology(
-                openfield,
-                name="Enclosed",
-                evaporative_cooling_effectiveness=0,
-                shelter=Shelter(
-                    altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0
-                ),
-            )
-
-            self.shaded_utci = shaded_typology._universal_thermal_climate_index()
-            self.unshaded_utci = unshaded_typology._universal_thermal_climate_index()
-
-            self.shaded_ground_surface_temperature = openfield.shaded_below_temperature
-            self.unshaded_ground_surface_temperature = (
-                openfield.unshaded_below_temperature
-            )
-
-            self.shaded_mean_radiant_temperature = (
-                openfield.shaded_mean_radiant_temperature
-            )
-            self.unshaded_mean_radiant_temperature = (
-                openfield.unshaded_mean_radiant_temperature
-            )
-
-            to_json(self.shaded_utci, shaded_utci_path)
-            to_json(self.unshaded_utci, unshaded_utci_path)
-            to_json(
-                self.shaded_ground_surface_temperature,
-                shaded_ground_surface_temperature_path,
-            )
-            to_json(
-                self.unshaded_ground_surface_temperature,
-                unshaded_ground_surface_temperature_path,
-            )
-            to_json(
-                self.shaded_mean_radiant_temperature,
-                shaded_mean_radiant_temperature_path,
-            )
-            to_json(
-                self.unshaded_mean_radiant_temperature,
-                unshaded_mean_radiant_temperature_path,
-            )
-
-        return None
-
-    def _find_points_files(self) -> List[Path]:
-        """Find the points files in the simulation directory."""
-        return list(
-            (self.simulation_directory / "sky_view" / "model" / "grid").glob("*.pts")
+        
+        shaded_typology = Typology(
+            openfield,
+            name="Enclosed",
+            evaporative_cooling_effectiveness=0,
+            shelter=Shelter(
+                altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0
+            ),
         )
 
-    def _find_irradiance_files(self) -> List[Path]:
-        """Find the irradiance files in the simulation directory."""
-        return list(
-            (
-                self.simulation_directory / "annual_irradiance" / "results" / "total"
-            ).glob("*.ill")
-        )
+        to_series(openfield.unshaded_below_temperature).to_csv(self.simulation_directory / "unshaded.gnd")
+        to_series(openfield.shaded_below_temperature).to_csv(self.simulation_directory / "shaded.gnd")
 
-    def _find_sky_view_files(self) -> List[Path]:
-        """Find the sky view files in the simulation directory."""
-        return list((self.simulation_directory / "sky_view" / "results").glob("*.res"))
+        to_series(openfield.unshaded_mean_radiant_temperature).to_csv(self.simulation_directory / "unshaded.mrt")
+        to_series(openfield.shaded_mean_radiant_temperature).to_csv(self.simulation_directory / "shaded.mrt")
 
-    def _spatial_utci_approx(self) -> pd.DataFrame:
-        """Approximate the UTCI values for the full geometric simulation."""
-        spatial_utci_path = self.simulation_directory / "utci.h5"
-        if spatial_utci_path.exists():
-            print(f"Loading {spatial_utci_path}")
-            return pd.read_hdf(spatial_utci_path, "df")
+        to_series(unshaded_typology._universal_thermal_climate_index()).to_csv(self.simulation_directory / "unshaded.utci")
+        to_series(shaded_typology._universal_thermal_climate_index()).to_csv(self.simulation_directory / "shaded.utci")
 
-        grp = self.total_irradiance.groupby(
-            self.total_irradiance.columns.get_level_values(0), axis=1
-        )
+    def spatial_mrt(self) -> pd.DataFrame:
+        """Return the annual MRT values for each point in the simulation."""
 
-        _min_rad = grp.min().min(axis=1)
-        _max_rad = grp.max().max(axis=1)
+        spatial_mrt_path = self.simulation_directory / "spatial_mrt.h5"
 
-        shaded_utci = to_series(self.shaded_utci)
-        unshaded_utci = to_series(self.unshaded_utci)
+        if self._spatial_mrt is not None:
+            return self._spatial_mrt
+        
+        if not spatial_mrt_path.exists():
+            y_original = np.stack([self.shaded_mrt.squeeze().values, self.unshaded_mrt.squeeze().values], axis=1)
 
-        xnew = self.total_irradiance.values
-        x = np.stack([_min_rad.values, _max_rad.values], axis=1)
+            # DAYTIME
+            irradiance_grp = self.total_irradiance[self.sun_up_bool].groupby(self.total_irradiance.columns.get_level_values(0), axis=1)
+            daytimes = []
+            for grid in self.sky_view.columns:
+                irradiance_range = np.vstack([irradiance_grp.min()[grid], irradiance_grp.max()[grid]]).T
+                new_min = y_original[self.sun_up_bool].min(axis=1)
+                new_max = y_original[self.sun_up_bool].max(axis=1)
+                old_min = irradiance_range.min(axis=1)
+                old_max = irradiance_range.max(axis=1)
+                old_value = self.total_irradiance[grid][self.sun_up_bool].values
+                new_value = ((old_value.T - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
+                daytimes.append(pd.DataFrame(new_value.T))
 
-        y_day = np.stack([shaded_utci.values, unshaded_utci.values], axis=1)
-        y_night = np.stack([unshaded_utci.values, shaded_utci.values], axis=1)
+            daytime = pd.concat(daytimes, axis=1)
+            daytime.index = self.total_irradiance.index[self.sun_up_bool]
+            daytime.columns = self.total_irradiance.columns
 
-        daytime_vals = []
-        nighttime_vals = []
-        for i in range(8760):
-            print(f"Spatial UTCI approx: [{i:04d}/8760]")
-            daytime_vals.append(interpolate.interp1d(x[i], y_day[i])(xnew[i]))
-            nighttime_vals.append(interpolate.interp1d(x[i], y_night[i])(xnew[i]))
+            # NIGHTTIME
+            x_original = [0, 100]
+            nighttime = []
+            for grid in self.sky_view.columns:
+                print(f"{grid} - Interpolating nighttime MRT values")
+                nighttime.append(pd.DataFrame(interp1d(x_original, y_original[~self.sun_up_bool])(self.sky_view[grid])).dropna(axis=1))
+            nighttime = pd.concat(nighttime, axis=1)
+            nighttime.index = self.total_irradiance.index[~self.sun_up_bool]
+            nighttime.columns = self.total_irradiance.columns
 
-        daytime = pd.DataFrame(
-            daytime_vals,
-            index=self.total_irradiance.index,
-            columns=self.total_irradiance.columns,
-        )
-        nighttime = pd.DataFrame(
-            nighttime_vals,
-            index=self.total_irradiance.index,
-            columns=self.total_irradiance.columns,
-        )
+            self._spatial_mrt = pd.concat([nighttime, daytime], axis=0).sort_index().interpolate().ewm(span=1.5).mean()
+            self._spatial_mrt.to_hdf(spatial_mrt_path, "df", complevel=9, complib="blosc")
 
-        utci_approx = daytime.where(
-            np.tile(self.sun_up_bool, [daytime.shape[1], 1]).T, nighttime
-        )
+            return self._spatial_mrt
+        else:
+            self._spatial_mrt = pd.read_hdf(spatial_mrt_path, "df")
+            return self._spatial_mrt
+        
+    def spatial_utci(self) -> pd.DataFrame:
+        """Return the annual UTCI values for each point in the simulation."""
 
-        utci_approx.to_hdf(spatial_utci_path, "df", complevel=9, complib="blosc")
+        spatial_utci_path = self.simulation_directory / "spatial_utci.h5"
 
-        return utci_approx
+        if self._spatial_utci is not None:
+            return self._spatial_utci
+        
+        if not spatial_utci_path.exists():
+            y_original = np.stack([self.shaded_utci.squeeze().values, self.unshaded_utci.squeeze().values], axis=1)
 
-    def _spatial_mrt_approx(self) -> pd.DataFrame:
-        """Approximate the mean radiant temperature values for the full geometric simulation."""
-        spatial_mrt_path = self.simulation_directory / "mrt.h5"
-        if spatial_mrt_path.exists():
-            print(f"Loading {spatial_mrt_path}")
-            return pd.read_hdf(spatial_mrt_path, "df")
+            # DAYTIME
+            irradiance_grp = self.total_irradiance[self.sun_up_bool].groupby(self.total_irradiance.columns.get_level_values(0), axis=1)
+            daytimes = []
+            for grid in self.sky_view.columns:
+                irradiance_range = np.vstack([irradiance_grp.min()[grid], irradiance_grp.max()[grid]]).T
+                new_min = y_original[self.sun_up_bool].min(axis=1)
+                new_max = y_original[self.sun_up_bool].max(axis=1)
+                old_min = irradiance_range.min(axis=1)
+                old_max = irradiance_range.max(axis=1)
+                old_value = self.total_irradiance[grid][self.sun_up_bool].values
+                new_value = ((old_value.T - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
+                daytimes.append(pd.DataFrame(new_value.T))
 
-        grp = self.total_irradiance.groupby(
-            self.total_irradiance.columns.get_level_values(0), axis=1
-        )
+            daytime = pd.concat(daytimes, axis=1)
+            daytime.index = self.total_irradiance.index[self.sun_up_bool]
+            daytime.columns = self.total_irradiance.columns
 
-        _min_rad = grp.min().min(axis=1)
-        _max_rad = grp.max().max(axis=1)
+            # NIGHTTIME
+            x_original = [0, 100]
+            nighttime = []
+            for grid in self.sky_view.columns:
+                print(f"{grid} - Interpolating nighttime utci values")
+                nighttime.append(pd.DataFrame(interp1d(x_original, y_original[~self.sun_up_bool])(self.sky_view[grid])).dropna(axis=1))
+            nighttime = pd.concat(nighttime, axis=1)
+            nighttime.index = self.total_irradiance.index[~self.sun_up_bool]
+            nighttime.columns = self.total_irradiance.columns
 
-        shaded_mrt = to_series(self.shaded_mean_radiant_temperature)
-        unshaded_mrt = to_series(self.unshaded_mean_radiant_temperature)
+            self._spatial_utci = pd.concat([nighttime, daytime], axis=0).sort_index().interpolate().ewm(span=1.5).mean()
+            self._spatial_utci.to_hdf(spatial_utci_path, "df", complevel=9, complib="blosc")
 
-        xnew = self.total_irradiance.values
-        x = np.stack([_min_rad.values, _max_rad.values], axis=1)
+            return self._spatial_utci
+        else:
+            self._spatial_utci = pd.read_hdf(spatial_utci_path, "df")
+            return self._spatial_utci
+    
+    def spatial_gnd(self) -> pd.DataFrame:
+        """Return the annual Ground Temperature values for each point in the simulation."""
 
-        y_day = np.stack([shaded_mrt.values, unshaded_mrt.values], axis=1)
-        y_night = np.stack([unshaded_mrt.values, shaded_mrt.values], axis=1)
+        spatial_gnd_path = self.simulation_directory / "spatial_gnd.h5"
 
-        daytime_vals = []
-        nighttime_vals = []
-        for i in range(8760):
-            print(f"Spatial MRT approx: [{i:04d}/8760]")
-            daytime_vals.append(interpolate.interp1d(x[i], y_day[i])(xnew[i]))
-            nighttime_vals.append(interpolate.interp1d(x[i], y_night[i])(xnew[i]))
+        if self._spatial_gnd is not None:
+            return self._spatial_gnd
+        
+        if not spatial_gnd_path.exists():
+            y_original = np.stack([self.shaded_gnd.squeeze().values, self.unshaded_gnd.squeeze().values], axis=1)
 
-        daytime = pd.DataFrame(
-            daytime_vals,
-            index=self.total_irradiance.index,
-            columns=self.total_irradiance.columns,
-        )
-        nighttime = pd.DataFrame(
-            nighttime_vals,
-            index=self.total_irradiance.index,
-            columns=self.total_irradiance.columns,
-        )
+            # DAYTIME
+            irradiance_grp = self.total_irradiance[self.sun_up_bool].groupby(self.total_irradiance.columns.get_level_values(0), axis=1)
+            daytimes = []
+            for grid in self.sky_view.columns:
+                irradiance_range = np.vstack([irradiance_grp.min()[grid], irradiance_grp.max()[grid]]).T
+                new_min = y_original[self.sun_up_bool].min(axis=1)
+                new_max = y_original[self.sun_up_bool].max(axis=1)
+                old_min = irradiance_range.min(axis=1)
+                old_max = irradiance_range.max(axis=1)
+                old_value = self.total_irradiance[grid][self.sun_up_bool].values
+                new_value = ((old_value.T - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
+                daytimes.append(pd.DataFrame(new_value.T))
 
-        mrt_approx = daytime.where(
-            np.tile(self.sun_up_bool, [daytime.shape[1], 1]).T, nighttime
-        )
+            daytime = pd.concat(daytimes, axis=1)
+            daytime.index = self.total_irradiance.index[self.sun_up_bool]
+            daytime.columns = self.total_irradiance.columns
 
-        mrt_approx.to_hdf(spatial_mrt_path, "df", complevel=9, complib="blosc")
+            # NIGHTTIME
+            x_original = [0, 100]
+            nighttime = []
+            for grid in self.sky_view.columns:
+                print(f"{grid} - Interpolating nighttime gnd values")
+                nighttime.append(pd.DataFrame(interp1d(x_original, y_original[~self.sun_up_bool])(self.sky_view[grid])).dropna(axis=1))
+            nighttime = pd.concat(nighttime, axis=1)
+            nighttime.index = self.total_irradiance.index[~self.sun_up_bool]
+            nighttime.columns = self.total_irradiance.columns
 
-        return mrt_approx
+            self._spatial_gnd = pd.concat([nighttime, daytime], axis=0).sort_index().interpolate().ewm(span=1.5).mean()
+            self._spatial_gnd.to_hdf(spatial_gnd_path, "df", complevel=9, complib="blosc")
 
-    def _spatial_gnd_srf_approx(self) -> pd.DataFrame:
-        """Approximate the ground surface temperature values for the full geometric simulation."""
-        spatial_gnd_srf_path = self.simulation_directory / "gnd_srf.h5"
-        if spatial_gnd_srf_path.exists():
-            print(f"Loading {spatial_gnd_srf_path}")
-            return pd.read_hdf(spatial_gnd_srf_path, "df")
-
-        grp = self.total_irradiance.groupby(
-            self.total_irradiance.columns.get_level_values(0), axis=1
-        )
-
-        _min_rad = grp.min().min(axis=1)
-        _max_rad = grp.max().max(axis=1)
-
-        shaded_gnd_srf = to_series(self.shaded_ground_surface_temperature)
-        unshaded_gnd_srf = to_series(self.unshaded_ground_surface_temperature)
-
-        xnew = self.total_irradiance.values
-        x = np.stack([_min_rad.values, _max_rad.values], axis=1)
-
-        y_day = np.stack([shaded_gnd_srf.values, unshaded_gnd_srf.values], axis=1)
-        y_night = np.stack([unshaded_gnd_srf.values, shaded_gnd_srf.values], axis=1)
-
-        daytime_vals = []
-        nighttime_vals = []
-        for i in range(8760):
-            print(f"Spatial Ground Srf Temp approx: [{i:04d}/8760]")
-            daytime_vals.append(interpolate.interp1d(x[i], y_day[i])(xnew[i]))
-            nighttime_vals.append(interpolate.interp1d(x[i], y_night[i])(xnew[i]))
-
-        daytime = pd.DataFrame(
-            daytime_vals,
-            index=self.total_irradiance.index,
-            columns=self.total_irradiance.columns,
-        )
-        nighttime = pd.DataFrame(
-            nighttime_vals,
-            index=self.total_irradiance.index,
-            columns=self.total_irradiance.columns,
-        )
-
-        gnd_srf_approx = daytime.where(
-            np.tile(self.sun_up_bool, [daytime.shape[1], 1]).T, nighttime
-        )
-
-        gnd_srf_approx.to_hdf(spatial_gnd_srf_path, "df", complevel=9, complib="blosc")
-
-        return gnd_srf_approx
+            return self._spatial_gnd
+        else:
+            self._spatial_gnd = pd.read_hdf(spatial_gnd_path, "df")
+            return self._spatial_gnd
 
     @property
     def xlim(self) -> List[float]:
@@ -402,11 +420,11 @@ class SpatialComfort:
 
     # TODO - add method to figure out appropriate trimesh alpha value
 
-    
+
 
 if __name__ == "__main__":
     ec = SpatialComfort(
-        simulation_directory=r"C:\Users\tgerrish\simulation\RootBridges",
-        epw=r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\GBR_LONDON-HEATHROW-AP_037720_IW2.epw",
+        simulation_directory=r"C:\Users\tgerrish\simulation\LadybugTools_ToolkitExternalThermalComfort",
+        epw=r"C:\Users\tgerrish\BuroHappold\Sustainability and Physics - epws\GBR_London.Gatwick.037760_IWEC.epw",
     )
     print(ec.utci)
