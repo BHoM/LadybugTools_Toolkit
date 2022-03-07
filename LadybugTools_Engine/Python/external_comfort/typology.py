@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
-from typing import Dict
+from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -121,8 +121,8 @@ class Typology:
 
 def create_typologies(
     epw: EPW,
-    ground_material: _EnergyMaterialOpaqueBase,
-    shade_material: _EnergyMaterialOpaqueBase,
+    ground_material: Union[str, _EnergyMaterialOpaqueBase],
+    shade_material: Union[str, _EnergyMaterialOpaqueBase],
 ) -> Dict[str, Typology]:
     """Create a dictionary of typologies for a given epw file, with all requisite simulations and calculations completed"""
     openfield = Openfield(epw, ground_material, shade_material, True)
@@ -162,6 +162,12 @@ def create_typologies(
             shelter=Shelter(
                 altitude_range=[45, 90], azimuth_range=[0, 360], porosity=0.5
             ),
+        ),
+        "NearWater": Typology(
+            openfield,
+            name="NearWater",
+            evaporative_cooling_effectiveness=0.15,
+            shelter=Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
         ),
         "Misting": Typology(
             openfield,
