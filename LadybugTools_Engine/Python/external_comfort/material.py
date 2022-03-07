@@ -155,6 +155,17 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         solar_absorptance=0.5,
         visible_absorptance=0.5,
     ),
+    "TRAVERTINE": EnergyMaterial(
+        identifier="TRAVERTINE",
+        roughness="MediumRough",
+        thickness=0.2,
+        conductivity=3.2,
+        density=2700.0,
+        specific_heat=790.0,
+        thermal_absorptance=0.96,
+        solar_absorptance=0.55,
+        visible_absorptance=0.55,
+    ),
     # "GRASS_DAMP": EnergyMaterialVegetation(
     #     identifier="GRASS_DAMP",
     #     roughness="MediumRough",

@@ -1,11 +1,13 @@
 import sys
 
+from matplotlib.colorbar import ColorbarBase
+
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 import calendar
 import colorsys
 import textwrap
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybug_extension.datacollection import from_series, to_series
 from matplotlib import patches
-from matplotlib.colors import cnames, to_rgb
+from matplotlib.colors import BoundaryNorm, Colormap, LinearSegmentedColormap, Normalize, cnames, to_rgb
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import make_interp_spline
@@ -237,16 +239,119 @@ def utci_heatmap(
     return fig
 
 
+def utci_distance_to_comfortable(collection: HourlyContinuousCollection, invert_y: bool = False, title: str = None, comfort_thresholds: Tuple[float] = (9, 26), distance_from_comfort_to_show: float = 20) -> Figure:
+
+    # TODO - Half implemented, but shows promise! Fix the shelter stuff first!
+    series = to_series(collection)
+    matrix = (
+        series.to_frame()
+        .pivot_table(columns=series.index.date, index=series.index.time)
+        .values[::-1]
+    )
+
+    comfort_midpoint = sum(comfort_thresholds) / 2
+
+    distance_to_comfort_midpoint = matrix - comfort_midpoint
+
+    vlow = comfort_midpoint - distance_from_comfort_to_show
+    vhigh = comfort_midpoint + distance_from_comfort_to_show
+
+    # construct colormap
+    too_cold_cmap: Colormap =plt.colormaps.get("Blues_r")
+    comfortable_cmap: Colormap = LinearSegmentedColormap.from_list("comfortable", list(zip([0, 0.5, 1], ["w", plt.colormaps.get("Greens").get_over(), "w"])), N=256)
+    too_hot_cmap: Colormap = plt.colormaps.get("Reds")
+
+    def NormalizeData(data):
+        return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+    too_cold_colors = too_cold_cmap(NormalizeData(np.linspace(vlow, comfort_thresholds[0], 128)))
+    comfortable_colors = comfortable_cmap(NormalizeData(np.linspace(comfort_thresholds[0], comfort_thresholds[1], 128)))
+    too_hot_colors = too_hot_cmap(NormalizeData(np.linspace(comfort_thresholds[1], vhigh, 128)))
+
+    all_colors = np.vstack((too_cold_colors, comfortable_colors, too_hot_colors))
+    mymap = LinearSegmentedColormap.from_list('all_colors', all_colors)
+    mymap.set_over(too_hot_cmap.get_over())
+    mymap.set_under(too_cold_cmap.get_under())
+    
+
+    # Plot infrastructure
+    fig, ax = plt.subplots(1, 1, figsize=(WIDTH, HEIGHT))
+
+    heatmap = ax.imshow(
+        distance_to_comfort_midpoint, 
+        extent=[
+            mdates.date2num(series.index.min()),
+            mdates.date2num(series.index.max()), 
+            726449, 
+            726450,
+        ], 
+        aspect="auto",
+        cmap=mymap,
+        interpolation="none", 
+        vmin=vlow, 
+        vmax=vhigh
+    )
+    
+    # Axis formatting
+    ax.xaxis_date()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+    ax.yaxis_date()
+    ax.yaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+
+    if invert_y:
+        ax.invert_yaxis()
+    ax.tick_params(labelleft=True, labelright=True, labelbottom=True)
+    plt.setp(ax.get_xticklabels(), ha="left", color="k")
+    plt.setp(ax.get_yticklabels(), color="k")
+
+    # Spine formatting
+    [
+        ax.spines[spine].set_visible(False)
+        for spine in ["top", "bottom", "left", "right"]
+    ]
+
+    # Grid formatting
+    ax.grid(visible=True, which="major", color="white", linestyle=":", alpha=1)
+
+    # Colorbar formatting
+    divider = make_axes_locatable(ax)
+    ax_cb = divider.new_vertical(size="6%", pad=0.4, pack_start=True)
+    cb = ColorbarBase(ax_cb, cmap=mymap, orientation='horizontal', norm=Normalize(vmin=distance_to_comfort_midpoint.min(), vmax=distance_to_comfort_midpoint.max()))
+    plt.gcf().add_axes(ax_cb)
+    
+    plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
+    cb.outline.set_visible(False)
+
+    ax_cb.text(comfort_midpoint, 0, "Comfortable", color="k", fontsize="small", ha="center", va="top")
+
+    if title is None:
+        ax.set_title("Distance to \"comfortable\"", color="k", y=1, ha="left", va="bottom", x=0)
+    else:
+        ax.set_title(
+            "{0:} - {1:}".format(series.name, title),
+            color="k",
+            y=1,
+            ha="left",
+            va="bottom",
+            x=0,
+        )
+
+    # Tidy plot
+    plt.tight_layout()
+
+    return distance_to_comfort_midpoint
+
+
 def utci_pseudo_journey(
     utci_collections: List[HourlyContinuousCollection],
     month: int,
     hour: int,
     names: List[str] = None,
     curve: bool = False,
-    ylims: List[float] = None,
+    ylims_override: Union[float, List[float]] = None,
     show_legend: bool = True,
     fig_width: float = 10,
-    fig_height: float = 5
+    fig_height: float = 2.5,
 ) -> Figure:
     """Create a figure showing the pseudo-journey between different UTCI conditions at a given time of year
 
@@ -256,7 +361,7 @@ def utci_pseudo_journey(
         hour (int): The hour of the day to plot
         names (List[str], optional): A list of names to label each condition with. Defaults to None.
         curve (bool, optional): Whether to plot the pseudo-journey as a spline. Defaults to False.
-        ylims (List[float], optional): A list of y-axis limits to use. Defaults to None.
+        ylims (Union[float, List[float]], optional): A value denoting the band-width to show in the plot, or list of y-axis limits to use. Defaults to None which fits values automatically.
 
     Returns:
         Figure: A matplotlib figure object
@@ -274,9 +379,6 @@ def utci_pseudo_journey(
 
     if not 0 <= hour <= 23:
         raise ValueError("Hour must be between 0 and 23.")
-    
-    if not isinstance(ylims, (None, list)) or len(ylims) != 2:
-        raise ValueError("ylims must be a list of length 2.")
 
     if names:
         if len(utci_collections) != len(names):
@@ -294,8 +396,7 @@ def utci_pseudo_journey(
             n, val, name, c="k", zorder=10, ha="center", va="center", fontsize="medium"
         )
 
-    if ylims is None:
-        ylims = ax.get_ylim()
+    ylims = ax.get_ylim()
 
     if curve:
         # Smooth values
@@ -339,10 +440,16 @@ def utci_pseudo_journey(
         utci_labels.append(category)
         utci_handles.append(patches.Patch(color=cc, label=category))
 
-    if len(ylims) == 1:
-        _middf = 0.5 * (df_pit.max() + df_pit.min())
-        ax.set_ylim([_middf - 1 - ylims[0], _middf + 1 +ylims[0]])
-    elif len(ylims) == 2:
+    # Center the ylims around the midpoint of the typologies shown
+    if isinstance(ylims_override, (int, float)):
+        midpoint_y = 0.5 * (df_pit.max() + df_pit.min())
+        ax.set_ylim([
+            midpoint_y - (ylims_override / 2),
+            midpoint_y + (ylims_override / 2),
+        ])
+    elif isinstance(ylims_override, list):
+        ax.set_ylim(ylims_override)
+    else:
         ax.set_ylim([ylims[0] - 1, ylims[1] + 1])
     
     ax.set_xlim(-0.5, len(utci_collections) - 0.5)
