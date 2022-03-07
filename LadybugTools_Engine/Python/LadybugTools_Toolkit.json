@@ -48,14 +48,6 @@
         {
             "Name": "shapely",
             "Version": "1.8.1"
-        },
-        {
-            "Name": "tqdm",
-            "Version": "4.63.0"
-        },
-        {
-            "Name": "ipywidgets",
-            "Version": "7.6.5"
         }
     ]
 }

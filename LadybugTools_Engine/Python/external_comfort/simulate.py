@@ -25,7 +25,6 @@ import numpy as np
 from ladybug_comfort.collection.solarcal import HorizontalSolarCal
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
 
-
 from honeybee_extension.results import load_sql, load_ill, _make_annual
 from ladybug_extension.datacollection import from_series, to_series
 from external_comfort.ground_temperature import energyplus_ground_temperature_strings
