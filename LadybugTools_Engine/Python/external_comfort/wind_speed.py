@@ -62,6 +62,5 @@ def wind_speed_at_height(
             np.pow((target_height / reference_height), windShearExponent)
         )
 
-
 if __name__ == "__main__":
     pass
