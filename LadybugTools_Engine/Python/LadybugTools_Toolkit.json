@@ -38,10 +38,6 @@
             "Version": "1.2.0"
         },
         {
-            "Name": "sphericalpolygon",
-            "Version": "1.2.2"
-        },
-        {
             "Name": "ipykernel",
             "Version": "6.9.1"
         },

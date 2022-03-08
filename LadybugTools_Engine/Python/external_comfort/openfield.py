@@ -70,21 +70,26 @@ class Openfield:
         self.energyplus_run = False
         self.radiance_run = False
 
+        self._simulated: bool = False
         if run:
             self._simulate()
+            self._simulated = True
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(epw={Path(self.epw.file_path).name}, ground_material={self.ground_material.identifier}, shade_material={self.shade_material.identifier})[{'simulated' if self._simulated else 'not simulated'}]"
 
     @property
     def shaded_below_temperature(self) -> HourlyContinuousCollection:
         if not self._shaded_below_temperature:
             self.__run_energyplus()
         return self._shaded_below_temperature
-
+    
     @property
     def shaded_above_temperature(self) -> HourlyContinuousCollection:
         if not self._shaded_above_temperature:
             self.__run_energyplus()
         return self._shaded_above_temperature
-
+    
     @property
     def unshaded_below_temperature(self) -> HourlyContinuousCollection:
         if not self._unshaded_below_temperature:
@@ -168,14 +173,6 @@ class Openfield:
                 )
             )
         return self._unshaded_mean_radiant_temperature
-
-    def __str__(self) -> str:
-        gm = f"{self.ground_material.identifier.title().replace('_', ' ')} ground"
-        sm = f"{self.shade_material.identifier.title().replace('_', ' ')} shade"
-        return f"<{self.__class__.__name__}: {Path(self.epw.file_path).name}, {gm} and {sm}>"
-
-    def __repr__(self) -> str:
-        return self.__str__()
 
     def __run_energyplus(self) -> Openfield:
         """Run EnergyPlus to simulate surrounding surface temperatures."""
