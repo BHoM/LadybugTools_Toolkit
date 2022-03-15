@@ -263,8 +263,8 @@ class SpatialComfort:
         to_series(openfield.unshaded_mean_radiant_temperature).to_csv(self.simulation_directory / "unshaded.mrt")
         to_series(openfield.shaded_mean_radiant_temperature).to_csv(self.simulation_directory / "shaded.mrt")
 
-        to_series(unshaded_typology._universal_thermal_climate_index()).to_csv(self.simulation_directory / "unshaded.utci")
-        to_series(shaded_typology._universal_thermal_climate_index()).to_csv(self.simulation_directory / "shaded.utci")
+        to_series(unshaded_typology.effective_utci()).to_csv(self.simulation_directory / "unshaded.utci")
+        to_series(shaded_typology.effective_utci()).to_csv(self.simulation_directory / "shaded.utci")
 
     def spatial_mrt(self) -> pd.DataFrame:
         """Return the annual MRT values for each point in the simulation."""
