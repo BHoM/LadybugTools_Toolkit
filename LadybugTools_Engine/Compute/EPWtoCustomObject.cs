@@ -38,15 +38,15 @@ namespace BH.Engine.LadybugTools
         [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            if(epwFile == null)
+            if (string.IsNullOrEmpty(epwFile))
             {
-                Base.Compute.RecordError($"epwFile is null.");
+                Base.Compute.RecordError($"epwFile input is either null or has 0 length.");
                 return null;
             }
 
             if (!File.Exists(epwFile))
             {
-                Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {(epwFile.Length == 0 ? "String of 0 length" : epwFile)}");
+                Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {epwFile}");
                 return null;
             }
 
