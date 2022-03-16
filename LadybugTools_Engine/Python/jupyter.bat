@@ -1,1 +1,0 @@
-"C:\ProgramData\BHoM\Extensions\PythonEnvironments\LadybugTools_Toolkit" python -m shell_plus --notebook
