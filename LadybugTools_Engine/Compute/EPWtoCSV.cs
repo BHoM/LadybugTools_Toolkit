@@ -24,6 +24,7 @@ using BH.Engine.Python;
 using BH.oM.Python;
 using BH.oM.Base.Attributes;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -32,10 +33,22 @@ namespace BH.Engine.LadybugTools
     public static partial class Compute
     {
         [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
-        [Input("epwFile", "An EPW file.")]
+        [Input("epwFileeee", "An EPW file.")]
         [Output("csv", "The generated CSV file.")]
         public static string EPWtoCSV(string epwFile)
         {
+            if (epwFile == null)
+            {
+                Base.Compute.RecordError($"epwFile is null.");
+                return null;
+            }
+
+            if (!File.Exists(epwFile))
+            {
+                Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {(epwFile.Length == 0 ? "String of 0 length" : epwFile)}");
+                return null;
+            }
+
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
             if (!pythonEnvironment.IsInstalled())
             {
