@@ -33,7 +33,7 @@ namespace BH.Engine.LadybugTools
     public static partial class Compute
     {
         [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
-        [Input("epwFileeee", "An EPW file.")]
+        [Input("epwFile", "An EPW file.")]
         [Output("csv", "The generated CSV file.")]
         public static string EPWtoCSV(string epwFile)
         {
