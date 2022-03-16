@@ -38,6 +38,18 @@ namespace BH.Engine.LadybugTools
         [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
+            if(epwFile == null)
+            {
+                Base.Compute.RecordError($"epwFile is null.");
+                return null;
+            }
+
+            if (!File.Exists(epwFile))
+            {
+                Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {(epwFile.Length == 0 ? "String of 0 length" : epwFile)}");
+                return null;
+            }
+
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
             if (!pythonEnvironment.IsInstalled())
             {
