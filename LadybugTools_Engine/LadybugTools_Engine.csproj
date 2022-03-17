@@ -163,8 +163,8 @@ if exist "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" rmdir "C:\P
 robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /s /purge /xf "*.pyc" /xd "\__pycache__\" &gt; output.log
 
 :: copy local Python config JSON to BHoM/Settings/Python
-if not exist "C:\ProgramData\BHoM\Settings\Python" mkdir "C:\ProgramData\BHoM\Settings\Python"
-robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Settings\Python" "$(SolutionName).json" &gt; output.log
+if not exist "C:\ProgramData\BHoM\Extensions\Python" mkdir "C:\ProgramData\BHoM\Extensions\Python"
+robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\Python" "$(SolutionName).json" &gt; output.log
 
 :: remove temporary log file
 del output.log</PostBuildEvent>

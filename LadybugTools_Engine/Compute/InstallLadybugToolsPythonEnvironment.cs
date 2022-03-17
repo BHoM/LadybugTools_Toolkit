@@ -37,7 +37,7 @@ namespace BH.Engine.LadybugTools
         [PreviousVersion("5.1", "BH.Engine.LadybugTools.Compute.InstallPythonEnvironment(System.Boolean, System.Boolean)")]
         public static PythonEnvironment InstallLadybugToolsPythonEnvironment(bool run = false, bool force = false)
         {
-            return BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json");
+            return BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Extensions\Python\LadybugTools_Toolkit.json");
         }
     }
 }
