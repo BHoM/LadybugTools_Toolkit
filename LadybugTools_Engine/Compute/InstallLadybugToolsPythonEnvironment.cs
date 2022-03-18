@@ -25,6 +25,7 @@ using System.ComponentModel;
 using BH.Engine.Python;
 using BH.oM.Python;
 using BH.oM.Base.Attributes;
+using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
@@ -37,6 +38,12 @@ namespace BH.Engine.LadybugTools
         [PreviousVersion("5.1", "BH.Engine.LadybugTools.Compute.InstallPythonEnvironment(System.Boolean, System.Boolean)")]
         public static PythonEnvironment InstallLadybugToolsPythonEnvironment(bool run = false, bool force = false)
         {
+            // The following checks for beta 5.1 only. These json files to be added to the installer for later versions. 
+            if (!File.Exists(@"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json"))
+                Base.Compute.RecordError("LadybugTools_Toolkit.json does not exist. Visit the following page for more information: https://github.com/BHoM/LadybugTools_Toolkit/wiki/Beta-version-5.1---Installation-instructions");
+            if (!File.Exists(@"C:\ProgramData\BHoM\Settings\Python\Python_Toolkit.json"))
+                Base.Compute.RecordError("Python_Toolkit.json does not exist. Visit the following page for more information: https://github.com/BHoM/LadybugTools_Toolkit/wiki/Beta-version-5.1---Installation-instructions");
+
             return BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json");
         }
     }
