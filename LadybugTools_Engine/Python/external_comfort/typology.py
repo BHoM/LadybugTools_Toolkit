@@ -1,20 +1,23 @@
 from __future__ import annotations
 
 import sys
-
-from black import diff
+from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
-from typing import Dict, List, Union
+import logging
+from typing import List, Union
+
+logging.basicConfig(level=logging.INFO)
+import inspect
 
 import numpy as np
 import pandas as pd
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 from ladybug.epw import EPW, HourlyContinuousCollection
+from ladybug.sunpath import Sunpath
 from ladybug_comfort.collection.utci import UTCI
 from ladybug_extension.datacollection import from_series, to_series
-from ladybug.sunpath import Sunpath
 
 from external_comfort.evaporative_cooling import get_evaporative_cooled_dbt_rh
 from external_comfort.openfield import Openfield
@@ -62,22 +65,23 @@ class Typology:
             raise ValueError(f"shelters overlap")
         else:
             self.shelters = shelters
-        
+
         self._effective_ws: HourlyContinuousCollection = None
         self._effective_dbt: HourlyContinuousCollection = None
         self._effective_rh: HourlyContinuousCollection = None
         self._effective_mrt: HourlyContinuousCollection = None
         self._effective_utci: HourlyContinuousCollection = None
-        
+
         if calculate:
-            self.dry_bulb_temperature
-            self.relative_humidity
-            self.wind_speed
-            self.mean_radiant_temperature#
-            self.universal_thermal_climate_index
+            self._calculate()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name}, openfield={self.openfield}, evaporative_cooling_effectiveness={self.evaporative_cooling_effectiveness:0.2%}, shelters={[str(i) for i in self.shelters]})"
+
+    def _calculate(self) -> Typology:
+        """Calculate the thermal comfort values for the typology, and in doing so populate the object with values."""
+        self.universal_thermal_climate_index
+        return self
 
     @property
     def dry_bulb_temperature(self) -> HourlyContinuousCollection:
@@ -90,7 +94,7 @@ class Typology:
         if not self._effective_rh:
             self._effective_rh = self.effective_rh()
         return self._effective_rh
-    
+
     @property
     def wind_speed(self) -> HourlyContinuousCollection:
         if not self._effective_ws:
@@ -144,7 +148,7 @@ class Typology:
 
     def effective_ws(self) -> HourlyContinuousCollection:
         """Based on the shelters in-place, create a composity wind-speed collection affected by those shelters."""
-        
+
         if len(self.shelters) == 0:
             self._ws = self.openfield.epw.wind_speed * self.wind_speed_multiplier
             return self._ws
@@ -163,14 +167,14 @@ class Typology:
 
     def effective_dbt(self) -> HourlyContinuousCollection:
         """Based on the evaporative cooling configuration, calculate the effective dry bulb temperature for each hour of the year."""
-        
+
         return get_evaporative_cooled_dbt_rh(
             self.openfield.epw, self.evaporative_cooling_effectiveness
         )["dry_bulb_temperature"]
 
     def effective_rh(self) -> HourlyContinuousCollection:
         """Based on the evaporative cooling configuration, calculate the effective dry bulb temperature for each hour of the year."""
-        
+
         return get_evaporative_cooled_dbt_rh(
             self.openfield.epw, self.evaporative_cooling_effectiveness
         )["relative_humidity"]
@@ -213,7 +217,12 @@ class Typology:
             mrts, index=shaded_mrt.index, name=shaded_mrt.name
         ).interpolate()
 
-        def _smoother(series: pd.Series, difference_threshold: float = -10, transition_window: int = 4, ewm_span: float = 1.25) -> pd.Series:
+        def __smoother(
+            series: pd.Series,
+            difference_threshold: float = -10,
+            transition_window: int = 4,
+            ewm_span: float = 1.25,
+        ) -> pd.Series:
             """Helper function that adds a decay rate to a time-series for values dropping significantly below the previous values.
 
             Args:
@@ -247,13 +256,17 @@ class Typology:
             new_series = ewm_smoothed.where(ewm_mask, series)
             return new_series
 
-        mrt_series = _smoother(mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25)
+        mrt_series = __smoother(
+            mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25
+        )
 
         return from_series(mrt_series)
 
     def effective_utci(self) -> HourlyContinuousCollection:
         """Return the effective UTCI for the given typology."""
-                
+
+        logging.info(f"[{self.name}] Calculating {inspect.stack()[0][3]}")
+
         return UTCI(
             air_temperature=self.dry_bulb_temperature,
             rel_humidity=self.relative_humidity,
@@ -309,31 +322,31 @@ def create_typologies(
     epw: EPW,
     ground_material: Union[str, _EnergyMaterialOpaqueBase],
     shade_material: Union[str, _EnergyMaterialOpaqueBase],
-    calculate: bool = False
-) -> Dict[str, Typology]:
+    calculate: bool = False,
+) -> List[Typology]:
     """Create a dictionary of typologies for a given epw file and context configuration, with all requisite simulations and calculations completed
-    
+
     Args:
         epw (EPW): The epw file to create typologies for
         ground_material (Union[str, _EnergyMaterialOpaqueBase]): The ground material to use for the typologies
         shade_material (Union[str, _EnergyMaterialOpaqueBase]): The shade material to use for the typologies
         calculate (bool, optional): Whether to pre-process the typologies generated. Defaults to False.
-    
+
     Returns:
-        Dict[str, Typology]: A dictionary of typologies, keyed by typology name
+        List[Typology]: A list of typologies
     """
 
     openfield = Openfield(epw, ground_material, shade_material, True)
-    typologies = {
-        "Openfield": Typology(
+    typologies = [
+        Typology(
             openfield,
             name="Openfield",
             evaporative_cooling_effectiveness=0,
             shelters=[],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "Enclosed": Typology(
+        Typology(
             openfield,
             name="Enclosed",
             evaporative_cooling_effectiveness=0,
@@ -341,9 +354,9 @@ def create_typologies(
                 Shelter(altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0)
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "PartiallyEnclosed": Typology(
+        Typology(
             openfield,
             name="Partially enclosed",
             evaporative_cooling_effectiveness=0,
@@ -351,9 +364,9 @@ def create_typologies(
                 Shelter(altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0.5)
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "SkyShelter": Typology(
+        Typology(
             openfield,
             name="Sky-shelter",
             evaporative_cooling_effectiveness=0,
@@ -361,9 +374,9 @@ def create_typologies(
                 Shelter(altitude_range=[45, 90], azimuth_range=[0, 360], porosity=0)
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "FrittedSkyShelter": Typology(
+        Typology(
             openfield,
             name="Fritted sky-shelter",
             evaporative_cooling_effectiveness=0,
@@ -371,9 +384,9 @@ def create_typologies(
                 Shelter(altitude_range=[45, 90], azimuth_range=[0, 360], porosity=0.5),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "NearWater": Typology(
+        Typology(
             openfield,
             name="Near water",
             evaporative_cooling_effectiveness=0.15,
@@ -381,9 +394,9 @@ def create_typologies(
                 Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
             ],
             wind_speed_multiplier=1.2,
-            calculate=calculate,
+            calculate=False,
         ),
-        "Misting": Typology(
+        Typology(
             openfield,
             name="Misting",
             evaporative_cooling_effectiveness=0.3,
@@ -391,9 +404,9 @@ def create_typologies(
                 Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
             ],
             wind_speed_multiplier=0.5,
-            calculate=calculate,
+            calculate=False,
         ),
-        "PDEC": Typology(
+        Typology(
             openfield,
             name="PDEC",
             evaporative_cooling_effectiveness=0.7,
@@ -401,9 +414,9 @@ def create_typologies(
                 Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
             ],
             wind_speed_multiplier=0.5,
-            calculate=calculate,
+            calculate=False,
         ),
-        "NorthShelter": Typology(
+        Typology(
             openfield,
             name="North shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -413,9 +426,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "NortheastShelter": Typology(
+        Typology(
             openfield,
             name="Northeast shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -423,9 +436,9 @@ def create_typologies(
                 Shelter(altitude_range=[0, 70], azimuth_range=[22.5, 67.5], porosity=0),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "EastShelter": Typology(
+        Typology(
             openfield,
             name="East shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -435,9 +448,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "SoutheastShelter": Typology(
+        Typology(
             openfield,
             name="Southeast shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -447,9 +460,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "SouthShelter": Typology(
+        Typology(
             openfield,
             name="South shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -459,9 +472,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "SouthwestShelter": Typology(
+        Typology(
             openfield,
             name="Southwest shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -471,9 +484,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "WestShelter": Typology(
+        Typology(
             openfield,
             name="West shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -483,9 +496,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "NorthwestShelter": Typology(
+        Typology(
             openfield,
             name="Northwest shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -495,9 +508,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "NorthShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="North shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -507,9 +520,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "NortheastShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="Northeast shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -517,9 +530,9 @@ def create_typologies(
                 Shelter(altitude_range=[0, 90], azimuth_range=[22.5, 67.5], porosity=0),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "EastShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="East shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -529,9 +542,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "SoutheastShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="Southeast shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -541,9 +554,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "SouthShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="South shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -553,9 +566,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "SouthwestShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="Southwest shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -565,9 +578,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "WestShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="West shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -577,9 +590,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "NorthwestShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="Northwest shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -589,9 +602,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "EastWestShelter": Typology(
+        Typology(
             openfield,
             name="East-west shelter",
             evaporative_cooling_effectiveness=0.0,
@@ -604,9 +617,9 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-        "EastWestShelterWithCanopy": Typology(
+        Typology(
             openfield,
             name="East-west shelter (with canopy)",
             evaporative_cooling_effectiveness=0.0,
@@ -619,9 +632,16 @@ def create_typologies(
                 ),
             ],
             wind_speed_multiplier=1,
-            calculate=calculate,
+            calculate=False,
         ),
-    }
+    ]
+
+    if not calculate:
+        return typologies
+
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        executor.map(Typology.universal_thermal_climate_index, typologies)
+
     return typologies
 
 
@@ -633,21 +653,17 @@ if __name__ == "__main__":
     epw = EPW(
         r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw"
     )
-    ground_material = MATERIALS["CONCRETE_LIGHTWEIGHT"]
-    shade_material = MATERIALS["FABRIC"]
 
-    typologies = create_typologies(epw, ground_material, shade_material)
+    typologies = create_typologies(epw, "CONCRETE_LIGHTWEIGHT", "FABRIC", True)
 
     utcis = []
-    descriptions = []
     names = []
-    for n, (typology_name, typology) in enumerate(typologies.items()):
-        if n > 5:
+    for n, typology in enumerate(typologies):
+        if n > 100:
             continue
-        print(f"Calculating UTCI for {typology_name}")
+        print(f"Calculating UTCI for {typology.name}")
         utci = typology.effective_utci()
         utcis.append(utci)
-        descriptions.append(typology.description)
         names.append(typology.name)
         f = utci_heatmap(
             utci,
