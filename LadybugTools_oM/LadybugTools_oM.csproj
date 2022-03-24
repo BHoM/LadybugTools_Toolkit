@@ -77,8 +77,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Enum\ExternalComfortMaterial.cs" />
-    <Compile Include="Enum\ExternalComfortTypology.cs" />
+    <Compile Include="Openfield.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

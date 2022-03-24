@@ -13,7 +13,7 @@ from ladybug.epw import EPW
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 
 
-def get_evaporative_cooled_dbt_rh(
+def evaporatively_cooled_dbt_rh(
     epw: EPW, evaporative_cooling_effectiveness: float = 0.3
 ) -> Dict[str, HourlyContinuousCollection]:
     """Calculate the effective DBT and RH considering effects of evaporative cooling.
@@ -62,7 +62,3 @@ def get_evaporative_cooled_dbt_rh(
     }
 
     return {"dry_bulb_temperature": dbt_adjusted, "relative_humidity": rh_adjusted}
-
-
-if __name__ == "__main__":
-    pass
