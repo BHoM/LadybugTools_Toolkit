@@ -7,14 +7,14 @@ from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
 
 
-def to_string(header: Header) -> str:
-    """Convert a Ladybug header object into a string."""
-    header_str = header.to_csv_strings()
-    return f"{header.data_type} ({header.unit})"
-
-
 def from_string(string: str) -> Header:
-    """Convert a string into a Ladybug header object."""
+    """Convert a string into a Ladybug header object.
+    
+    Args:
+        string (str): A Ladybug header string.
+    
+    Returns:
+        Header: A Ladybug header object."""
 
     try:
         str_elements = string.split(" ")
@@ -30,6 +30,3 @@ def from_string(string: str) -> Header:
         _data_type = GenericType(name=_data_type, unit=_unit)
 
     return Header(data_type=_data_type, unit=_unit, analysis_period=AnalysisPeriod())
-
-if __name__ == "__main__":
-    pass
