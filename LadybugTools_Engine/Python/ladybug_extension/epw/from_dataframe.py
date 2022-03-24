@@ -1,22 +1,15 @@
 import sys
+
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 import numpy as np
 import pandas as pd
 from ladybug import datatype
-from ladybug.epw import EPW, AnalysisPeriod, Header, HourlyContinuousCollection
+from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.location import Location
-from ladybug.psychrometrics import (
-    enthalpy_from_db_hr,
-    humid_ratio_from_db_rh,
-    rel_humid_from_db_dpt,
-    wet_bulb_from_db_rh,
-)
-from ladybug.skymodel import clearness_index
-from ladybug.sunpath import Sun, Sunpath
+from ladybug.psychrometrics import rel_humid_from_db_dpt
+from ladybug.sunpath import Sunpath
 from ladybug.wea import Wea
-
-from ladybug_extension.datacollection import to_datetimes, to_hourly, to_series
 
 
 def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
@@ -259,78 +252,3 @@ def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
         epw_obj.global_horizontal_illuminance.values = glob_horiz
 
     return epw_obj
-
-
-def _epw_equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
-    """Check for equality between two EPW objects, with regards to the data contained within.
-
-    Args:
-        epw0 (EPW): A ladybug EPW object.
-        epw1 (EPW): A ladybug EPW object.
-        include_header (bool, optional): Include the str repsresentation of the EPW files header in the comparison. Defaults to False.
-
-    Returns:
-        bool: True if the two EPW objects are equal, False otherwise.
-    """
-    if not isinstance(epw0, EPW) or not isinstance(epw1, EPW):
-        raise TypeError("Both inputs must be of type EPW.")
-
-    if include_header:
-        if epw0.header != epw1.header:
-            return False
-
-    # Check key metrics
-    dbt_match = epw0.dry_bulb_temperature == epw1.dry_bulb_temperature
-    rh_match = epw0.relative_humidity == epw1.relative_humidity
-    dpt_match = epw0.dew_point_temperature == epw1.dew_point_temperature
-    ws_match = epw0.wind_speed == epw1.wind_speed
-    wd_match = epw0.wind_direction == epw1.wind_direction
-    ghr_match = epw0.global_horizontal_radiation == epw1.global_horizontal_radiation
-    dnr_match = epw0.direct_normal_radiation == epw1.direct_normal_radiation
-    dhr_match = epw0.diffuse_horizontal_radiation == epw1.diffuse_horizontal_radiation
-    atm_match = epw0.atmospheric_station_pressure == epw1.atmospheric_station_pressure
-
-    return all(
-        [
-            dbt_match,
-            rh_match,
-            dpt_match,
-            ws_match,
-            wd_match,
-            ghr_match,
-            dnr_match,
-            dhr_match,
-            atm_match,
-        ]
-    )
-
-
-def radiation_tilt_orientation_matrix(epw: EPW) -> pd.DataFrame:
-    """Compute the annual cumulative radiation matrix per surface tilt and orientation, for a given EPW object.
-
-    Args:
-        epw (EPW): The EPW object for which this calculation is made.
-
-    Returns:
-        pd.DataFrame: _description_
-    """    
-    
-    wea = Wea.from_annual_values(epw.location, epw.direct_normal_radiation.values, epw.diffuse_horizontal_radiation.values, is_leap_year=epw.is_leap_year)
-    
-    # I implement a bit of a hack here, to calculate only the Eastern insolation - then mirror it about the North-South axis to get the whole matrix
-    altitudes = np.linspace(0, 90, 10)
-    azimuths = np.linspace(0, 180, 19)
-    combinations = np.array(list(itertools.product(altitudes, azimuths)))
-
-    return HourlyContinuousCollection(
-        header=Header(
-            data_type=datatype.fraction.Fraction(name="Clearness Index"),
-            unit="fraction",
-            analysis_period=AnalysisPeriod(),
-        ),
-        values=ci,
-    )
-
-if __name__ == "__main__":
-    epw = EPW(r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw")
-    print(to_dataframe(epw))
