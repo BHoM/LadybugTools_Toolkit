@@ -114,7 +114,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compute\Openfield.cs" />
+    <Compile Include="Compute\ExternalComfort.cs" />
     <Compile Include="Compute\InstallLadybugToolsPythonEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />

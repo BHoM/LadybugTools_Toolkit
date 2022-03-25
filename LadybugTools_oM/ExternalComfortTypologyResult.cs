@@ -20,27 +20,30 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using System.Collections.Generic;
 using System.ComponentModel;
+using BH.oM.Base;
 
 namespace BH.oM.Ladybug
 {
-    [Description("An external comfort material type to be assigned to either the ground or shade, for use in the Python \"external_comfort\" workflow.")]
-    public enum ExternalComfortMaterial
+    public class ExternalComfortTypologyResult : BHoMObject
     {
-        Undefined,
-        Asphalt,
-        ConcreteHeavyweight,
-        ConcreteLightweight,
-        DustDry,
-        Fabric,
-        Hardwood,
-        MetalPainted,
-        MetalReflective,
-        Mud,
-        Rock,
-        SandDry,
-        Softwood,
-        SoilDamp,
-        Travertine,
+        [Description("The typology to which results are associated.")]
+        public virtual ExternalComfortTypology ExternalComfortTypology { get; set; } = ExternalComfortTypology.Undefined;
+
+        [Description("The results object containing the simulation results for this typology.")]
+        public virtual ExternalComfortResult ExternalComfortResult { get; set; } = new ExternalComfortResult();
+
+        [Description("The effective dry bulb temperature for this typology under the given ExternalComfortResult.")]
+        public virtual List<double> DryBulbTemperature { get; set; } = new List<double>();
+
+        [Description("The effective relative humidity for this typology under the given ExternalComfortResult.")]
+        public virtual List<double> RelativeHumidity { get; set; } = new List<double>();
+
+        [Description("The effective wind speed for this typology under the given ExternalComfortResult.")]
+        public virtual List<double> WindSpeed { get; set; } = new List<double>();
+
+        [Description("The effective mean radiant temperature for this typology under the given ExternalComfortResult.")]
+        public virtual List<double> MeanRadiantTemperature { get; set; } = new List<double>();
     }
 }
