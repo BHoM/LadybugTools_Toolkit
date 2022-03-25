@@ -8,17 +8,16 @@
 # from pathlib import Path
 # from typing import Union
 
+# from external_comfort.material.material_from_string import material_from_string
+# from external_comfort.model.create_model import create_model
+# from external_comfort.simulate.energyplus import energyplus
+# from external_comfort.simulate.mean_radiant_temperature import \
+#     mean_radiant_temperature
+# from external_comfort.simulate.radiance import radiance
+# from external_comfort.simulate.radiant_temperature_from_collections import \
+#     radiant_temperature_from_collections
 # from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 # from ladybug.epw import EPW, HourlyContinuousCollection
-
-# from external_comfort.material import MATERIALS, material_from_string
-# from external_comfort.model import create_model
-# from external_comfort.simulate import (
-#     _convert_radiation_to_mean_radiant_temperature,
-#     _radiant_temperature_from_collections,
-#     _run_energyplus,
-#     _run_radiance,
-# )
 
 
 # class Openfield:
@@ -41,11 +40,17 @@
 #             Openfield: An Openfield object containing the inputs and results for an outdoor radiant temperature simulation.
 #         """
 #         self.epw = epw if isinstance(epw, EPW) else EPW(epw)
-#         self.ground_material = ground_material if isinstance(ground_material, _EnergyMaterialOpaqueBase) else material_from_string(ground_material)
-#         self.shade_material = shade_material if isinstance(shade_material, _EnergyMaterialOpaqueBase) else material_from_string(shade_material)
-#         self.model = create_model(self.ground_material, self.shade_material, "testing")
-
-#         # TODO - remove "testing" from the model identifier
+#         self.ground_material = (
+#             ground_material
+#             if isinstance(ground_material, _EnergyMaterialOpaqueBase)
+#             else material_from_string(ground_material)
+#         )
+#         self.shade_material = (
+#             shade_material
+#             if isinstance(shade_material, _EnergyMaterialOpaqueBase)
+#             else material_from_string(shade_material)
+#         )
+#         self.model = create_model(self.ground_material, self.shade_material)
 
 #         self._shaded_below_temperature: HourlyContinuousCollection = None
 #         self._shaded_above_temperature: HourlyContinuousCollection = None
@@ -80,57 +85,66 @@
 
 #     @property
 #     def shaded_below_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The surface temperature of the shaded ground surface."""
 #         if not self._shaded_below_temperature:
 #             self.__run_energyplus()
 #         return self._shaded_below_temperature
-    
+
 #     @property
 #     def shaded_above_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The effective "surface" temperature of the sky."""
 #         if not self._shaded_above_temperature:
 #             self.__run_energyplus()
 #         return self._shaded_above_temperature
-    
+
 #     @property
 #     def unshaded_below_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The surface temperature of the unshaded ground surface."""
 #         if not self._unshaded_below_temperature:
 #             self.__run_energyplus()
 #         return self._unshaded_below_temperature
 
 #     @property
 #     def unshaded_above_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The surface temperature of the shade underside."""
 #         if not self._unshaded_above_temperature:
 #             self.__run_energyplus()
 #         return self._unshaded_above_temperature
 
 #     @property
 #     def shaded_direct_radiation(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The direct radiation in the shaded case."""
 #         if not self._shaded_direct_radiation:
 #             self.__run_radiance()
 #         return self._shaded_direct_radiation
 
 #     @property
 #     def shaded_diffuse_radiation(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The diffuse radiation in the shaded case."""
 #         if not self._shaded_diffuse_radiation:
 #             self.__run_radiance()
 #         return self._shaded_diffuse_radiation
 
 #     @property
 #     def unshaded_direct_radiation(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The direct radiation in the unshaded case."""
 #         if not self._unshaded_direct_radiation:
 #             self.__run_radiance()
 #         return self._unshaded_direct_radiation
 
 #     @property
 #     def unshaded_diffuse_radiation(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The diffuse radiation in the unshaded case."""
 #         if not self._unshaded_diffuse_radiation:
 #             self.__run_radiance()
 #         return self._unshaded_diffuse_radiation
 
 #     @property
 #     def shaded_longwave_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The shaded longwave mean radiant temperature (from contextual surfaces only)."""
 #         if not self._shaded_longwave_mean_radiant_temperature:
 #             self._shaded_longwave_mean_radiant_temperature = (
-#                 _radiant_temperature_from_collections(
+#                 radiant_temperature_from_collections(
 #                     [self.shaded_below_temperature, self.shaded_above_temperature],
 #                     [0.5, 0.5],
 #                 )
@@ -139,9 +153,10 @@
 
 #     @property
 #     def unshaded_longwave_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The unshaded longwave mean radiant temperature (from contextual surfaces only)."""
 #         if not self._unshaded_longwave_mean_radiant_temperature:
 #             self._unshaded_longwave_mean_radiant_temperature = (
-#                 _radiant_temperature_from_collections(
+#                 radiant_temperature_from_collections(
 #                     [self.unshaded_below_temperature, self.unshaded_above_temperature],
 #                     [0.5, 0.5],
 #                 )
@@ -150,27 +165,25 @@
 
 #     @property
 #     def shaded_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The shaded mean radiant temperature (from contextual surfaces and sun)."""
 #         if not self._shaded_mean_radiant_temperature:
-#             self._shaded_mean_radiant_temperature = (
-#                 _convert_radiation_to_mean_radiant_temperature(
-#                     self.epw,
-#                     self.shaded_longwave_mean_radiant_temperature,
-#                     self.shaded_direct_radiation,
-#                     self.shaded_diffuse_radiation,
-#                 )
+#             self._shaded_mean_radiant_temperature = mean_radiant_temperature(
+#                 self.epw,
+#                 self.shaded_longwave_mean_radiant_temperature,
+#                 self.shaded_direct_radiation,
+#                 self.shaded_diffuse_radiation,
 #             )
 #         return self._shaded_mean_radiant_temperature
 
 #     @property
 #     def unshaded_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+#         """HourlyContinuousCollection: The unshaded mean radiant temperature (from contextual surfaces and sun)."""
 #         if not self._unshaded_mean_radiant_temperature:
-#             self._unshaded_mean_radiant_temperature = (
-#                 _convert_radiation_to_mean_radiant_temperature(
-#                     self.epw,
-#                     self.unshaded_longwave_mean_radiant_temperature,
-#                     self.unshaded_direct_radiation,
-#                     self.unshaded_diffuse_radiation,
-#                 )
+#             self._unshaded_mean_radiant_temperature = mean_radiant_temperature(
+#                 self.epw,
+#                 self.unshaded_longwave_mean_radiant_temperature,
+#                 self.unshaded_direct_radiation,
+#                 self.unshaded_diffuse_radiation,
 #             )
 #         return self._unshaded_mean_radiant_temperature
 
@@ -183,7 +196,7 @@
 #             "_unshaded_above_temperature",
 #         ]:
 #             if not isinstance(getattr(self, prop), HourlyContinuousCollection):
-#                 for k, v in _run_energyplus(self.model, self.epw).items():
+#                 for k, v in energyplus(self.model, self.epw).items():
 #                     setattr(self, f"_{k}", v)
 #         self.energyplus_run = True
 #         return self
@@ -197,7 +210,7 @@
 #             "_unshaded_diffuse_radiation",
 #         ]:
 #             if not isinstance(getattr(self, prop), HourlyContinuousCollection):
-#                 for k, v in _run_radiance(self.model, self.epw).items():
+#                 for k, v in radiance(self.model, self.epw).items():
 #                     setattr(self, f"_{k}", v)
 #         self.radiance_run = True
 #         return self
@@ -210,26 +223,11 @@
 
 #         results = []
 #         with ThreadPoolExecutor(max_workers=2) as executor:
-#             for f in [_run_radiance, _run_energyplus]:
+#             for f in [radiance, energyplus]:
 #                 results.append(executor.submit(f, self.model, self.epw))
 
 #         for x in results:
 #             for k, v in x.result().items():
 #                 setattr(self, f"_{k}", v)
+        
 #         return self
-
-
-# if __name__ == "__main__":
-
-#     epw = EPW(
-#         r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw"
-#     )
-#     ground_material = MATERIALS["CONCRETE_LIGHTWEIGHT"]
-#     shade_material = MATERIALS["FABRIC"]
-
-#     openfield = Openfield(epw, ground_material, shade_material, True)
-
-#     print(
-#         openfield.unshaded_mean_radiant_temperature,
-#         openfield.shaded_mean_radiant_temperature,
-#     )

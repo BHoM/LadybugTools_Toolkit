@@ -1,27 +1,26 @@
 # from __future__ import annotations
 
 # import sys
-# from concurrent.futures import ThreadPoolExecutor
 
 # sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 # import logging
-# from typing import List, Union
+# from typing import Dict, List
 
 # logging.basicConfig(level=logging.INFO)
 # import inspect
 
 # import numpy as np
 # import pandas as pd
-# from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
-# from ladybug.epw import EPW, HourlyContinuousCollection
+# from external_comfort.evaporatively_cooled_dbt_rh import evaporatively_cooled_dbt_rh
+# from external_comfort.openfield import Openfield
+# from external_comfort.shelter import overlaps
+# from external_comfort.shelter import Shelter
+# from ladybug.epw import HourlyContinuousCollection
 # from ladybug.sunpath import Sunpath
 # from ladybug_comfort.collection.utci import UTCI
-# from ladybug_extension.datacollection import from_series, to_series
-
-# from external_comfort.evaporative_cooling import get_evaporative_cooled_dbt_rh
-# from external_comfort.openfield import Openfield
-# from external_comfort.shelter import Shelter, coincident_shelters
+# from ladybug_extension.datacollection.from_series import from_series
+# from ladybug_extension.datacollection.to_series import to_series
 
 
 # class Typology:
@@ -61,7 +60,7 @@
 #         else:
 #             self.wind_speed_multiplier = wind_speed_multiplier
 
-#         if coincident_shelters(shelters):
+#         if overlaps(shelters):
 #             raise ValueError(f"shelters overlap")
 #         else:
 #             self.shelters = shelters
@@ -85,30 +84,35 @@
 
 #     @property
 #     def dry_bulb_temperature(self) -> HourlyContinuousCollection:
+#         """Return the effective dry bulb temperature for the typology."""
 #         if not self._effective_dbt:
 #             self._effective_dbt = self.effective_dbt()
 #         return self._effective_dbt
 
 #     @property
 #     def relative_humidity(self) -> HourlyContinuousCollection:
+#         """Return the effective relative humidity for the typology."""
 #         if not self._effective_rh:
 #             self._effective_rh = self.effective_rh()
 #         return self._effective_rh
 
 #     @property
 #     def wind_speed(self) -> HourlyContinuousCollection:
+#         """Return the effective wind speed for the typology."""
 #         if not self._effective_ws:
 #             self._effective_ws = self.effective_ws()
 #         return self._effective_ws
 
 #     @property
 #     def mean_radiant_temperature(self) -> HourlyContinuousCollection:
+#         """Return the effective mean radiant temperature for the typology."""
 #         if not self._effective_mrt:
 #             self._effective_mrt = self.effective_mrt()
 #         return self._effective_mrt
 
 #     @property
 #     def universal_thermal_climate_index(self) -> HourlyContinuousCollection:
+#         """Return the effective UTCI for the typology."""
 #         if not self._effective_utci:
 #             self._effective_utci = self.effective_utci()
 #         return self._effective_utci
@@ -168,14 +172,14 @@
 #     def effective_dbt(self) -> HourlyContinuousCollection:
 #         """Based on the evaporative cooling configuration, calculate the effective dry bulb temperature for each hour of the year."""
 
-#         return get_evaporative_cooled_dbt_rh(
+#         return evaporatively_cooled_dbt_rh(
 #             self.openfield.epw, self.evaporative_cooling_effectiveness
 #         )["dry_bulb_temperature"]
 
 #     def effective_rh(self) -> HourlyContinuousCollection:
 #         """Based on the evaporative cooling configuration, calculate the effective dry bulb temperature for each hour of the year."""
 
-#         return get_evaporative_cooled_dbt_rh(
+#         return evaporatively_cooled_dbt_rh(
 #             self.openfield.epw, self.evaporative_cooling_effectiveness
 #         )["relative_humidity"]
 
@@ -317,28 +321,8 @@
 #                 + wind_adj
 #             )
 
-
-# def create_typologies(
-#     epw: EPW,
-#     ground_material: Union[str, _EnergyMaterialOpaqueBase],
-#     shade_material: Union[str, _EnergyMaterialOpaqueBase],
-#     calculate: bool = False,
-# ) -> List[Typology]:
-#     """Create a dictionary of typologies for a given epw file and context configuration, with all requisite simulations and calculations completed
-
-#     Args:
-#         epw (EPW): The epw file to create typologies for
-#         ground_material (Union[str, _EnergyMaterialOpaqueBase]): The ground material to use for the typologies
-#         shade_material (Union[str, _EnergyMaterialOpaqueBase]): The shade material to use for the typologies
-#         calculate (bool, optional): Whether to pre-process the typologies generated. Defaults to False.
-
-#     Returns:
-#         List[Typology]: A list of typologies
-#     """
-
-#     openfield = Openfield(epw, ground_material, shade_material, True)
-#     typologies = [
-#         Typology(
+# TYPOLOGIES: Dict[str, Typology] = {
+#     Typology(
 #             openfield,
 #             name="Openfield",
 #             evaporative_cooling_effectiveness=0,
@@ -634,52 +618,4 @@
 #             wind_speed_multiplier=1,
 #             calculate=False,
 #         ),
-#     ]
-
-#     if not calculate:
-#         return typologies
-
-#     with ThreadPoolExecutor(max_workers=12) as executor:
-#         executor.map(Typology.universal_thermal_climate_index, typologies)
-
-#     return typologies
-
-
-# if __name__ == "__main__":
-
-#     from external_comfort.material import MATERIALS
-#     from external_comfort.plot.plot import utci_heatmap, utci_pseudo_journey
-
-#     epw = EPW(
-#         r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\test\GBR_London.Gatwick.037760_IWEC.epw"
-#     )
-
-#     typologies = create_typologies(epw, "CONCRETE_LIGHTWEIGHT", "FABRIC", True)
-
-#     utcis = []
-#     names = []
-#     for n, typology in enumerate(typologies):
-#         if n > 100:
-#             continue
-#         print(f"Calculating UTCI for {typology.name}")
-#         utci = typology.effective_utci()
-#         utcis.append(utci)
-#         names.append(typology.name)
-#         f = utci_heatmap(
-#             utci,
-#             title=f"{epw.location.country}-{epw.location.city}\n{typology.description}",
-#         )
-#         f.savefig(
-#             f"C:/Users/tgerrish/Downloads/heatmap_{typology.name}.png",
-#             transparent=True,
-#             dpi=300,
-#             bbox_inches="tight",
-#         )
-
-#     f = utci_pseudo_journey(utcis, month=5, hour=15, names=names)
-#     f.savefig(
-#         f"C:/Users/tgerrish/Downloads/utci_journey.png",
-#         transparent=True,
-#         dpi=300,
-#         bbox_inches="tight",
-#     )
+# }
