@@ -21,26 +21,17 @@
  */
 
 using System.ComponentModel;
+using BH.oM.Base;
 
 namespace BH.oM.Ladybug
 {
-    [Description("An external comfort material type to be assigned to either the ground or shade, for use in the Python \"external_comfort\" workflow.")]
-    public enum ExternalComfortMaterial
+    public class ExternalComfortConfiguration : BHoMObject
     {
-        Undefined,
-        Asphalt,
-        ConcreteHeavyweight,
-        ConcreteLightweight,
-        DustDry,
-        Fabric,
-        Hardwood,
-        MetalPainted,
-        MetalReflective,
-        Mud,
-        Rock,
-        SandDry,
-        Softwood,
-        SoilDamp,
-        Travertine,
+        [Description("The path to the EPW file used for this external comfort workflow.")]
+        public virtual string EPW { get; set; } = "";
+        [Description("The ground material to be used in this external comfort workflow.")]
+        public virtual ExternalComfortMaterial GroundMaterial { get; set; } = ExternalComfortMaterial.Undefined;
+        [Description("The shade material to be used in this external comfort workflow.")]
+        public virtual ExternalComfortMaterial ShadeMaterial { get; set; } = ExternalComfortMaterial.Undefined;
     }
 }

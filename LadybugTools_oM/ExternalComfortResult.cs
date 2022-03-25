@@ -21,30 +21,40 @@
  */
 
 using System.Collections.Generic;
+using System.ComponentModel;
 using BH.oM.Base;
 
 namespace BH.oM.Ladybug
 {
-    public class Openfield : BHoMObject
+    public class ExternalComfortResult : BHoMObject
     {
-        public virtual string EPW { get; set; } = "";
-        public virtual string GroundMaterial { get; set; } = "";
-        public virtual string ShadeMaterial { get; set; } = "";
+        [Description("The External Comfort object these results are associated with.")]
+        public virtual ExternalComfortConfiguration ExternalComfortConfiguration { get; set; } = new ExternalComfortConfiguration();
 
+        [Description("The surface temperature of the ground beneath the shade material.")]
         public virtual List<double> ShadedGroundSurfaceTemperature { get; set; } = new List<double>();
+        [Description("The surface temperature of the material above providing shade.")]
         public virtual List<double> ShadeSurfaceTemperature { get; set; } = new List<double>();
+        [Description("The direct radiation incident beneath the shade.")]
         public virtual List<double> ShadedDirectRadiation { get; set; } = new List<double>();
+        [Description("The diffuse radiation incident beneath the shade.")]
         public virtual List<double> ShadedDiffuseRadiation { get; set; } = new List<double>();
+        [Description("The longwave mean radiant temperature from surrounding surfaces (shade and ground).")]
         public virtual List<double> ShadedLongwaveRadiantTemperature { get; set; } = new List<double>();
+        [Description("The mean radiant temperature from surrounding surfaces (shade and ground).")]
         public virtual List<double> ShadedMeanRadiantTemperature { get; set; } = new List<double>();
-        public virtual List<double> ShadedUniversalThermalClimateIndex { get; set; } = new List<double>();
 
+        [Description("The surface temperature of the ground.")]
         public virtual List<double> UnshadedGroundSurfaceTemperature { get; set; } = new List<double>();
+        [Description("The \"surface temperature\" of the sky.")]
         public virtual List<double> SkyTemperature { get; set; } = new List<double>();
+        [Description("The direct radiation incident in an exposed condition.")]
         public virtual List<double> UnshadedDirectRadiation { get; set; } = new List<double>();
+        [Description("The diffuse radiation incident in an exposed condition.")]
         public virtual List<double> UnshadedDiffuseRadiation { get; set; } = new List<double>();
+        [Description("The longwave mean radiant temperature from surrounding surfaces (sky and ground).")]
         public virtual List<double> UnshadedLongwaveRadiantTemperature { get; set; } = new List<double>();
+        [Description("The mean radiant temperature from surrounding surfaces (sky, sun and ground).")]
         public virtual List<double> UnshadedMeanRadiantTemperature { get; set; } = new List<double>();
-        public virtual List<double> UnshadedUniversalThermalClimateIndex { get; set; } = new List<double>();
     }
 }
