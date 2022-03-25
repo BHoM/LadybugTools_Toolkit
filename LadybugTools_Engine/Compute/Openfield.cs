@@ -27,6 +27,8 @@ using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using BH.oM.Base;
 
 namespace BH.Engine.LadybugTools
 {
@@ -37,7 +39,7 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A pre-defined ground material.")]
         [Input("shadeMaterial", "A pre-defined shade material.")]
         [Output("openfield", "An openfield object containing simulation results.")]
-        public static string Openfield(string epw, string groundMaterial = "ASPHALT", string shadeMaterial = "FABRIC")
+        public static CustomObject Openfield(string epw, string groundMaterial = "ASPHALT", string shadeMaterial = "FABRIC")
         {
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
             if (!pythonEnvironment.IsInstalled())
@@ -51,7 +53,19 @@ namespace BH.Engine.LadybugTools
                 "import sys",
                 $"sys.path.insert(0, '{pythonEnvironment.CodeDirectory()}')",
                 "",
+                "import json",
                 "from external_comfort.openfield import EPW, Openfield",
+                "import numpy as np",
+                "",
+                "class NpEncoder(json.JSONEncoder):",
+                "    def default(self, obj):",
+                "        if isinstance(obj, np.integer) :",
+                "            return int (obj)",
+                "        if isinstance(obj, np.floating) :",
+                "            return float (obj)",
+                "        if isinstance(obj, np.ndarray) :",
+                "            return obj.tolist()",
+                "        return super(NpEncoder, self).default(obj)",
                 "",
                 $"epw = EPW(r'{epw}')",
                 $"of = Openfield(epw, '{groundMaterial}', '{shadeMaterial}', run=True)",
@@ -77,12 +91,16 @@ namespace BH.Engine.LadybugTools
                 "d['UnshadedMeanRadiantTemperature'] = of.unshaded_mean_radiant_temperature.values",
                 "d['UnshadedUniversalThermalClimateIndex'] = None",
 
-                "print(d)",
+                "print(json.dumps(d, cls=NpEncoder))",
             });
 
             string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
+            string jsonString = output.Split(
+                new string[] { System.Environment.NewLine },
+                StringSplitOptions.None
+            ).Last();
 
-            return output;
+            return Serialiser.Convert.FromJson(jsonString) as CustomObject;
         }
     }
 }
