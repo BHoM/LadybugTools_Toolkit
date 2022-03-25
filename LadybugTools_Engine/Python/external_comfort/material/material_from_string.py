@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
-from external_comfort.material.materials import MATERIALS
+from external_comfort.material import MATERIALS
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 
 

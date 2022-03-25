@@ -24,7 +24,7 @@ def create_model(
     Args:
         ground_material (_EnergyMaterialOpaqueBase): A surface material for the ground zones topmost face.
         shade_material (_EnergyMaterialOpaqueBase): A surface material for the shade zones faces.
-        identifier (str, optional): A unique identifier for the model. Defaults to None which will generate a unique identifier. This is usefuil for testing purposes!
+        identifier (str, optional): A unique identifier for the model. Defaults to None which will generate a unique identifier. This is useful for testing purposes!
 
     Returns:
         Model: A model containing geometry describing a shaded and unshaded external comfort scenario, including sensor grids for simulation.
