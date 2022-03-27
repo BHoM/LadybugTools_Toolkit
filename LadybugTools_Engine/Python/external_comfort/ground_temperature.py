@@ -1,13 +1,63 @@
 import sys
+
 sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
+
+import inspect
+from warnings import warn
 
 import numpy as np
 import pandas as pd
-from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datacollection import (HourlyContinuousCollection,
+                                    MonthlyCollection)
 from ladybug.epw import EPW
-from ladybug_extension.datacollection.to_series import to_series
-from ladybug_extension.datacollection.to_hourly import to_hourly
 from ladybug_extension.datacollection.from_series import from_series
+from ladybug_extension.datacollection.to_hourly import to_hourly
+from ladybug_extension.datacollection.to_series import to_series
+
+
+def monthly_ground_temperature(
+    epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
+) -> MonthlyCollection:
+    """Return the monthly ground temperature values from the EPW file, or approximate these if not available.
+
+    Args:
+        epw (EPW): The EPW file to extract ground temperature data from.
+        depth (float, optional): The depth of the soil in meters. Defaults to 0.5 meters.
+        soil_diffusivity (float, optional): The soil diffusivity in m2/s. Defaults to 0.31e-6 m2/s.
+
+    Returns:
+        MonthlyCollection: A data collection containing ground temperature values at the depth specified.
+    """
+
+    try:
+        return epw.monthly_ground_temperature[depth]
+    except KeyError:
+        warn(
+            f"The input EPW doesn't contain any monthly ground temperatures at {depth}m. An approximation method will be used to determine ground temperature at that depth based on ambient dry-bulb."
+        )
+        return ground_temperature_at_depth(
+            epw, depth, soil_diffusivity
+        ).average_monthly()
+
+
+def hourly_ground_temperature(
+    epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
+) -> HourlyContinuousCollection:
+    """Return the hourly ground temperature values from the EPW file (upsampled from any available montly values), or approximate these if not available.
+
+    Args:
+        epw (EPW): The EPW file to extract ground temperature data from.
+        depth (float, optional): The depth of the soil in meters. Defaults to 0.5 meters.
+        soil_diffusivity (float, optional): The soil diffusivity in m2/s. Defaults to 0.31e-6 m2/s.
+
+    Returns:
+        MonthlyCollection: A data collection containing ground temperature values at the depth specified.
+    """
+
+    try:
+        return to_hourly(epw.monthly_ground_temperature[depth])
+    except KeyError:
+        return ground_temperature_at_depth(epw, depth, soil_diffusivity)
 
 
 def ground_temperature_at_depth(
@@ -95,3 +145,36 @@ def ground_temperature_at_depth(
         )
 
         return from_series(gnd_temp_hourly)
+
+
+def energyplus_strings(epw: EPW) -> str:
+    """Generate strings to add into EnergyPlus simulation for more accurate ground surface temperature results.
+
+    Args:
+        epw (EPW): A ladybug EPW object.
+
+    Returns:
+        List[str]: Strings to append to the EnergyPlus IDF simulation input file.
+    """
+
+    monthly_ground_temperatures = monthly_ground_temperature(epw, 0.5)
+
+    ground_temperature_str = inspect.cleandoc(
+        f"""
+            Site:GroundTemperature:Shallow,
+                {monthly_ground_temperatures[0]}, !- January Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[1]}, !- February Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[2]}, !- March Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[3]}, !- April Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[4]}, !- May Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[5]}, !- June Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[6]}, !- July Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[7]}, !- August Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[8]}, !- September Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[9]}, !- October Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[10]}, !- November Surface Ground Temperature {{C}}
+                {monthly_ground_temperatures[11]}; !- December Surface Ground Temperature {{C}}
+            """
+    )
+
+    return ground_temperature_str
