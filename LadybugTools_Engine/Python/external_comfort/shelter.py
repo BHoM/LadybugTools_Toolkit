@@ -7,6 +7,7 @@ from typing import Dict, List, Union
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
+from external_comfort.encoder import Encoder
 from ladybug_extension.datacollection import from_series, to_series
 from ladybug.sunpath import Sun
 from shapely.geometry import Polygon
@@ -168,10 +169,8 @@ class Shelter:
         file_path: Path = Path(file_path)
         file_path.parent.mkdir(exist_ok=True, parents=True)
 
-        json_str = json.dumps(self.to_dict())
-
         with open(file_path, "w") as fp:
-            fp.write(json_str)
+            json.dump(self.to_dict(), fp, cls=Encoder, indent=4)
 
         return file_path
 

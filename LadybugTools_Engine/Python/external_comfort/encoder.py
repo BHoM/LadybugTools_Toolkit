@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import json
@@ -8,6 +9,10 @@ from honeybee_energy.material._base import _EnergyMaterialBase
 
 class Encoder(json.JSONEncoder):
     def default(self, obj):
+
+        # Path encoding
+        if isinstance(obj, Path):
+            return obj.as_posix()
         
         # NumPy encoding
         if isinstance(obj, (np.number, np.inexact, np.floating, np.complexfloating)):
