@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
+import datetime
 from honeybee.model import Model
-from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
-from ladybug.datacollection import HourlyContinuousCollection
+from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase, EnergyMaterial, EnergyMaterialNoMass, EnergyMaterialVegetation
+from ladybug.datacollection import BaseCollection, HourlyContinuousCollection, MonthlyCollection
+from ladybug.datacollectionimmutable import HourlyContinuousCollectionImmutable, MonthlyCollectionImmutable
 from ladybug.datatype.temperature import Temperature
 from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug_comfort.collection.solarcal import HorizontalSolarCal
@@ -19,12 +21,11 @@ from ladybug_extension.datacollection import from_series, to_series
 
 from external_comfort.encoder import Encoder
 from external_comfort.model import create_model
-from external_comfort.simulate import energyplus, radiance, SIMULATION_DIRECTORY
-
+from external_comfort.material import MATERIALS
+from external_comfort.simulate import energyplus, radiance
 
 class ExternalComfortEncoder(Encoder):
     """A JSON encoder for the ExternalComfort and ExternalComfortResult classes."""
-
     def default(self, obj):
         if isinstance(obj, ExternalComfort):
             return obj.to_dict()
@@ -32,28 +33,24 @@ class ExternalComfortEncoder(Encoder):
             return obj.to_dict()
         return super(ExternalComfortEncoder, self).default(obj)
 
-
 @dataclass(frozen=True)
 class ExternalComfort:
     epw: EPW = field(init=True, repr=True)
-    ground_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True)
-    shade_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True)
-    identifier: str = field(init=True, repr=False, default=None)
+    ground_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["Asphalt"])
+    shade_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["Fabric"])
     model: Model = field(init=False, repr=False)
 
     def __post_init__(self) -> ExternalComfort:
         object.__setattr__(
-            self,
-            "model",
-            create_model(self.ground_material, self.shade_material, self.identifier),
+            self, "model", create_model(self.ground_material, self.shade_material)
         )
-        
-        # Save EPW into working directory folder for posterity
-        self.epw.save(SIMULATION_DIRECTORY / self.model.identifier / Path(self.epw.file_path).name)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.identifier}, {self.epw}, {self.ground_material.identifier}, {self.shade_material.identifier})"
-
+        return (
+            f"{self.__class__.__name__}"
+            f"(epw={self.epw}, ground_material={self.ground_material.identifier}, shade_material={self.shade_material.identifier}, model={self.model.identifier})"
+        )
+    
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
 
@@ -68,7 +65,7 @@ class ExternalComfort:
             "model": self.model,
         }
         return d
-
+    
     def to_json(self, file_path: str) -> Path:
         """Return this object as a json file
 
@@ -81,7 +78,7 @@ class ExternalComfort:
 
         with open(file_path, "w") as fp:
             json.dump(self.to_dict(), fp, cls=ExternalComfortEncoder, indent=4)
-
+        
         return file_path
 
 
@@ -130,8 +127,6 @@ class ExternalComfortResult:
     def __post_init__(self) -> ExternalComfortResult:
         """Calculate the mean radiant tempertaure, and constituent parts of this value from the External Comfort configuration."""
 
-        print(f"- Running external comfort calculation for {self}")
-
         # Run EnergyPlus and Radiance simulations
         results = []
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -151,7 +146,7 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "shaded_longwave_mean_radiant_temperature",
-            self._radiant_temperature_from_collections(
+            self.radiant_temperature_from_collections(
                 [
                     self.shaded_below_temperature,
                     self.shaded_above_temperature,
@@ -163,7 +158,7 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "unshaded_longwave_mean_radiant_temperature",
-            self._radiant_temperature_from_collections(
+            self.radiant_temperature_from_collections(
                 [
                     self.unshaded_below_temperature,
                     self.unshaded_above_temperature,
@@ -175,7 +170,7 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "shaded_mean_radiant_temperature",
-            self._mean_radiant_temperature(
+            self.mean_radiant_temperature(
                 self.external_comfort.epw,
                 self.shaded_longwave_mean_radiant_temperature,
                 self.shaded_direct_radiation,
@@ -186,21 +181,21 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "unshaded_mean_radiant_temperature",
-            self._mean_radiant_temperature(
+            self.mean_radiant_temperature(
                 self.external_comfort.epw,
                 self.unshaded_longwave_mean_radiant_temperature,
                 self.unshaded_direct_radiation,
                 self.unshaded_diffuse_radiation,
             ),
         )
-
+    
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
 
         Returns:
             Dict: The dict representation of this object.
-        """
-
+        """        
+        
         attributes = [
             "external_comfort",
             "shaded_below_temperature",
@@ -233,11 +228,8 @@ class ExternalComfortResult:
 
         return file_path
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.external_comfort.identifier})"
-
     @staticmethod
-    def _mean_radiant_temperature(
+    def mean_radiant_temperature(
         epw: EPW,
         surface_temperature: HourlyContinuousCollection,
         direct_radiation: HourlyContinuousCollection,
@@ -276,7 +268,7 @@ class ExternalComfortResult:
         return mrt
 
     @staticmethod
-    def _radiant_temperature_from_collections(
+    def radiant_temperature_from_collections(
         collections: List[HourlyContinuousCollection], view_factors: List[float]
     ) -> HourlyContinuousCollection:
         """Calculate the radiant temperature from a list of hourly continuous collections and view factors to each of those collections.
@@ -313,7 +305,7 @@ class ExternalComfortResult:
         return from_series(mrt_series)
 
     @staticmethod
-    def _mean_radiant_temperature_from_surfaces(
+    def mean_radiant_temperature_from_surfaces(
         surface_temperatures: List[float], view_factors: List[float]
     ) -> float:
         """Calculate Mean Radiant Temperature from a list of surface temperature and view factors to those surfaces.
@@ -346,7 +338,7 @@ class ExternalComfortResult:
 
         Returns:
             pd.DataFrame: A dataframe containing the simulation results.
-        """
+        """        
 
         attributes = [
             "shaded_below_temperature",
@@ -365,8 +357,4 @@ class ExternalComfortResult:
         series: List[pd.Series] = []
         for attribute in attributes:
             series.append(to_series(getattr(self, attribute)))
-        return pd.concat(
-            series,
-            axis=1,
-            keys=[f"{self.__class__.__name__} - {i}" for i in attributes],
-        )
+        return pd.concat(series, axis=1, keys=[f"{self.__class__.__name__} - {i}" for i in attributes])

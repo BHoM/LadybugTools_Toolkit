@@ -3,7 +3,9 @@ from __future__ import annotations
 import copy
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import Dict, List
+import json
+from pathlib import Path
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -14,12 +16,24 @@ from ladybug.psychrometrics import wet_bulb_from_db_rh
 from ladybug.sunpath import Sunpath
 from ladybug_comfort.collection.utci import UTCI
 from ladybug_comfort.collection.pmv import PMV
-from ladybug_extension.datacollection.from_series import from_series
-from ladybug_extension.datacollection.to_series import to_series
+from ladybug_extension.datacollection import from_series, to_series
 
-from external_comfort import ExternalComfortResult
+from external_comfort.encoder import Encoder
+from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult, ExternalComfortEncoder
 from external_comfort.shelter import Shelter
 
+class TypologyEncoder(Encoder):
+    """A JSON encoder for the Typology and TypologyResult classes."""
+    def default(self, obj):
+        if isinstance(obj, ExternalComfort):
+            return obj.to_dict()
+        if isinstance(obj, ExternalComfortResult):
+            return obj.to_dict()
+        if isinstance(obj, Typology):
+            return obj.to_dict()
+        if isinstance(obj, TypologyResult):
+            return obj.to_dict()
+        return super(TypologyEncoder, self).default(obj)
 
 @dataclass(frozen=True)
 class Typology:
@@ -29,11 +43,44 @@ class Typology:
     wind_speed_multiplier: float = field(init=True, repr=True, default=1)
 
     def __post_init__(self) -> Typology:
+        if self.shelters is None:
+            object.__setattr__(self, "shelters", [])
+
         if Shelter._overlaps(self.shelters):
             raise ValueError("Shelters overlap")
 
     def __repr__(self):
         return f"{self.__class__.__name__}" f"(name={self.name})"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Return this object as a dictionary
+
+        Returns:
+            Dict: The dict representation of this object.
+        """
+
+        d = {
+            "name": self.name,
+            "shelters": [i.to_dict() for i in self.shelters],
+            "evaporative_cooling_effectiveness": self.evaporative_cooling_effectiveness,
+            "wind_speed_multiplier": self.wind_speed_multiplier,
+        }
+        return d
+    
+    def to_json(self, file_path: str) -> Path:
+        """Write the content of this object to a JSON file
+
+        Returns:
+            Path: The path to the newly created JSON file.
+        """
+
+        file_path: Path = Path(file_path)
+        file_path.parent.mkdir(exist_ok=True, parents=True)
+
+        with open(file_path, "w") as fp:
+            json.dump(self.to_dict(), fp, cls=TypologyEncoder, indent=4)
+
+        return file_path
 
 
 @dataclass(frozen=True)
@@ -53,7 +100,7 @@ class TypologyResult:
     )
 
     def __post_init__(self) -> TypologyResult:
-        print(f"- Calculating {self.__class__.__name__} for {self.typology}")
+        print(f"- Calculating {self.__class__.__name__} for [{self.typology.name}]")
         dbt_rh = self.evaporatively_cooled_dbt_rh(
             self.external_comfort_result.external_comfort.epw,
             self.typology.evaporative_cooling_effectiveness,
@@ -260,6 +307,69 @@ class TypologyResult:
             clo_value=0.7,
             external_work=0,
         ).standard_effective_temperature
+    
+    def to_dataframe(self, include_external_comfort_results: bool = True) -> pd.DataFrame:
+        """Create a dataframe from the typology results.
+
+        Args:
+            include_external_comfort_results (bool, optional): Whether to include the external comfort results in the dataframe. Defaults to True.
+
+        Returns:
+            pd.DataFrame: A dataframe containing the typology results.
+        """        
+
+        attributes = [
+            "dry_bulb_temperature",
+            "relative_humidity",
+            "wind_speed",
+            "mean_radiant_temperature",
+            "universal_thermal_climate_index",
+        ]
+        series: List[pd.Series] = []
+        for attribute in attributes:
+            series.append(to_series(getattr(self, attribute)))
+        df = pd.concat(series, axis=1, keys=[f"{self.__class__.__name__} - {i}" for i in attributes])
+
+        if include_external_comfort_results:
+            df = pd.concat([df, self.external_comfort_result.to_dataframe()], axis=1)
+        
+        return df
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Return this object as a dictionary
+
+        Returns:
+            Dict: The dict representation of this object.
+        """
+
+        attributes = [
+            "typology",
+            "external_comfort_result",
+            "dry_bulb_temperature",
+            "relative_humidity",
+            "wind_speed",
+            "mean_radiant_temperature",
+            "universal_thermal_climate_index",
+            # "standard_effective_temperature",
+        ]
+        return {attribute: getattr(self, attribute) for attribute in attributes}  
+    
+    def to_json(self, file_path: str) -> Path:
+        """Write the content of this object to a JSON file
+
+        Returns:
+            Path: The path to the newly created JSON file.
+        """
+
+        file_path: Path = Path(file_path)
+        file_path.parent.mkdir(exist_ok=True, parents=True)
+
+        with open(file_path, "w") as fp:
+            json.dump(self.to_dict(), fp, cls=TypologyEncoder, indent=4)
+
+        return file_path
+
+
 
     @staticmethod
     def evaporatively_cooled_dbt_rh(
@@ -296,7 +406,7 @@ class TypologyResult:
             **dbt.header.metadata,
             **{
                 "evaporative_cooling": f"{evaporative_cooling_effectiveness:0.0%}",
-                "description": "Evaporatively Cooled Dry Bulb Temperature (C) - f'{evaporative_cooling_effectiveness:0.0%}' effective",
+                "description": f"Evaporatively Cooled Dry Bulb Temperature (C) - {evaporative_cooling_effectiveness:0.0%} effective",
             },
         }
 
@@ -308,7 +418,7 @@ class TypologyResult:
             **rh.header.metadata,
             **{
                 "evaporative_cooling": f"{evaporative_cooling_effectiveness:0.0%}",
-                "description": "Evaporatively Cooled Relative Humidity (%) - f'{evaporative_cooling_effectiveness:0.0%}' effective",
+                "description": f"Evaporatively Cooled Relative Humidity (%) - {evaporative_cooling_effectiveness:0.0%} effective",
             },
         }
 
