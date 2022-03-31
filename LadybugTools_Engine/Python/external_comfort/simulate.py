@@ -13,13 +13,11 @@ from honeybee_energy.simulation.parameter import (RunPeriod, ShadowCalculation,
                                                   SimulationControl,
                                                   SimulationOutput,
                                                   SimulationParameter)
-from honeybee_extension.results.load_ill import load_ill
-from honeybee_extension.results.load_sql import load_sql
-from honeybee_extension.results.make_annual import make_annual
+from honeybee_extension.results import load_ill, load_sql, make_annual
 from honeybee_radiance.config import folders as hbr_folders
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
 from ladybug.wea import Wea
-from ladybug_extension.datacollection.from_series import from_series
+from ladybug_extension.datacollection import from_series
 from lbt_recipes.recipe import Recipe, RecipeSettings
 
 from external_comfort.ground_temperature import energyplus_strings

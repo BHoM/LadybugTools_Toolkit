@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 _WIDTH = 10
 _DEPTH = 10
