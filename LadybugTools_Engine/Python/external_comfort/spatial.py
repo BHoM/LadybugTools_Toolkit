@@ -1,8 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 from scipy.interpolate import interp1d
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -12,25 +13,50 @@ from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug_extension.datacollection import from_json, to_array, to_json, to_series
 from scipy import interpolate
 
+from external_comfort.encoder import Encoder
 from external_comfort.material import MATERIALS
 from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult
 from external_comfort.shelter import Shelter
 from external_comfort.typology import Typology, TypologyResult
 
+class SpatialEncoder(Encoder):
+    """A JSON encoder for the Typology and TypologyResult classes."""
+    def default(self, obj):
+        if isinstance(obj, ExternalComfort):
+            return obj.to_dict()
+        if isinstance(obj, ExternalComfortResult):
+            return obj.to_dict()
+        if isinstance(obj, Shelter):
+            return obj.to_dict()
+        if isinstance(obj, Typology):
+            return obj.to_dict()
+        if isinstance(obj, TypologyResult):
+            return obj.to_dict()
+        if isinstance(obj, SpatialComfort):
+            return obj.to_dict()
+        if isinstance(obj, SpatialComfortResult):
+            return obj.to_dict()
+        return super(SpatialEncoder, self).default(obj)
 
 @dataclass
 class SpatialComfort:
     simulation_directory: Path = field(init=True, repr=True)
-    epw: EPW = field(init=True, repr=True)
+    external_comfort_result: ExternalComfortResult = field(init=True, repr=True)
     ground_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["ConcreteHeavyweight"])
     shade_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["Fabric"])
+
+    unshaded: ExternalComfortResult = field(init=False, repr=False)
+    shaded: ExternalComfortResult = field(init=False, repr=False)
 
     def __post_init__(self) -> SpatialComfort:
         object.__setattr__(self, "simulation_directory", Path(self.simulation_directory))
         self._simulation_validity()
-
+        
+        
+        for k, v in self._typology_result().items():
+            object.__setattr__(self, k, v)
+        
     def _simulation_validity(self) -> None:
-
 
         if (self.simulation_directory is None) or (self.simulation_directory == ""):
             raise ValueError("Simulation directory is not set.")
@@ -43,9 +69,65 @@ class SpatialComfort:
         if not (sky_view_directory).exists():
             raise ValueError(f"Sky-view data is not available at {sky_view_directory}.")
 
+        water_sources_json = self.simulation_directory / "water_sources.json"
+        if not (water_sources_json).exists():
+            raise ValueError(f"Water-source data is not available at {water_sources_json}.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Return this object as a dictionary
+
+        Returns:
+            Dict: The dict representation of this object.
+        """
+
+        return {
+            "simulation_directory": self.simulation_directory,
+            "ground_material": self.ground_material,
+            "shade_material": self.shade_material,
+            "unshaded": self.unshaded.to_dict(),
+            "shaded": self.shaded.to_dict(),
+        }
+    
+    def to_json(self, file_path: str) -> Path:
+        """Write the content of this object to a JSON file
+
+        Returns:
+            Path: The path to the newly created JSON file.
+        """
+
+        file_path: Path = Path(file_path)
+        file_path.parent.mkdir(exist_ok=True, parents=True)
+
+        with open(file_path, "w") as fp:
+            json.dump(self.to_dict(), fp, cls=SpatialEncoder, indent=4)
+
+        return file_path
+
+    def _typology_result(self) -> Dict[str, TypologyResult]:  
+        unshaded = TypologyResult(
+            Typology(
+                name="Unshaded", 
+                shelters=None
+            ), 
+            self.external_comfort_result
+        )
+
+        shaded = TypologyResult(
+            Typology(
+                name="Shaded", 
+                shelters=[
+                    Shelter(porosity=0, altitude_range=[0, 90], azimuth_range=[0, 360])
+                ]
+            ), 
+            self.external_comfort_result
+        )
+        return {"unshaded": unshaded, "shaded": shaded}
+
+
 @dataclass
 class SpatialComfortResult:
     spatial_comfort: SpatialComfort = field(init=True, repr=True)
+    external_comfort_result: ExternalComfortResult = field(init=True, repr=True)
 
     points: pd.DataFrame = field(init=False, repr=False)
     sky_view: pd.DataFrame = field(init=False, repr=False)
@@ -62,6 +144,11 @@ class SpatialComfortResult:
     
 
     def __post_init__(self) -> SpatialComfortResult:
+
+        # Save external comfort results to file, to reload if they already exist
+        ecr_json = self.spatial_comfort.simulation_directory / "external_comfort.json"
+        if not ecr_json.exists():
+            self.external_comfort_result.to_json(ecr_json)
         
         object.__setattr__(self, "points", self._points())
         object.__setattr__(self, "sky_view", self._sky_view())
