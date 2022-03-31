@@ -29,6 +29,8 @@ class TypologyEncoder(Encoder):
             return obj.to_dict()
         if isinstance(obj, ExternalComfortResult):
             return obj.to_dict()
+        if isinstance(obj, Shelter):
+            return obj.to_dict()
         if isinstance(obj, Typology):
             return obj.to_dict()
         if isinstance(obj, TypologyResult):
