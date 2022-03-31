@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype import TYPESDICT
@@ -7,12 +5,24 @@ from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
 
 
+def to_string(header: Header) -> str:
+    """Convert a Ladybug header object into a string.
+
+    Args:
+        header (Header): A Ladybug header object.
+
+    Returns:
+        str: A Ladybug header string."""
+
+    return f"{header.data_type} ({header.unit})"
+
+
 def from_string(string: str) -> Header:
     """Convert a string into a Ladybug header object.
-    
+
     Args:
         string (str): A Ladybug header string.
-    
+
     Returns:
         Header: A Ladybug header object."""
 

@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 import inspect
 from warnings import warn
@@ -10,9 +7,7 @@ import pandas as pd
 from ladybug.datacollection import (HourlyContinuousCollection,
                                     MonthlyCollection)
 from ladybug.epw import EPW
-from ladybug_extension.datacollection.from_series import from_series
-from ladybug_extension.datacollection.to_hourly import to_hourly
-from ladybug_extension.datacollection.to_series import to_series
+from ladybug_extension.datacollection import from_series, to_hourly, to_series
 
 
 def monthly_ground_temperature(
