@@ -1,12 +1,26 @@
-import sys
-
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit")
 
 from datetime import datetime
 from typing import List
 
+import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
+
 from ladybug_extension.dt import from_datetime
+
+
+def to_datetimes(analysis_period: AnalysisPeriod) -> pd.DatetimeIndex:
+    """Convert an AnalysisPeriod object into a Pandas DatetimeIndex.
+
+    Args:
+        analysis_period (AnalysisPeriod): An AnalysisPeriod object.
+
+    Returns:
+        pd.DatetimeIndex: A Pandas DatetimeIndex object.
+    """
+
+    datetimes = pd.to_datetime(analysis_period.datetimes)
+
+    return datetimes
 
 
 def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Union
+import json
+from pathlib import Path
+from typing import Dict, List, Union
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
-from ladybug_extension.datacollection.from_series import from_series
-from ladybug_extension.datacollection.to_series import to_series
+from ladybug_extension.datacollection import from_series, to_series
 from ladybug.sunpath import Sun
 from shapely.geometry import Polygon
 
@@ -143,6 +144,36 @@ class Shelter:
     def overlaps(self, other: Shelter) -> bool:
         """Return True if this shelter overlaps with another"""
         return self._overlaps([self, other])
+
+    def to_dict(self) -> Dict:
+        """Return this object as a dictionary
+
+        Returns:
+            Dict: The dict representation of this object.
+        """        
+        d = {
+            "porosity": self.porosity,
+            "altitude_range": self.altitude_range,
+            "azimuth_range": self.azimuth_range,
+        }
+        return d
+
+    def to_json(self, file_path: str) -> Path:
+        """Write the content of this object to a JSON file
+
+        Returns:
+            Path: The path to the newly created JSON file.
+        """
+
+        file_path: Path = Path(file_path)
+        file_path.parent.mkdir(exist_ok=True, parents=True)
+
+        json_str = json.dumps(self.to_dict())
+
+        with open(file_path, "w") as fp:
+            fp.write(json_str)
+
+        return file_path
 
     @property
     def description(self) -> str:
