@@ -42,16 +42,13 @@ class SpatialEncoder(Encoder):
 class SpatialComfort:
     simulation_directory: Path = field(init=True, repr=True)
     external_comfort_result: ExternalComfortResult = field(init=True, repr=True)
-    ground_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["ConcreteHeavyweight"])
-    shade_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["Fabric"])
 
-    unshaded: ExternalComfortResult = field(init=False, repr=False)
-    shaded: ExternalComfortResult = field(init=False, repr=False)
+    unshaded: TypologyResult = field(init=False, repr=False)
+    shaded: TypologyResult = field(init=False, repr=False)
 
     def __post_init__(self) -> SpatialComfort:
         object.__setattr__(self, "simulation_directory", Path(self.simulation_directory))
         self._simulation_validity()
-        
         
         for k, v in self._typology_result().items():
             object.__setattr__(self, k, v)
@@ -80,22 +77,25 @@ class SpatialComfort:
             Dict: The dict representation of this object.
         """
 
-        return {
+        d = {
             "simulation_directory": self.simulation_directory,
-            "ground_material": self.ground_material,
-            "shade_material": self.shade_material,
-            "unshaded": self.unshaded.to_dict(),
-            "shaded": self.shaded.to_dict(),
+            "shaded_ground_temperature": self.shaded.external_comfort_result.shaded_below_temperature,
+            "shaded_universal_thermal_climate_index": self.shaded.universal_thermal_climate_index,
+            "shaded_mean_radiant_temperature": self.shaded.mean_radiant_temperature,
+            "unshaded_ground_temperature": self.unshaded.external_comfort_result.unshaded_below_temperature,
+            "unshaded_universal_thermal_climate_index": self.unshaded.universal_thermal_climate_index,
+            "unshaded_mean_radiant_temperature": self.unshaded.mean_radiant_temperature,
         }
+        return d
     
-    def to_json(self, file_path: str) -> Path:
+    def to_json(self) -> Path:
         """Write the content of this object to a JSON file
 
         Returns:
             Path: The path to the newly created JSON file.
         """
 
-        file_path: Path = Path(file_path)
+        file_path: Path = self.simulation_directory / "spatial_comfort.json"
         file_path.parent.mkdir(exist_ok=True, parents=True)
 
         with open(file_path, "w") as fp:
@@ -106,7 +106,7 @@ class SpatialComfort:
     def _typology_result(self) -> Dict[str, TypologyResult]:  
         unshaded = TypologyResult(
             Typology(
-                name="Unshaded", 
+                name="unshaded", 
                 shelters=None
             ), 
             self.external_comfort_result
@@ -114,7 +114,7 @@ class SpatialComfort:
 
         shaded = TypologyResult(
             Typology(
-                name="Shaded", 
+                name="shaded", 
                 shelters=[
                     Shelter(porosity=0, altitude_range=[0, 90], azimuth_range=[0, 360])
                 ]
@@ -127,7 +127,6 @@ class SpatialComfort:
 @dataclass
 class SpatialComfortResult:
     spatial_comfort: SpatialComfort = field(init=True, repr=True)
-    external_comfort_result: ExternalComfortResult = field(init=True, repr=True)
 
     points: pd.DataFrame = field(init=False, repr=False)
     sky_view: pd.DataFrame = field(init=False, repr=False)
