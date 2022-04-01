@@ -48,7 +48,7 @@ class ExternalComfort:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}"
-            f"(epw={self.epw}, ground_material={self.ground_material.identifier}, shade_material={self.shade_material.identifier}, model={self.model.identifier})"
+            f" [{self.model.identifier}]"
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -227,6 +227,12 @@ class ExternalComfortResult:
             json.dump(self.to_dict(), fp, cls=ExternalComfortEncoder, indent=4)
 
         return file_path
+    
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}"
+            f" [{self.external_comfort.model.identifier}]"
+        )
 
     @staticmethod
     def mean_radiant_temperature(
