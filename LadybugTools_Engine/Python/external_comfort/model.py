@@ -130,7 +130,7 @@ def create_model(
     [i.move(displacement_vector) for i in shades]
 
     if identifier is None:
-        identifier = f"external_comfort_{uuid.uuid4()}"
+        identifier = f"{str(uuid.uuid4())[:8]}"
 
     model = Model(
         identifier=identifier,
