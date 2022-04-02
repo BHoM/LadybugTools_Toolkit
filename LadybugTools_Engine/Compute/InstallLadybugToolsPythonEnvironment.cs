@@ -35,7 +35,6 @@ namespace BH.Engine.LadybugTools
         [Input("run", "Starts the installation of the toolkit if true. Stays idle otherwise.")]
         [Input("force", "Forces re-installation of the toolkits Python environment (and the base Python environment) if true. This is used when the environment has been updated or package versions have changed.")]
         [Output("pythonEnvironment", "The LadybugTools_Toolkit Python environment.")]
-        [PreviousVersion("5.1", "BH.Engine.LadybugTools.Compute.InstallPythonEnvironment(System.Boolean, System.Boolean)")]
         public static PythonEnvironment InstallLadybugToolsPythonEnvironment(bool run = false, bool force = false)
         {
             // The following checks for beta 5.1 only. These json files to be added to the installer for later versions. 
