@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-import datetime
+
 from honeybee.model import Model
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase, EnergyMaterial, EnergyMaterialNoMass, EnergyMaterialVegetation
 from ladybug.datacollection import BaseCollection, HourlyContinuousCollection, MonthlyCollection
@@ -36,13 +36,14 @@ class ExternalComfortEncoder(Encoder):
 @dataclass(frozen=True)
 class ExternalComfort:
     epw: EPW = field(init=True, repr=True)
-    ground_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["Asphalt"])
-    shade_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True, default=MATERIALS["Fabric"])
+    ground_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True)
+    shade_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True)
+    identifier: str = field(init=True, repr=False, default=None)
     model: Model = field(init=False, repr=False)
 
     def __post_init__(self) -> ExternalComfort:
         object.__setattr__(
-            self, "model", create_model(self.ground_material, self.shade_material)
+            self, "model", create_model(self.ground_material, self.shade_material, self.identifier)
         )
 
     def __repr__(self):
