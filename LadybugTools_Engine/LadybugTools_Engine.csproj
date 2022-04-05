@@ -114,14 +114,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compute\ExternalComfortTypology.cs" />
     <Compile Include="Compute\ExternalComfort.cs" />
     <Compile Include="Compute\InstallLadybugToolsPythonEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Compute\SpatialComfortPossible.cs" />
-    <Compile Include="Compute\ExternalComfortPossible.cs" />
+    <Compile Include="Query\ExternalComfortPossible.cs" />
     <Compile Include="Query\ToolkitName.cs" />
   </ItemGroup>
   <ItemGroup>
