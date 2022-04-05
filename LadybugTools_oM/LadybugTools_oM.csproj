@@ -84,9 +84,6 @@
   <ItemGroup>
     <Compile Include="Enum\ExternalComfortMaterial.cs" />
     <Compile Include="Enum\ExternalComfortTypology.cs" />
-    <Compile Include="ExternalComfortTypologyResult.cs" />
-    <Compile Include="ExternalComfortResult.cs" />
-    <Compile Include="ExternalComfortConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

@@ -39,8 +39,9 @@ namespace BH.Engine.LadybugTools
         [Input("epw", "An EPW file.")]
         [Input("groundMaterial", "A pre-defined ground material.")]
         [Input("shadeMaterial", "A pre-defined shade material.")]
-        [Output("externalComfortResult", "An external comfort result object containing simulation results.")]
-        public static CustomObject ExternalComfort(string epw, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial)
+        [Input("typology", "A pre-defined external comfort typology.")]
+        [Output("typologyResult", "A typologyt result object containing simulation results and typology specific comfort metrics.")]
+        public static CustomObject ExternalComfortTypology(string epw, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial, BH.oM.Ladybug.ExternalComfortTypology typology)
         {
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
             if (!pythonEnvironment.IsInstalled())
@@ -58,15 +59,21 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
+            if (typology == BH.oM.Ladybug.ExternalComfortTypology.Undefined)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid ExternalComfortTypology.");
+                return null;
+            }
+
             if (!File.Exists(epw))
             {
                 BH.Engine.Base.Compute.RecordError($"The EPW file given cannot be found.");
                 return null;
             }
 
-            string outputPath = Path.Combine(Path.GetTempPath(), "ecr.json");
-
             string epwPath = Path.GetFullPath(epw);
+
+            string outputPath = Path.Combine(Path.GetTempPath(), "typr.json");
 
             string pythonScript = String.Join("\n", new List<string>() 
             {
@@ -76,11 +83,14 @@ namespace BH.Engine.LadybugTools
                 "from ladybug.epw import EPW",
                 "from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult",
                 "from external_comfort.material import MATERIALS",
+                "from external_comfort.typology import Typologies, TypologyResult",
                 "",
                 $"epw = EPW(r'{epwPath}')",
                 $"ec = ExternalComfort(epw, ground_material=MATERIALS['{groundMaterial}'], shade_material=MATERIALS['{shadeMaterial}'])",
                 "ecr = ExternalComfortResult(ec)",
-                $"ecr.to_json(r'{outputPath}')",
+                $"typ = Typologies.{typology}.value",
+                "typr = TypologyResult(typ, ecr)",
+                $"typr.to_json(r'{outputPath}')",
                 "print('Nothing to see here!')",
             });
 
