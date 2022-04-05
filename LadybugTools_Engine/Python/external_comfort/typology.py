@@ -98,6 +98,7 @@ class TypologyResult:
     relative_humidity: HourlyContinuousCollection = field(init=False, repr=False)
     wind_speed: HourlyContinuousCollection = field(init=False, repr=False)
     mean_radiant_temperature: HourlyContinuousCollection = field(init=False, repr=False)
+    ground_surface_temperature: HourlyContinuousCollection = field(init=False, repr=False)
     universal_thermal_climate_index: HourlyContinuousCollection = field(
         init=False, repr=False
     )
@@ -114,6 +115,7 @@ class TypologyResult:
         object.__setattr__(self, "dry_bulb_temperature", dbt_rh["dry_bulb_temperature"])
         object.__setattr__(self, "relative_humidity", dbt_rh["relative_humidity"])
         object.__setattr__(self, "wind_speed", self._wind_speed())
+        object.__setattr__(self, "ground_surface_temperature", self._ground_surface_temperature())
         object.__setattr__(
             self, "mean_radiant_temperature", self._mean_radiant_temperature()
         )
@@ -145,6 +147,18 @@ class TypologyResult:
             return from_series(
                 pd.concat(collections, axis=1).min(axis=1).rename("Wind Speed (m/s)")
             )
+    
+    def _ground_surface_temperature(self) -> HourlyContinuousCollection:
+        """Calculate the ground surface temperature based on the external comfort result and typology set-up.
+
+        Returns:
+            HourlyContinuousCollection: An HourlyContinuousCollection of ground surface temperature.
+        """
+
+        sky_visible = self._sky_visibility()
+        sky_blocked = 1 - sky_visible
+
+        return (self.external_comfort_result.unshaded_below_temperature * sky_visible) + (self.external_comfort_result.shaded_below_temperature * sky_blocked)
 
     def _sky_visibility(self) -> float:
         """Calculate the proportion of sky visible from a typology with any nuber of shelters.
@@ -289,13 +303,14 @@ class TypologyResult:
         Returns:
             HourlyContinuousCollection: The calculated UTCI based on the shelter configuration for the given typology.
         """
-
-        return UTCI(
+        utci_collection: HourlyContinuousCollection = UTCI(
             air_temperature=self.dry_bulb_temperature,
             rel_humidity=self.relative_humidity,
             rad_temperature=self.mean_radiant_temperature,
             wind_speed=self.wind_speed,
         ).universal_thermal_climate_index
+        utci_collection.header.metadata["description"] = self.typology.name
+        return 
 
     def _standard_effective_temperature(self) -> HourlyContinuousCollection:
         """Return the standard effective temperature for the given typology.

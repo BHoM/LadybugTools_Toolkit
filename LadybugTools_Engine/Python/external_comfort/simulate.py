@@ -50,7 +50,10 @@ if not (Path(hbr_folders.radiance_path) / "bin/rtrace.exe").exists():
         f"Radiance binaries not found in {hbr_folders.radiance_path}. Ensure that the Radiance installation is located in this directory."
     )
 
-
+if not (Path(hbr_folders.radiance_path) / "bin/rtrace.exe").exists():
+    raise FileNotFoundError(
+        f"Radiance binaries not found in {hbr_folders.radiance_path}. Ensure that the Radiance installation is located in this directory."
+    )
 
 if not (Path(hbe_folders.openstudio_path) / "openstudio.exe").exists():
     raise FileNotFoundError(
@@ -79,74 +82,80 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     )
     working_directory.mkdir(exist_ok=True, parents=True)
 
-    # Write model JSON
-    model_dict = model.to_dict(triangulate_sub_faces=True)
-    model_json = working_directory / f"{model.identifier}.hbjson"
-    with open(model_json, "w") as fp:
-        json.dump(model_dict, fp)
+    # Save associated EPW file to simulation directory
+    epw.save(working_directory / Path(epw.file_path).name)
 
-    # Write simulation parameter JSON
-    sim_output = SimulationOutput(
-        outputs=["Surface Outside Face Temperature"],
-        include_sqlite=True,
-        summary_reports=None,
-        include_html=False,
-    )
+    if (working_directory  / "run" / "eplusout.sql").exists():
+        sql = (working_directory  / "run" / "eplusout.sql").as_posix()
+    else:
+        # Write model JSON
+        model_dict = model.to_dict(triangulate_sub_faces=True)
+        model_json = working_directory / f"{model.identifier}.hbjson"
+        with open(model_json, "w") as fp:
+            json.dump(model_dict, fp)
 
-    sim_control = SimulationControl(
-        do_zone_sizing=False,
-        do_system_sizing=False,
-        do_plant_sizing=False,
-        run_for_sizing_periods=False,
-        run_for_run_periods=True,
-    )
-    sim_period = RunPeriod.from_analysis_period(
-        AnalysisPeriod(), start_day_of_week="Monday"
-    )
-    shadow_calc = ShadowCalculation(
-        solar_distribution="FullExteriorWithReflections",
-        calculation_method="PolygonClipping",
-        calculation_update_method="Timestep",
-    )
-    sim_par = SimulationParameter(
-        output=sim_output,
-        simulation_control=sim_control,
-        shadow_calculation=shadow_calc,
-        terrain_type="Country",
-        run_period=sim_period,
-        timestep=10,
-    )
-    sim_par_dict = sim_par.to_dict()
-    sim_par_json = working_directory / "simulation_parameter.json"
-    with open(sim_par_json, "w") as fp:
-        json.dump(sim_par_dict, fp)
+        # Write simulation parameter JSON
+        sim_output = SimulationOutput(
+            outputs=["Surface Outside Face Temperature"],
+            include_sqlite=True,
+            summary_reports=None,
+            include_html=False,
+        )
 
-    # Create OpenStudio workflow
-    osw = to_openstudio_osw(
-        working_directory.as_posix(),
-        model_json.as_posix(),
-        sim_par_json.as_posix(),
-        additional_measures=None,
-        epw_file=epw.file_path,
-    )
+        sim_control = SimulationControl(
+            do_zone_sizing=False,
+            do_system_sizing=False,
+            do_plant_sizing=False,
+            run_for_sizing_periods=False,
+            run_for_run_periods=True,
+        )
+        sim_period = RunPeriod.from_analysis_period(
+            AnalysisPeriod(), start_day_of_week="Monday"
+        )
+        shadow_calc = ShadowCalculation(
+            solar_distribution="FullExteriorWithReflections",
+            calculation_method="PolygonClipping",
+            calculation_update_method="Timestep",
+        )
+        sim_par = SimulationParameter(
+            output=sim_output,
+            simulation_control=sim_control,
+            shadow_calculation=shadow_calc,
+            terrain_type="Country",
+            run_period=sim_period,
+            timestep=10,
+        )
+        sim_par_dict = sim_par.to_dict()
+        sim_par_json = working_directory / "simulation_parameter.json"
+        with open(sim_par_json, "w") as fp:
+            json.dump(sim_par_dict, fp)
 
-    # Convert workflow to IDF file
-    _, idf = run_osw(osw, silent=False)
+        # Create OpenStudio workflow
+        osw = to_openstudio_osw(
+            working_directory.as_posix(),
+            model_json.as_posix(),
+            sim_par_json.as_posix(),
+            additional_measures=None,
+            epw_file=epw.file_path,
+        )
 
-    # Add ground temperature strings to IDF
-    with open(idf, "r") as fp:
-        temp = fp.readlines()
-    with open(idf, "w") as fp:
-        fp.writelines(temp + [energyplus_strings(epw)])
+        # Convert workflow to IDF file
+        _, idf = run_osw(osw, silent=False)
 
-    # Simulate IDF
-    sql, _, _, _, _ = run_idf(idf, epw.file_path, silent=False)
+        # Add ground temperature strings to IDF
+        with open(idf, "r") as fp:
+            temp = fp.readlines()
+        with open(idf, "w") as fp:
+            fp.writelines(temp + [energyplus_strings(epw)])
 
-    # Remove files no longer needed (to save on space)
-    output_directory = Path(sql).parent
-    for file in output_directory.glob("*"):
-        if file.suffix not in [".sql", ".err"]:
-            os.remove(file)
+        # Simulate IDF
+        sql, _, _, _, _ = run_idf(idf, epw.file_path, silent=False)
+
+        # Remove files no longer needed (to save on space)
+        output_directory = Path(sql).parent
+        for file in output_directory.glob("*"):
+            if file.suffix not in [".sql", ".err"]:
+                os.remove(file)
 
     # Return results
     df = load_sql(sql)
@@ -168,14 +177,7 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     }
     return d
 
-QUEENBEE_EXE = (ladybug_tools_folder / "python/Scripts/queenbee.exe").as_posix()
 
-hbr_folders.radiance_path = (ladybug_tools_folder / "radiance").as_posix()
-
-if not (Path(hbr_folders.radiance_path) / "bin/rtrace.exe").exists():
-    raise FileNotFoundError(
-        f"Radiance binaries not found in {hbr_folders.radiance_path}. Ensure that the Radiance installation is located in this directory."
-    )
 
 
 def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
@@ -194,16 +196,20 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     )
     working_directory.mkdir(exist_ok=True, parents=True)
 
-    wea = Wea.from_epw_file(epw.file_path)
+    if (working_directory / "annual_irradiance" / "results" / "direct" / "UNSHADED.ill").exists() and (working_directory / "annual_irradiance" / "results" / "total" / "UNSHADED.ill").exists():
+        total_directory = working_directory / "annual_irradiance" / "results" / "total"
+        direct_directory = working_directory / "annual_irradiance" / "results" / "direct"
+    else:
+        wea = Wea.from_epw_file(epw.file_path)
 
-    recipe = Recipe("annual-irradiance")
-    recipe.input_value_by_name("model", model)
-    recipe.input_value_by_name("wea", wea)
-    recipe_settings = RecipeSettings()
-    results = recipe.run(settings=recipe_settings, radiance_check=True)
+        recipe = Recipe("annual-irradiance")
+        recipe.input_value_by_name("model", model)
+        recipe.input_value_by_name("wea", wea)
+        recipe_settings = RecipeSettings()
+        results = recipe.run(settings=recipe_settings, radiance_check=True)
 
-    total_directory = Path(results) / "annual_irradiance/results/total"
-    direct_directory = Path(results) / "annual_irradiance/results/direct"
+        total_directory = Path(results) / "annual_irradiance/results/total"
+        direct_directory = Path(results) / "annual_irradiance/results/direct"
 
     unshaded_total = (
         make_annual(load_ill(total_directory / "UNSHADED.ill"))

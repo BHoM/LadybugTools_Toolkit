@@ -40,7 +40,7 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A pre-defined ground material.")]
         [Input("shadeMaterial", "A pre-defined shade material.")]
         [Input("typology", "A pre-defined external comfort typology.")]
-        [Output("typologyResult", "A typology result object containing simulation results and typology specific comfort metrics.")]
+        [Output("typologyResult", "A typologyt result object containing simulation results and typology specific comfort metrics.")]
         public static CustomObject ExternalComfortTypology(string epw, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial, BH.oM.Ladybug.ExternalComfortTypology typology)
         {
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
@@ -50,7 +50,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            if (!ExternalComfortPossible())
+            if (!Query.ExternalComfortPossible())
                 return null;
 
             if (groundMaterial == ExternalComfortMaterial.Undefined || shadeMaterial == ExternalComfortMaterial.Undefined)
@@ -73,7 +73,7 @@ namespace BH.Engine.LadybugTools
 
             string epwPath = Path.GetFullPath(epw);
 
-            string outputPath = Path.Combine(Path.GetTempPath(), $"{System.Guid.NewGuid()}.json");
+            string outputPath = Path.Combine(Path.GetTempPath(), "typr.json");
 
             string pythonScript = String.Join("\n", new List<string>() 
             {
@@ -82,11 +82,11 @@ namespace BH.Engine.LadybugTools
                 "",
                 "from ladybug.epw import EPW",
                 "from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult",
-                "from external_comfort.material import Material",
+                "from external_comfort.material import MATERIALS",
                 "from external_comfort.typology import Typologies, TypologyResult",
                 "",
                 $"epw = EPW(r'{epwPath}')",
-                $"ec = ExternalComfort(epw, ground_material=Material.{groundMaterial}.value, shade_material=Material.{shadeMaterial}.value)",
+                $"ec = ExternalComfort(epw, ground_material=MATERIALS['{groundMaterial}'], shade_material=MATERIALS['{shadeMaterial}'])",
                 "ecr = ExternalComfortResult(ec)",
                 $"typ = Typologies.{typology}.value",
                 "typr = TypologyResult(typ, ecr)",
