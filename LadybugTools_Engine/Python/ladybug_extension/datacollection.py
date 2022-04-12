@@ -1,4 +1,3 @@
-
 import json
 import sys
 from pathlib import Path
@@ -11,6 +10,7 @@ from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 
 from ladybug_extension.header import from_string, to_string
 from ladybug_extension.analysis_period import to_datetimes
+
 
 def from_json(json_path: Union[Path, str]) -> BaseCollection:
     """Load a JSON containing a serialised Ladybug BaseCollection-like object.

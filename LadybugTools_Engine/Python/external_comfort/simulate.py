@@ -9,10 +9,13 @@ from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 from honeybee_energy.config import folders as hbe_folders
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
-from honeybee_energy.simulation.parameter import (RunPeriod, ShadowCalculation,
-                                                  SimulationControl,
-                                                  SimulationOutput,
-                                                  SimulationParameter)
+from honeybee_energy.simulation.parameter import (
+    RunPeriod,
+    ShadowCalculation,
+    SimulationControl,
+    SimulationOutput,
+    SimulationParameter,
+)
 from honeybee_extension.results import load_ill, load_sql, make_annual
 from honeybee_radiance.config import folders as hbr_folders
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
@@ -23,6 +26,13 @@ from lbt_recipes.recipe import Recipe, RecipeSettings
 from external_comfort.ground_temperature import energyplus_strings
 
 USERNAME = getpass.getuser()
+
+"""
+Where this code is run and IT policies modify the "HOME" environment variable, 
+this part is essential to make sure that HOME is accessible via the Honeybee/
+Queenbee configuration.
+"""
+os.environ["HOME"] = f"C:\\Users\\{USERNAME}"
 
 ladybug_tools_folder = Path(f"C:/Users/{USERNAME}/ladybug_tools")
 
@@ -85,8 +95,8 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     # Save associated EPW file to simulation directory
     epw.save(working_directory / Path(epw.file_path).name)
 
-    if (working_directory  / "run" / "eplusout.sql").exists():
-        sql = (working_directory  / "run" / "eplusout.sql").as_posix()
+    if (working_directory / "run" / "eplusout.sql").exists():
+        sql = (working_directory / "run" / "eplusout.sql").as_posix()
     else:
         # Write model JSON
         model_dict = model.to_dict(triangulate_sub_faces=True)
@@ -178,8 +188,6 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     return d
 
 
-
-
 def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     """Run Radiance on a model and return the results.
 
@@ -196,9 +204,15 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     )
     working_directory.mkdir(exist_ok=True, parents=True)
 
-    if (working_directory / "annual_irradiance" / "results" / "direct" / "UNSHADED.ill").exists() and (working_directory / "annual_irradiance" / "results" / "total" / "UNSHADED.ill").exists():
+    if (
+        working_directory / "annual_irradiance" / "results" / "direct" / "UNSHADED.ill"
+    ).exists() and (
+        working_directory / "annual_irradiance" / "results" / "total" / "UNSHADED.ill"
+    ).exists():
         total_directory = working_directory / "annual_irradiance" / "results" / "total"
-        direct_directory = working_directory / "annual_irradiance" / "results" / "direct"
+        direct_directory = (
+            working_directory / "annual_irradiance" / "results" / "direct"
+        )
     else:
         wea = Wea.from_epw_file(epw.file_path)
 
@@ -246,4 +260,3 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         ),
     }
     return d
-

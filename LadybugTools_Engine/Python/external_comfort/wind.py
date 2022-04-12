@@ -1,8 +1,7 @@
-
-
+import numpy as np
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-import numpy as np
+
 
 def wind_speed_at_height(
     reference_wind_speed: float,
@@ -58,4 +57,3 @@ def target_wind_speed_collection(
     adjustment_factor = target_average_wind_speed_at_10m / epw.wind_speed.average
 
     return epw.wind_speed * adjustment_factor
-
