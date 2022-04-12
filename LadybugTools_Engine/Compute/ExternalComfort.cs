@@ -64,7 +64,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            string outputPath = Path.Combine(Path.GetTempPath(), "ecr.json");
+            string outputPath = Path.Combine(Path.GetTempPath(), $"{System.Guid.NewGuid()}.json");
 
             string epwPath = Path.GetFullPath(epw);
 

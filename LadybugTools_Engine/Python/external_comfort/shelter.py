@@ -1,50 +1,65 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Union
+
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
-from external_comfort.encoder import Encoder
-from ladybug_extension.datacollection import from_series, to_series
 from ladybug.sunpath import Sun
+from ladybug_extension.datacollection import from_series, to_series
 from shapely.geometry import Polygon
+
+from external_comfort.encoder import Encoder
+
 
 @dataclass(frozen=True)
 class Shelter:
     porosity: float = field(init=True, compare=False, default=1)
     altitude_range: List[float] = field(init=True, compare=True, default_factory=list)
     azimuth_range: List[float] = field(init=True, compare=True, default_factory=list)
-    
+
     def __post_init__(self) -> Shelter:
 
         if not (0 <= self.porosity <= 1):
             raise ValueError(f"Porosity must be between 0 and 1")
 
         if len(self.altitude_range) == 0:
-            object.__setattr__(self, 'altitude_range', [0, 0])
-        elif (len(self.altitude_range) != 2) or (max(self.altitude_range) > 90) or (min(self.altitude_range) < 0):
-            raise ValueError(f"{__class__.__name__} altitude range must be a list of two floats between 0 and 90.")
+            object.__setattr__(self, "altitude_range", [0, 0])
+        elif (
+            (len(self.altitude_range) != 2)
+            or (max(self.altitude_range) > 90)
+            or (min(self.altitude_range) < 0)
+        ):
+            raise ValueError(
+                f"{__class__.__name__} altitude range must be a list of two floats between 0 and 90."
+            )
 
         if len(self.azimuth_range) == 0:
-            object.__setattr__(self, 'azimuth_range', [0, 0])
-        elif (len(self.azimuth_range) != 2) or (max(self.azimuth_range) > 360) or (min(self.azimuth_range) < 0):
-            raise ValueError(f"{__class__.__name__} azimuth range must be a list of two floats between 0 and 90.")
-    
+            object.__setattr__(self, "azimuth_range", [0, 0])
+        elif (
+            (len(self.azimuth_range) != 2)
+            or (max(self.azimuth_range) > 360)
+            or (min(self.azimuth_range) < 0)
+        ):
+            raise ValueError(
+                f"{__class__.__name__} azimuth range must be a list of two floats between 0 and 90."
+            )
+
     def _polygons(self) -> List[Polygon]:
         """Return a list of polygons representing the shade of this shelter.
 
         Returns:
             List[Polygon]: A list of polygons representing the shade of this shelter.
-        """        
+        """
         if self._width == 0:
             return []
 
         if self._height == 0:
             return []
-        
+
         if self.crosses_north:
             return [
                 Polygon(
@@ -86,7 +101,7 @@ class Shelter:
 
         Returns:
             List[bool]: A list of booleans indicating whether the sun (or each of the suns) is blocked by this shelter.
-        """        
+        """
         if not isinstance(suns, list):
             suns = [suns]
         blocked = []
@@ -108,9 +123,9 @@ class Shelter:
             else:
                 blocked.append(False)
         return blocked
-    
+
     def effective_wind_speed(self, epw: EPW) -> HourlyContinuousCollection:
-        """Return the wind speed (at original height of 10m from EPW) when subjected to this shelter. 
+        """Return the wind speed (at original height of 10m from EPW) when subjected to this shelter.
            The proportion of shelter occluding the altitude, and the porosity of the shelter determines how much of the wind to block
 
         Args:
@@ -118,11 +133,11 @@ class Shelter:
 
         Returns:
             HourlyContinuousCollection: An HourlyContinuousCollection object with the effective wind speed impacted by this shelter.
-        """        
-        
+        """
+
         if self.porosity == 1:
             return epw.wind_speed
-        
+
         shelter_height_factor = np.interp(self._height / 90, [0, 1], [1, 0.25])
 
         wd = to_series(epw.wind_direction)
@@ -132,15 +147,21 @@ class Shelter:
         for _, row in df.iterrows():
             if self.crosses_north:
                 if (row[1] > self._start_azimuth) or (row[1] < self._end_azimuth):
-                    modified_values.append(row[0] * self.porosity * shelter_height_factor)
+                    modified_values.append(
+                        row[0] * self.porosity * shelter_height_factor
+                    )
                 else:
                     modified_values.append(row[0])
             else:
                 if self._start_azimuth < row[1] < self._end_azimuth:
-                    modified_values.append(row[0] * self.porosity * shelter_height_factor)
+                    modified_values.append(
+                        row[0] * self.porosity * shelter_height_factor
+                    )
                 else:
                     modified_values.append(row[0])
-        return from_series(pd.Series(modified_values, index=df.index, name="Wind Speed (m/s)"))
+        return from_series(
+            pd.Series(modified_values, index=df.index, name="Wind Speed (m/s)")
+        )
 
     def overlaps(self, other: Shelter) -> bool:
         """Return True if this shelter overlaps with another"""
@@ -151,7 +172,7 @@ class Shelter:
 
         Returns:
             Dict: The dict representation of this object.
-        """        
+        """
         d = {
             "porosity": self.porosity,
             "altitude_range": self.altitude_range,
@@ -179,7 +200,7 @@ class Shelter:
         if (self._height == 0) or (self._width == 0) or (self.porosity == 1):
             return None
         return f"sheltered between ({self._start_azimuth}, {self._start_altitude}) and ({self._end_azimuth}, {self._end_altitude}) with porosity of {self.porosity:0.0%}"
-    
+
     @property
     def _start_azimuth(self) -> float:
         """The azimuth at which the shelter starts"""
@@ -285,7 +306,7 @@ class Shelter:
 
             Returns:
                 bool: True if the two shelters overlap with each other.
-            """    
+            """
 
             for poly1 in shelter1._polygons():
                 for poly2 in shelter2._polygons():

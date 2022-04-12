@@ -1,4 +1,3 @@
-
 _WIDTH = 10
 _DEPTH = 10
 _GROUND_HEIGHT = 1

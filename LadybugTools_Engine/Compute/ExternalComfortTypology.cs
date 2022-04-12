@@ -73,7 +73,7 @@ namespace BH.Engine.LadybugTools
 
             string epwPath = Path.GetFullPath(epw);
 
-            string outputPath = Path.Combine(Path.GetTempPath(), "typr.json");
+            string outputPath = Path.Combine(Path.GetTempPath(), $"{System.Guid.NewGuid()}.json");
 
             string pythonScript = String.Join("\n", new List<string>() 
             {

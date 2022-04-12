@@ -6,9 +6,12 @@ import pandas as pd
 from ladybug import datatype
 from ladybug.epw import EPW, AnalysisPeriod, Header, HourlyContinuousCollection
 from ladybug.location import Location
-from ladybug.psychrometrics import (enthalpy_from_db_hr,
-                                    humid_ratio_from_db_rh,
-                                    rel_humid_from_db_dpt, wet_bulb_from_db_rh)
+from ladybug.psychrometrics import (
+    enthalpy_from_db_hr,
+    humid_ratio_from_db_rh,
+    rel_humid_from_db_dpt,
+    wet_bulb_from_db_rh,
+)
 from ladybug.skymodel import clearness_index
 from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
