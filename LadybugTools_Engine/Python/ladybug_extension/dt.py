@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from ladybug.dt import DateTime

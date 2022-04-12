@@ -7,7 +7,7 @@
     },
     {
       "Name": "dragonfly-energy",
-      "Version": "1.16.49"
+      "Version": "1.16.51"
     },
     {
       "Name": "dragonfly-schema",
@@ -23,7 +23,7 @@
     },
     {
       "Name": "honeybee-energy",
-      "Version": "1.88.13"
+      "Version": "1.89.0"
     },
     {
       "Name": "honeybee-energy-standards",
@@ -31,7 +31,7 @@
     },
     {
       "Name": "honeybee-radiance",
-      "Version": "1.61.0"
+      "Version": "1.63.0"
     },
     {
       "Name": "honeybee-radiance-command",
@@ -51,7 +51,7 @@
     },
     {
       "Name": "ladybug-comfort",
-      "Version": "0.15.5"
+      "Version": "0.15.6"
     },
     {
       "Name": "ladybug-core",
@@ -71,23 +71,23 @@
     },
     {
       "Name": "lbt-dragonfly",
-      "Version": "0.8.543"
+      "Version": "0.9.9"
     },
     {
       "Name": "lbt-honeybee",
-      "Version": "0.5.427"
+      "Version": "0.5.440"
     },
     {
       "Name": "lbt-ladybug",
-      "Version": "0.25.136"
+      "Version": "0.25.137"
     },
     {
       "Name": "lbt-recipes",
-      "Version": "0.20.5"
+      "Version": "0.21.2"
     },
     {
       "Name": "pollination-handlers",
-      "Version": "0.8.15"
+      "Version": "0.8.17"
     },
     {
       "Name": "queenbee",

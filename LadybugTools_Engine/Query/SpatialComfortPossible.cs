@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2022, the respective contributors. All rights reserved.
  *
@@ -20,30 +20,39 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base.Attributes;
+using System.Collections.Generic;
+using System.IO;
 using System.ComponentModel;
 
-namespace BH.oM.Ladybug
+namespace BH.Engine.LadybugTools
 {
-    [Description("An external comfort material type to be assigned to either the ground or shade, for use in the Python \"external_comfort\" workflow.")]
-    public enum ExternalComfortMaterial
+    public static partial class Query
     {
-        Undefined,
-        Asphalt,
-        ConcreteHeavyweight,
-        ConcreteLightweight,
-        DustDry,
-        Fabric,
-        GrassDamp,
-        GrassDry,
-        Hardwood,
-        MetalPainted,
-        MetalReflective,
-        Mud,
-        Rock,
-        SandDry,
-        Shrubs,
-        Softwood,
-        SoilDamp,
-        Travertine,
+        [Description("Determine whether a spatial comfort post-process is possible.")]
+        [Output("bool", "True if spatial comfort post-process is possible.")]
+        public static bool SpatialComfortPossible(string directory)
+        {
+            if (!ExternalComfortPossible())
+                return false;
+
+            string annualIrradiancePath = System.IO.Path.Combine(directory, "annual_irradiance");
+            string skyViewPath = System.IO.Path.Combine(directory, "sky_view");
+
+            foreach (string path in new List<string>() {
+                annualIrradiancePath,
+                skyViewPath,
+            })
+            {
+                if (!Directory.Exists(path))
+                {
+                    BH.Engine.Base.Compute.RecordError($"Install Ladybug Tools using the instructions found https://www.food4rhino.com/en/app/ladybug-tools in order to be able to run this method.");
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }
+
