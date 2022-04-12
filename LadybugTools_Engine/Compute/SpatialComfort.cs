@@ -37,8 +37,8 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Post-process a spatial-comfort simulation and return results.")]
         [Input("epw", "An EPW file.")]
-        [Output("spatialComfortResult", "A spatial comfort result object containing simulation results and paths to outputs.")]
-        public static CustomObject SpatialComfort(string epw, string simulationDirectory)
+        [Output("simulationDirectory", "The directory in which results can be found.")]
+        public static string SpatialComfort(string epw, string simulationDirectory)
         {
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
             if (!pythonEnvironment.IsInstalled())
@@ -57,8 +57,6 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            string outputPath = Path.Combine(Path.GetTempPath(), "ecr.json");
-
             string epwPath = Path.GetFullPath(epw);
 
             string pythonScript = String.Join("\n", new List<string>() 
@@ -67,26 +65,21 @@ namespace BH.Engine.LadybugTools
                 $"sys.path.insert(0, '{pythonEnvironment.CodeDirectory()}')",
                 "",
                 "from ladybug.epw import EPW",
+                "from external_comfort.spatial import SpatialComfort, SpatialComfortResult",
                 "from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult",
                 "from external_comfort.material import MATERIALS",
                 "",
                 $"epw = EPW(r'{epwPath}')",
                 $"ec = ExternalComfort(epw, ground_material=MATERIALS['ConcreteHeavyweight'], shade_material=MATERIALS['Fabric'])",
                 "ecr = ExternalComfortResult(ec)",
-                $"ecr.to_json(r'{outputPath}')",
+                $"sc = SpatialComfort(r'{simulationDirectory}', ecr)",
+                "scr = SpatialComfortResult(sc)",
                 "print('Nothing to see here!')",
             });
 
             string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
 
-            string jsonString = "";
-            using (StreamReader r = new StreamReader(outputPath))
-            {
-                jsonString = r.ReadToEnd();
-            }
-
-
-            return Serialiser.Convert.FromJson(jsonString) as CustomObject;
+            return simulationDirectory;
         }
     }
 }
