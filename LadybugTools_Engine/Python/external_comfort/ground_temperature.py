@@ -1,11 +1,9 @@
-
 import inspect
 from warnings import warn
 
 import numpy as np
 import pandas as pd
-from ladybug.datacollection import (HourlyContinuousCollection,
-                                    MonthlyCollection)
+from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybug.epw import EPW
 from ladybug_extension.datacollection import from_series, to_hourly, to_series
 

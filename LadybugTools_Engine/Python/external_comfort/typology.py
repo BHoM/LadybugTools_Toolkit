@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import copy
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
-import json
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -15,16 +15,30 @@ from ladybug.datatype.temperature import WetBulbTemperature
 from ladybug.epw import EPW
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 from ladybug.sunpath import Sunpath
-from ladybug_comfort.collection.utci import UTCI
 from ladybug_comfort.collection.pmv import PMV
+from ladybug_comfort.collection.utci import UTCI
 from ladybug_extension.datacollection import from_series, to_series
+from ladybug_extension.location import describe
+from matplotlib.figure import Figure
 
 from external_comfort.encoder import Encoder
-from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult, ExternalComfortEncoder
+from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult
+from external_comfort.plot import (
+    DBT_COLORMAP,
+    MRT_COLORMAP,
+    RH_COLORMAP,
+    UTCI_BOUNDARYNORM,
+    UTCI_COLORMAP,
+    WS_COLORMAP,
+    plot_heatmap,
+    plot_typology_day,
+)
 from external_comfort.shelter import Shelter
+
 
 class TypologyEncoder(Encoder):
     """A JSON encoder for the Typology and TypologyResult classes."""
+
     def default(self, obj):
         if isinstance(obj, ExternalComfort):
             return obj.to_dict()
@@ -37,6 +51,7 @@ class TypologyEncoder(Encoder):
         if isinstance(obj, TypologyResult):
             return obj.to_dict()
         return super(TypologyEncoder, self).default(obj)
+
 
 @dataclass(frozen=True)
 class Typology:
@@ -53,10 +68,7 @@ class Typology:
             raise ValueError("Shelters overlap")
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}"
-            f" - {self.name}"
-        )
+        return f"{self.__class__.__name__}" f" - {self.name}"
 
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
@@ -72,7 +84,7 @@ class Typology:
             "wind_speed_multiplier": self.wind_speed_multiplier,
         }
         return d
-    
+
     def to_json(self, file_path: str) -> Path:
         """Write the content of this object to a JSON file
 
@@ -98,7 +110,9 @@ class TypologyResult:
     relative_humidity: HourlyContinuousCollection = field(init=False, repr=False)
     wind_speed: HourlyContinuousCollection = field(init=False, repr=False)
     mean_radiant_temperature: HourlyContinuousCollection = field(init=False, repr=False)
-    ground_surface_temperature: HourlyContinuousCollection = field(init=False, repr=False)
+    ground_surface_temperature: HourlyContinuousCollection = field(
+        init=False, repr=False
+    )
     universal_thermal_climate_index: HourlyContinuousCollection = field(
         init=False, repr=False
     )
@@ -115,7 +129,9 @@ class TypologyResult:
         object.__setattr__(self, "dry_bulb_temperature", dbt_rh["dry_bulb_temperature"])
         object.__setattr__(self, "relative_humidity", dbt_rh["relative_humidity"])
         object.__setattr__(self, "wind_speed", self._wind_speed())
-        object.__setattr__(self, "ground_surface_temperature", self._ground_surface_temperature())
+        object.__setattr__(
+            self, "ground_surface_temperature", self._ground_surface_temperature()
+        )
         object.__setattr__(
             self, "mean_radiant_temperature", self._mean_radiant_temperature()
         )
@@ -132,7 +148,10 @@ class TypologyResult:
 
     def _wind_speed(self) -> HourlyContinuousCollection:
         if len(self.typology.shelters) == 0:
-            return self.external_comfort_result.external_comfort.epw.wind_speed * self.typology.wind_speed_multiplier
+            return (
+                self.external_comfort_result.external_comfort.epw.wind_speed
+                * self.typology.wind_speed_multiplier
+            )
         else:
             collections = []
             for shelter in self.typology.shelters:
@@ -147,7 +166,7 @@ class TypologyResult:
             return from_series(
                 pd.concat(collections, axis=1).min(axis=1).rename("Wind Speed (m/s)")
             )
-    
+
     def _ground_surface_temperature(self) -> HourlyContinuousCollection:
         """Calculate the ground surface temperature based on the external comfort result and typology set-up.
 
@@ -158,7 +177,9 @@ class TypologyResult:
         sky_visible = self._sky_visibility()
         sky_blocked = 1 - sky_visible
 
-        return (self.external_comfort_result.unshaded_below_temperature * sky_visible) + (self.external_comfort_result.shaded_below_temperature * sky_blocked)
+        return (
+            self.external_comfort_result.unshaded_below_temperature * sky_visible
+        ) + (self.external_comfort_result.shaded_below_temperature * sky_blocked)
 
     def _sky_visibility(self) -> float:
         """Calculate the proportion of sky visible from a typology with any nuber of shelters.
@@ -188,9 +209,7 @@ class TypologyResult:
         sun_is_up = np.array([True if sun.altitude > 0 else False for sun in suns])
 
         nans = np.empty(
-            len(
-                self.external_comfort_result.external_comfort.epw.dry_bulb_temperature
-            )
+            len(self.external_comfort_result.external_comfort.epw.dry_bulb_temperature)
         )
         nans[:] = np.NaN
 
@@ -310,14 +329,14 @@ class TypologyResult:
             wind_speed=self.wind_speed,
         ).universal_thermal_climate_index
         utci_collection.header.metadata["description"] = self.typology.name
-        return 
+        return utci_collection
 
     def _standard_effective_temperature(self) -> HourlyContinuousCollection:
         """Return the standard effective temperature for the given typology.
 
         Returns:
             HourlyContinuousCollection: The calculated standard effective temperature based on the shelter configuration for the given typology.
-        """        
+        """
 
         return PMV(
             air_temperature=self.dry_bulb_temperature,
@@ -328,8 +347,10 @@ class TypologyResult:
             clo_value=0.7,
             external_work=0,
         ).standard_effective_temperature
-    
-    def to_dataframe(self, include_external_comfort_results: bool = True) -> pd.DataFrame:
+
+    def to_dataframe(
+        self, include_external_comfort_results: bool = True
+    ) -> pd.DataFrame:
         """Create a dataframe from the typology results.
 
         Args:
@@ -337,7 +358,7 @@ class TypologyResult:
 
         Returns:
             pd.DataFrame: A dataframe containing the typology results.
-        """        
+        """
 
         attributes = [
             "dry_bulb_temperature",
@@ -349,11 +370,15 @@ class TypologyResult:
         series: List[pd.Series] = []
         for attribute in attributes:
             series.append(to_series(getattr(self, attribute)))
-        df = pd.concat(series, axis=1, keys=[f"{self.__class__.__name__} - {i}" for i in attributes])
+        df = pd.concat(
+            series,
+            axis=1,
+            keys=[f"{self.__class__.__name__} - {i}" for i in attributes],
+        )
 
         if include_external_comfort_results:
             df = pd.concat([df, self.external_comfort_result.to_dataframe()], axis=1)
-        
+
         return df
 
     def to_dict(self) -> Dict[str, Any]:
@@ -373,8 +398,8 @@ class TypologyResult:
             "universal_thermal_climate_index",
             # "standard_effective_temperature",
         ]
-        return {attribute: getattr(self, attribute) for attribute in attributes}  
-    
+        return {attribute: getattr(self, attribute) for attribute in attributes}
+
     def to_json(self, file_path: str) -> Path:
         """Write the content of this object to a JSON file
 
@@ -389,8 +414,6 @@ class TypologyResult:
             json.dump(self.to_dict(), fp, cls=TypologyEncoder, indent=4)
 
         return file_path
-
-
 
     @staticmethod
     def evaporatively_cooled_dbt_rh(
@@ -444,12 +467,126 @@ class TypologyResult:
         }
 
         return {"dry_bulb_temperature": dbt_adjusted, "relative_humidity": rh_adjusted}
-    
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}"
             f" [{self.external_comfort_result.external_comfort.model.identifier}] - {self.typology.name}"
         )
+
+    def plot_utci_day(self, month: int = 6, day: int = 21) -> Figure:
+        """Plot a single day UTCI and composite components
+
+        Args:
+            month (int, optional): The month to plot. Defaults to 6.
+            day (int, optional): The day to plot. Defaults to 21.
+
+        Returns:
+            Figure: A figure showing UTCI and component parts for the given day.
+        """
+        return plot_typology_day(
+            to_series(self.universal_thermal_climate_index),
+            to_series(self.dry_bulb_temperature),
+            to_series(self.mean_radiant_temperature),
+            to_series(self.relative_humidity),
+            to_series(self.wind_speed),
+            month,
+            day,
+            f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+        )
+
+    def plot_utci_heatmap(self) -> Figure:
+        """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = plot_heatmap(
+            collection=self.universal_thermal_climate_index,
+            colormap=UTCI_COLORMAP,
+            norm=UTCI_BOUNDARYNORM,
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+        )
+
+        return fig
+
+    def plot_dbt_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly DBT values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = plot_heatmap(
+            collection=self.dry_bulb_temperature,
+            colormap=DBT_COLORMAP,
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig
+
+    def plot_rh_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly RH values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = plot_heatmap(
+            collection=self.relative_humidity,
+            colormap=RH_COLORMAP,
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig
+
+    def plot_ws_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly WS values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = plot_heatmap(
+            collection=self.wind_speed,
+            colormap=WS_COLORMAP,
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig
+
+    def plot_mrt_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly MRT values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = plot_heatmap(
+            collection=self.mean_radiant_temperature,
+            colormap=MRT_COLORMAP,
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig
+
 
 class Typologies(Enum):
     Openfield = Typology(
@@ -656,7 +793,8 @@ class Typologies(Enum):
         ],
         wind_speed_multiplier=1,
     )
-    
+
+
 TYPOLOGIES: Dict[str, Typology] = {
     "Openfield": Typology(
         name="Openfield",

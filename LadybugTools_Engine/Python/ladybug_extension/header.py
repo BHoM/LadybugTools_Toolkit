@@ -1,4 +1,3 @@
-
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype import TYPESDICT
 from ladybug.datatype.generic import GenericType

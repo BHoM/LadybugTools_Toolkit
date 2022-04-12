@@ -1,8 +1,7 @@
-
-
+import numpy as np
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-import numpy as np
+
 
 def wind_speed_at_height(
     reference_wind_speed: float,

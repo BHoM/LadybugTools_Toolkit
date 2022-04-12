@@ -1,18 +1,16 @@
 from __future__ import annotations
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-import json
 from pathlib import Path
 from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-
 from honeybee.model import Model
-from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase, EnergyMaterial, EnergyMaterialNoMass, EnergyMaterialVegetation
-from ladybug.datacollection import BaseCollection, HourlyContinuousCollection, MonthlyCollection
-from ladybug.datacollectionimmutable import HourlyContinuousCollectionImmutable, MonthlyCollectionImmutable
+from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
+from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import Temperature
 from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug_comfort.collection.solarcal import HorizontalSolarCal
@@ -21,17 +19,19 @@ from ladybug_extension.datacollection import from_series, to_series
 
 from external_comfort.encoder import Encoder
 from external_comfort.model import create_model
-from external_comfort.material import MATERIALS
 from external_comfort.simulate import energyplus, radiance
+
 
 class ExternalComfortEncoder(Encoder):
     """A JSON encoder for the ExternalComfort and ExternalComfortResult classes."""
+
     def default(self, obj):
         if isinstance(obj, ExternalComfort):
             return obj.to_dict()
         if isinstance(obj, ExternalComfortResult):
             return obj.to_dict()
         return super(ExternalComfortEncoder, self).default(obj)
+
 
 @dataclass(frozen=True)
 class ExternalComfort:
@@ -43,15 +43,14 @@ class ExternalComfort:
 
     def __post_init__(self) -> ExternalComfort:
         object.__setattr__(
-            self, "model", create_model(self.ground_material, self.shade_material, self.identifier)
+            self,
+            "model",
+            create_model(self.ground_material, self.shade_material, self.identifier),
         )
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}"
-            f" [{self.model.identifier}]"
-        )
-    
+        return f"{self.__class__.__name__}" f" [{self.model.identifier}]"
+
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
 
@@ -66,7 +65,7 @@ class ExternalComfort:
             "model": self.model,
         }
         return d
-    
+
     def to_json(self, file_path: str) -> Path:
         """Return this object as a json file
 
@@ -79,7 +78,7 @@ class ExternalComfort:
 
         with open(file_path, "w") as fp:
             json.dump(self.to_dict(), fp, cls=ExternalComfortEncoder, indent=4)
-        
+
         return file_path
 
 
@@ -189,14 +188,14 @@ class ExternalComfortResult:
                 self.unshaded_diffuse_radiation,
             ),
         )
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
 
         Returns:
             Dict: The dict representation of this object.
-        """        
-        
+        """
+
         attributes = [
             "external_comfort",
             "shaded_below_temperature",
@@ -228,11 +227,10 @@ class ExternalComfortResult:
             json.dump(self.to_dict(), fp, cls=ExternalComfortEncoder, indent=4)
 
         return file_path
-    
+
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}"
-            f" [{self.external_comfort.model.identifier}]"
+            f"{self.__class__.__name__}" f" [{self.external_comfort.model.identifier}]"
         )
 
     @staticmethod
@@ -345,7 +343,7 @@ class ExternalComfortResult:
 
         Returns:
             pd.DataFrame: A dataframe containing the simulation results.
-        """        
+        """
 
         attributes = [
             "shaded_below_temperature",
@@ -364,4 +362,8 @@ class ExternalComfortResult:
         series: List[pd.Series] = []
         for attribute in attributes:
             series.append(to_series(getattr(self, attribute)))
-        return pd.concat(series, axis=1, keys=[f"{self.__class__.__name__} - {i}" for i in attributes])
+        return pd.concat(
+            series,
+            axis=1,
+            keys=[f"{self.__class__.__name__} - {i}" for i in attributes],
+        )
