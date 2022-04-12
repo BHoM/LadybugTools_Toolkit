@@ -30,7 +30,7 @@ namespace BH.oM.Ladybug
         Undefined,
         Openfield,
         Enclosed,
-        FrittedEnclosure,
+        PorousEnclosure,
         SkyShelter,
         FrittedSkyShelter,
         NearWater,

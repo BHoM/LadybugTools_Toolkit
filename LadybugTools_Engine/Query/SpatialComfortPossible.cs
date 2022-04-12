@@ -46,7 +46,7 @@ namespace BH.Engine.LadybugTools
             {
                 if (!Directory.Exists(path))
                 {
-                    BH.Engine.Base.Compute.RecordError($"Install Ladybug Tools using the instructions found https://www.food4rhino.com/en/app/ladybug-tools in order to be able to run this method.");
+                    BH.Engine.Base.Compute.RecordError($"You must run a {new DirectoryInfo(path).Name} simulation in order to make Spatial Comfort post-processing possible.");
                     return false;
                 }
             }
