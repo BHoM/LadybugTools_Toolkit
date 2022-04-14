@@ -47,7 +47,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            if (!Query.SpatialComfortPossible(simulationDirectory))
+            if (!SpatialComfortPossible(simulationDirectory))
                 return null;
 
             

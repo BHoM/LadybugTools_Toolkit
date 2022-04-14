@@ -31,7 +31,7 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Determine whether a spatial comfort post-process is possible.")]
         [Output("bool", "True if spatial comfort post-process is possible.")]
-        private static bool SpatialComfortPossible(string directory)
+        public static bool SpatialComfortPossible(string directory)
         {
             if (!ExternalComfortPossible())
                 return false;
