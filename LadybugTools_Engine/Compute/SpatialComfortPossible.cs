@@ -27,7 +27,7 @@ using System.ComponentModel;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Query
+    public static partial class Compute
     {
         [Description("Determine whether a spatial comfort post-process is possible.")]
         [Output("bool", "True if spatial comfort post-process is possible.")]

@@ -27,7 +27,7 @@ using System.ComponentModel;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Query
+    public static partial class Compute
     {
         [Description("Determine whether the External Comfort process is possible.")]
         [Output("bool", "True if External Comfort simulation is possible.")]

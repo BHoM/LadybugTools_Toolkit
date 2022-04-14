@@ -122,8 +122,8 @@
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Query\SpatialComfortPossible.cs" />
-    <Compile Include="Query\ExternalComfortPossible.cs" />
+    <Compile Include="Compute\SpatialComfortPossible.cs" />
+    <Compile Include="Compute\ExternalComfortPossible.cs" />
     <Compile Include="Query\ToolkitName.cs" />
   </ItemGroup>
   <ItemGroup>

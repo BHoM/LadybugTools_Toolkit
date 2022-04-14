@@ -50,7 +50,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            if (!Query.ExternalComfortPossible())
+            if (!ExternalComfortPossible())
                 return null;
 
             if (groundMaterial == ExternalComfortMaterial.Undefined || shadeMaterial == ExternalComfortMaterial.Undefined)
