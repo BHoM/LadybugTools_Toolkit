@@ -32,10 +32,12 @@ def to_dataframe(
         pd.DataFrame: A Pandas DataFrame with the EPW data and additional calculated properties.
     """
 
-    Args:
-        epw0 (EPW): A ladybug EPW object.
-        epw1 (EPW): A ladybug EPW object.
-        include_header (bool, optional): Include the str repsresentation of the EPW files header in the comparison. Defaults to False.
+    all_series = []
+    for p in dir(epw):
+        try:
+            all_series.append(to_series(getattr(epw, p)))
+        except (AttributeError, TypeError, ZeroDivisionError, ValueError) as e:
+            pass
 
     Returns:
         bool: True if the two EPW objects are equal, False otherwise.

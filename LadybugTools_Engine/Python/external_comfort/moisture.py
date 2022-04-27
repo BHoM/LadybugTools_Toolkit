@@ -1,24 +1,26 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
+from os import stat
 from pathlib import Path
-from typing import Any, Dict, List
-
+from typing import List, Union
+import warnings
+import shapely.geometry
+import shapely.ops
+import shapely.affinity
+import json
 import numpy as np
+from ladybug.epw import EPW
 import pandas as pd
-from cached_property import cached_property
-from ladybug.datatype.temperature import WetBulbTemperature
-from ladybug.epw import EPW, HourlyContinuousCollection
-from ladybug.psychrometrics import wet_bulb_from_db_rh
-from ladybug_extension.datacollection import to_series
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+
 
 
 @dataclass()
 class MoistureSource:
     id: str = field(init=True, repr=True)
     magnitude: float = field(init=True, repr=False)
-    points: List[int] = field(init=True, repr=False)
+    point_indices: List[int] = field(init=True, repr=False)
 
     @classmethod
     def from_json(cls, json_file: Path) -> List[MoistureSource]:
@@ -29,195 +31,155 @@ class MoistureSource:
 
         Returns:
             List[MoistureSource]: A list of MoistureSource objects.
-        """
+        """        
         objs = []
         with open(json_file, "r") as fp:
             water_sources = json.load(fp)
         for ws in water_sources:
-            objs.append(
-                MoistureSource(
-                    ws["id"], ws["magnitude"], np.array(ws["points"]).astype(np.float16)
-                )
-            )
+            objs.append(MoistureSource(ws["id"], ws["magnitude"], ws["point_indices"]))
         return objs
+    
+    @staticmethod
+    def frame_to_multipoint(df: pd.DataFrame) -> List[shapely.geometry.MultiPoint]:
+        """Convert a pandas DataFrame containing a header row and x, y, z columns to a shapely MultiPoint.
 
-    @property
-    def pathsafe_id(self) -> str:
-        return (
-            self.id.replace("*", "")
-            .replace(":", "")
-            .replace("/", "")
-            .replace("\\", "")
-            .replace("?", "")
-            .replace('"', "")
-            .replace(">", "")
-            .replace("<", "")
-            .replace("|", "")
-        )
-
-    def __repr__(self) -> str:
-        return f"MoistureSource(id={self.id})"
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Return this object as a dictionary
+        Args:
+            df (pd.DataFrame): A "points" dataframe
 
         Returns:
-            Dict: The dict representation of this object.
+            List[MultiPoint]: A list of shapely MultiPoint object (one for each column grouping in the dataframe).
+        """
+        points = []
+        if isinstance(df.columns, pd.MultiIndex):
+            if len(df.columns[0]) > 2:
+                raise ValueError("The dataframe must have a multiindex header with only two levels, the first being teh point group, and the second the point values.")
+            
+            for grp in df.columns.get_level_values(0).unique():
+                points.append(shapely.geometry.MultiPoint([shapely.geometry.Point(i.x, i.y) for _, i in df[grp].iterrows()]))
+        else:
+            points.append(shapely.geometry.MultiPoint([shapely.geometry.Point(i.x, i.y) for _, i in df.iterrows()]))
+        return points
+    
+    @staticmethod
+    def multipoint_to_frame(multipoint: shapely.geometry.MultiPoint) -> pd.DataFrame:
+        """Convert a shapely MultiPoint object to a pandas DataFrame.
+
+        Args:
+            multipoint (shapely.geometry.MultiPoint): A shapely MultiPoint object.
+
+        Returns:
+            pd.DataFrame: A pandas DataFrame containing the x, y coordinates of the points in the multipoint.
+        """        
+        return pd.DataFrame([[j[0] for j in i.xy] for i in multipoint.geoms], columns=["x", "y"])
+
+    def create_moisture_points(self, df: pd.DataFrame) -> shapely.geometry.MultiPoint:
+        """Create a shapely MultiPoint object denoting the points where a moisture source is located.
+
+        Args:
+            df (pd.DataFrame): A "points" dataframe
+
+        Returns:
+            shapely.geometry.MultiPoint: A shapely MultiPoint object.
+        """
+        all_points = MoistureSource.frame_to_multipoint(df)
+        return shapely.geometry.MultiPoint([all_points[0].geoms[i] for i in self.point_indices])
+
+    @staticmethod
+    def create_wakes(buffer_distances: List[float], wind_direction: float, wind_speed: float, points: shapely.geometry.MultiPoint = None) -> List[shapely.geometry.MultiPolygon]:
+        """For a given set of buffer distances around a moisture source, create a set of wake polygons showing effects of that moisture downwind.
+
+        Args:
+            buffer_distances (List[float]): Distances for effectiveness layers of the wake.
+            wind_direction (float): The direction in which the wake will be pulled
+            wind_speed (float): The speed applied to the wake, stretching it out in the direction of the wind.
+            point (shapely.geometry.MultiPoint, optional): A set of points to which the wake polygons will be moved nad merged if given.
+
+        Returns:
+            shapely.geometry.MultiPolygon: The 
+        """        
+        
+        if min(buffer_distances) == 0:
+            raise ValueError("Buffer distances must be greater than zero.")
+        if not all(i < j for i, j in zip(buffer_distances, buffer_distances[1:])):
+            raise ValueError("Buffer distances must be in ascending order.")
+        
+        base_wake = []
+        base_pt = shapely.geometry.Point(0, 0)
+        for buffer_distance in buffer_distances:
+            if wind_speed == 0:
+                base_wake.append(base_pt.buffer(buffer_distance))
+            else:
+                splitter = shapely.geometry.LineString([
+                    shapely.affinity.translate(base_pt, xoff=buffer_distance), 
+                    shapely.affinity.translate(base_pt, xoff=-buffer_distance)
+                ])
+                downwind, upwind = shapely.ops.SplitOp.split(base_pt.buffer(buffer_distance), splitter).geoms
+                scaled_downwind = shapely.affinity.scale(downwind, yfact=1 + (wind_speed * buffer_distance), origin=base_pt)
+                joined = shapely.ops.unary_union([upwind, scaled_downwind])
+                joined_rotated = shapely.affinity.rotate(joined, -wind_direction, origin=base_pt)
+                base_wake.append(joined_rotated)
+        base_wake = shapely.geometry.MultiPolygon(base_wake)
+
+        wake_regions = []
+        if points:
+            # Move wakes to each point location, and merge into single shape, then subtract more signifigant wakes
+            translated_wakes = np.array([shapely.affinity.translate(base_wake, xoff=i.x, yoff=i.y).geoms for i in points.geoms]).T
+            unioned_wakes = [shapely.ops.unary_union(wake) for wake in translated_wakes]
+            for n, g in enumerate(unioned_wakes):
+                if n == 0:
+                    wake_regions.append(g)
+                else:
+                    wake_regions.append(g.difference(unioned_wakes[n-1]))
+        else:
+            for n, g in enumerate(base_wake.geoms):
+                wake_regions.append(g if n == 0 else g.difference(base_wake.geoms[n-1]))
+        
+        return wake_regions
+    
+    def get_wake_point_indices(self, all_points_df: pd.DataFrame, buffer_distances, wind_direction: float, wind_speed: float) -> List[int]:
+        """Get the indices of the points in the dataframe that are within the wake of a given moisture source.
+
+        Args:
+            df (pd.DataFrame): A "points" dataframe
+            buffer_distances (List[float]): Distances for effectiveness layers of the wake.
+            wind_direction (float): The direction in which the wake will be pulled
+            wind_speed (float): The speed applied to the wake, stretching it out in the direction of the wind.
+            points (shapely.geometry.MultiPoint, optional): A set of points to which the wake polygons will be moved and merged if given.
+
+        Returns:
+            List[int]: A list of indices of the points within the wake.
         """
 
-        d = {
-            "id": self.id,
-            "magnitude": self.magnitude,
-            "points": self.points,
-        }
-        return d
+        warnings.warn("This process currently only works for single analysis grid set-up!")
 
-    @property
-    def points_xy(self) -> List[List[float]]:
-        """Return a list of x,y coordinates for each point in the moisture source."""
-        return self.points[:, :2]
+        all_points = self.frame_to_multipoint(all_points_df)[0]
+        moisture_source_points = shapely.geometry.MultiPoint([all_points.geoms[i] for i in self.point_indices])
+        wakes = self.create_wakes(buffer_distances, wind_direction, wind_speed, moisture_source_points)
 
+        ll = []
+        for wake in wakes:
+            sub_points = all_points.intersection(wake)
 
-def evaporative_cooling_effect(
-    dry_bulb_temperature: float,
-    relative_humidity: float,
-    evaporative_cooling_effectiveness: float,
-    atmospheric_pressure: float = None,
-) -> List[float]:
-    """For the inputs, calculate the effective DBT and RH values for the evaporative cooling effectiveness given.
+            contained_pt_indices = pd.merge(
+                self.multipoint_to_frame(all_points).reset_index(), 
+                self.multipoint_to_frame(sub_points), 
+                how='inner', on=['x', "y"])["index"].values.tolist()
+            ll.append(contained_pt_indices)
 
-    Args:
-        dry_bulb_temperature (float): A dry bulb temperature in degrees Celsius.
-        relative_humidity (float): A relative humidity in percent (0-100).
-        evaporative_cooling_effectiveness (float): The evaporative cooling effectiveness. Defaults to 0.3.
-        atmospheric_pressure (float, optional): A pressure in Pa.
+        return ll
 
-    Returns:
-        List[float]: A list of two values for the effective dry bulb temperature and relative humidity.
-    """
-    wet_bulb_temperature = wet_bulb_from_db_rh(
-        dry_bulb_temperature, relative_humidity, atmospheric_pressure
-    )
+    def annual_modifiable_indices(self, epw: EPW, all_points_df: pd.DataFrame, buffer_distances: List[float] = [0.33, 1.2]) -> List[List[int]]:
 
-    return [
-        dry_bulb_temperature
-        - (
-            (dry_bulb_temperature - wet_bulb_temperature)
-            * evaporative_cooling_effectiveness
-        ),
-        (relative_humidity * (1 - evaporative_cooling_effectiveness))
-        + evaporative_cooling_effectiveness * 100,
-    ]
+        def worker(idx):
+            print("", end="\r")
+            print(f"{idx/8769:0.2%}", end="\r")
+            return self.get_wake_point_indices(all_points_df, buffer_distances, epw.wind_direction[idx], epw.wind_speed[idx])
 
+        # with ThreadPoolExecutor() as executor:
+        #     ll = list(executor.map(worker, range(3)))
 
-def evaporative_cooling_effect_collection(
-    epw: EPW, evaporative_cooling_effectiveness: float = 0.3
-) -> List[HourlyContinuousCollection]:
-    """Calculate the effective DBT and RH considering effects of evaporative cooling.
+        ll = []
+        for idx in range(8760):
+            ll.append(worker(idx))
 
-    Args:
-        epw (EPW): A ladybug EPW object.
-        evaporative_cooling_effectiveness (float, optional): The proportion of difference betwen DBT and WBT by which to adjust DBT. Defaults to 0.3 which equates to 30% effective evaporative cooling, roughly that of Misting.
-
-    Returns:
-        List[HourlyContinuousCollection]: Adjusted dry-bulb temperature and relative humidity collections incorporating evaporative cooling effect.
-    """
-
-    if (evaporative_cooling_effectiveness > 1) or (
-        evaporative_cooling_effectiveness < 0
-    ):
-        raise ValueError("evaporative_cooling_effectiveness must be between 0 and 1.")
-
-    wbt = HourlyContinuousCollection.compute_function_aligned(
-        wet_bulb_from_db_rh,
-        [
-            epw.dry_bulb_temperature,
-            epw.relative_humidity,
-            epw.atmospheric_station_pressure,
-        ],
-        WetBulbTemperature(),
-        "C",
-    )
-    dbt = epw.dry_bulb_temperature.duplicate()
-    dbt = dbt - ((dbt - wbt) * evaporative_cooling_effectiveness)
-    dbt.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
-
-    rh = epw.relative_humidity.duplicate()
-    rh = (rh * (1 - evaporative_cooling_effectiveness)) + (
-        evaporative_cooling_effectiveness * 100
-    )
-    rh.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
-
-    return [dbt, rh]
-
-    #################################################
-
-    """For a given EPW file, create a moisture adjustment matrix for a given set of points based on their inclusion within a moisture source wake/plume.
-
-    Args:
-        moisture_source (MoistureSource): A MoistureSource object.
-        epw (EPW): A ladybug EPW object.
-        all_points (Union[pd.DataFrame, shapely.geometry.MultiPoint]): A pandas DataFrame or shapely MultiPoint object containing all the points to be used in the analysis.
-        boundary_layers (List[float]): A list of floats representing the boundary layers of the plume.
-        boundary_layer_effectiveness (List[float]): A list of floats representing the effectiveness of the boundary layers of the plume.
-        output_directory (Path, optional): A directoy in which to save results if given. Defaults to None.
-
-    Returns:
-        List[Dict[str, List[List[int]]]]: _description_
-    """
-
-    if len(boundary_layer_effectiveness) != len(boundary_layers):
-        raise ValueError(
-            "boundary_layer_effectiveness must be the same length as boundary_layers"
-        )
-    if not all(
-        i > j
-        for i, j in zip(boundary_layer_effectiveness, boundary_layer_effectiveness[1:])
-    ):
-        raise ValueError(
-            "Boundary layer effectiveness must be given in decreasing order."
-        )
-
-    if isinstance(all_points, shapely.geometry.MultiPoint):
-        all_points_mp = all_points
-        all_points_df = multipoint_to_frame(all_points)
-    else:
-        all_points_mp = frame_to_multipoint(all_points)
-        all_points_df = all_points
-
-    temp_1 = []
-    for moisture_source in moisture_sources:
-        print(
-            f"- Calculating annual hourly moisture matrix for {moisture_source.pathsafe_id}"
-        )
-        hourly_point_indices = wake_indices(
-            moisture_source, epw, all_points_mp, boundary_layers, output_directory
-        )
-
-        temp_0 = []
-        for hour in range(len(epw.dry_bulb_temperature)):
-            key = f"{epw.wind_speed[hour]}, {epw.wind_direction[hour]}"
-            pt_indices = hourly_point_indices[key]
-            temp = []
-            for n_wake_level, wake_level in enumerate(pt_indices):
-                temp.append(
-                    np.where(
-                        np.isin(range(len(all_points_df)), wake_level),
-                        moisture_source.magnitude
-                        * boundary_layer_effectiveness[n_wake_level],
-                        0,
-                    )
-                )
-            temp_0.append(temp)
-        temp_0 = np.swapaxes(temp_0, 0, 1)
-        temp_1.append(temp_0)
-    temp = pd.DataFrame(
-        np.amax(np.amax(temp_1, axis=0), axis=0),
-        index=to_series(epw.dry_bulb_temperature).index,
-    )
-
-    return temp
+        return ll
