@@ -36,7 +36,7 @@ def to_dataframe(
     for p in dir(epw):
         try:
             all_series.append(to_series(getattr(epw, p)))
-        except (AttributeError, TypeError, ZeroDivisionError) as e:
+        except (AttributeError, TypeError, ZeroDivisionError, ValueError) as e:
             pass
 
     for k, v in epw.monthly_ground_temperature.items():
