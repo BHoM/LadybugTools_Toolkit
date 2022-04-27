@@ -40,7 +40,7 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A pre-defined ground material.")]
         [Input("shadeMaterial", "A pre-defined shade material.")]
         [Input("typology", "A pre-defined external comfort typology.")]
-        [Output("typologyResult", "A typologyt result object containing simulation results and typology specific comfort metrics.")]
+        [Output("typologyResult", "A typology result object containing simulation results and typology specific comfort metrics.")]
         public static CustomObject ExternalComfortTypology(string epw, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial, BH.oM.Ladybug.ExternalComfortTypology typology)
         {
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());

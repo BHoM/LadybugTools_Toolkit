@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
+from external_comfort.moisture import MoistureSource
 from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybug_extension.analysis_period import describe_analysis_period
@@ -175,7 +176,7 @@ class SpatialComfortResult:
 
         object.__setattr__(self, "triangulation", self._triangulation())
 
-        self._generic_output()
+        # self._generic_output()
 
     def _points(self) -> pd.DataFrame:
         """Return the points results from the simulation directory, and create the H5 file to store them as compressed objects if not already done.
@@ -190,10 +191,10 @@ class SpatialComfortResult:
             return self.points
         except AttributeError:
             if points_path.exists():
-                print(f"- Loading points data")
+                print(f"- Loading points data from {self.spatial_comfort.simulation_directory.name}")
                 return pd.read_hdf(points_path, "df")
             else:
-                print(f"- Processing points data")
+                print(f"- Processing points data for {self.spatial_comfort.simulation_directory.name}")
                 points_files = list(
                     (
                         self.spatial_comfort.simulation_directory
@@ -220,10 +221,10 @@ class SpatialComfortResult:
             )
 
             if total_irradiance_path.exists():
-                print(f"- Loading irradiance data")
+                print(f"- Loading irradiance data from {self.spatial_comfort.simulation_directory.name}")
                 return pd.read_hdf(total_irradiance_path, "df")
             else:
-                print(f"- Processing irradiance data")
+                print(f"- Processing irradiance data for {self.spatial_comfort.simulation_directory.name}")
                 ill_files = list(
                     (
                         self.spatial_comfort.simulation_directory
@@ -251,10 +252,10 @@ class SpatialComfortResult:
             sky_view_path = self.spatial_comfort.simulation_directory / "sky_view.h5"
 
             if sky_view_path.exists():
-                print(f"- Loading sky-view data")
+                print(f"- Loading sky-view data from {self.spatial_comfort.simulation_directory.name}")
                 return pd.read_hdf(sky_view_path, "df")
             else:
-                print(f"- Processing sky-view data")
+                print(f"- Processing sky-view data for {self.spatial_comfort.simulation_directory.name}")
                 res_files = list(
                     (
                         self.spatial_comfort.simulation_directory
@@ -403,7 +404,7 @@ class SpatialComfortResult:
                 )
                 return pd.read_hdf(mrt_path, "df")
 
-            print(f"- Processing mean-radiant-temperature data")
+            print(f"- Processing mean-radiant-temperature data for {self.spatial_comfort.simulation_directory.name}")
 
             mrt = self._interpolate_between_unshaded_shaded(
                 self.spatial_comfort.unshaded.mean_radiant_temperature,
@@ -438,7 +439,7 @@ class SpatialComfortResult:
                 )
                 return pd.read_hdf(gnd_srf_path, "df")
 
-            print(f"- Processing ground_surface_temperature data")
+            print(f"- Processing ground_surface_temperature data for {self.spatial_comfort.simulation_directory.name}")
 
             gnd_srf = self._interpolate_between_unshaded_shaded(
                 self.spatial_comfort.shaded.ground_surface_temperature,
@@ -473,7 +474,7 @@ class SpatialComfortResult:
                 )
                 return pd.read_hdf(utci_path, "df")
 
-            print(f"- Processing universal thermal climate index data")
+            print(f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}")
 
             utci = self._interpolate_between_unshaded_shaded(
                 self.spatial_comfort.unshaded.universal_thermal_climate_index,
@@ -489,11 +490,11 @@ class SpatialComfortResult:
             return utci
 
     def _spatial_moisture_distribution(self) -> pd.DataFrame:
-        """Return a dataframe with per-point moisture values per each hour of the year based on wind direction and speed. These will
-        be used to estmate the DBT and RH for each point for input into the dataframe UTCI calcualtion method
+        """Return a dataframe with per-point moisture factor values per each hour of the year based on wind direction and speed. These will
+        be used to estimate the DBT and RH for each point for input into the dataframe UTCI calcualtion method
 
         Returns:
-            pd.DataFrame: A dataframe with per-point moisture values per each hour of the year based on wind direction and speed.
+            pd.DataFrame: A dataframe with per-point moisture factor values per each hour of the year based on wind direction and speed.
         """
 
         # For a point, offset by a distance to create a circle (point.buffer...), then
@@ -508,10 +509,41 @@ class SpatialComfortResult:
         # the air based on type of moisture body - for now we'll just assume misting and still(ish) water bodies
 
         # Stack effects, up to a maximum amount, to account for intersections betewen water bodies down-wind
+        
+        moisture_sources = MoistureSource.from_json(self.spatial_comfort.simulation_directory / "water_sources.json")
+        buffer_effectiveness_levels = [1, 0.5]
+        buffer_distances = [0.33, 1.2]
 
-        raise NotImplementedError(
-            "Spatial moisture distribution is not yet implemented."
-        )
+        moisture_effectiveness_filename = self.spatial_comfort.simulation_directory / f"moisture_effectiveness.h5"
+        if moisture_effectiveness_filename.exists():
+            moisture_effectiveness_df = pd.read_hdf(moisture_effectiveness_filename, "df")
+        else:
+            temp_2 = []
+            for n_ms, moisture_source in enumerate(moisture_sources):
+
+                file_name = self.spatial_comfort.simulation_directory / f"moisture_source_indices_{n_ms}.json"
+                if file_name.exists():
+                    print(f"- Loading moisture impacted sensor locations for water source {n_ms}")
+                    with open(file_name, "r") as f:
+                        hourly_point_indices = json.load(f)["indices"]
+                else:
+                    print(f"- Determining moisture impacted sensor locations for water source {n_ms}")
+                    hourly_point_indices = moisture_source.annual_modifiable_indices(self.spatial_comfort.external_comfort_result.external_comfort.epw, self.points.droplevel([0], axis=1), buffer_distances)
+                    with open(file_name, "w") as f:
+                        json.dump({"indices": hourly_point_indices}, f)
+                temp_1 = []
+                for n_hour, hour in enumerate(hourly_point_indices):
+                    temp_0 = []
+                    for n_wake_level, wake_level in enumerate(hour):
+                        temp_0.append(np.where(np.isin(range(len(self.points)), wake_level), moisture_source.magnitude * buffer_effectiveness_levels[n_wake_level], 0))
+                    temp_1.append(temp_0)
+                temp_2.append(np.amax(np.array(temp_1), axis=1))
+
+            moisture_effectiveness_df = pd.DataFrame(np.amax(np.array(temp_2), axis=0), index=self.total_irradiance.index)
+            moisture_effectiveness_df.to_hdf(moisture_effectiveness_filename, "df", complevel=9, complib="blosc")
+        
+        return moisture_effectiveness_df
+
 
     @staticmethod
     def _universal_thermal_climate_index(
