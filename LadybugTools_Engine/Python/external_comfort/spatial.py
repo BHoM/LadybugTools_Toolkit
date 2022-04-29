@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import calendar
+from dis import dis
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -8,7 +9,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-from external_comfort.moisture import MoistureSource
+from external_comfort.moisture import MoistureSource, annual_moisture_effectiveness_matrix
 from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybug_extension.analysis_period import describe_analysis_period
@@ -489,7 +490,108 @@ class SpatialComfortResult:
             utci.to_hdf(utci_path, "df", complevel=9, complib="blosc")
             return utci
 
-    def _spatial_moisture_distribution(self) -> pd.DataFrame:
+    def _spatial_moisture_matrix(self) -> pd.DataFrame:
+
+        save_path = self.spatial_comfort.simulation_directory / "moisture_matrix.h5"
+        if save_path.exists():
+            print(f"- Loading moisture matrix data from {self.spatial_comfort.simulation_directory.name}")
+            return pd.read_hdf(save_path, "df")
+
+        # Create lookup for unique wind-speed/direction combinations for year
+        ws = to_series(self.spatial_comfort.external_comfort_result.external_comfort.epw.wind_speed)
+        wd = to_series(self.spatial_comfort.external_comfort_result.external_comfort.epw.wind_direction)
+        wind_speed_direction = pd.concat([ws, wd], axis=1).values
+        wind_speed_direction_unique = np.unique(wind_speed_direction, axis=0)
+
+        moisture_sources = MoistureSource.from_json(self.spatial_comfort.simulation_directory / "water_sources.json")
+
+        all_points_df = self.points.droplevel([0], axis=1)
+        all_pts = all_points_df[["x", "y"]].values
+
+        angle_matrices = []
+        distance_matrices = []
+        for n_ms, moisture_source in enumerate(moisture_sources[0:]):
+            src_pts = all_pts[moisture_source.point_indices][0:]  # <- Limit this value to reduce points to test - useful for debugging
+
+            # create distance and angle matrices
+            normal_vector = np.array([0, -1])
+            vector_matrix = np.array([all_pts - sp for sp in src_pts])
+            distance_matrix = np.linalg.norm(vector_matrix, axis=2)
+            vector_matrix_unit = np.moveaxis([i.T / distance_matrix for i in vector_matrix.T], 0, -1)
+            angle_matrix_temp = np.nan_to_num(np.degrees(np.arccos(np.clip(np.dot(normal_vector, np.swapaxes(vector_matrix_unit, -1, -2)), -1.0, 1.0))))
+            angle_matrix = np.where(vector_matrix[:, :, 0] > 0, 360 - angle_matrix_temp, angle_matrix_temp)
+            distance_matrices.append(distance_matrix.astype(np.float16, copy=False))
+            angle_matrices.append(angle_matrix.astype(np.float16, copy=False))
+
+        angle_matrices = np.array(angle_matrices, dtype=object)
+        distance_matrices = np.array(distance_matrices, dtype=object)
+
+        # Construct a table containing all possible combinations of speed/direction to then pick from for the annual matrix
+        lookup = []
+        for n_ws_wd, (wind_speed, wind_direction) in enumerate(wind_speed_direction_unique[0:]):
+            print(f" - {n_ws_wd/len(wind_speed_direction_unique):0.2%}", end="\r")
+            # Get distance mask - describing where each point is within a certain distance of the moisture source point, based on wind speed
+            distance_mask = [dm < wind_speed * 10 for dm in distance_matrices]
+
+            # Get angle mask - describing where each point is "downwind" from each moisture source point
+            plume_buffer = 5  # the angle (in degrees) either side of the downwind direction within which to capture downwind points
+            angle_mask = []
+            for am in angle_matrices:
+                if wind_direction > (360 - plume_buffer):
+                    angle_mask.append(np.any([
+                        (am > wind_direction - plume_buffer),
+                        (am < plume_buffer - 360 - wind_direction),
+                    ], axis=0))
+                elif wind_direction < (0 + plume_buffer):
+                    angle_mask.append(np.any([
+                        (am < wind_direction + plume_buffer), 
+                        (am > 360 + wind_direction - plume_buffer)
+                    ], axis=0))
+                else:
+                    angle_mask.append(np.all([
+                        (am < wind_direction + plume_buffer), 
+                        (am > wind_direction - plume_buffer)
+                    ], axis=0))
+
+            # Get combined mask for impacted points
+            mask = [np.all([am, dm], axis=0) for am, dm in zip(*[angle_mask, distance_mask])]
+
+            moisture_matrices = []
+            for n_ms, moisture_source in enumerate(moisture_sources[0:]):
+                moisture_matrices.append(
+                    np.amax(
+                        np.where(mask[n_ms], np.clip(moisture_source.magnitude / distance_matrices[n_ms], 0, moisture_source.magnitude), 0),
+                        axis=0
+                    )
+                )
+            lookup.append(np.amax(moisture_matrices, axis=0))
+
+        # Construct annual matrix
+        idx = [np.all(wind_speed_direction_unique == ws_wd, axis=1).argmax() for ws_wd in wind_speed_direction]
+        annual_moisture_matrix = np.array(lookup)[idx]
+
+        # Ensure hours where wind speed == 0 use the raw moisture index values
+        # This part is a hack to get things working properly! It can be made much better/more efficient
+        mags = []
+        for ms in moisture_sources:
+            moisture_pt_bool = np.isin(range(len(all_pts)), ms.point_indices)
+            mags.append(np.where(moisture_pt_bool, ms.magnitude, 0))
+        val_at_zero = np.array(mags).max(axis=0)
+
+        new_matrix = []
+        for hr in range(len(annual_moisture_matrix)):
+            if ws[hr] == 0:
+                new_matrix.append(val_at_zero)
+            else:
+                new_matrix.append(annual_moisture_matrix.values[hr])
+        
+        df = pd.DataFrame(np.array(new_matrix), index=ws.index).round(3)
+
+        df.to_hdf(save_path, "df", complevel=9, complib="blosc")
+
+        return df
+
+    def _spatial_moisture_distribution(self, boundary_layers: List[float] = [0.33, 2.5], boundary_layer_effectiveness: List[float] = [1, 0.5]) -> pd.DataFrame:
         """Return a dataframe with per-point moisture factor values per each hour of the year based on wind direction and speed. These will
         be used to estimate the DBT and RH for each point for input into the dataframe UTCI calcualtion method
 
@@ -497,52 +599,27 @@ class SpatialComfortResult:
             pd.DataFrame: A dataframe with per-point moisture factor values per each hour of the year based on wind direction and speed.
         """
 
-        # For a point, offset by a distance to create a circle (point.buffer...), then
-        # construct a skewed version of that to North, then create a list iof these per hour of the year directed and
-        # scaled by wind properties. Then test whether pointsin the dataset are within thse and multiply based on distance
-        # to the origin of that point to create an amount of moisture to be added to the air within those regions
+        # TODO - Add prun profiler to each sub method within this to determine faster ways of calculating the moisture matrix
 
-        # For a body, create the boundary around it, then skew based on wind properties, then get boundary of the skew
-        # and do the same test as with the point.
-
-        # Additional details should also be added which will be used to calculate the amount of moisture to be added to
-        # the air based on type of moisture body - for now we'll just assume misting and still(ish) water bodies
-
-        # Stack effects, up to a maximum amount, to account for intersections betewen water bodies down-wind
+        save_path = self.spatial_comfort.simulation_directory / "moisture_matrix.h5"
+        if save_path.exists():
+            print(f"- Loading moisture matrix data from {self.spatial_comfort.simulation_directory.name}")
+            return pd.read_hdf(save_path, "df")
         
         moisture_sources = MoistureSource.from_json(self.spatial_comfort.simulation_directory / "water_sources.json")
-        buffer_effectiveness_levels = [1, 0.5]
-        buffer_distances = [0.33, 1.2]
 
-        moisture_effectiveness_filename = self.spatial_comfort.simulation_directory / f"moisture_effectiveness.h5"
-        if moisture_effectiveness_filename.exists():
-            moisture_effectiveness_df = pd.read_hdf(moisture_effectiveness_filename, "df")
-        else:
-            temp_2 = []
-            for n_ms, moisture_source in enumerate(moisture_sources):
+        moisture_matrix = annual_moisture_effectiveness_matrix(
+            moisture_sources, 
+            self.spatial_comfort.external_comfort_result.external_comfort.epw, 
+            self.points.droplevel([0], axis=1),
+            boundary_layers=boundary_layers, 
+            boundary_layer_effectiveness=boundary_layer_effectiveness,
+            output_directory=self.spatial_comfort.simulation_directory,
+        )
 
-                file_name = self.spatial_comfort.simulation_directory / f"moisture_source_indices_{n_ms}.json"
-                if file_name.exists():
-                    print(f"- Loading moisture impacted sensor locations for water source {n_ms}")
-                    with open(file_name, "r") as f:
-                        hourly_point_indices = json.load(f)["indices"]
-                else:
-                    print(f"- Determining moisture impacted sensor locations for water source {n_ms}")
-                    hourly_point_indices = moisture_source.annual_modifiable_indices(self.spatial_comfort.external_comfort_result.external_comfort.epw, self.points.droplevel([0], axis=1), buffer_distances)
-                    with open(file_name, "w") as f:
-                        json.dump({"indices": hourly_point_indices}, f)
-                temp_1 = []
-                for n_hour, hour in enumerate(hourly_point_indices):
-                    temp_0 = []
-                    for n_wake_level, wake_level in enumerate(hour):
-                        temp_0.append(np.where(np.isin(range(len(self.points)), wake_level), moisture_source.magnitude * buffer_effectiveness_levels[n_wake_level], 0))
-                    temp_1.append(temp_0)
-                temp_2.append(np.amax(np.array(temp_1), axis=1))
+        moisture_matrix.to_hdf(save_path, "df", complevel=9, complib="blosc")
 
-            moisture_effectiveness_df = pd.DataFrame(np.amax(np.array(temp_2), axis=0), index=self.total_irradiance.index)
-            moisture_effectiveness_df.to_hdf(moisture_effectiveness_filename, "df", complevel=9, complib="blosc")
-        
-        return moisture_effectiveness_df
+        return moisture_matrix
 
 
     @staticmethod
