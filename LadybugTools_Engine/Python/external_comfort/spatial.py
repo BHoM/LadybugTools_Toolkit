@@ -185,7 +185,7 @@ class SpatialComfortResult:
         
         object.__setattr__(self, "triangulation", self._triangulation())
 
-        # self._generic_output()
+        self._generic_output()
 
     def _points(self) -> pd.DataFrame:
         """Return the points results from the simulation directory, and create the H5 file to store them as compressed objects if not already done.
@@ -626,27 +626,38 @@ class SpatialComfortResult:
 
     def _universal_thermal_climate_index_complex(self) -> pd.DataFrame:
 
-        save_path = self.spatial_comfort.simulation_directory / "universal_thermal_climate_index_complex.h5"
-        if save_path.exists():
-            print(f"- Loading UTCI from {save_path}")
-            return pd.read_hdf(save_path, "df")
-       
-        uu = np.vectorize(universal_thermal_climate_index)
+        try:
+            return self.universal_thermal_climate_index_complex
+        except AttributeError:
+            utci_path = (
+                self.spatial_comfort.simulation_directory
+                / "universal_thermal_climate_index_complex.h5"
+            )
 
-        dbt, rh, ws = self._dbt_rh_ws_matrices()
-        mrt = self._mean_radiant_temperature()
+            if utci_path.exists():
+                print(
+                    f"- Loading universal thermal climate index data from {self.spatial_comfort.simulation_directory.name}"
+                )
+                return pd.read_hdf(utci_path, "df")
 
-        # TODO - MAKE THIS MULTITHREADED AS IT WOULD BE SOOOOO MUCH FASTER!!!!!!!
-        utcis = []
-        for n in range(len(dbt)):
-            print(f"{n/len(dbt):0.2%}", end="\r")
-            utcis.append(uu(dbt.values[n], mrt.values[n], ws.values[n], rh.values[n]))
+            print(f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}")
         
-        utci = pd.DataFrame(np.array(utcis), index=dbt.index)
+            uu = np.vectorize(universal_thermal_climate_index)
 
-        utci.to_hdf(save_path, "df", complib="blosc", complevel=9)
+            dbt, rh, ws = self._dbt_rh_ws_matrices()
+            mrt = self._mean_radiant_temperature()
 
-        return utci
+            # TODO - MAKE THIS MULTITHREADED AS IT WOULD BE SOOOOO MUCH FASTER!!!!!!!
+            utcis = []
+            for n in range(len(dbt)):
+                print(f"{n/len(dbt):0.2%}", end="\r")
+                utcis.append(uu(dbt.values[n], mrt.values[n], ws.values[n], rh.values[n]))
+            
+            utci = pd.DataFrame(np.array(utcis), index=dbt.index)
+
+            utci.to_hdf(utci_path, "df", complib="blosc", complevel=9)
+
+            return utci
 
     def _x_lims(self) -> List[float]:
         """Return the x-axis limits for the plot."""
@@ -690,8 +701,13 @@ class SpatialComfortResult:
 
     def _utci_lims(self) -> List[float]:
         """Return the UTCI value limits for the plot."""
-        maxima = self.universal_thermal_climate_index_simple.unstack().max()
-        minima = self.universal_thermal_climate_index_simple.unstack().min()
+        try:
+            maxima = self.universal_thermal_climate_index_complex.unstack().max()
+            minima = self.universal_thermal_climate_index_complex.unstack().min()
+        except Exception as e:
+            maxima = self.universal_thermal_climate_index_simple.unstack().max()
+            minima = self.universal_thermal_climate_index_simple.unstack().min()
+            
         return [minima, maxima]
 
     def _grid_names(self) -> List[str]:
@@ -749,14 +765,18 @@ class SpatialComfortResult:
             raise ValueError(f"Month must be between 1 and 12 inclusive, got {month}")
         if not hour in range(0, 24, 1):
             raise ValueError(f"Hour must be between 0 and 23 inclusive, got {hour}")
+        
+        try:
+            utci = self.universal_thermal_climate_index_complex
+        except Exception as e:
+            utci = self.universal_thermal_climate_index_simple
 
         # Group data to give a typical month-hour value
         zs = (
-            self._universal_thermal_climate_index_simple()
-            .groupby(
+            utci.groupby(
                 [
-                    self._universal_thermal_climate_index_simple().index.month,
-                    self._universal_thermal_climate_index_simple().index.hour,
+                    utci.index.month,
+                    utci.index.hour,
                 ],
                 axis=0,
             )
@@ -837,8 +857,13 @@ class SpatialComfortResult:
     def _plot_utci_comfortable_hours(self, analysis_period: AnalysisPeriod) -> Path:
         """Return the path to the comfortable-hours plot."""
 
+        try:
+            utci = self.universal_thermal_climate_index_complex
+        except Exception as e:
+            utci = self.universal_thermal_climate_index_simple
+
         # Filter for the analysis period
-        zs_temp = self._universal_thermal_climate_index_simple().iloc[
+        zs_temp = utci.iloc[
             list(analysis_period.hoys_int), :
         ]
 
