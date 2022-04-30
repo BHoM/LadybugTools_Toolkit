@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import calendar
-from dis import dis
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -9,12 +8,14 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-from external_comfort.moisture import MoistureSource, annual_moisture_effectiveness_matrix
+from external_comfort.moisture import MoistureSource
 from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
+from ladybug_comfort.utci import universal_thermal_climate_index
 from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybug_extension.analysis_period import describe_analysis_period
 from ladybug_extension.datacollection import to_array, to_series
 from matplotlib import pyplot as plt
+from external_comfort.moisture import evaporative_cooling_effect
 from PIL import Image
 from scipy.interpolate import interp1d
 
@@ -161,8 +162,6 @@ class SpatialComfortResult:
         object.__setattr__(self, "sky_view", self._sky_view())
         object.__setattr__(self, "total_irradiance", self._total_irradiance())
 
-        object.__setattr__(self, "water_sources", self._water_sources())
-
         object.__setattr__(
             self, "ground_surface_temperature", self._ground_surface_temperature()
         )
@@ -174,7 +173,16 @@ class SpatialComfortResult:
             "universal_thermal_climate_index_simple",
             self._universal_thermal_climate_index_simple(),
         )
-
+        try:
+            object.__setattr__(self, "moisture_sources", self._water_sources())
+            object.__setattr__(
+                self,
+                "universal_thermal_climate_index_complex",
+                self._universal_thermal_climate_index_complex(),
+            )
+        except Exception as e:
+            print(f"Complex UTCI calcualtion not possible because {e}")
+        
         object.__setattr__(self, "triangulation", self._triangulation())
 
         # self._generic_output()
@@ -268,7 +276,7 @@ class SpatialComfortResult:
                 sky_view.to_hdf(sky_view_path, "df", complevel=9, complib="blosc")
             return sky_view
 
-    def _water_sources(self) -> Dict[str, Any]:
+    def _water_sources(self) -> List[MoistureSource]:
         """Load the water bodies from the simulation directory.
 
         Returns:
@@ -278,13 +286,8 @@ class SpatialComfortResult:
         water_sources_path = (
             self.spatial_comfort.simulation_directory / "water_sources.json"
         )
-        if not water_sources_path.exists():
-            return {"bodies": [], "points": []}
 
-        with open(water_sources_path, "r") as fp:
-            water_sources = json.load(fp)
-
-        return water_sources
+        return MoistureSource.from_json(water_sources_path)
 
     def _dry_bulb_temperature_no_moisture(self) -> pd.Series:
         """Get the dry bulb temperature from the input EPW file.
@@ -456,7 +459,7 @@ class SpatialComfortResult:
             return gnd_srf
 
     def _universal_thermal_climate_index_simple(self) -> pd.DataFrame:
-        """Using the simplified method (bot accounting for wind direction, speed or moisture addition), calculate the UTCI.
+        """Using the simplified method (not accounting for wind direction, speed or moisture addition), calculate the UTCI.
 
         Returns:
             pd.DataFrame: A dataframe with the UTCI for each hour of the year, for each point.
@@ -466,7 +469,7 @@ class SpatialComfortResult:
         except AttributeError:
             utci_path = (
                 self.spatial_comfort.simulation_directory
-                / "universal_thermal_climate_index.h5"
+                / "universal_thermal_climate_index_simple.h5"
             )
 
             if utci_path.exists():
@@ -503,87 +506,88 @@ class SpatialComfortResult:
         wind_speed_direction = pd.concat([ws, wd], axis=1).values
         wind_speed_direction_unique = np.unique(wind_speed_direction, axis=0)
 
-        moisture_sources = MoistureSource.from_json(self.spatial_comfort.simulation_directory / "water_sources.json")
+        moisture_sources = self._water_sources()
 
         all_points_df = self.points.droplevel([0], axis=1)
         all_pts = all_points_df[["x", "y"]].values
 
-        angle_matrices = []
-        distance_matrices = []
-        for n_ms, moisture_source in enumerate(moisture_sources[0:]):
-            src_pts = all_pts[moisture_source.point_indices][0:]  # <- Limit this value to reduce points to test - useful for debugging
-
-            # create distance and angle matrices
-            normal_vector = np.array([0, -1])
-            vector_matrix = np.array([all_pts - sp for sp in src_pts])
-            distance_matrix = np.linalg.norm(vector_matrix, axis=2)
-            vector_matrix_unit = np.moveaxis([i.T / distance_matrix for i in vector_matrix.T], 0, -1)
-            angle_matrix_temp = np.nan_to_num(np.degrees(np.arccos(np.clip(np.dot(normal_vector, np.swapaxes(vector_matrix_unit, -1, -2)), -1.0, 1.0))))
-            angle_matrix = np.where(vector_matrix[:, :, 0] > 0, 360 - angle_matrix_temp, angle_matrix_temp)
-            distance_matrices.append(distance_matrix.astype(np.float16, copy=False))
-            angle_matrices.append(angle_matrix.astype(np.float16, copy=False))
-
-        angle_matrices = np.array(angle_matrices, dtype=object)
-        distance_matrices = np.array(distance_matrices, dtype=object)
-
-        # Construct a table containing all possible combinations of speed/direction to then pick from for the annual matrix
-        lookup = []
-        for n_ws_wd, (wind_speed, wind_direction) in enumerate(wind_speed_direction_unique[0:]):
-            print(f" - {n_ws_wd/len(wind_speed_direction_unique):0.2%}", end="\r")
-            # Get distance mask - describing where each point is within a certain distance of the moisture source point, based on wind speed
-            distance_mask = [dm < wind_speed * 10 for dm in distance_matrices]
-
-            # Get angle mask - describing where each point is "downwind" from each moisture source point
-            plume_buffer = 5  # the angle (in degrees) either side of the downwind direction within which to capture downwind points
-            angle_mask = []
-            for am in angle_matrices:
-                if wind_direction > (360 - plume_buffer):
-                    angle_mask.append(np.any([
-                        (am > wind_direction - plume_buffer),
-                        (am < plume_buffer - 360 - wind_direction),
-                    ], axis=0))
-                elif wind_direction < (0 + plume_buffer):
-                    angle_mask.append(np.any([
-                        (am < wind_direction + plume_buffer), 
-                        (am > 360 + wind_direction - plume_buffer)
-                    ], axis=0))
-                else:
-                    angle_mask.append(np.all([
-                        (am < wind_direction + plume_buffer), 
-                        (am > wind_direction - plume_buffer)
-                    ], axis=0))
-
-            # Get combined mask for impacted points
-            mask = [np.all([am, dm], axis=0) for am, dm in zip(*[angle_mask, distance_mask])]
-
-            moisture_matrices = []
+        with np.errstate(divide='ignore', invalid='ignore'):
+            angle_matrices = []
+            distance_matrices = []
             for n_ms, moisture_source in enumerate(moisture_sources[0:]):
-                moisture_matrices.append(
-                    np.amax(
-                        np.where(mask[n_ms], np.clip(moisture_source.magnitude / distance_matrices[n_ms], 0, moisture_source.magnitude), 0),
-                        axis=0
+                src_pts = all_pts[moisture_source.point_indices][0:]  # <- Limit this value to reduce points to test - useful for debugging
+
+                # create distance and angle matrices
+                normal_vector = np.array([0, -1])
+                vector_matrix = np.array([all_pts - sp for sp in src_pts])
+                distance_matrix = np.linalg.norm(vector_matrix, axis=2)
+                vector_matrix_unit = np.moveaxis([i.T / distance_matrix for i in vector_matrix.T], 0, -1)
+                angle_matrix_temp = np.nan_to_num(np.degrees(np.arccos(np.clip(np.dot(normal_vector, np.swapaxes(vector_matrix_unit, -1, -2)), -1.0, 1.0))))
+                angle_matrix = np.where(vector_matrix[:, :, 0] > 0, 360 - angle_matrix_temp, angle_matrix_temp)
+                distance_matrices.append(distance_matrix.astype(np.float16, copy=False))
+                angle_matrices.append(angle_matrix.astype(np.float16, copy=False))
+
+            angle_matrices = np.array(angle_matrices, dtype=object)
+            distance_matrices = np.array(distance_matrices, dtype=object)
+
+            # Construct a table containing all possible combinations of speed/direction to then pick from for the annual matrix
+            lookup = []
+            for n_ws_wd, (wind_speed, wind_direction) in enumerate(wind_speed_direction_unique[0:]):
+                print(f" - {n_ws_wd/len(wind_speed_direction_unique):0.3%}", end="\r")
+                # Get distance mask - describing where each point is within a certain distance of the moisture source point, based on wind speed
+                distance_mask = [dm < wind_speed * 10 for dm in distance_matrices]
+
+                # Get angle mask - describing where each point is "downwind" from each moisture source point
+                plume_buffer = 5  # the angle (in degrees) either side of the downwind direction within which to capture downwind points
+                angle_mask = []
+                for am in angle_matrices:
+                    if wind_direction > (360 - plume_buffer):
+                        angle_mask.append(np.any([
+                            (am > wind_direction - plume_buffer),
+                            (am < plume_buffer - 360 - wind_direction),
+                        ], axis=0))
+                    elif wind_direction < (0 + plume_buffer):
+                        angle_mask.append(np.any([
+                            (am < wind_direction + plume_buffer), 
+                            (am > 360 + wind_direction - plume_buffer)
+                        ], axis=0))
+                    else:
+                        angle_mask.append(np.all([
+                            (am < wind_direction + plume_buffer), 
+                            (am > wind_direction - plume_buffer)
+                        ], axis=0))
+
+                # Get combined mask for impacted points
+                mask = [np.all([am, dm], axis=0) for am, dm in zip(*[angle_mask, distance_mask])]
+
+                moisture_matrices = []
+                for n_ms, moisture_source in enumerate(moisture_sources[0:]):
+                    moisture_matrices.append(
+                        np.amax(
+                            np.where(mask[n_ms], np.clip(moisture_source.magnitude / distance_matrices[n_ms], 0, moisture_source.magnitude), 0),
+                            axis=0
+                        )
                     )
-                )
-            lookup.append(np.amax(moisture_matrices, axis=0))
+                lookup.append(np.amax(moisture_matrices, axis=0))
 
-        # Construct annual matrix
-        idx = [np.all(wind_speed_direction_unique == ws_wd, axis=1).argmax() for ws_wd in wind_speed_direction]
-        annual_moisture_matrix = np.array(lookup)[idx]
+            # Construct annual matrix
+            idx = [np.all(wind_speed_direction_unique == ws_wd, axis=1).argmax() for ws_wd in wind_speed_direction]
+            annual_moisture_matrix = np.array(lookup)[idx]
 
-        # Ensure hours where wind speed == 0 use the raw moisture index values
-        # This part is a hack to get things working properly! It can be made much better/more efficient
-        mags = []
-        for ms in moisture_sources:
-            moisture_pt_bool = np.isin(range(len(all_pts)), ms.point_indices)
-            mags.append(np.where(moisture_pt_bool, ms.magnitude, 0))
-        val_at_zero = np.array(mags).max(axis=0)
+            # Ensure hours where wind speed == 0 use the raw moisture index values
+            # This part is a hack to get things working properly! It can be made much better/more efficient
+            mags = []
+            for ms in moisture_sources:
+                moisture_pt_bool = np.isin(range(len(all_pts)), ms.point_indices)
+                mags.append(np.where(moisture_pt_bool, ms.magnitude, 0))
+            val_at_zero = np.array(mags).max(axis=0)
 
-        new_matrix = []
-        for hr in range(len(annual_moisture_matrix)):
-            if ws[hr] == 0:
-                new_matrix.append(val_at_zero)
-            else:
-                new_matrix.append(annual_moisture_matrix.values[hr])
+            new_matrix = []
+            for hr in range(len(annual_moisture_matrix)):
+                if ws[hr] == 0:
+                    new_matrix.append(val_at_zero)
+                else:
+                    new_matrix.append(annual_moisture_matrix[hr])
         
         df = pd.DataFrame(np.array(new_matrix), index=ws.index).round(3)
 
@@ -591,43 +595,58 @@ class SpatialComfortResult:
 
         return df
 
-    def _spatial_moisture_distribution(self, boundary_layers: List[float] = [0.33, 2.5], boundary_layer_effectiveness: List[float] = [1, 0.5]) -> pd.DataFrame:
-        """Return a dataframe with per-point moisture factor values per each hour of the year based on wind direction and speed. These will
-        be used to estimate the DBT and RH for each point for input into the dataframe UTCI calcualtion method
+    def _dbt_rh_ws_matrices(self) -> List[pd.DataFrame]:
 
-        Returns:
-            pd.DataFrame: A dataframe with per-point moisture factor values per each hour of the year based on wind direction and speed.
-        """
+        dbt_save_path = self.spatial_comfort.simulation_directory / "dry_bulb_temperature_matrix.h5"
+        rh_save_path = self.spatial_comfort.simulation_directory / "relative_humidity_matrix.h5"
+        ws_save_path = self.spatial_comfort.simulation_directory / "wind_speed_matrix.h5"
+        if dbt_save_path.exists() & rh_save_path.exists() & ws_save_path.exists():
+            print(f"- Matrix data already exists, and will be loaded instead of calculated")
 
-        # TODO - Add prun profiler to each sub method within this to determine faster ways of calculating the moisture matrix
+            return [pd.read_hdf(dbt_save_path, "df"), pd.read_hdf(rh_save_path, "df"), pd.read_hdf(ws_save_path, "df")]
 
-        save_path = self.spatial_comfort.simulation_directory / "moisture_matrix.h5"
+        moisture_matrix = self._spatial_moisture_matrix()
+        temp = []
+        for n, (dbt, rh, atm) in enumerate(list(zip(*[self.spatial_comfort.external_comfort_result.external_comfort.epw.dry_bulb_temperature, self.spatial_comfort.external_comfort_result.external_comfort.epw.relative_humidity, self.spatial_comfort.external_comfort_result.external_comfort.epw.atmospheric_station_pressure]))[0:]):
+            print(f"- Calculating DBT/RH hourly spatial values - {n/len(moisture_matrix):0.2%}", end="\r")
+            temp.append(evaporative_cooling_effect(dbt, rh, moisture_matrix.values[n], atm))
+        dbt_mtx, rh_mtx = np.swapaxes(temp, 0, 1)
+
+        dbt = pd.DataFrame(dbt_mtx, index=moisture_matrix.index)
+        rh = pd.DataFrame(rh_mtx, index=moisture_matrix.index)
+
+        dbt.to_hdf(dbt_save_path, "df", complib="blosc", complevel=9)
+        rh.to_hdf(rh_save_path, "df", complib="blosc", complevel=9)
+
+        ws = to_series(self.spatial_comfort.external_comfort_result.external_comfort.epw.wind_speed)
+        ws = pd.DataFrame(np.repeat([ws.values.astype(np.float16)], [len(moisture_matrix.values.T)], axis=0).T, index=moisture_matrix.index)
+        ws.to_hdf(ws_save_path, "df", complib="blosc", complevel=9)
+
+        return [dbt, rh, ws]
+
+    def _universal_thermal_climate_index_complex(self) -> pd.DataFrame:
+
+        save_path = self.spatial_comfort.simulation_directory / "universal_thermal_climate_index_complex.h5"
         if save_path.exists():
-            print(f"- Loading moisture matrix data from {self.spatial_comfort.simulation_directory.name}")
+            print(f"- Loading UTCI from {save_path}")
             return pd.read_hdf(save_path, "df")
+       
+        uu = np.vectorize(universal_thermal_climate_index)
+
+        dbt, rh, ws = self._dbt_rh_ws_matrices()
+        mrt = self._mean_radiant_temperature()
+
+        # TODO - MAKE THIS MULTITHREADED AS IT WOULD BE SOOOOO MUCH FASTER!!!!!!!
+        utcis = []
+        for n in range(len(dbt)):
+            print(f"{n/len(dbt):0.2%}", end="\r")
+            utcis.append(uu(dbt.values[n], mrt.values[n], ws.values[n], rh.values[n]))
         
-        moisture_sources = MoistureSource.from_json(self.spatial_comfort.simulation_directory / "water_sources.json")
+        utci = pd.DataFrame(np.array(utcis), index=dbt.index)
 
-        moisture_matrix = annual_moisture_effectiveness_matrix(
-            moisture_sources, 
-            self.spatial_comfort.external_comfort_result.external_comfort.epw, 
-            self.points.droplevel([0], axis=1),
-            boundary_layers=boundary_layers, 
-            boundary_layer_effectiveness=boundary_layer_effectiveness,
-            output_directory=self.spatial_comfort.simulation_directory,
-        )
+        utci.to_hdf(save_path, "df", complib="blosc", complevel=9)
 
-        moisture_matrix.to_hdf(save_path, "df", complevel=9, complib="blosc")
-
-        return moisture_matrix
-
-
-    @staticmethod
-    def _universal_thermal_climate_index(
-        dbt: pd.DataFrame, rh: pd.DataFrame, ws: pd.DataFrame, mrt: pd.DataFrame
-    ) -> pd.DataFrame:
-        # TODO - method here to rapidly calculate UTCI using values from dataframes of matching shapes
-        raise NotImplementedError("This method is not yet implemented")
+        return utci
 
     def _x_lims(self) -> List[float]:
         """Return the x-axis limits for the plot."""
