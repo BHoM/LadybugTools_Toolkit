@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
 import json
 import numpy as np
 from ladybug.epw import EPW, HourlyContinuousCollection
@@ -16,7 +16,7 @@ import pandas as pd
 class MoistureSource:
     id: str = field(init=True, repr=True)
     magnitude: float = field(init=True, repr=False)
-    point_indices: List[int] = field(init=True, repr=False)
+    points: List[int] = field(init=True, repr=False)
 
     @classmethod
     def from_json(cls, json_file: Path) -> List[MoistureSource]:
@@ -32,7 +32,7 @@ class MoistureSource:
         with open(json_file, "r") as fp:
             water_sources = json.load(fp)
         for ws in water_sources:
-            objs.append(MoistureSource(ws["id"], ws["magnitude"], ws["point_indices"]))
+            objs.append(MoistureSource(ws["id"], ws["magnitude"], np.array(ws["points"]).astype(np.float16)))
         return objs
     
     @property
@@ -42,6 +42,20 @@ class MoistureSource:
     def __repr__(self) -> str:
         return f"MoistureSource(id={self.id})"
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Return this object as a dictionary
+
+        Returns:
+            Dict: The dict representation of this object.
+        """
+
+        d = {
+            "id": self.id,
+            "magnitude": self.magnitude,
+            "points": self.points,
+        }
+        return d
+        
 def evaporative_cooling_effect(dry_bulb_temperature: float, relative_humidity: float, evaporative_cooling_effectiveness: float, atmospheric_pressure: float = None) -> List[float]:
     """For the inputs, calculate the effective DBT and RH values for the evaporative cooling effectiveness given.
 
