@@ -132,6 +132,10 @@
     {
       "Name": "shapely",
       "Version": "1.8.1"
+    },
+    {
+      "Name": "cached_property",
+      "Version": "1.5.2"
     }
   ]
 }
