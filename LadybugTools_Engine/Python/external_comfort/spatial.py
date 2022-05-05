@@ -1,26 +1,26 @@
 from __future__ import annotations
-
 import calendar
-import json
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List
+import shutil
+from typing import Dict, List
+import warnings
 
+from matplotlib import pyplot as plt
+
+from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
+from cached_property import cached_property
 import numpy as np
 import pandas as pd
-from external_comfort.moisture import MoistureSource
-from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
-from ladybug_comfort.utci import universal_thermal_climate_index
-from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
-from ladybug_extension.analysis_period import describe_analysis_period
-from ladybug_extension.datacollection import to_array, to_series
-from matplotlib import pyplot as plt
-from external_comfort.moisture import evaporative_cooling_effect
-from PIL import Image
-from scipy.interpolate import interp1d
-
 from external_comfort.encoder import Encoder
+from dataclasses import dataclass
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.analysisperiod import AnalysisPeriod
+from pathlib import Path
 from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult
+from external_comfort.moisture import MoistureSource, evaporative_cooling_effect
+from ladybug_extension.analysis_period import describe_analysis_period
+from external_comfort.typology import Typology, TypologyResult, Shelter
+from ladybug_comfort.utci import universal_thermal_climate_index
+from scipy.interpolate import interp1d
 from external_comfort.plot import (
     UTCI_BOUNDARYNORM,
     UTCI_COLORMAP,
@@ -29,8 +29,9 @@ from external_comfort.plot import (
     create_triangulation,
     plot_spatial,
 )
-from external_comfort.shelter import Shelter
-from external_comfort.typology import Typology, TypologyResult
+from PIL import Image
+
+v_utci = np.vectorize(universal_thermal_climate_index)
 
 
 class SpatialEncoder(Encoder):
@@ -51,80 +52,27 @@ class SpatialEncoder(Encoder):
             return obj.to_dict()
         if isinstance(obj, SpatialComfortResult):
             return obj.to_dict()
+        if isinstance(obj, MoistureSource):
+            return obj.to_dict()
         return super(SpatialEncoder, self).default(obj)
 
 
 @dataclass
 class SpatialComfort:
-    simulation_directory: Path = field(init=True, repr=True)
-    external_comfort_result: ExternalComfortResult = field(init=True, repr=True)
+    def __init__(
+        self, simulation_directory: Path, external_comfort_result: ExternalComfortResult
+    ) -> SpatialComfort:
+        self.simulation_directory = Path(simulation_directory)
 
-    unshaded: TypologyResult = field(init=False, repr=False)
-    shaded: TypologyResult = field(init=False, repr=False)
-
-    def __post_init__(self) -> SpatialComfort:
-        object.__setattr__(
-            self, "simulation_directory", Path(self.simulation_directory)
-        )
+        # Tidy results folder and check for requisite datasets
         self._simulation_validity()
+        self._remove_temp_files()
 
-        for k, v in self._typology_result().items():
-            object.__setattr__(self, k, v)
-
-    def _simulation_validity(self) -> None:
-
-        if (self.simulation_directory is None) or (self.simulation_directory == ""):
-            raise ValueError("Simulation directory is not set.")
-
-        annual_irradiance_directory = self.simulation_directory / "annual_irradiance"
-        if not annual_irradiance_directory.exists():
-            raise ValueError(
-                f"Annual-irradiance data is not available at {annual_irradiance_directory}."
-            )
-
-        sky_view_directory = self.simulation_directory / "sky_view"
-        if not (sky_view_directory).exists():
-            raise ValueError(f"Sky-view data is not available at {sky_view_directory}.")
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Return this object as a dictionary
-
-        Returns:
-            Dict: The dict representation of this object.
-        """
-
-        d = {
-            "simulation_directory": self.simulation_directory,
-            "shaded_ground_temperature": self.shaded.external_comfort_result.shaded_below_temperature,
-            "shaded_universal_thermal_climate_index": self.shaded.universal_thermal_climate_index,
-            "shaded_mean_radiant_temperature": self.shaded.mean_radiant_temperature,
-            "unshaded_ground_temperature": self.unshaded.external_comfort_result.unshaded_below_temperature,
-            "unshaded_universal_thermal_climate_index": self.unshaded.universal_thermal_climate_index,
-            "unshaded_mean_radiant_temperature": self.unshaded.mean_radiant_temperature,
-        }
-        return d
-
-    def to_json(self) -> Path:
-        """Write the content of this object to a JSON file
-
-        Returns:
-            Path: The path to the newly created JSON file.
-        """
-
-        file_path: Path = self.simulation_directory / "spatial_comfort.json"
-        file_path.parent.mkdir(exist_ok=True, parents=True)
-
-        with open(file_path, "w") as fp:
-            json.dump(self.to_dict(), fp, cls=SpatialEncoder, indent=4)
-
-        return file_path
-
-    def _typology_result(self) -> Dict[str, TypologyResult]:
-        unshaded = TypologyResult(
+        self.external_comfort_result = external_comfort_result
+        self.unshaded_typology_result = TypologyResult(
             Typology(name="unshaded", shelters=None), self.external_comfort_result
         )
-
-        shaded = TypologyResult(
+        self.shaded_typology_result = TypologyResult(
             Typology(
                 name="shaded",
                 shelters=[
@@ -133,50 +81,98 @@ class SpatialComfort:
             ),
             self.external_comfort_result,
         )
-        return {"unshaded": unshaded, "shaded": shaded}
+
+        self.moisture_sources = self._load_moisture_sources()
+        self.epw = self.external_comfort_result.external_comfort.epw
+
+    def _simulation_validity(self) -> None:
+
+        annual_irradiance_directory = self.simulation_directory / "annual_irradiance"
+        if (
+            not annual_irradiance_directory.exists()
+            or len(list((annual_irradiance_directory / "results").glob("**/*.ill")))
+            == 0
+        ):
+            raise ValueError(
+                f"Annual-irradiance data is not available in {annual_irradiance_directory}."
+            )
+
+        sky_view_directory = self.simulation_directory / "sky_view"
+        if (
+            not (sky_view_directory).exists()
+            or len(list((sky_view_directory / "results").glob("**/*.res"))) == 0
+        ):
+            raise ValueError(f"Sky-view data is not available in {sky_view_directory}.")
+
+        res_files = list((sky_view_directory / "results").glob("*.res"))
+        if len(res_files) != 1:
+            raise ValueError(
+                f"This process is only possible for a single Analysis Grid - multiple files found {[i.stem for i in res_files]}."
+            )
+
+    def _remove_temp_files(self) -> None:
+        """Remove initial results files from simulated case to save on disk space."""
+        directories = list(self.simulation_directory.glob("**"))
+        for dir in directories:
+            if dir.name == "initial_results":
+                shutil.rmtree(dir)
+
+    def _load_moisture_sources(self) -> List[MoistureSource]:
+        """Load the water bodies from the simulation directory.
+
+        Returns:
+            Dict[str, Any]: A dictionary contining the boundary vertices of any water bodies, and locations of any point-sources.
+        """
+
+        moisture_sources_path = self.simulation_directory / "moisture_sources.json"
+
+        try:
+            moisture_sources = MoistureSource.from_json(moisture_sources_path)
+
+            if len(moisture_sources) == 0:
+                raise ValueError(
+                    f"No moisture sources found in {moisture_sources_path}"
+                )
+
+            return moisture_sources
+        except FileNotFoundError as e:
+            warnings.warn(
+                "No moisture_sources.json found in simulation directory - advanced moisture-impacted UTCI not possible."
+            )
+            return []
 
 
-@dataclass
 class SpatialComfortResult:
-    spatial_comfort: SpatialComfort = field(init=True, repr=True)
+    def __init__(self, spatial_comfort: SpatialComfort) -> SpatialComfortResult:
+        self.spatial_comfort = spatial_comfort
 
-    points: pd.DataFrame = field(init=False, repr=False)
-    sky_view: pd.DataFrame = field(init=False, repr=False)
-    total_irradiance: pd.DataFrame = field(init=False, repr=False)
+    @cached_property
+    def dry_bulb_temperature(self) -> List[float]:
+        """Return the hourly dry bulb temperature values from the simulation weatherfile."""
+        return np.array(self.spatial_comfort.epw.dry_bulb_temperature.values)
 
-    ground_surface_temperature: pd.DataFrame = field(init=False, repr=False)
-    mean_radiant_temperature: pd.DataFrame = field(init=False, repr=False)
-    universal_thermal_climate_index: pd.DataFrame = field(init=False, repr=False)
+    @cached_property
+    def atmospheric_station_pressure(self) -> List[float]:
+        """Return the hourly atmospheric station pressure values from the simulation weatherfile."""
+        return np.array(self.spatial_comfort.epw.atmospheric_station_pressure.values)
 
-    triangulation: Dict[str, Triangulation] = field(init=False, repr=False)
+    @cached_property
+    def relative_humidity(self) -> List[float]:
+        """Return the hourly relative humidity values from the simulation weatherfile."""
+        return np.array(self.spatial_comfort.epw.relative_humidity.values)
 
+    @cached_property
+    def wind_speed(self) -> List[float]:
+        """Return the hourly wind speed values from the simulation weatherfile."""
+        return np.array(self.spatial_comfort.epw.wind_speed.values)
 
-    def __post_init__(self) -> SpatialComfortResult:
+    @cached_property
+    def wind_direction(self) -> List[float]:
+        """Return the hourly wind direction values from the simulation weatherfile."""
+        return np.array(self.spatial_comfort.epw.wind_direction.values)
 
-        # Write input spatial metrics to JSON
-        self.spatial_comfort.to_json()
-
-        object.__setattr__(self, "points", self._points())
-        object.__setattr__(self, "sky_view", self._sky_view())
-        object.__setattr__(self, "total_irradiance", self._total_irradiance())
-
-        object.__setattr__(
-            self, "ground_surface_temperature", self._ground_surface_temperature()
-        )
-        object.__setattr__(
-            self, "mean_radiant_temperature", self._mean_radiant_temperature()
-        )
-        object.__setattr__(
-            self,
-            "universal_thermal_climate_index",
-            self._universal_thermal_climate_index(),
-        )
-        
-        object.__setattr__(self, "triangulation", self._triangulation())
-
-        # self._generic_output()
-
-    def _points(self) -> pd.DataFrame:
+    @cached_property
+    def points(self) -> pd.DataFrame:
         """Return the points results from the simulation directory, and create the H5 file to store them as compressed objects if not already done.
 
         Returns:
@@ -185,85 +181,118 @@ class SpatialComfortResult:
 
         points_path = self.spatial_comfort.simulation_directory / "points.h5"
 
-        try:
-            return self.points
-        except AttributeError:
-            if points_path.exists():
-                print(f"- Loading points data from {self.spatial_comfort.simulation_directory.name}")
-                return pd.read_hdf(points_path, "df")
-            else:
-                print(f"- Processing points data for {self.spatial_comfort.simulation_directory.name}")
-                points_files = list(
-                    (
-                        self.spatial_comfort.simulation_directory
-                        / "sky_view"
-                        / "model"
-                        / "grid"
-                    ).glob("*.pts")
-                )
-                points = load_pts(points_files)
-                points.to_hdf(points_path, "df", complevel=9, complib="blosc")
-            return points
+        if points_path.exists():
+            print(
+                f"- Loading points data from {self.spatial_comfort.simulation_directory.name}"
+            )
+            return pd.read_hdf(points_path, "df")
 
-    def _total_irradiance(self) -> pd.DataFrame:
+        print(
+            f"- Processing points data for {self.spatial_comfort.simulation_directory.name}"
+        )
+        points_files = list(
+            (
+                self.spatial_comfort.simulation_directory
+                / "sky_view"
+                / "model"
+                / "grid"
+            ).glob("*.pts")
+        )
+        points = load_pts(points_files).astype(np.float16)
+        points.to_hdf(points_path, "df", complevel=9, complib="blosc")
+        return points
+
+    @cached_property
+    def total_irradiance_matrix(self) -> pd.DataFrame:
         """Get the total irradiance from the simulation directory.
 
         Returns:
             pd.DataFrame: A dataframe with the total irradiance.
         """
-        try:
-            return self.total_irradiance
-        except AttributeError:
-            total_irradiance_path = (
-                self.spatial_comfort.simulation_directory / "total_irradiance.h5"
+
+        total_irradiance_path = (
+            self.spatial_comfort.simulation_directory / "total_irradiance_matrix.h5"
+        )
+
+        if total_irradiance_path.exists():
+            print(
+                f"- Loading irradiance data from {self.spatial_comfort.simulation_directory.name}"
             )
+            return pd.read_hdf(total_irradiance_path, "df")
 
-            if total_irradiance_path.exists():
-                print(f"- Loading irradiance data from {self.spatial_comfort.simulation_directory.name}")
-                return pd.read_hdf(total_irradiance_path, "df")
-            else:
-                print(f"- Processing irradiance data for {self.spatial_comfort.simulation_directory.name}")
-                ill_files = list(
-                    (
-                        self.spatial_comfort.simulation_directory
-                        / "annual_irradiance"
-                        / "results"
-                        / "total"
-                    ).glob("*.ill")
-                )
-                total_irradiance = make_annual(load_ill(ill_files)).fillna(0)
-                total_irradiance.to_hdf(
-                    total_irradiance_path, "df", complevel=9, complib="blosc"
-                )
-            return total_irradiance
+        print(
+            f"- Processing irradiance data for {self.spatial_comfort.simulation_directory.name}"
+        )
+        ill_files = list(
+            (
+                self.spatial_comfort.simulation_directory
+                / "annual_irradiance"
+                / "results"
+                / "total"
+            ).glob("*.ill")
+        )
+        total_irradiance = make_annual(load_ill(ill_files)).fillna(0).astype(np.float16)
+        total_irradiance.to_hdf(
+            total_irradiance_path, "df", complevel=9, complib="blosc"
+        )
+        return total_irradiance
 
-    def _sky_view(self) -> pd.DataFrame:
+    @cached_property
+    def sky_view(self) -> pd.DataFrame:
         """Get the sky view from the simulation directory.
 
         Returns:
             pd.DataFrame: The sky view dataframe.
         """
 
-        try:
-            return self.sky_view
-        except AttributeError:
-            sky_view_path = self.spatial_comfort.simulation_directory / "sky_view.h5"
+        sky_view_path = self.spatial_comfort.simulation_directory / "sky_view.h5"
 
-            if sky_view_path.exists():
-                print(f"- Loading sky-view data from {self.spatial_comfort.simulation_directory.name}")
-                return pd.read_hdf(sky_view_path, "df")
-            else:
-                print(f"- Processing sky-view data for {self.spatial_comfort.simulation_directory.name}")
-                res_files = list(
-                    (
-                        self.spatial_comfort.simulation_directory
-                        / "sky_view"
-                        / "results"
-                    ).glob("*.res")
-                )
-                sky_view = load_res(res_files)
-                sky_view.to_hdf(sky_view_path, "df", complevel=9, complib="blosc")
-            return sky_view
+        if sky_view_path.exists():
+            print(
+                f"- Loading sky-view data from {self.spatial_comfort.simulation_directory.name}"
+            )
+            return pd.read_hdf(sky_view_path, "df")
+
+        print(
+            f"- Processing sky-view data for {self.spatial_comfort.simulation_directory.name}"
+        )
+        res_files = list(
+            (self.spatial_comfort.simulation_directory / "sky_view" / "results").glob(
+                "*.res"
+            )
+        )
+        sky_view = load_res(res_files).astype(np.float16)
+        sky_view.to_hdf(sky_view_path, "df", complevel=9, complib="blosc")
+        return sky_view
+
+    @staticmethod
+    def _distribute(
+        magnitude: float,
+        distance: float,
+        max_distance: float,
+        curve_type: str = "linear",
+    ) -> float:
+        """Calculate the "decayed" value distributed from 0 to a given distance up to the maximum distance.
+
+        Args:
+            magnitude (float): The value to be distributed.
+            distance (float): A distance at which to return the magnitude.
+            max_distance (float): The maximum distance to which magnitude is to be distributed.
+            curve_type (str, optional): A type of distribution (the shape of the distribution profile). Defaults to "linear".
+
+        Returns:
+            float: The magnitude at the given distance.
+        """
+        distance = np.interp(distance, [0, max_distance], [0, 1])
+
+        if curve_type == "linear":
+            return (1 - distance) * magnitude
+        elif curve_type == "parabolic":
+            return (-(distance**2) + 1) * magnitude
+        elif curve_type == "sigmoid":
+            return (1 - (0.5 * (np.sin(distance * np.pi - np.pi / 2) + 1))) * magnitude
+        else:
+            raise ValueError(f"Unknown curve type: {curve_type}")
 
     @staticmethod
     def _interpolate_between_unshaded_shaded(
@@ -273,12 +302,12 @@ class SpatialComfortResult:
         sky_view: pd.DataFrame,
         sun_up_bool: np.ndarray(dtype=bool),
     ) -> pd.DataFrame:
-        """INterpolate between the unshaded and shaded input values, using the total irradiance and sky view as proportional values for each point.
+        """Interpolate between the unshaded and shaded input values, using the total irradiance and sky view as proportional values for each point.
 
         Args:
             unshaded (HourlyContinuousCollection): A collection of hourly values for the unshaded case.
             shaded (HourlyContinuousCollection): A collection of hourly values for the shaded case.
-            total_irradiance (pd.DataFrame): A dataframe with the total irradiance for each point.
+            total_irradiance (pd.DataFrame): A dataframe with the total irradiance for each point for each hour.
             sky_view (pd.DataFrame): A dataframe with the sky view for each point.
             sun_up_bool (np.ndarray): A list if booleans stating whether the sun is up.
 
@@ -334,368 +363,584 @@ class SpatialComfortResult:
 
         return interpolated_result
 
-    def _mean_radiant_temperature(self) -> pd.DataFrame:
-        """Determine the mean radiant temperature based on a shaded/unshed ground surface, and the annual spatial incident total radiation.
+    @staticmethod
+    def _angle_from_north(vector: List[float]) -> float:
+        """For an X, Y vector, determine the clockwise angle to north at [0, 1].
+
+        Args:
+            vector (List[float]): A vector of length 2.
+
+        Returns:
+            float: The angle between vector and north in degrees clockwise from [0, 1].
+        """
+        north = [0, 1]
+        angle1 = np.arctan2(*north[::-1])
+        angle2 = np.arctan2(*vector[::-1])
+        return np.rad2deg((angle1 - angle2) % (2 * np.pi))
+
+    @cached_property
+    def mean_radiant_temperature_matrix(self) -> pd.DataFrame:
+        """Determine the mean radiant temperature based on a shaded/unshaded ground surface, and the annual spatial incident total radiation.
 
         Returns:
             pd.DataFrame: A dataframe with the mean radiant temperature.
         """
-        try:
-            return self.mean_radiant_temperature
-        except AttributeError:
-            mrt_path = (
-                self.spatial_comfort.simulation_directory
-                / "mean_radiant_temperature.h5"
-            )
 
-            if mrt_path.exists():
-                print(
-                    f"- Loading mean-radiant-temperature data from {self.spatial_comfort.simulation_directory.name}"
-                )
-                return pd.read_hdf(mrt_path, "df")
-
-            print(f"- Processing mean-radiant-temperature data for {self.spatial_comfort.simulation_directory.name}")
-
-            mrt = self._interpolate_between_unshaded_shaded(
-                self.spatial_comfort.unshaded.mean_radiant_temperature,
-                self.spatial_comfort.shaded.mean_radiant_temperature,
-                self.total_irradiance,
-                self.sky_view,
-                to_array(
-                    self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation
-                )
-                > 0,
-            )
-            mrt.to_hdf(mrt_path, "df", complevel=9, complib="blosc")
-            return mrt
-
-    def _ground_surface_temperature(self) -> pd.DataFrame:
-        """Determine the ground surface temperature based on a shaded/unshed ground surface, and the annual spatial incident total radiation.
-
-        Returns:
-            pd.DataFrame: A dataframe with the ground surface temperature.
-        """
-        try:
-            return self.ground_surface_temperature
-        except AttributeError:
-            gnd_srf_path = (
-                self.spatial_comfort.simulation_directory
-                / "ground_surface_temperature.h5"
-            )
-
-            if gnd_srf_path.exists():
-                print(
-                    f"- Loading ground_surface_temperature data from {self.spatial_comfort.simulation_directory.name}"
-                )
-                return pd.read_hdf(gnd_srf_path, "df")
-
-            print(f"- Processing ground_surface_temperature data for {self.spatial_comfort.simulation_directory.name}")
-
-            gnd_srf = self._interpolate_between_unshaded_shaded(
-                self.spatial_comfort.shaded.ground_surface_temperature,
-                self.spatial_comfort.unshaded.ground_surface_temperature,
-                self.total_irradiance,
-                self.sky_view,
-                to_array(
-                    self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation
-                )
-                > 0,
-            )
-            gnd_srf.to_hdf(gnd_srf_path, "df", complevel=9, complib="blosc")
-            return gnd_srf
-
-    def _universal_thermal_climate_index(self) -> pd.DataFrame:
-        """Using the simplified method (not accounting for wind direction, speed or moisture addition), calculate the UTCI.
-
-        Returns:
-            pd.DataFrame: A dataframe with the UTCI for each hour of the year, for each point.
-        """
-        try:
-            return self.universal_thermal_climate_index
-        except Exception as e:
-            utci_path = (
-                self.spatial_comfort.simulation_directory
-                / "universal_thermal_climate_index.h5"
-            )
-
-            if utci_path.exists():
-                print(
-                    f"- Loading universal thermal climate index data from {self.spatial_comfort.simulation_directory.name}"
-                )
-                return pd.read_hdf(utci_path, "df")
-
-            print(f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}")
-
-            utci = self._interpolate_between_unshaded_shaded(
-                self.spatial_comfort.unshaded.universal_thermal_climate_index,
-                self.spatial_comfort.shaded.universal_thermal_climate_index,
-                self.total_irradiance,
-                self.sky_view,
-                to_array(
-                    self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation
-                )
-                > 0,
-            )
-            utci.to_hdf(utci_path, "df", complevel=9, complib="blosc")
-            return utci
-
-    def _x_lims(self) -> List[float]:
-        """Return the x-axis limits for the plot."""
-        maxima = (
-            self.points.groupby(self.points.columns.get_level_values(1), axis=1)
-            .max()
-            .max()
+        mrt_path = (
+            self.spatial_comfort.simulation_directory
+            / "mean_radiant_temperature_matrix.h5"
         )
-        minima = (
-            self.points.groupby(self.points.columns.get_level_values(1), axis=1)
-            .min()
-            .min()
+
+        if mrt_path.exists():
+            print(
+                f"- Loading mean-radiant-temperature data from {self.spatial_comfort.simulation_directory.name}"
+            )
+            return pd.read_hdf(mrt_path, "df")
+
+        print(
+            f"- Processing mean-radiant-temperature data for {self.spatial_comfort.simulation_directory.name}"
         )
-        return [minima.x, maxima.x]
+        mrt = self._interpolate_between_unshaded_shaded(
+            self.spatial_comfort.unshaded_typology_result.mean_radiant_temperature,
+            self.spatial_comfort.shaded_typology_result.mean_radiant_temperature,
+            self.total_irradiance_matrix,
+            self.sky_view,
+            np.array(self.spatial_comfort.epw.global_horizontal_radiation.values) > 0,
+        ).astype(np.float16)
+        mrt.to_hdf(mrt_path, "df", complevel=9, complib="blosc")
+        return mrt
 
-    def _y_lims(self) -> List[float]:
-        """Return the y-axis limits for the plot."""
-        maxima = (
-            self.points.groupby(self.points.columns.get_level_values(1), axis=1)
-            .max()
-            .max()
+    @cached_property
+    def points_xy(self) -> List[List[float]]:
+        """Return the x and y coordinates of the points in the grid."""
+        reshaped_points = (
+            self.points.unstack()
+            .reset_index()
+            .pivot(index=["level_0", "level_2"], values=0, columns="level_1")
+            .dropna()
         )
-        minima = (
-            self.points.groupby(self.points.columns.get_level_values(1), axis=1)
-            .min()
-            .min()
+        reshaped_points.columns.name = None
+        reshaped_points.index.names = (None, None)
+        return reshaped_points[["x", "y"]].values
+
+    @cached_property
+    def wind_speed_direction(self) -> List[List[float]]:
+        """Return a list of all wind speeds and directions"""
+        return np.stack([self.wind_speed, self.wind_direction], axis=1)
+
+    @cached_property
+    def wind_speed_direction_unique(self) -> List[List[float]]:
+        """Return a list of every unique wind speed and direction combination."""
+        return np.unique(self.wind_speed_direction, axis=0)
+
+    @cached_property
+    def wind_speed_direction_indices(self) -> List[int]:
+        """Return a list of indices for every unique wind speed and direction combination, to map these back to the original hourly set of wind speeds and directions."""
+        return np.array(
+            [
+                np.all(self.wind_speed_direction_unique == ws_wd, axis=1).argmax()
+                for ws_wd in self.wind_speed_direction
+            ]
         )
-        return [minima.y, maxima.y]
 
-    def _gnd_temp_lims(self) -> List[float]:
-        """Return the ground surface temperature value limits for the plot."""
-        maxima = self.ground_surface_temperature.unstack().max()
-        minima = self.ground_surface_temperature.unstack().min()
-        return [minima, maxima]
+    @cached_property
+    def moisture_source_points(self) -> List[List[List[float]]]:
+        """Return a list of all moisture source points, for each moisture source found in the simulation directory."""
+        return [i.points_xy for i in self.spatial_comfort.moisture_sources]
 
-    def _mrt_lims(self) -> List[float]:
-        """Return the MRT value limits for the plot."""
-        maxima = self.mean_radiant_temperature.unstack().max()
-        minima = self.mean_radiant_temperature.unstack().min()
-        return [minima, maxima]
+    @cached_property
+    def moisture_source_magnitudes(self) -> List[float]:
+        """Return a list of all moisture source magnitudes, for each moisture source found in the simulation directory."""
+        return [i.magnitude for i in self.spatial_comfort.moisture_sources]
 
-    def _utci_lims(self) -> List[float]:
-        """Return the UTCI value limits for the plot."""
-        maxima = self.universal_thermal_climate_index.unstack().max()
-        minima = self.universal_thermal_climate_index.unstack().min()
-            
-        return [minima, maxima]
-
-    def _grid_names(self) -> List[str]:
-        """Return the names of the grids for this spatial comfort result."""
-        return self.points.columns.get_level_values(0).unique().tolist()
-
-    def _triangulation(self) -> Dict[str, Triangulation]:
-        """Triangulate the x, y sensor locations for this spatial case.
-
-        Returns:
-            Dict[str, Triangulation]: A dictionary with grid names as keys and triangulations as values.
-        """
-        d = {}
-        for grid_name in self._grid_names():
-            xs = self.points.loc[:, (grid_name, "x")].dropna().values
-            ys = self.points.loc[:, (grid_name, "y")].dropna().values
-            d[grid_name] = create_triangulation(xs, ys, 1.1)
-        return d
-
-    def _plot_sky_view(self) -> Path:
-        """Return the path to the sky view plot."""
-
-        min_val = 0
-        max_val = 100
-        step = 5
-        levels = np.arange(min_val, max_val + step, step)
-
-        zs = [
-            self._sky_view()[grid_name].dropna().values
-            for grid_name in self._grid_names()
+    @cached_property
+    def moisture_source_vectors(self) -> List[List[List[List[float]]]]:
+        """Return a list of all moisture source vectors (between source point and sensor points), for each moisture source found in the simulation directory."""
+        return [
+            np.subtract(i, self.points_xy[:, None]) for i in self.moisture_source_points
         ]
 
-        fig = plot_spatial(
-            triangulations=self.triangulation.values(),
-            values=zs,
-            levels=levels,
-            colormap="Spectral_r",
-            extend="neither",
-            xlims=self._x_lims(),
-            ylims=self._y_lims(),
-            colorbar_label="Proportion of sky visible (%)",
-            title=f"Proportion of sky visible",
+    @cached_property
+    def moisture_source_distances(self) -> List[List[List[List[float]]]]:
+        """Return a list of all moisture source distances (between source point and sensor points), for each moisture source found in the simulation directory."""
+        return [np.linalg.norm(i, axis=2) for i in self.moisture_source_vectors]
+
+    @cached_property
+    def moisture_source_angles(self) -> List[List[List[float]]]:
+        """Return a list of all moisture source relative angles to North (between source point and sensor points), for each moisture source found in the simulation directory."""
+        return [self._angle_from_north(i.T).T for i in self.moisture_source_vectors]
+
+    @cached_property
+    def moisture_source_matrix_unique(self) -> List[List[List[float]]]:
+        """Create a matrix of moisture source evaporative cooling effectivenessess, for each moisture source found in the simulation directory."""
+
+        distance_around_sources_in_calm_wind = 5
+        wind_speed_multiplier_for_distances = 10
+        angle_width = 12
+
+        moisture_source_matrices = []
+        for moisture_source_idx, moisture_source in enumerate(
+            self.spatial_comfort.moisture_sources[0:]
+        ):  # <<<< TESTING LIMIT
+
+            save_path = (
+                self.spatial_comfort.simulation_directory
+                / f"{moisture_source.pathsafe_id}.npy"
+            )
+            if save_path.exists():
+                print(
+                    f"- Loading moisture matrix lookup for {moisture_source}", end="\n"
+                )
+                moisture_matrix = np.load(save_path)
+                moisture_source_matrices.append(moisture_matrix)
+                continue
+
+            print(f"- Generating moisture matrix index for {moisture_source}", end="\n")
+            moisture_matrix = []
+            for w_idx, (ws, wd) in enumerate(
+                self.wind_speed_direction_unique[0:]
+            ):  # <<<< TESTING LIMIT
+                print(
+                    f"- Calculating {(w_idx + 1)/len(self.wind_speed_direction_unique):0.3%}",
+                    end="\r",
+                )
+
+                # CREATE MOISTURE PROFILE AROUND EACH POINT (based on distance from source and wind speed * multiplier)
+                if ws == 0:
+                    magnitude_matrix_local = self._distribute(
+                        self.spatial_comfort.moisture_sources[
+                            moisture_source_idx
+                        ].magnitude,
+                        self.moisture_source_distances[moisture_source_idx],
+                        distance_around_sources_in_calm_wind,
+                        "parabolic",
+                    )
+                else:
+                    magnitude_matrix_local = self._distribute(
+                        self.spatial_comfort.moisture_sources[
+                            moisture_source_idx
+                        ].magnitude,
+                        self.moisture_source_distances[moisture_source_idx],
+                        ws * wind_speed_multiplier_for_distances,
+                        "parabolic",
+                    )
+
+                # ANGLE MASK
+                plume_buffer = angle_width / 2
+                if ws == 0:
+                    # Where no wind is present, use all directions, and filter using the DIRECTION MASK
+                    angle_mask_local = np.ones_like(
+                        self.moisture_source_angles[moisture_source_idx], dtype=bool
+                    )
+                elif wd > (360 - plume_buffer):
+                    angle_mask_local = np.any(
+                        [
+                            (
+                                self.moisture_source_angles[moisture_source_idx]
+                                > wd - plume_buffer
+                            ),
+                            (
+                                self.moisture_source_angles[moisture_source_idx]
+                                < wd - 360 - wd
+                            ),
+                        ],
+                        axis=0,
+                    )
+                elif wd < (0 + plume_buffer):
+                    angle_mask_local = np.any(
+                        [
+                            (
+                                self.moisture_source_angles[moisture_source_idx]
+                                < wd + plume_buffer
+                            ),
+                            (
+                                self.moisture_source_angles[moisture_source_idx]
+                                > 360 + wd - plume_buffer
+                            ),
+                        ],
+                        axis=0,
+                    )
+                else:
+                    angle_mask_local = np.all(
+                        [
+                            (
+                                self.moisture_source_angles[moisture_source_idx]
+                                < wd + plume_buffer
+                            ),
+                            (
+                                self.moisture_source_angles[moisture_source_idx]
+                                > wd - plume_buffer
+                            ),
+                        ],
+                        axis=0,
+                    )
+
+                # POINT-IN-TIME MOISTURE MATRIX
+                moisture_matrix.append(
+                    np.amax(
+                        np.where(angle_mask_local, magnitude_matrix_local, 0), axis=1
+                    )
+                )
+
+            np.save(save_path, moisture_matrix)
+
+            moisture_source_matrices.append(np.array(moisture_matrix))
+            print("\n")
+
+        return np.amax(moisture_source_matrices, axis=0)
+
+    @cached_property
+    def moisture_matrix(self) -> pd.DataFrame:
+        """Create an annual hourly spatial matrix of moisture source evaporative cooling effectivenessess."""
+        return pd.DataFrame(
+            self.moisture_source_matrix_unique[self.wind_speed_direction_indices],
+            index=self.mean_radiant_temperature_matrix.index,
+            columns=self.mean_radiant_temperature_matrix.columns,
+        ).astype(np.float16)
+
+    @cached_property
+    def dry_bulb_temperature_matrix(self) -> pd.DataFrame:
+        """Return an annual hourly spatial matrix of dry bulb temperature."""
+        save_path = (
+            self.spatial_comfort.simulation_directory / "dry_bulb_temperature_matrix.h5"
         )
 
-        save_path = self.spatial_comfort.simulation_directory / "sky_view.png"
+        if save_path.exists():
+            print("- Loading dry bulb temperature matrix")
+            return pd.read_hdf(save_path, "df")
+        elif len(self.spatial_comfort.moisture_sources) == 0:
+            dbt = pd.DataFrame(
+                np.repeat(
+                    [self.dry_bulb_temperature],
+                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    axis=0,
+                ).T,
+                index=self.mean_radiant_temperature_matrix.index,
+                columns=self.mean_radiant_temperature_matrix.columns,
+            )
+            dbt.to_hdf(save_path, "df", complib="blosc", complevel=9)
+        else:
+            return self.spatial_moisture_properties()["dbt"]
+
+    def spatial_moisture_properties(self) -> Dict[str, pd.DataFrame]:
+        """Calculate the annual hourly spatial matrices of dry bulb temperature and relative humidity."""
+
+        dbt_save_path = (
+            self.spatial_comfort.simulation_directory / "dry_bulb_temperature_matrix.h5"
+        )
+        rh_save_path = (
+            self.spatial_comfort.simulation_directory / "relative_humidity_matrix.h5"
+        )
+
+        if dbt_save_path.exists() and rh_save_path.exists():
+            print("- Loading DBT/RH matrices")
+            dbt = pd.read_hdf(dbt_save_path, "df")
+            rh = pd.read_hdf(rh_save_path, "df")
+            return {"dbt": dbt, "rh": rh}
+        elif len(self.spatial_comfort.moisture_sources) == 0:
+            dbt = pd.DataFrame(
+                np.repeat(
+                    [self.dry_bulb_temperature],
+                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    axis=0,
+                ).T,
+                index=self.mean_radiant_temperature_matrix.index,
+                columns=self.mean_radiant_temperature_matrix.columns,
+            )
+            rh = pd.DataFrame(
+                np.repeat(
+                    [self.relative_humidity],
+                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    axis=0,
+                ).T,
+                index=self.mean_radiant_temperature_matrix.index,
+                columns=self.mean_radiant_temperature_matrix.columns,
+            )
+        else:
+            temp = []
+            for n, (dbt, rh, ms, atm) in enumerate(
+                list(
+                    zip(
+                        *[
+                            self.dry_bulb_temperature,
+                            self.relative_humidity,
+                            self.moisture_matrix.values,
+                            self.atmospheric_station_pressure,
+                        ]
+                    )
+                )[0:]
+            ):
+                print(
+                    f"- Calculating DBT/RH matrices - {n/len(self.moisture_matrix.values):0.2%}",
+                    end="\r",
+                )
+                temp.append(evaporative_cooling_effect(dbt, rh, ms, atm))
+            dbt_mtx, rh_mtx = np.swapaxes(temp, 0, 1)
+
+            dbt = pd.DataFrame(
+                dbt_mtx,
+                index=self.moisture_matrix.index,
+                columns=self.moisture_matrix.columns,
+            )
+            rh = pd.DataFrame(
+                rh_mtx,
+                index=self.moisture_matrix.index,
+                columns=self.moisture_matrix.columns,
+            )
+
+        dbt.to_hdf(dbt_save_path, "df", complib="blosc", complevel=9)
+        rh.to_hdf(rh_save_path, "df", complib="blosc", complevel=9)
+
+        return {"dbt": dbt, "rh": rh}
+
+    @cached_property
+    def relative_humidity_matrix(self) -> pd.DataFrame:
+        """Return an annual hourly spatial matrix of relative humidity."""
+
+        save_path = (
+            self.spatial_comfort.simulation_directory / "relative_humidity_matrix.h5"
+        )
+
+        if save_path.exists():
+            print("- Loading relative humidity matrix")
+            return pd.read_hdf(save_path, "df")
+        elif len(self.spatial_comfort.moisture_sources) == 0:
+            rh = pd.DataFrame(
+                np.repeat(
+                    [self.relative_humidity],
+                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    axis=0,
+                ).T,
+                index=self.mean_radiant_temperature_matrix.index,
+                columns=self.mean_radiant_temperature_matrix.columns,
+            )
+            rh.to_hdf(save_path, "df", complib="blosc", complevel=9)
+        else:
+            return self.spatial_moisture_properties()["rh"]
+
+    @cached_property
+    def wind_speed_matrix(self) -> pd.DataFrame:
+        """Return an annual hourly spatial matrix of wind speed."""
+        save_path = self.spatial_comfort.simulation_directory / "wind_speed_matrix.h5"
+
+        ws = pd.DataFrame(
+            np.repeat(
+                [self.wind_speed],
+                [len(self.mean_radiant_temperature_matrix.values.T)],
+                axis=0,
+            ).T,
+            index=self.mean_radiant_temperature_matrix.index,
+            columns=self.mean_radiant_temperature_matrix.columns,
+        )
+        ws.to_hdf(save_path, "df", complib="blosc", complevel=9)
+
+        return ws
+
+    @cached_property
+    def universal_thermal_climate_index_matrix(self) -> pd.DataFrame:
+        """Calculate the universal thermal climate index based on matrices of DBT, MRT, WS and RH.
+
+        Returns:
+            pd.DataFrame: A dataframe with the universal thermal climate index.
+        """
+
+        save_path = (
+            self.spatial_comfort.simulation_directory
+            / "universal_thermal_climate_index_matrix.h5"
+        )
+
+        if save_path.exists():
+            print(
+                f"- Loading universal thermal climate index data from {self.spatial_comfort.simulation_directory.name}"
+            )
+            return pd.read_hdf(save_path, "df")
+
+        print(
+            f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}"
+        )
+        utcis = []
+        for n, (dbt, mrt, ws, rh) in enumerate(
+            list(
+                zip(
+                    *[
+                        self.dry_bulb_temperature_matrix.values,
+                        self.mean_radiant_temperature_matrix.values,
+                        self.wind_speed_matrix.values,
+                        self.relative_humidity_matrix.values,
+                    ]
+                )
+            )
+        ):
+            print(
+                f"- Calculating UTCI matrix - {n + 1/len(self.dry_bulb_temperature):0.2%}",
+                end="\r",
+            )
+            utcis.append(v_utci(dbt, mrt, ws, rh))
+
+        utci = pd.DataFrame(
+            np.array(utcis),
+            index=self.mean_radiant_temperature_matrix.index,
+            columns=self.mean_radiant_temperature_matrix.columns,
+        ).astype(np.float16)
+        utci.to_hdf(save_path, "df", complevel=9, complib="blosc")
+        return utci
+
+    @cached_property
+    def _triangulation(self) -> Triangulation:
+        """Return a triangulation of the spatial grid."""
+        x, y = self.points_xy.T
+        return create_triangulation(x, y)
+
+    @property
+    def plot_directory(self) -> Path:
+        """Return the path to the plot directory."""
+        plot_dir = self.spatial_comfort.simulation_directory / "plots"
+        plot_dir.mkdir(exist_ok=True, parents=True)
+        return plot_dir
+
+    def plot_utci_comfortable_hours(
+        self, analysis_period: AnalysisPeriod, hours: bool = False
+    ) -> Path:
+        """Return the path to the comfortable-hours plot."""
+
+        save_path = (
+            self.plot_directory
+            / f"time_comfortable_{'hours' if hours else 'percentage'}_{describe_analysis_period(analysis_period, True)}.png"
+        )
+        if save_path.exists():
+            return save_path
+        print(f"- Plotting {save_path.stem}")
+
+        x, y = self.points_xy.T
+        # Filter for the analysis period
+        z_temp = self.universal_thermal_climate_index_matrix.iloc[
+            list(analysis_period.hoys_int), :
+        ]
+        z = ((z_temp >= 9) & (z_temp <= 26)).sum().values
+
+        if not hours:
+            z = z / len(analysis_period.hoys_int) * 100
+
+        fig = plot_spatial(
+            triangulations=[self._triangulation],
+            values=[z],
+            levels=21,
+            colormap="magma_r",
+            extend="both",
+            xlims=[x.min(), x.max()],
+            ylims=[y.min(), y.max()],
+            colorbar_label=f"Hours comfortable (out of a possible {len(analysis_period.hoys_int)})"
+            if hours
+            else f"% time comfortable (out of {len(analysis_period.hoys_int)} hours)",
+            title=f"Time comfortable (9°C-26°C UTCI) for {describe_analysis_period(analysis_period, False)}",
+        )
 
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
 
         return save_path
 
-    def _plot_utci(self, month: int, hour: int) -> Path:
+    def plot_typical_utci(self, month: int, hour: int) -> Path:
         """Return the path to the UTCI plot."""
 
         if not month in range(1, 13, 1):
             raise ValueError(f"Month must be between 1 and 12 inclusive, got {month}")
         if not hour in range(0, 24, 1):
             raise ValueError(f"Hour must be between 0 and 23 inclusive, got {hour}")
-        
-        utci = self.universal_thermal_climate_index
 
-        # Group data to give a typical month-hour value
-        zs = (
-            utci.groupby(
+        save_path = (
+            self.plot_directory
+            / f"universal_thermal_climate_index_{month:02d}_{hour:02d}.png"
+        )
+        if save_path.exists():
+            return save_path
+        print(f"- Plotting {save_path.stem}")
+
+        x, y = self.points_xy.T
+
+        # Filter for the analysis period
+        z = (
+            self.universal_thermal_climate_index_matrix.groupby(
                 [
-                    utci.index.month,
-                    utci.index.hour,
+                    self.universal_thermal_climate_index_matrix.index.month,
+                    self.universal_thermal_climate_index_matrix.index.hour,
                 ],
                 axis=0,
             )
             .mean()
             .loc[month, hour]
-        )
-        zs = [zs.unstack().T[gn].dropna().values.tolist() for gn in self._grid_names()]
+        ).values
 
         fig = plot_spatial(
-            triangulations=self.triangulation.values(),
-            values=zs,
+            triangulations=[self._triangulation],
+            values=[z],
             levels=UTCI_LEVELS,
             colormap=UTCI_COLORMAP,
             extend="both",
             norm=UTCI_BOUNDARYNORM,
-            xlims=self._x_lims(),
-            ylims=self._y_lims(),
+            xlims=[x.min(), x.max()],
+            ylims=[y.min(), y.max()],
             colorbar_label="Universal thermal climate index (°C)",
             title=f"{calendar.month_abbr[month]} {hour:02d}:00",
         )
 
-        save_path = (
-            self.spatial_comfort.simulation_directory
-            / f"universal_thermal_climate_index_{month:02d}_{hour:02d}.png"
-        )
-
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
 
         return save_path
 
-    def _plot_mrt(self, month: int, hour: int) -> Path:
-        """Return the path to the MRT plot."""
+    def plot_sky_view(self) -> Path:
+        """Return the path to the sky view plot."""
 
-        if not month in range(1, 13, 1):
-            raise ValueError(f"Month must be between 1 and 12 inclusive, got {month}")
-        if not hour in range(0, 24, 1):
-            raise ValueError(f"Hour must be between 0 and 23 inclusive, got {hour}")
+        save_path = self.plot_directory / "sky_view.png"
+        if save_path.exists():
+            return save_path
+        print(f"- Plotting {save_path.stem}")
 
-        min_val, max_val = self._mrt_lims()
-        levels = np.linspace(np.floor(min_val), np.ceil(max_val), 21)
+        min_val = 0
+        max_val = 100
+        step = 5
+        levels = np.arange(min_val, max_val + step, step)
 
-        # Group data to give a typical month-hour value
-        zs = (
-            self._mean_radiant_temperature()
-            .groupby(
-                [
-                    self._mean_radiant_temperature().index.month,
-                    self._mean_radiant_temperature().index.hour,
-                ],
-                axis=0,
-            )
-            .mean()
-            .loc[month, hour]
-        )
-        zs = [zs.unstack().T[gn].dropna().values.tolist() for gn in self._grid_names()]
+        x, y = self.points_xy.T
+        z = self.sky_view.iloc[:, 0].values
 
         fig = plot_spatial(
-            triangulations=self.triangulation.values(),
-            values=zs,
+            triangulations=[self._triangulation],
+            values=[z],
             levels=levels,
-            colormap="inferno",
-            extend="both",
-            xlims=self._x_lims(),
-            ylims=self._y_lims(),
-            colorbar_label="Mean radiant temperature (°C)",
-            title=f"{calendar.month_abbr[month]} {hour:02d}:00",
-        )
-
-        save_path = (
-            self.spatial_comfort.simulation_directory
-            / f"mean_radiant_temperature_{month:02d}_{hour:02d}.png"
+            colormap="Spectral_r",
+            extend="neither",
+            xlims=[x.min(), x.max()],
+            ylims=[y.min(), y.max()],
+            colorbar_label="Proportion of sky visible (%)",
+            title=f"Proportion of sky visible",
         )
 
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
 
         return save_path
 
-    def _plot_utci_comfortable_hours(self, analysis_period: AnalysisPeriod, hours: bool = False) -> Path:
-        """Return the path to the comfortable-hours plot."""
+    def generic_output(self) -> List[Path]:
+        """Shortcut to running all methods and generating the associated output plots.
 
-        utci = self.universal_thermal_climate_index
-
-        # Filter for the analysis period
-        zs_temp = utci.iloc[
-            list(analysis_period.hoys_int), :
-        ]
-
-        comfortable = ((zs_temp >= 9) & (zs_temp <= 26)).sum()
-
-        # Calculate % hours comfortable
-        if hours:
-            zs = comfortable
-        else:
-            zs = (
-                comfortable
-                / len(analysis_period.hoys_int)
-                * 100
-            )
-        zs = [zs.unstack().T[gn].dropna().values.tolist() for gn in self._grid_names()]
-
-        fig = plot_spatial(
-            triangulations=self.triangulation.values(),
-            values=zs,
-            levels=21,
-            colormap="magma_r",
-            extend="both",
-            xlims=self._x_lims(),
-            ylims=self._y_lims(),
-            colorbar_label=f"Hours comfortable (out of a possible {len(analysis_period.hoys_int)})" if hours else f"% time comfortable (out of {len(analysis_period.hoys_int)} hours)",
-            title=f"Time comfortable (9°C-26°C UTCI) for {describe_analysis_period(analysis_period, False)}",
-        )
-
-        save_path = (
-            self.spatial_comfort.simulation_directory
-            / f"time_comfortable_{'hours' if hours else 'percentage'}_{describe_analysis_period(analysis_period, True)}.png"
-        )
-
-        fig.savefig(save_path, dpi=200, bbox_inches="tight")
-
-        return save_path
-
-    def _generic_output(self) -> List[Path]:
-        """Return a list of paths to the generic outputs."""
-
+        Returns:
+            List[Path]: A list of all generated plots.
+        """
         output = []
 
         # Sky view plot
-        print("- Plotting sky view...")
-        output.append(self._plot_sky_view())
+        output.append(self.plot_sky_view())
         plt.close("all")
 
         # UTCI comfortable hours
-        print("- Plotting UTCI comfortable hours (annual)...")
-        output.append(self._plot_utci_comfortable_hours(AnalysisPeriod()))
+        output.append(self.plot_utci_comfortable_hours(AnalysisPeriod()))
         plt.close("all")
-        print("- Plotting UTCI comfortable hours (08:00-18:00)...")
         output.append(
-            self._plot_utci_comfortable_hours(AnalysisPeriod(st_hour=8, end_hour=18))
+            self.plot_utci_comfortable_hours(AnalysisPeriod(st_hour=8, end_hour=18))
         )
         plt.close("all")
         for month in range(1, 13, 1):
-            print(
-                f"- Plotting UTCI comfortable hours (08:00-18:00) for {calendar.month_abbr[month]}..."
-            )
             output.append(
-                self._plot_utci_comfortable_hours(
+                self.plot_utci_comfortable_hours(
                     AnalysisPeriod(st_month=month, end_month=month)
                 )
             )
@@ -703,22 +948,23 @@ class SpatialComfortResult:
 
         # UTCI typical days animation
         for month in [12, 3, 6]:
-            print(f"- Plotting spatial UTCI for {calendar.month_abbr[month]}...")
             temp_output = []
             for hour in range(24):
-                temp_output.append(self._plot_utci(month, hour))
+                temp_output.append(self.plot_typical_utci(month, hour))
                 plt.close("all")
-            
-            # images = [Image.open(to) for to in temp_output]
-            # print(f"- Creating animated spatial UTCI for {calendar.month_abbr[month]}...")
-            # images[0].save(
-            #     self.spatial_comfort.simulation_directory
-            #     / f"universal_thermal_climate_index_{month:02d}.gif",
-            #     save_all=True,
-            #     append_images=images[1:],
-            #     optimize=True,
-            #     duration=333,
-            #     loop=0,
-            # )
 
-        return output
+            images = [Image.open(to) for to in temp_output]
+            background = Image.new("RGBA", images[0].size, (255, 255, 255))
+            images = [Image.alpha_composite(background, i) for i in images]
+            print(
+                f"- Creating animated spatial UTCI for {calendar.month_abbr[month]}..."
+            )
+            images[0].save(
+                self.plot_directory
+                / f"universal_thermal_climate_index_{month:02d}.gif",
+                save_all=True,
+                append_images=images[1:],
+                optimize=True,
+                duration=333,
+                loop=0,
+            )

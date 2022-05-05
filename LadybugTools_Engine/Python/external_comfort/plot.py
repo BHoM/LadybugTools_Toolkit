@@ -56,7 +56,9 @@ def colormap_sequential(colors: List[Union[str, Tuple]]) -> LinearSegmentedColor
     )
 
 
-def create_triangulation(x: List[float], y: List[float], alpha: float = 1.1) -> Triangulation:
+def create_triangulation(
+    x: List[float], y: List[float], alpha: float = 1.1
+) -> Triangulation:
     """Create a matplotlib Triangulation from a list of x and y coordinates, including a mask to remove islands within this triangulation.
 
     Args:

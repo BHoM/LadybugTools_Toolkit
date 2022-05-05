@@ -1,5 +1,6 @@
 from ladybug.location import Location
 
+
 def describe(location: Location) -> str:
     """Return a simple string representation of the LOcation object.
 
