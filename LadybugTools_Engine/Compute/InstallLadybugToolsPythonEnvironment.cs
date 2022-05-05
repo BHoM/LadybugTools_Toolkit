@@ -50,7 +50,13 @@ namespace BH.Engine.LadybugTools
             if (!Directory.Exists(Path.Combine(ladybugToolsDirectory, "resources", "measures", "honeybee_openstudio_gem")))
                 BH.Engine.Base.Compute.RecordWarning($"honeybee-openstudio-gem measures are not available in {Path.Combine(ladybugToolsDirectory, "resources", "measures", "honeybee_openstudio_gem")} and any commands used that call to them will not work. Follow instructions https://github.com/ladybug-tools/lbt-grasshopper/wiki/1.1-Windows-Installation-Steps to install this for the latest version of ladybug_tools.");
             
-            return BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json"); ;
+            // The following checks for beta 5.1 only. These json files to be added to the installer for later versions. 
+            if (!File.Exists(@"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json"))
+                Base.Compute.RecordError("LadybugTools_Toolkit.json does not exist. Visit the following page for more information: https://github.com/BHoM/LadybugTools_Toolkit/wiki/Beta-version-5.1---Installation-instructions");
+            if (!File.Exists(@"C:\ProgramData\BHoM\Settings\Python\Python_Toolkit.json"))
+                Base.Compute.RecordError("Python_Toolkit.json does not exist. Visit the following page for more information: https://github.com/BHoM/LadybugTools_Toolkit/wiki/Beta-version-5.1---Installation-instructions");
+
+            return BH.Engine.Python.Compute.InstallPythonEnvironment(run, force, @"C:\ProgramData\BHoM\Settings\Python\LadybugTools_Toolkit.json");
         }
     }
 }
