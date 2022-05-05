@@ -18,6 +18,7 @@ from matplotlib.colors import (
 from ladybug.windrose import Compass, WindRose
 from matplotlib.figure import Figure
 
+
 def heatmap(
     collection: HourlyContinuousCollection,
     colormap: Colormap = "viridis",
@@ -115,6 +116,7 @@ def heatmap(
 
     return fig
 
+
 def rose(
     epw: EPW,
     collection: HourlyContinuousCollection,
@@ -172,7 +174,7 @@ def rose(
             ]
         )
 
-    fig, ax = plt.subplots(1, 1, figsize=(7, 7), subplot_kw={'projection': "polar"})
+    fig, ax = plt.subplots(1, 1, figsize=(7, 7), subplot_kw={"projection": "polar"})
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
     plt.setp(ax.get_xticklabels(), fontsize="small")
@@ -186,15 +188,29 @@ def rose(
 
     bottom = np.zeros(directions)
     for n, d in enumerate(binned_data.T):
-        ax.bar(x=theta, height=d, width=width, bottom=bottom, color=colors[n], ec=(1, 1, 1, 0.2), lw=0.5,)
+        ax.bar(
+            x=theta,
+            height=d,
+            width=width,
+            bottom=bottom,
+            color=colors[n],
+            ec=(1, 1, 1, 0.2),
+            lw=0.5,
+        )
         bottom += d
 
     if not hide_label_legend:
         norm = Normalize(vmin=bins[0], vmax=bins[-2]) if norm is None else norm
-        colorbar_axes = fig.add_axes([1, 0.11, 0.03, 0.78]) 
+        colorbar_axes = fig.add_axes([1, 0.11, 0.03, 0.78])
         sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
         sm.set_array([])
-        colorbar = plt.colorbar(sm, ticks=bins, boundaries=bins, cax=colorbar_axes, label=to_series(collection).name)
+        colorbar = plt.colorbar(
+            sm,
+            ticks=bins,
+            boundaries=bins,
+            cax=colorbar_axes,
+            label=to_series(collection).name,
+        )
         colorbar.outline.set_visible(False)
 
         ax.set_title(title, ha="left", x=0)

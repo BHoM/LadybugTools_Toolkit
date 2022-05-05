@@ -1043,31 +1043,46 @@ def main():
     from external_comfort.material import MATERIALS
     import pandas as pd
 
-
     def annual_windrose(epw: EPW, out_dir: Path) -> Path:
         sp = out_dir / f"windrose_{Path(epw.file_path).stem}.png"
         if sp.exists():
             pass
         else:
-            fig = rose(epw, epw.wind_speed, directions=16, colormap=WS_COLORMAP, bins=[0, 2, 5, 7, 10, 15, 20, 25])
+            fig = rose(
+                epw,
+                epw.wind_speed,
+                directions=16,
+                colormap=WS_COLORMAP,
+                bins=[0, 2, 5, 7, 10, 15, 20, 25],
+            )
             fig.savefig(sp, dpi=350, transparent=True, bbox_inches="tight")
             plt.close(fig)
         return sp
 
     def typology_results(epw, out_dir: Path) -> List[TypologyResult]:
-        ec = ExternalComfort(epw, MATERIALS["Asphalt"], MATERIALS["ConcreteLightweight"], identifier=Path(epw.file_path).stem)
+        ec = ExternalComfort(
+            epw,
+            MATERIALS["Asphalt"],
+            MATERIALS["ConcreteLightweight"],
+            identifier=Path(epw.file_path).stem,
+        )
         ecr = ExternalComfortResult(ec)
-        
+
         typology_results = []
         for i in range(len(TYPOLOGIES)):
-            typology_results.append(calculate_typology_results([list(TYPOLOGIES.values())[i]], ecr)[0])
-        
+            typology_results.append(
+                calculate_typology_results([list(TYPOLOGIES.values())[i]], ecr)[0]
+            )
+
         return typology_results
 
     def typology_matrix(typology_results: List[TypologyResult], out_dir: Path) -> Path:
-        
-        sp = out_dir / f"externalcomfort_{Path(typology_results[0].external_comfort_result.external_comfort.epw.file_path).stem}.csv"
-        
+
+        sp = (
+            out_dir
+            / f"externalcomfort_{Path(typology_results[0].external_comfort_result.external_comfort.epw.file_path).stem}.csv"
+        )
+
         if sp.exists():
             pass
         else:
@@ -1075,7 +1090,12 @@ def main():
             names = []
             for tr in typology_results:
                 fr = tr.to_dataframe(include_external_comfort_results=False)
-                fr.columns = [i.replace("TypologyResult - ", "") for i in tr.to_dataframe(include_external_comfort_results=False).columns]
+                fr.columns = [
+                    i.replace("TypologyResult - ", "")
+                    for i in tr.to_dataframe(
+                        include_external_comfort_results=False
+                    ).columns
+                ]
                 frs.append(fr)
                 names.append(tr.typology.name)
             df = pd.concat(frs, axis=1, keys=names)
@@ -1083,9 +1103,14 @@ def main():
             df.to_csv(sp)
         return sp
 
-    def typology_utci_heatmap(typology_results: List[TypologyResult], out_dir: Path) -> Path:
+    def typology_utci_heatmap(
+        typology_results: List[TypologyResult], out_dir: Path
+    ) -> Path:
         for tr in typology_results:
-            sp = out_dir / f"utci_{Path(tr.external_comfort_result.external_comfort.epw.file_path).stem}_{tr.typology.name}.png"
+            sp = (
+                out_dir
+                / f"utci_{Path(tr.external_comfort_result.external_comfort.epw.file_path).stem}_{tr.typology.name}.png"
+            )
             if sp.exists():
                 pass
             else:
@@ -1108,8 +1133,6 @@ def main():
         r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.epw",
         r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto-City.Centre.715080_CWEC2016.epw",
         r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.epw",
-
-
         r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2c_2020.epw",
         r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2c_2050.epw",
         r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2c_2080.epw",
@@ -1212,15 +1235,18 @@ def main():
     ]
 
     for n, epw_file in enumerate(files):
-        print(f"#################\n{n:02d}/{len(files):02d} - {Path(epw_file).stem}\n#################")
+        print(
+            f"#################\n{n:02d}/{len(files):02d} - {Path(epw_file).stem}\n#################"
+        )
         epw = EPW(epw_file)
 
         typ_res = typology_results(epw, out_dir)
-        
+
         annual_windrose(epw, out_dir)
         typology_matrix(typ_res, out_dir)
         typology_utci_heatmap(typ_res, out_dir)
     return None
+
 
 if __name__ == "__main__":
     main()
