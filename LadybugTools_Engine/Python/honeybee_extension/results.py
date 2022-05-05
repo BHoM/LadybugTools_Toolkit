@@ -231,6 +231,9 @@ def load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
     if isinstance(files, (str, Path)):
         files = [files]
 
+    if len(files) == 0:
+        raise FileNotFoundError("No files of the specified type were found.")
+
     filenames = [Path(i).stem for i in files]
     if len(set(filenames)) != len(filenames):
         err_str = f"There are duplicate filenames in the list of input files for {func.__name__}. This may cause issues when trying to reference specific results sets!"
