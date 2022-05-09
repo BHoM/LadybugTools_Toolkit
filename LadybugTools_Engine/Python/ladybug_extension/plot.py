@@ -155,8 +155,8 @@ def rose(
     n_calm_hours = sum(ws_values == 0)
 
     not_calm: bool = to_array(epw.wind_speed) > 0
-    filtered_collection = collection.filter_by_pattern(not_calm)
-    filtered_wind_direction = epw.wind_direction.filter_by_pattern(not_calm)
+    filtered_collection = collection.filter_by_analysis_period(analysis_period).filter_by_pattern(not_calm)
+    filtered_wind_direction = epw.wind_direction.filter_by_analysis_period(analysis_period).filter_by_pattern(not_calm)
 
     wr = WindRose(filtered_wind_direction, filtered_collection, directions)
     width = 360 / directions

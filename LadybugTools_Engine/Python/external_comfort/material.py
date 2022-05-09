@@ -6,6 +6,14 @@ from honeybee_energy.material.opaque import (
     _EnergyMaterialOpaqueBase,
 )
 
+# TODO - CHECK REFERENCES AND GIVE THEM A NICE NAME
+"""Material properties defined here are predominantly from the following sources:
+- EnergyPlus (ASHRAE 55-2004)
+- EnergyPlus (ASHRAE 90-2013)
+- Honeybee (honeybee-standards 2.0.5)
+"""
+# TODO - MAKE THE SPATIAL COMFORT MEHODS PRIOVATE IN BHOM FOR NOW (AND CHECK FOR UPDATES FOLLOWING REFACTOR WITH SPATIAL METHHODS)
+
 MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
     "Asphalt": EnergyMaterial(
         identifier="Asphalt",
