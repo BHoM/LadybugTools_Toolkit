@@ -169,7 +169,7 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
 
     # Return results
     df = load_sql(sql)
-    d = {
+    return {
         "shaded_below_temperature": from_series(
             df.filter(regex="GROUND_ZONE_UP_SHADED")
             .droplevel([0, 1, 2], axis=1)
@@ -185,7 +185,6 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         ),
         "unshaded_above_temperature": epw.sky_temperature,
     }
-    return d
 
 
 def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
@@ -241,7 +240,7 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         "DiffuseHorizontalRadiation (Wh/m2)"
     )
 
-    d = {
+    return {
         "unshaded_direct_radiation": from_series(unshaded_direct),
         "unshaded_diffuse_radiation": from_series(unshaded_diffuse),
         "shaded_direct_radiation": from_series(
@@ -259,4 +258,3 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
             )
         ),
     }
-    return d
