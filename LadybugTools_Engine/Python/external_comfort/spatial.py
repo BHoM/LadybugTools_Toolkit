@@ -1,10 +1,14 @@
 from __future__ import annotations
 import calendar
+from datetime import datetime
 import shutil
 from typing import Dict, List
 import warnings
 
 from matplotlib import pyplot as plt
+from external_comfort.plot import colormap_sequential, plot_heatmap
+from external_comfort.plot import plot_utci_heatmap_histogram
+from ladybug_extension.datacollection import to_series, from_series
 
 from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from cached_property import cached_property
@@ -28,6 +32,7 @@ from external_comfort.plot import (
     Triangulation,
     create_triangulation,
     plot_spatial,
+    utci_comparison_diurnal,
 )
 from PIL import Image
 
@@ -968,3 +973,86 @@ class SpatialComfortResult:
                 duration=333,
                 loop=0,
             )
+
+    def point_summary_str(self, point_index: int, name: str = None) -> str:
+        """Create a summary string descirbing the difference between the selected point and an "openfield" condition.
+
+        Returns:
+            str: The summary.
+        """
+
+        if name == None:
+            name = f"Sensor #{point_index}"
+        
+        up_hours_bool = (to_series(self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation) > 0).values
+        daytime_hours = up_hours_bool.sum()
+        start_hour = 9
+        end_hour = 21
+
+        openf = to_series(self.spatial_comfort.unshaded_typology_result.universal_thermal_climate_index)
+        annual_comf_hours_baseline = ((openf >= 9) & (openf <= 26)).sum()
+        heat_stress_hours = (openf > 26).sum()
+        cold_stress_hours = (openf < 9).sum()
+        daytime_comf_hours_baseline = ((openf >= 9) & (openf <= 26) & (up_hours_bool)).sum()
+        outstr = []
+        outstr.append("Openfield:")
+        outstr.append(f"- No thermal stress is expected for {annual_comf_hours_baseline} hours in the year ({annual_comf_hours_baseline/8760:0.1%}). Heat stress is expected for {heat_stress_hours} hours ({heat_stress_hours/8760:0.1%}) and cold stress for {cold_stress_hours} hours ({cold_stress_hours/8760:0.1%}).")
+        outstr.append(f"- When considering only the hours between {start_hour:02d}:00 and {end_hour:02d}:00, this changes to {daytime_comf_hours_baseline} comfortable hours in the year ({daytime_comf_hours_baseline/daytime_hours:0.1%}).")
+        outstr.append("")
+
+        tgt = self.universal_thermal_climate_index_matrix.iloc[:, point_index]
+        tgt.index = openf.index
+        difference = tgt - openf
+        peak_reduction_time = pd.to_datetime(difference.idxmin())
+
+        annual_comf_hours = ((tgt >= 9) & (tgt <= 26)).sum()
+        heat_stress_hours = (tgt > 26).sum()
+        cold_stress_hours = (tgt < 9).sum()
+        daytime_comf_hours = ((tgt >= 9) & (tgt <= 26) & (up_hours_bool)).sum()
+        diffr = (annual_comf_hours - annual_comf_hours_baseline) / annual_comf_hours_baseline
+        diffr_daytime = (daytime_comf_hours - daytime_comf_hours_baseline) / daytime_comf_hours_baseline
+
+        outstr.append(f"{name}:")
+        outstr.append(f"- No thermal stress is expected for {annual_comf_hours} hours in the year ({annual_comf_hours/8760:0.1%}). Heat stress is expected for {heat_stress_hours} hours ({heat_stress_hours/8760:0.1%}) and cold stress for {cold_stress_hours} hours ({cold_stress_hours/8760:0.1%}).")
+        outstr.append(f"- When considering only the hours between {start_hour:02d}:00 and {end_hour:02d}:00, this changes to {daytime_comf_hours} comfortable hours in the year ({daytime_comf_hours/daytime_hours:0.1%}).")
+        outstr.append(f"- Compared to the baseline \"Openfield\" condition this represents an {diffr:0.1%} {'increase' if diffr > 0 else 'decrease'} in comfortable hours in this location annually, and a {diffr_daytime:0.1%} {'increase' if diffr_daytime > 0 else 'decrease'} in comfortable hours between {start_hour:02d}:00 and {end_hour:02d}:00.")
+        outstr.append(f"- A peak UTCI reduction in this location is expected to be around {difference.min():0.1f}°C, occurring on {peak_reduction_time:%B %d} at {peak_reduction_time:%H:%M}.")
+        outstr.append("")
+
+        return "\n".join(outstr)
+
+    def point_summary_plots(self, point_index: int, name: str = None) -> List[Path]:
+        """Create summary plots for the selected point."""
+
+        openfield_utci = self.spatial_comfort.unshaded_typology_result.universal_thermal_climate_index
+        point_utci = self.universal_thermal_climate_index_matrix.iloc[:, point_index]
+        point_utci.name = "Universal Thermal Climate Index (C)"
+        point_utci = from_series(point_utci)
+
+        openfield_fig_path = self.plot_directory / "utci_openfield.png"
+        openfield_fig = plot_utci_heatmap_histogram(openfield_utci, title="Openfield")
+        openfield_fig.savefig(openfield_fig_path, dpi=300, transparent=True, bbox_inches="tight")
+
+        if name == None:
+            name = f"Sensor #{point_index}"
+
+        point_fig_path = self.plot_directory / f"utci_{name}.png"
+        point_fig = plot_utci_heatmap_histogram(
+            point_utci, 
+            title=name
+        )
+        point_fig.savefig(point_fig_path, dpi=300, transparent=True, bbox_inches="tight")
+
+        # comparison
+        cmap = colormap_sequential(["#00A9E0", "w", "#702F8A"])
+        diff_fig_path = self.plot_directory / f"utci_{name}_difference.png"
+        diff_fig = plot_heatmap(point_utci - openfield_utci, colormap=cmap, title=f"Difference between Openfield UTCI and {name}", vlims=[-10, 10])
+        diff_fig.savefig(diff_fig_path, dpi=300, transparent=True, bbox_inches="tight")
+
+        # diurnal
+        diurnal_fig_path = self.plot_directory / f"utci_{name}_diurnal.png"
+        diurnal_fig = utci_comparison_diurnal([openfield_utci, point_utci], ["Openfield", name])
+        diurnal_fig.savefig(diurnal_fig_path, dpi=300, transparent=True, bbox_inches="tight")
+
+        return [openfield_fig_path, point_fig_path, diff_fig_path, diurnal_fig_path]
+    

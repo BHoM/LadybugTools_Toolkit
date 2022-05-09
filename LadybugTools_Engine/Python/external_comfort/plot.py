@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import copy
+from datetime import datetime
+import textwrap
 from typing import List, Tuple, Union
+from matplotlib import patches
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -12,6 +15,11 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybug_extension.datacollection import to_series
 from matplotlib.colorbar import ColorbarBase
+from matplotlib.colors import (
+    cnames,
+    to_rgb,
+)
+import colorsys
 from matplotlib.colors import (
     BoundaryNorm,
     Colormap,
@@ -54,6 +62,48 @@ def colormap_sequential(colors: List[Union[str, Tuple]]) -> LinearSegmentedColor
         list(zip(np.linspace(0, 1, len(fixed_colors)), fixed_colors)),
         N=256,
     )
+
+
+UTCI_COLORMAP = ListedColormap(
+    [
+        "#262972",
+        "#3452A4",
+        "#3C65AF",
+        "#37BCED",
+        "#2EB349",
+        "#F38322",
+        "#C31F25",
+        "#7F1416",
+    ]
+)
+UTCI_COLORMAP.set_under("#0D104B")
+UTCI_COLORMAP.set_over("#580002")
+UTCI_LEVELS = [-40, -27, -13, 0, 9, 26, 32, 38, 46]
+UTCI_LABELS = [
+    "Extreme Cold Stress",
+    "Very Strong Cold Stress",
+    "Strong Cold Stress",
+    "Moderate Cold Stress",
+    "Slight Cold Stress",
+    "No Thermal Stress",
+    "Moderate Heat Stress",
+    "Strong Heat Stress",
+    "Very Strong Heat Stress",
+    "Extreme Heat Stress",
+]
+UTCI_BOUNDARYNORM = BoundaryNorm(UTCI_LEVELS, UTCI_COLORMAP.N)
+
+DBT_COLORMAP = colormap_sequential(["white", "#bc204b"])
+RH_COLORMAP = colormap_sequential(["white", "#8db9ca"])
+MRT_COLORMAP = colormap_sequential(["white", "#6d104e"])
+WS_COLORMAP = colormap_sequential(
+    [
+        "#d0e8e4",
+        "#8db9ca",
+        "#006da8",
+        "#24135f",
+    ]
+)
 
 
 def create_triangulation(
@@ -107,6 +157,22 @@ def create_triangulation(
     triang.set_mask(maxi > alpha)
     return triang
 
+def lighten_color(color: str, amount: float = 0.5) -> Tuple[float]:
+    """
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+    Input can be matplotlib color string, hex string, or RGB tuple.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    try:
+        c = cnames[color]
+    except:
+        c = color
+    c = np.array(colorsys.rgb_to_hls(*to_rgb(c)))
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
 
 def plot_typology_day(
     utci: pd.Series,
@@ -367,6 +433,181 @@ def plot_heatmap(
     return fig
 
 
+def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: str = None) -> Figure:
+    """Create a histogram showing the annual hourly UTCI values associated with this Typology.
+    
+    Returns:
+        Figure: A matplotlib Figure object.
+    """
+
+    assert (
+        type(collection.header.data_type) == UniversalThermalClimateIndex
+    ), f"Collection data type is not UTCI and cannot be used in this plot."
+
+    # Instantiate figure
+    fig = plt.figure(figsize=(15, 5), constrained_layout=True)
+    spec = fig.add_gridspec(
+        ncols=1, nrows=2, width_ratios=[1], height_ratios=[4, 2], hspace=0.0
+    )
+    heatmap_ax = fig.add_subplot(spec[0, 0])
+    histogram_ax = fig.add_subplot(spec[1, 0])
+    divider = make_axes_locatable(histogram_ax)
+    colorbar_ax = divider.append_axes("bottom", size="20%", pad=0.75)
+
+    # Construct series
+    series = to_series(collection)
+
+    # Add heatmap
+    heatmap = heatmap_ax.imshow(
+        pd.pivot_table(
+            series.to_frame(),
+            index=series.index.time,
+            columns=series.index.date,
+            values=series.name,
+        ).values[::-1],
+        norm=UTCI_BOUNDARYNORM,
+        extent=[
+            mdates.date2num(series.index.min()),
+            mdates.date2num(series.index.max()),
+            726449,
+            726450,
+        ],
+        aspect="auto",
+        cmap=UTCI_COLORMAP,
+        interpolation="none",
+    )
+
+    heatmap_ax.xaxis_date()
+    heatmap_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+    heatmap_ax.yaxis_date()
+    heatmap_ax.yaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+    heatmap_ax.tick_params(labelleft=True, labelright=True, labelbottom=True)
+    plt.setp(heatmap_ax.get_xticklabels(), ha="left", color="k")
+    plt.setp(heatmap_ax.get_yticklabels(), color="k")
+    for spine in ["top", "bottom", "left", "right"]:
+        heatmap_ax.spines[spine].set_visible(False)
+        heatmap_ax.spines[spine].set_color("k")
+    heatmap_ax.grid(b=True, which="major", color="k", linestyle=":", alpha=0.5)
+
+    # Add colorbar legend and text descriptors for comfort bands
+    cb = fig.colorbar(
+        heatmap,
+        cax=colorbar_ax,
+        orientation="horizontal",
+        ticks=UTCI_LEVELS,
+        drawedges=False,
+    )
+    cb.outline.set_visible(False)
+    plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
+
+    # Add labels to the colorbar
+    levels = [-100] + UTCI_LEVELS + [100]
+    for n, ((low, high), label) in enumerate(zip(*[[(x,y) for x,y in zip(levels[:-1], levels[1:])], UTCI_LABELS])):
+        if n == 0:
+            ha = "right"
+            position = high
+        elif n == len(levels) - 2:
+            ha = "left"
+            position = low
+        else:
+            ha = "center"
+            position = (low + high) / 2
+        
+        colorbar_ax.text(
+            position,
+            1,
+            textwrap.fill(label, 9),
+            ha=ha,
+            va="bottom",
+            size="small",
+            # transform=colorbar_ax.transAxes,
+        )
+        
+    # Add stacked plot
+    t = pd.cut(series, [-100] + UTCI_LEVELS + [100], labels=UTCI_LABELS)
+    t = t.groupby([t.index.month, t]).count().unstack().T
+    t = t / t.sum()
+    months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
+    t.T.plot.bar(
+        ax=histogram_ax,
+        stacked=True,
+        color=[rgb2hex(UTCI_COLORMAP.get_under())] + UTCI_COLORMAP.colors + [rgb2hex(UTCI_COLORMAP.get_over())],
+        legend=False,
+        width=1,
+    )
+    histogram_ax.set_xlabel(None)
+    histogram_ax.set_xlim(-0.5, 11.5)
+    histogram_ax.set_ylim(0, 1)
+    histogram_ax.set_xticklabels(months, ha="center", rotation=0, color="k")
+    plt.setp(histogram_ax.get_yticklabels(), color="k")
+    for spine in ["top", "right"]:
+        histogram_ax.spines[spine].set_visible(False)
+    for spine in ["bottom", "left"]:
+        histogram_ax.spines[spine].set_color("k")
+    histogram_ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
+
+    # # Add header percentages for bar plot
+    cold_stress = t.T.filter(regex="Cold").sum(axis=1)
+    heat_stress = t.T.filter(regex="Heat").sum(axis=1)
+    no_stress = 1 - cold_stress - heat_stress
+    for n, (i, j, k) in enumerate(zip(*[cold_stress, no_stress, heat_stress])):
+        histogram_ax.text(
+            n,
+            1.02,
+            "{0:0.1f}%".format(i * 100),
+            va="bottom",
+            ha="center",
+            color="#3C65AF",
+            fontsize="small",
+        )
+        histogram_ax.text(
+            n,
+            1.02,
+            "{0:0.1f}%\n".format(j * 100),
+            va="bottom",
+            ha="center",
+            color="#2EB349",
+            fontsize="small",
+        )
+        histogram_ax.text(
+            n,
+            1.02,
+            "{0:0.1f}%\n\n".format(k * 100),
+            va="bottom",
+            ha="center",
+            color="#C31F25",
+            fontsize="small",
+        )
+    
+    if title is None:
+        heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)
+    else:
+        heatmap_ax.set_title(
+            f"{series.name} - {title}",
+            color="k",
+            y=1,
+            ha="left",
+            va="bottom",
+            x=0,
+        )
+
+
+    return fig
+
+
 def plot_utci_distance_to_comfortable(
     collection: HourlyContinuousCollection,
     title: str = None,
@@ -491,37 +732,6 @@ def plot_utci_distance_to_comfortable(
 
     return fig
 
-
-UTCI_COLORMAP = ListedColormap(
-    [
-        "#262972",
-        "#3452A4",
-        "#3C65AF",
-        "#37BCED",
-        "#2EB349",
-        "#F38322",
-        "#C31F25",
-        "#7F1416",
-    ]
-)
-UTCI_COLORMAP.set_under("#0D104B")
-UTCI_COLORMAP.set_over("#580002")
-UTCI_LEVELS = [-40, -27, -13, 0, 9, 26, 32, 38, 46]
-UTCI_BOUNDARYNORM = BoundaryNorm(UTCI_LEVELS, UTCI_COLORMAP.N)
-
-DBT_COLORMAP = colormap_sequential(["white", "#bc204b"])
-RH_COLORMAP = colormap_sequential(["white", "#8db9ca"])
-MRT_COLORMAP = colormap_sequential(["white", "#6d104e"])
-WS_COLORMAP = colormap_sequential(
-    [
-        "#d0e8e4",
-        "#8db9ca",
-        "#006da8",
-        "#24135f",
-    ]
-)
-
-
 def plot_utci_journey(
     utci_values: List[float],
     names: List[str] = None,
@@ -586,3 +796,132 @@ def plot_utci_journey(
     plt.tight_layout()
 
     return fig
+
+def utci_comparison_diurnal(
+    collections: List[HourlyContinuousCollection],
+    collection_ids: List[str] = None,
+) -> Figure:
+    """Plot a set of UTCI collections on a single figure for monthly diurnal periods.
+
+    Args:
+        collections (List[HourlyContinuousCollection]): A list of UTCI collections.
+        collection_ids (List[str], optional): A list of descriptions for each of the input collections. Defaults to None.
+
+    Returns:
+        Figure: A matplotlib figure object.
+    """
+
+    if collection_ids is None:
+        collection_ids = [f"{i:02d}" for i in range(len(collections))]
+    assert len(collections) == len(
+        collection_ids
+    ), "The length of collections_ids must match the number of collections."
+
+    for n, col in enumerate(collections):
+        assert (
+            type(col.header.data_type) == UniversalThermalClimateIndex
+        ), f"Collection {n} data type is not UTCI and cannot be used in this plot."
+
+    months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ]
+
+    x_values = range(288)
+    idx = [
+        item
+        for sublist in [
+            [datetime(2021, month, 1, hour, 0, 0) for hour in range(24)]
+            for month in range(1, 13)
+        ]
+        for item in sublist
+    ]
+    idx_str = [i.strftime("%b %H:%M") for i in idx]
+
+    fig, axes = plt.subplots(4, 3, figsize=(12, 8), sharex=True, sharey=True)
+    for n, ax in enumerate(axes.flat):
+        for nn, col in enumerate(collections):
+            values = col.average_monthly_per_hour().values
+            ax.plot(
+                range(25),
+                list(values[n * 24 : (n * 24) + 24]) + [values[n * 24]],
+                lw=1,
+                label=collection_ids[nn],
+            )
+            ax.set_title(months[n], x=0, ha="left")
+        [ax.spines[spine].set_visible(False) for spine in ["top", "right"]]
+        [ax.spines[j].set_color("k") for j in ["bottom", "left"]]
+
+    # Get plotted values attributes
+    ylim = ax.get_ylim()
+    mitigation_handles, mitigation_labels = ax.get_legend_handles_labels()
+
+    # Fill between ranges
+    for n, ax in enumerate(axes.flat):
+        utci_handles = []
+        utci_labels = []
+        for low, high, color, category in list(
+            zip(
+                *[
+                    ([-100] + UTCI_LEVELS + [100])[0:-1],
+                    ([-100] + UTCI_LEVELS + [100])[1:],
+                    [rgb2hex(UTCI_COLORMAP.get_under())] + UTCI_COLORMAP.colors + [rgb2hex(UTCI_COLORMAP.get_over())],
+                    UTCI_LABELS,
+                ]
+            )
+        ):
+            cc = lighten_color(color, 0.2)
+            ax.axhspan(low, high, color=cc)
+            # Get fille color attributes
+            utci_labels.append(category)
+            utci_handles.append(patches.Patch(color=cc, label=category))
+        ax.grid(b=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.1)
+        ax.grid(b=True, which="minor", axis="x", c="k", ls=":", lw=1, alpha=0.1)
+        if n in [0, 3, 6, 9]:
+            ax.set_ylabel("UTCI (C)")
+        if n in [9, 10, 11]:
+            ax.set_xlabel("Time of day")
+
+    # Format plots
+    ax.set_xlim(0, 24)
+    ax.set_ylim(ylim)
+    ax.xaxis.set_major_locator(plt.FixedLocator([0, 6, 12, 18]))
+    ax.xaxis.set_minor_locator(plt.FixedLocator([3, 9, 15, 21]))
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+    ax.set_xticklabels(["00:00", "06:00", "12:00", "18:00"], minor=False, ha="left")
+
+    # Construct legend
+    handles = utci_handles + mitigation_handles
+    labels = utci_labels + mitigation_labels
+    lgd = fig.legend(
+        handles,
+        labels,
+        loc="upper left",
+        bbox_to_anchor=[1, 0.9],
+        frameon=False,
+        fontsize="small",
+        ncol=1,
+    )
+
+    ti = fig.suptitle(
+        f"Average diurnal profile",
+        ha="left",
+        va="bottom",
+        x=0.05,
+        y=0.95,
+    )
+
+    plt.tight_layout()
+
+    return fig
+

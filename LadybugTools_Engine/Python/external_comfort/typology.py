@@ -32,6 +32,7 @@ from external_comfort.plot import (
     WS_COLORMAP,
     plot_heatmap,
     plot_typology_day,
+    plot_utci_heatmap_histogram,
 )
 from external_comfort.shelter import Shelter
 
@@ -415,6 +416,7 @@ class TypologyResult:
 
         return file_path
 
+    # TODO - MOVE EVAP CLG TO MOISTURE.PY FILE INSTEAD
     @staticmethod
     def evaporatively_cooled_dbt_rh(
         epw: EPW, evaporative_cooling_effectiveness: float = 0.3
@@ -508,6 +510,13 @@ class TypologyResult:
             norm=UTCI_BOUNDARYNORM,
             title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
         )
+
+        return fig
+    
+    def plot_utci_histogram(self) -> Figure:
+        """Create a histogram showing the annual hourly UTCI values associated with this Typology."""
+            
+        fig = plot_utci_heatmap_histogram(self.universal_thermal_climate_index, title=f"{self.typology.name}\n{describe(self.external_comfort_result.external_comfort.epw.location)}")
 
         return fig
 
