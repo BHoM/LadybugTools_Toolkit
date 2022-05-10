@@ -48,6 +48,9 @@ class Shelter:
                 f"{__class__.__name__} azimuth range must be a list of two floats between 0 and 90."
             )
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.porosity}, {self.altitude_range}, {self.azimuth_range})"
+
     def _polygons(self) -> List[Polygon]:
         """Return a list of polygons representing the shade of this shelter.
 
@@ -197,8 +200,9 @@ class Shelter:
 
     @property
     def description(self) -> str:
+        """A human readable description of the Shelter object."""
         if (self._height == 0) or (self._width == 0) or (self.porosity == 1):
-            return None
+            return "unsheltered"
         return f"sheltered between ({self._start_azimuth}, {self._start_altitude}) and ({self._end_azimuth}, {self._end_altitude}) with porosity of {self.porosity:0.0%}"
 
     @property

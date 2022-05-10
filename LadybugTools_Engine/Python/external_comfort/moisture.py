@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
-from cached_property import cached_property
 from pathlib import Path
 from typing import Any, Dict, List
-import json
+
 import numpy as np
+import pandas as pd
+from cached_property import cached_property
+from ladybug.datatype.temperature import WetBulbTemperature
 from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.psychrometrics import wet_bulb_from_db_rh
-from ladybug.datatype.temperature import WetBulbTemperature
 from ladybug_extension.datacollection import to_series
-import pandas as pd
 
 
 @dataclass()
@@ -76,54 +77,6 @@ class MoistureSource:
         """Return a list of x,y coordinates for each point in the moisture source."""
         return self.points[:, :2]
 
-    # def vectors(self, other_points: List[List[float]]) -> List[List[List[float]]]:
-    #     """Obtain the vectors between the moisture source points and a set of other points.
-
-    #     Args:
-    #         other_points (List[List[float]]): A list of other points.
-
-    #     Returns:
-    #         List[List[List[float]]]: Vectors between the moisture source points and the other points.
-    #     """
-    #     return np.subtract(other_points, self.points_xy[:, None])
-
-    # def distances(self, other_points: List[List[float]]) -> List[List[float]]:
-    #     """Obtain the distances to each of the other points from the moisture source points.
-
-    #     Args:
-    #         other_points (List[List[float]]): A list of other points.
-
-    #     Returns:
-    #         List[List[float]]: Distances.
-    #     """
-    #     return np.linalg.norm(self.vectors(other_points), axis=2)
-
-    # def angles(self, other_points: List[List[float]]) -> List[List[List[float]]]:
-    #     """Determine the relative angle between moisture source points and a set of other points.
-
-    #     Args:
-    #         other_points (List[List[float]]): A list of other points.
-
-    #     Returns:
-    #         List[List[List[float]]]: Angles.
-    #     """
-    #     return angle_from_north(self.vectors(other_points).T).T
-
-
-# def angle_from_north(vector: List[float]) -> float:
-#     """For an X, Y vector, determine the clockwise angle to north at [0, 1].
-
-#     Args:
-#         vector (List[float]): A vector of length 2.
-
-#     Returns:
-#         float: The angle between vector and north in degrees clockwise from [0, 1].
-#     """
-#     north = [0, 1]
-#     angle1 = np.arctan2(*north[::-1])
-#     angle2 = np.arctan2(*vector[::-1])
-#     return np.rad2deg((angle1 - angle2) % (2 * np.pi))
-
 
 def evaporative_cooling_effect(
     dry_bulb_temperature: float,
@@ -167,7 +120,7 @@ def evaporative_cooling_effect_collection(
         evaporative_cooling_effectiveness (float, optional): The proportion of difference betwen DBT and WBT by which to adjust DBT. Defaults to 0.3 which equates to 30% effective evaporative cooling, roughly that of Misting.
 
     Returns:
-        HourlyContinuousCollection: An adjusted dry-bulb temperature collection with evaporative cooling factored in.
+        List[HourlyContinuousCollection]: Adjusted dry-bulb temperature and relative humidity collections incorporating evaporative cooling effect.
     """
 
     if (evaporative_cooling_effectiveness > 1) or (

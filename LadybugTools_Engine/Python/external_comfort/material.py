@@ -1,153 +1,41 @@
+from enum import Enum
 from typing import Dict
 
-from honeybee_energy.material.opaque import (
-    EnergyMaterial,
-    EnergyMaterialVegetation,
-    _EnergyMaterialOpaqueBase,
-)
+from honeybee_energy.lib.materials import opaque_material_by_identifier
+from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
 
-# TODO - CHECK REFERENCES AND GIVE THEM A NICE NAME
-"""Material properties defined here are predominantly from the following sources:
-- EnergyPlus (ASHRAE 55-2004)
-- EnergyPlus (ASHRAE 90-2013)
-- Honeybee (honeybee-standards 2.0.5)
 """
-# TODO - MAKE THE SPATIAL COMFORT MEHODS PRIOVATE IN BHOM FOR NOW (AND CHECK FOR UPDATES FOLLOWING REFACTOR WITH SPATIAL METHHODS)
+Material properties defined here are from a range of sources. 
 
-MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
-    "Asphalt": EnergyMaterial(
-        identifier="Asphalt",
-        roughness="MediumRough",
-        thickness=0.2,
-        conductivity=0.75,
-        density=2360.0,
-        specific_heat=920.0,
-        thermal_absorptance=0.93,
-        solar_absorptance=0.87,
-        visible_absorptance=0.87,
-    ),
-    "ConcreteHeavyweight": EnergyMaterial(
-        identifier="ConcreteHeavyweight",
-        roughness="MediumRough",
-        thickness=0.2,
-        conductivity=1.95,
-        density=2240.0,
-        specific_heat=900.0,
-        thermal_absorptance=0.9,
-        solar_absorptance=0.8,
-        visible_absorptance=0.8,
-    ),
-    "ConcreteLightweight": EnergyMaterial(
-        identifier="ConcreteLightweight",
-        roughness="MediumRough",
-        thickness=0.1,
-        conductivity=0.53,
-        density=1280.0,
-        specific_heat=840.0,
-        thermal_absorptance=0.9,
-        solar_absorptance=0.8,
-        visible_absorptance=0.8,
-    ),
-    "DustDry": EnergyMaterial(
-        identifier="DustDry",
-        roughness="Rough",
-        thickness=0.2,
-        conductivity=0.5,
-        density=1600.0,
-        specific_heat=1026.0,
-        thermal_absorptance=0.9,
-        solar_absorptance=0.7,
-        visible_absorptance=0.7,
-    ),
-    "MetalPainted": EnergyMaterial(
-        identifier="MetalPainted",
-        roughness="Smooth",
-        thickness=0.0015,
-        conductivity=5.0,
-        density=7690.0,
-        specific_heat=410.0,
-        thermal_absorptance=0.9,
-        solar_absorptance=0.5,
-        visible_absorptance=0.5,
-    ),
-    "MetalReflective": EnergyMaterial(
-        identifier="MetalReflective",
-        roughness="MediumSmooth",
-        thickness=0.0015,
-        conductivity=5.0,
-        density=7680.0,
-        specific_heat=418.0,
-        thermal_absorptance=0.75,
-        solar_absorptance=0.45,
-        visible_absorptance=0.6,
-    ),
-    "Mud": EnergyMaterial(
-        identifier="Mud",
-        roughness="MediumRough",
-        thickness=0.2,
-        conductivity=1.4,
-        density=1840.0,
-        specific_heat=1480.0,
-        thermal_absorptance=0.95,
-        solar_absorptance=0.8,
-        visible_absorptance=0.8,
-    ),
-    "Rock": EnergyMaterial(
-        identifier="Rock",
-        roughness="MediumRough",
-        thickness=0.2,
-        conductivity=3.0,
-        density=2700.0,
-        specific_heat=790.0,
-        thermal_absorptance=0.96,
-        solar_absorptance=0.55,
-        visible_absorptance=0.55,
-    ),
-    "SandDry": EnergyMaterial(
-        identifier="SandDry",
-        roughness="Rough",
-        thickness=0.2,
-        conductivity=0.33,
-        density=1555.0,
-        specific_heat=800.0,
-        thermal_absorptance=0.85,
-        solar_absorptance=0.65,
-        visible_absorptance=0.65,
-    ),
-    "SoilDamp": EnergyMaterial(
-        identifier="SoilDamp",
-        roughness="Rough",
-        thickness=0.2,
-        conductivity=1.0,
-        density=1250.0,
-        specific_heat=1252.0,
-        thermal_absorptance=0.92,
-        solar_absorptance=0.75,
-        visible_absorptance=0.75,
-    ),
-    "Softwood": EnergyMaterial(
-        identifier="Softwood",
-        roughness="MediumSmooth",
-        thickness=0.0254,
-        conductivity=0.129,
-        density=496.0,
-        specific_heat=1630.0,
-        thermal_absorptance=0.9,
-        solar_absorptance=0.65,
-        visible_absorptance=0.65,
-    ),
-    "Hardwood": EnergyMaterial(
-        identifier="Hardwood",
-        roughness="MediumSmooth",
-        thickness=0.0254,
-        conductivity=0.167,
-        density=680.0,
-        specific_heat=1630.0,
-        thermal_absorptance=0.9,
-        solar_absorptance=0.7,
-        visible_absorptance=0.7,
-    ),
-    "Fabric": EnergyMaterial(
+If they cannot be found in the locations given below, then the material must have 
+been added based on precedent, project requirement and research into representative 
+properties of the named material:
+
+- ASHRAE_2005_HOF_Materials.idf (ASHRAE Handbook of Fundamentals, 2005, Chapter 30, Table 19 and Table 22)
+- https://github.com/ladybug-tools/honeybee-energy-standards
+"""
+
+
+class Material(Enum):
+    """Enum of predefined materials for use in External Comfort simulation workflow."""
+
+    AsphaltPavement: EnergyMaterial = opaque_material_by_identifier("Asphalt Pavement")
+    ConcretePavement: EnergyMaterial = opaque_material_by_identifier(
+        "Concrete Pavement"
+    )
+    DryDust: EnergyMaterial = opaque_material_by_identifier("Dry Dust")
+    DrySand: EnergyMaterial = opaque_material_by_identifier("Dry Sand")
+    # GrassyLawn: EnergyMaterial = opaque_material_by_identifier("Grassy Lawn")
+    MetalSurface: EnergyMaterial = opaque_material_by_identifier("Metal Surface")
+    MetalSurfaceHighlyReflective: EnergyMaterial = opaque_material_by_identifier(
+        "Metal Roof Surface - Highly Reflective"
+    )
+    MoistSoil: EnergyMaterial = opaque_material_by_identifier("Moist Soil")
+    Mud: EnergyMaterial = opaque_material_by_identifier("Mud")
+    SolidRock: EnergyMaterial = opaque_material_by_identifier("Solid Rock")
+    WoodSiding: EnergyMaterial = opaque_material_by_identifier("Wood Siding")
+    # CUSTOM MATERIALS
+    Fabric: EnergyMaterial = EnergyMaterial(
         identifier="Fabric",
         roughness="Smooth",
         thickness=0.002,
@@ -157,51 +45,8 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         thermal_absorptance=0.89,
         solar_absorptance=0.5,
         visible_absorptance=0.5,
-    ),
-    "Travertine": EnergyMaterial(
-        identifier="Travertine",
-        roughness="MediumRough",
-        thickness=0.2,
-        conductivity=3.2,
-        density=2700.0,
-        specific_heat=790.0,
-        thermal_absorptance=0.96,
-        solar_absorptance=0.55,
-        visible_absorptance=0.55,
-    ),
-    "GrassDamp": EnergyMaterialVegetation(
-        identifier="GrassDamp",
-        roughness="MediumRough",
-        thickness=0.1,
-        conductivity=0.35,
-        density=1100,
-        specific_heat=1252,
-        soil_thermal_absorptance=0.92,
-        soil_solar_absorptance=0.7,
-        soil_visible_absorptance=0.7,
-        plant_height=0.2,
-        leaf_area_index=1.71,
-        leaf_reflectivity=0.25,
-        leaf_emissivity=0.92,
-        min_stomatal_resist=160,
-    ),
-    "GrassDry": EnergyMaterialVegetation(
-        identifier="GrassDry",
-        roughness="Rough",
-        thickness=0.1,
-        conductivity=0.3,
-        density=1100,
-        specific_heat=1252,
-        soil_thermal_absorptance=0.89,
-        soil_solar_absorptance=0.75,
-        soil_visible_absorptance=0.75,
-        plant_height=0.2,
-        leaf_area_index=1.71,
-        leaf_reflectivity=0.19,
-        leaf_emissivity=0.95,
-        min_stomatal_resist=180,
-    ),
-    "Shrubs": EnergyMaterialVegetation(
+    )
+    Shrubs: EnergyMaterialVegetation = EnergyMaterialVegetation(
         identifier="Shrubs",
         roughness="Rough",
         thickness=0.1,
@@ -216,5 +61,15 @@ MATERIALS: Dict[str, _EnergyMaterialOpaqueBase] = {
         leaf_reflectivity=0.21,
         leaf_emissivity=0.95,
         min_stomatal_resist=180,
-    ),
-}
+    )
+    Travertine: EnergyMaterial = EnergyMaterial(
+        identifier="Travertine",
+        roughness="MediumRough",
+        thickness=0.2,
+        conductivity=3.2,
+        density=2700.0,
+        specific_heat=790.0,
+        thermal_absorptance=0.96,
+        solar_absorptance=0.55,
+        visible_absorptance=0.55,
+    )

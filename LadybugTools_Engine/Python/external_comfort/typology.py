@@ -22,7 +22,11 @@ from ladybug_extension.location import describe
 from matplotlib.figure import Figure
 
 from external_comfort.encoder import Encoder
-from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult
+from external_comfort.external_comfort import (
+    ExternalComfort,
+    ExternalComfortResult,
+    ExternalComfortEncoder,
+)
 from external_comfort.plot import (
     DBT_COLORMAP,
     MRT_COLORMAP,
@@ -35,16 +39,13 @@ from external_comfort.plot import (
     plot_utci_heatmap_histogram,
 )
 from external_comfort.shelter import Shelter
+from external_comfort.moisture import evaporative_cooling_effect_collection
 
 
-class TypologyEncoder(Encoder):
+class TypologyEncoder(ExternalComfortEncoder):
     """A JSON encoder for the Typology and TypologyResult classes."""
 
     def default(self, obj):
-        if isinstance(obj, ExternalComfort):
-            return obj.to_dict()
-        if isinstance(obj, ExternalComfortResult):
-            return obj.to_dict()
         if isinstance(obj, Shelter):
             return obj.to_dict()
         if isinstance(obj, Typology):
@@ -68,8 +69,40 @@ class Typology:
         if Shelter._overlaps(self.shelters):
             raise ValueError("Shelters overlap")
 
+        if self.wind_speed_multiplier < 0:
+            raise ValueError("Wind speed multiplier must be greater than 0")
+
+    @property
+    def description(self) -> str:
+        """Return a human readable description of the Typology object."""
+
+        if self.wind_speed_multiplier == 1:
+            wind_str = f"wind speed per weatherfile"
+        elif self.wind_speed_multiplier > 1:
+            wind_str = f"wind speed increased by {self.wind_speed_multiplier - 1:0.0%}"
+        else:
+            wind_str = f"wind speed decreased by {1 - self.wind_speed_multiplier:0.0%}"
+
+        # Remove shelters that provide no shelter
+        shelters = [i for i in self.shelters if i.description != "unsheltered"]
+        if len(shelters) > 0:
+            shelter_str = " and ".join(
+                [i.description for i in self.shelters]
+            ).capitalize()
+        else:
+            shelter_str = "unsheltered".capitalize()
+
+        if (self.evaporative_cooling_effectiveness != 0) and (
+            self.wind_speed_multiplier != 1
+        ):
+            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness, and {wind_str}"
+        elif self.evaporative_cooling_effectiveness != 0:
+            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness"
+        else:
+            return f"{self.name}: {shelter_str}, with {wind_str}"
+
     def __repr__(self):
-        return f"{self.__class__.__name__}" f" - {self.name}"
+        return f"{self.__class__.__name__}({self.name}, {[i for i in self.shelters]}, {self.evaporative_cooling_effectiveness}, {self.wind_speed_multiplier})"
 
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
@@ -122,13 +155,13 @@ class TypologyResult:
     )
 
     def __post_init__(self) -> TypologyResult:
-        print(f"- Calculating {self.__class__.__name__} - {self.typology.name}")
-        dbt_rh = self.evaporatively_cooled_dbt_rh(
+        print(f"- Calculating {self}")
+        dbt, rh = evaporative_cooling_effect_collection(
             self.external_comfort_result.external_comfort.epw,
             self.typology.evaporative_cooling_effectiveness,
         )
-        object.__setattr__(self, "dry_bulb_temperature", dbt_rh["dry_bulb_temperature"])
-        object.__setattr__(self, "relative_humidity", dbt_rh["relative_humidity"])
+        object.__setattr__(self, "dry_bulb_temperature", dbt)
+        object.__setattr__(self, "relative_humidity", rh)
         object.__setattr__(self, "wind_speed", self._wind_speed())
         object.__setattr__(
             self, "ground_surface_temperature", self._ground_surface_temperature()
@@ -416,65 +449,8 @@ class TypologyResult:
 
         return file_path
 
-    # TODO - MOVE EVAP CLG TO MOISTURE.PY FILE INSTEAD
-    @staticmethod
-    def evaporatively_cooled_dbt_rh(
-        epw: EPW, evaporative_cooling_effectiveness: float = 0.3
-    ) -> Dict[str, HourlyContinuousCollection]:
-        """Calculate the effective DBT and RH considering effects of evaporative cooling.
-
-        Args:
-            epw (EPW): A ladybug EPW object.
-            evaporative_cooling_effectiveness (float, optional): The proportion of difference betwen DBT and WBT by which to adjust DBT. Defaults to 0.3 which equates to 30% effective evaporative cooling, roughly that of Misting.
-
-        Returns:
-            HourlyContinuousCollection: An adjusted dry-bulb temperature collection with evaporative cooling factored in.
-        """
-
-        dbt: HourlyContinuousCollection = copy.deepcopy(epw.dry_bulb_temperature)
-        wbt = HourlyContinuousCollection(
-            header=Header(
-                data_type=WetBulbTemperature(),
-                unit="C",
-                analysis_period=AnalysisPeriod(),
-            ),
-            values=[
-                wet_bulb_from_db_rh(
-                    epw.dry_bulb_temperature[i],
-                    epw.relative_humidity[i],
-                    epw.atmospheric_station_pressure[i],
-                )
-                for i in range(8760)
-            ],
-        )
-        dbt_adjusted = dbt - ((dbt - wbt) * evaporative_cooling_effectiveness)
-        dbt_adjusted.header.metadata = {
-            **dbt.header.metadata,
-            **{
-                "evaporative_cooling": f"{evaporative_cooling_effectiveness:0.0%}",
-                "description": f"Evaporatively Cooled Dry Bulb Temperature (C) - {evaporative_cooling_effectiveness:0.0%} effective",
-            },
-        }
-
-        rh: HourlyContinuousCollection = copy.deepcopy(epw.relative_humidity)
-        rh_adjusted = (rh * (1 - evaporative_cooling_effectiveness)) + (
-            evaporative_cooling_effectiveness * 100
-        )
-        rh_adjusted.header.metadata = {
-            **rh.header.metadata,
-            **{
-                "evaporative_cooling": f"{evaporative_cooling_effectiveness:0.0%}",
-                "description": f"Evaporatively Cooled Relative Humidity (%) - {evaporative_cooling_effectiveness:0.0%} effective",
-            },
-        }
-
-        return {"dry_bulb_temperature": dbt_adjusted, "relative_humidity": rh_adjusted}
-
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}"
-            f" [{self.external_comfort_result.external_comfort.model.identifier}] - {self.typology.name}"
-        )
+        return f"{self.__class__.__name__}({self.typology.name})"
 
     def plot_utci_day(self, month: int = 6, day: int = 21) -> Figure:
         """Plot a single day UTCI and composite components
@@ -487,14 +463,14 @@ class TypologyResult:
             Figure: A figure showing UTCI and component parts for the given day.
         """
         return plot_typology_day(
-            to_series(self.universal_thermal_climate_index),
-            to_series(self.dry_bulb_temperature),
-            to_series(self.mean_radiant_temperature),
-            to_series(self.relative_humidity),
-            to_series(self.wind_speed),
-            month,
-            day,
-            f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            utci=to_series(self.universal_thermal_climate_index),
+            dbt=to_series(self.dry_bulb_temperature),
+            mrt=to_series(self.mean_radiant_temperature),
+            rh=to_series(self.relative_humidity),
+            ws=to_series(self.wind_speed),
+            month=month,
+            day=day,
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
         )
 
     def plot_utci_heatmap(self) -> Figure:
@@ -508,15 +484,18 @@ class TypologyResult:
             collection=self.universal_thermal_climate_index,
             colormap=UTCI_COLORMAP,
             norm=UTCI_BOUNDARYNORM,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
         )
 
         return fig
-    
+
     def plot_utci_histogram(self) -> Figure:
         """Create a histogram showing the annual hourly UTCI values associated with this Typology."""
-            
-        fig = plot_utci_heatmap_histogram(self.universal_thermal_climate_index, title=f"{self.typology.name}\n{describe(self.external_comfort_result.external_comfort.epw.location)}")
+
+        fig = plot_utci_heatmap_histogram(
+            self.universal_thermal_climate_index,
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+        )
 
         return fig
 
@@ -533,7 +512,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.dry_bulb_temperature,
             colormap=DBT_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
             vlims=vlims,
         )
 
@@ -552,7 +531,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.relative_humidity,
             colormap=RH_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
             vlims=vlims,
         )
 
@@ -571,7 +550,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.wind_speed,
             colormap=WS_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
             vlims=vlims,
         )
 
@@ -590,7 +569,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.mean_radiant_temperature,
             colormap=MRT_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
             vlims=vlims,
         )
 
@@ -804,214 +783,6 @@ class Typologies(Enum):
     )
 
 
-TYPOLOGIES: Dict[str, Typology] = {
-    "Openfield": Typology(
-        name="Openfield",
-        evaporative_cooling_effectiveness=0,
-        shelters=[],
-        wind_speed_multiplier=1,
-    ),
-    "Enclosed": Typology(
-        name="Enclosed",
-        evaporative_cooling_effectiveness=0,
-        shelters=[Shelter(altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0)],
-        wind_speed_multiplier=1,
-    ),
-    "PorousEnclosure": Typology(
-        name="Porous enclosure",
-        evaporative_cooling_effectiveness=0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0.5)
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "SkyShelter": Typology(
-        name="Sky-shelter",
-        evaporative_cooling_effectiveness=0,
-        shelters=[Shelter(altitude_range=[45, 90], azimuth_range=[0, 360], porosity=0)],
-        wind_speed_multiplier=1,
-    ),
-    "FrittedSkyShelter": Typology(
-        name="Fritted sky-shelter",
-        evaporative_cooling_effectiveness=0,
-        shelters=[
-            Shelter(altitude_range=[45, 90], azimuth_range=[0, 360], porosity=0.5),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "NearWater": Typology(
-        name="Near water",
-        evaporative_cooling_effectiveness=0.15,
-        shelters=[
-            Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
-        ],
-        wind_speed_multiplier=1.2,
-    ),
-    "Misting": Typology(
-        name="Misting",
-        evaporative_cooling_effectiveness=0.3,
-        shelters=[
-            Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
-        ],
-        wind_speed_multiplier=0.5,
-    ),
-    "PDEC": Typology(
-        name="PDEC",
-        evaporative_cooling_effectiveness=0.7,
-        shelters=[
-            Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
-        ],
-        wind_speed_multiplier=0.5,
-    ),
-    "NorthShelter": Typology(
-        name="North shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[337.5, 22.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "NortheastShelter": Typology(
-        name="Northeast shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[22.5, 67.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "EastShelter": Typology(
-        name="East shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[67.5, 112.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "SoutheastShelter": Typology(
-        name="Southeast shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[112.5, 157.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "SouthShelter": Typology(
-        name="South shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[157.5, 202.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "SouthwestShelter": Typology(
-        name="Southwest shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[202.5, 247.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "WestShelter": Typology(
-        name="West shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[247.5, 292.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "NorthwestShelter": Typology(
-        name="Northwest shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[292.5, 337.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "NorthShelterWithCanopy": Typology(
-        name="North shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[337.5, 22.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "NortheastShelterWithCanopy": Typology(
-        name="Northeast shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[22.5, 67.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "EastShelterWithCanopy": Typology(
-        name="East shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[67.5, 112.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "SoutheastShelterWithCanopy": Typology(
-        name="Southeast shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[112.5, 157.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "SouthShelterWithCanopy": Typology(
-        name="South shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[157.5, 202.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "SouthwestShelterWithCanopy": Typology(
-        name="Southwest shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[202.5, 247.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "WestShelterWithCanopy": Typology(
-        name="West shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[247.5, 292.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "NorthwestShelterWithCanopy": Typology(
-        name="Northwest shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[292.5, 337.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "EastWestShelter": Typology(
-        name="East-west shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 70], azimuth_range=[67.5, 112.5], porosity=0),
-            Shelter(altitude_range=[0, 70], azimuth_range=[247.5, 292.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-    "EastWestShelterWithCanopy": Typology(
-        name="East-west shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(altitude_range=[0, 90], azimuth_range=[67.5, 112.5], porosity=0),
-            Shelter(altitude_range=[0, 90], azimuth_range=[247.5, 292.5], porosity=0),
-        ],
-        wind_speed_multiplier=1,
-    ),
-}
-
-
 def calculate_typology_results(
     typologies: List[Typology], external_comfort_result: ExternalComfortResult
 ) -> List[TypologyResult]:
@@ -1040,222 +811,3 @@ def calculate_typology_results(
         typology_results.append(result.result())
 
     return typology_results
-
-
-def main():
-    import matplotlib.pyplot as plt
-    from ladybug.epw import EPW
-    from ladybug_extension.plot import rose
-
-    # Toronto - summarise each EPW file
-    from external_comfort.plot import WS_COLORMAP
-    from external_comfort.material import MATERIALS
-    import pandas as pd
-
-    def annual_windrose(epw: EPW, out_dir: Path) -> Path:
-        sp = out_dir / f"windrose_{Path(epw.file_path).stem}.png"
-        if sp.exists():
-            pass
-        else:
-            fig = rose(
-                epw,
-                epw.wind_speed,
-                directions=16,
-                colormap=WS_COLORMAP,
-                bins=[0, 2, 5, 7, 10, 15, 20, 25],
-            )
-            fig.savefig(sp, dpi=350, transparent=True, bbox_inches="tight")
-            plt.close(fig)
-        return sp
-
-    def typology_results(epw, out_dir: Path) -> List[TypologyResult]:
-        ec = ExternalComfort(
-            epw,
-            MATERIALS["Asphalt"],
-            MATERIALS["ConcreteLightweight"],
-            identifier=Path(epw.file_path).stem,
-        )
-        ecr = ExternalComfortResult(ec)
-
-        typology_results = []
-        for i in range(len(TYPOLOGIES)):
-            typology_results.append(
-                calculate_typology_results([list(TYPOLOGIES.values())[i]], ecr)[0]
-            )
-
-        return typology_results
-
-    def typology_matrix(typology_results: List[TypologyResult], out_dir: Path) -> Path:
-
-        sp = (
-            out_dir
-            / f"externalcomfort_{Path(typology_results[0].external_comfort_result.external_comfort.epw.file_path).stem}.csv"
-        )
-
-        if sp.exists():
-            pass
-        else:
-            frs = []
-            names = []
-            for tr in typology_results:
-                fr = tr.to_dataframe(include_external_comfort_results=False)
-                fr.columns = [
-                    i.replace("TypologyResult - ", "")
-                    for i in tr.to_dataframe(
-                        include_external_comfort_results=False
-                    ).columns
-                ]
-                frs.append(fr)
-                names.append(tr.typology.name)
-            df = pd.concat(frs, axis=1, keys=names)
-
-            df.to_csv(sp)
-        return sp
-
-    def typology_utci_heatmap(
-        typology_results: List[TypologyResult], out_dir: Path
-    ) -> Path:
-        for tr in typology_results:
-            sp = (
-                out_dir
-                / f"utci_{Path(tr.external_comfort_result.external_comfort.epw.file_path).stem}_{tr.typology.name}.png"
-            )
-            if sp.exists():
-                pass
-            else:
-                fig = tr.plot_utci_heatmap()
-                fig.savefig(sp, dpi=350, transparent=True, bbox_inches="tight")
-                plt.close(fig)
-        return sp
-
-    out_dir = Path(r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\plots")
-
-    files = [
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto.716240_CWEC.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto.City.715080_CWEC2016.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto.City.715080_TMYx.2004-2018.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto.City.715080_TMYx.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto.City.AP.712650_CWEC2016.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto-City.Centre.715080_CWEC2016.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.716240_CWEC.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_CWEC2016.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.2004-2018.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.715080_TMYx.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.City.AP.712650_CWEC2016.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto.Pearson.Intl.AP.716240_CWEC2016.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Bishop.AP.712650_CWEC2016.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-City.Centre.715080_CWEC2016.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2b_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2c_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2c_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.2004-2018.A2c_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2a_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2a_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2a_2080.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2b_2020.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2b_2050.epw",
-        r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 Toronto\epws\forecast\CAN_ON_Toronto-Pearson.Intl.AP.716240_TMYx.A2b_2080.epw",
-    ]
-
-    for n, epw_file in enumerate(files):
-        print(
-            f"#################\n{n:02d}/{len(files):02d} - {Path(epw_file).stem}\n#################"
-        )
-        epw = EPW(epw_file)
-
-        typ_res = typology_results(epw, out_dir)
-
-        annual_windrose(epw, out_dir)
-        typology_matrix(typ_res, out_dir)
-        typology_utci_heatmap(typ_res, out_dir)
-    return None
-
-
-if __name__ == "__main__":
-    main()

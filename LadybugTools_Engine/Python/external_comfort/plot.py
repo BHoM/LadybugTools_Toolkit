@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import colorsys
 import copy
-from datetime import datetime
 import textwrap
+from datetime import datetime
 from typing import List, Tuple, Union
-from matplotlib import patches
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -14,19 +14,17 @@ import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybug_extension.datacollection import to_series
+from matplotlib import patches
 from matplotlib.colorbar import ColorbarBase
-from matplotlib.colors import (
-    cnames,
-    to_rgb,
-)
-import colorsys
 from matplotlib.colors import (
     BoundaryNorm,
     Colormap,
     LinearSegmentedColormap,
     ListedColormap,
+    cnames,
     is_color_like,
     rgb2hex,
+    to_rgb,
 )
 from matplotlib.figure import Figure
 from matplotlib.tri.triangulation import Triangulation
@@ -157,6 +155,7 @@ def create_triangulation(
     triang.set_mask(maxi > alpha)
     return triang
 
+
 def lighten_color(color: str, amount: float = 0.5) -> Tuple[float]:
     """
     Lightens the given color by multiplying (1-luminosity) by the given amount.
@@ -173,6 +172,7 @@ def lighten_color(color: str, amount: float = 0.5) -> Tuple[float]:
         c = color
     c = np.array(colorsys.rgb_to_hls(*to_rgb(c)))
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
+
 
 def plot_typology_day(
     utci: pd.Series,
@@ -251,7 +251,7 @@ def plot_typology_day(
     [plt.setp(text, color="k") for text in lgd.get_texts()]
 
     if title:
-        ax.set_title(f"{title} - {date:%B %d}", ha="left", va="bottom", x=0)
+        ax.set_title(f"{date:%B %d} - {title}", ha="left", va="bottom", x=0)
 
     plt.tight_layout()
 
@@ -433,9 +433,11 @@ def plot_heatmap(
     return fig
 
 
-def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: str = None) -> Figure:
+def plot_utci_heatmap_histogram(
+    collection: HourlyContinuousCollection, title: str = None
+) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
-    
+
     Returns:
         Figure: A matplotlib Figure object.
     """
@@ -502,7 +504,9 @@ def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: s
 
     # Add labels to the colorbar
     levels = [-100] + UTCI_LEVELS + [100]
-    for n, ((low, high), label) in enumerate(zip(*[[(x,y) for x,y in zip(levels[:-1], levels[1:])], UTCI_LABELS])):
+    for n, ((low, high), label) in enumerate(
+        zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LABELS])
+    ):
         if n == 0:
             ha = "right"
             position = high
@@ -512,7 +516,7 @@ def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: s
         else:
             ha = "center"
             position = (low + high) / 2
-        
+
         colorbar_ax.text(
             position,
             1,
@@ -522,7 +526,7 @@ def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: s
             size="small",
             # transform=colorbar_ax.transAxes,
         )
-        
+
     # Add stacked plot
     t = pd.cut(series, [-100] + UTCI_LEVELS + [100], labels=UTCI_LABELS)
     t = t.groupby([t.index.month, t]).count().unstack().T
@@ -544,7 +548,9 @@ def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: s
     t.T.plot.bar(
         ax=histogram_ax,
         stacked=True,
-        color=[rgb2hex(UTCI_COLORMAP.get_under())] + UTCI_COLORMAP.colors + [rgb2hex(UTCI_COLORMAP.get_over())],
+        color=[rgb2hex(UTCI_COLORMAP.get_under())]
+        + UTCI_COLORMAP.colors
+        + [rgb2hex(UTCI_COLORMAP.get_over())],
         legend=False,
         width=1,
     )
@@ -591,7 +597,7 @@ def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: s
             color="#C31F25",
             fontsize="small",
         )
-    
+
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)
     else:
@@ -603,7 +609,6 @@ def plot_utci_heatmap_histogram(collection: HourlyContinuousCollection, title: s
             va="bottom",
             x=0,
         )
-
 
     return fig
 
@@ -732,6 +737,7 @@ def plot_utci_distance_to_comfortable(
 
     return fig
 
+
 def plot_utci_journey(
     utci_values: List[float],
     names: List[str] = None,
@@ -796,6 +802,7 @@ def plot_utci_journey(
     plt.tight_layout()
 
     return fig
+
 
 def utci_comparison_diurnal(
     collections: List[HourlyContinuousCollection],
@@ -875,7 +882,9 @@ def utci_comparison_diurnal(
                 *[
                     ([-100] + UTCI_LEVELS + [100])[0:-1],
                     ([-100] + UTCI_LEVELS + [100])[1:],
-                    [rgb2hex(UTCI_COLORMAP.get_under())] + UTCI_COLORMAP.colors + [rgb2hex(UTCI_COLORMAP.get_over())],
+                    [rgb2hex(UTCI_COLORMAP.get_under())]
+                    + UTCI_COLORMAP.colors
+                    + [rgb2hex(UTCI_COLORMAP.get_over())],
                     UTCI_LABELS,
                 ]
             )
@@ -924,4 +933,3 @@ def utci_comparison_diurnal(
     plt.tight_layout()
 
     return fig
-
