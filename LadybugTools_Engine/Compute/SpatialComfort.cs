@@ -38,7 +38,7 @@ namespace BH.Engine.LadybugTools
         [Description("Post-process a spatial-comfort simulation and return results.")]
         [Input("epw", "An EPW file.")]
         [Output("simulationDirectory", "The directory in which results can be found.")]
-        public static string SpatialComfort(string epw, string simulationDirectory)
+        private static string SpatialComfort(string epw, string simulationDirectory)
         {
             PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
             if (!pythonEnvironment.IsInstalled())
@@ -74,6 +74,7 @@ namespace BH.Engine.LadybugTools
                 "ecr = ExternalComfortResult(ec)",
                 $"sc = SpatialComfort(r'{simulationDirectory}', ecr)",
                 "scr = SpatialComfortResult(sc)",
+                "scr.generic_output()",
                 "print('Nothing to see here!')",
             });
 

@@ -49,7 +49,7 @@ class ExternalComfort:
         )
 
     def __repr__(self):
-        return f"{self.__class__.__name__}" f" [{self.model.identifier}]"
+        return f"{self.__class__.__name__}({self.identifier}, {self.epw}, {self.ground_material.identifier}, {self.shade_material.identifier})"
 
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
@@ -127,6 +127,8 @@ class ExternalComfortResult:
     def __post_init__(self) -> ExternalComfortResult:
         """Calculate the mean radiant tempertaure, and constituent parts of this value from the External Comfort configuration."""
 
+        print(f"- Running simulation for {self}")
+
         # Run EnergyPlus and Radiance simulations
         results = []
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -146,7 +148,7 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "shaded_longwave_mean_radiant_temperature",
-            self.radiant_temperature_from_collections(
+            self._radiant_temperature_from_collections(
                 [
                     self.shaded_below_temperature,
                     self.shaded_above_temperature,
@@ -158,7 +160,7 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "unshaded_longwave_mean_radiant_temperature",
-            self.radiant_temperature_from_collections(
+            self._radiant_temperature_from_collections(
                 [
                     self.unshaded_below_temperature,
                     self.unshaded_above_temperature,
@@ -170,7 +172,7 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "shaded_mean_radiant_temperature",
-            self.mean_radiant_temperature(
+            self._mean_radiant_temperature(
                 self.external_comfort.epw,
                 self.shaded_longwave_mean_radiant_temperature,
                 self.shaded_direct_radiation,
@@ -181,7 +183,7 @@ class ExternalComfortResult:
         object.__setattr__(
             self,
             "unshaded_mean_radiant_temperature",
-            self.mean_radiant_temperature(
+            self._mean_radiant_temperature(
                 self.external_comfort.epw,
                 self.unshaded_longwave_mean_radiant_temperature,
                 self.unshaded_direct_radiation,
@@ -229,12 +231,10 @@ class ExternalComfortResult:
         return file_path
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}" f" [{self.external_comfort.model.identifier}]"
-        )
+        return f"{self.__class__.__name__}({self.external_comfort.identifier})"
 
     @staticmethod
-    def mean_radiant_temperature(
+    def _mean_radiant_temperature(
         epw: EPW,
         surface_temperature: HourlyContinuousCollection,
         direct_radiation: HourlyContinuousCollection,
@@ -273,7 +273,7 @@ class ExternalComfortResult:
         return mrt
 
     @staticmethod
-    def radiant_temperature_from_collections(
+    def _radiant_temperature_from_collections(
         collections: List[HourlyContinuousCollection], view_factors: List[float]
     ) -> HourlyContinuousCollection:
         """Calculate the radiant temperature from a list of hourly continuous collections and view factors to each of those collections.
@@ -310,7 +310,7 @@ class ExternalComfortResult:
         return from_series(mrt_series)
 
     @staticmethod
-    def mean_radiant_temperature_from_surfaces(
+    def _mean_radiant_temperature_from_surfaces(
         surface_temperatures: List[float], view_factors: List[float]
     ) -> float:
         """Calculate Mean Radiant Temperature from a list of surface temperature and view factors to those surfaces.
