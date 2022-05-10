@@ -6,10 +6,12 @@ from typing import Dict, List
 import warnings
 
 from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 from external_comfort.plot import colormap_sequential, plot_heatmap
 from external_comfort.plot import plot_utci_heatmap_histogram
 from ladybug_extension.datacollection import to_series, from_series
 
+from honeybee.model import Model
 from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from cached_property import cached_property
 import numpy as np
@@ -37,29 +39,6 @@ from external_comfort.plot import (
 from PIL import Image
 
 v_utci = np.vectorize(universal_thermal_climate_index)
-
-
-class SpatialEncoder(Encoder):
-    """A JSON encoder for the Typology and TypologyResult classes."""
-
-    def default(self, obj):
-        if isinstance(obj, ExternalComfort):
-            return obj.to_dict()
-        if isinstance(obj, ExternalComfortResult):
-            return obj.to_dict()
-        if isinstance(obj, Shelter):
-            return obj.to_dict()
-        if isinstance(obj, Typology):
-            return obj.to_dict()
-        if isinstance(obj, TypologyResult):
-            return obj.to_dict()
-        if isinstance(obj, SpatialComfort):
-            return obj.to_dict()
-        if isinstance(obj, SpatialComfortResult):
-            return obj.to_dict()
-        if isinstance(obj, MoistureSource):
-            return obj.to_dict()
-        return super(SpatialEncoder, self).default(obj)
 
 
 @dataclass
@@ -146,6 +125,11 @@ class SpatialComfort:
             )
             return []
 
+    @cached_property
+    def model(self) -> Model:
+        """Load the honeybee model from the simulation directory."""
+        print(f"Loading the model for {self.simulation_directory.stem}, this can take a while ...")
+        return Model.from_hbjson(self.simulation_directory / f"{self.simulation_directory.stem}.hbjson")
 
 class SpatialComfortResult:
     def __init__(self, spatial_comfort: SpatialComfort) -> SpatialComfortResult:
@@ -974,6 +958,54 @@ class SpatialComfortResult:
                 loop=0,
             )
 
+    def plot_wireframe(self, include_points: bool = True, highlight_points: Dict[str, int] = None) -> Figure:
+        """A method included here to quickly plot a wireframe of the model."""
+        from shapely.geometry import Polygon, MultiPolygon
+        from shapely.ops import unary_union
+        from collections import defaultdict
+
+        groups = defaultdict(list)
+        for obj in self.spatial_comfort.model.faces:
+            groups[str(obj)].append(obj)
+        
+        mps = []
+        for k, v in groups.items():
+            try:
+                mps.append(MultiPolygon(unary_union([Polygon([i.to_array() for i in face.vertices]) for face in v])))
+            except:
+                print(f"Failed to create multipolygon for {k}")
+                pass
+        
+        fig, ax = plt.subplots(1, 1, figsize=(30, 25))
+        ax.set_aspect('equal')
+        ax.axis("off")
+
+        for mp in mps:
+            for geom in mp.geoms:    
+                xs, ys = geom.exterior.xy    
+                ax.fill(xs, ys, alpha=0.5, fc="none", ec="k", fill=False)
+
+        x, y = self.points_xy.T        
+        if include_points:
+            ax.scatter(x, y, s=0.05)
+            for n, xy in enumerate(self.points_xy): 
+                if n % 30 == 0:
+                    ax.annotate(n, xy=xy, textcoords='data', fontsize="xx-small", ha="center", va="center", c="r", rotation=45)
+        
+        if highlight_points is not None:
+            for k, v in highlight_points.items():
+                for n, xy in enumerate(self.points_xy): 
+                    if n != v:
+                        pass
+                    else:
+                        ax.scatter(x[n], y[n], s=10, c="red")
+                        ax.annotate(k, xy=xy, textcoords='data', fontsize="xx-large", ha="left", va="bottom", c="k", rotation=0)
+
+        plt.tight_layout()
+
+        return fig
+
+
     def point_summary_str(self, point_index: int, name: str = None) -> str:
         """Create a summary string descirbing the difference between the selected point and an "openfield" condition.
 
@@ -983,21 +1015,34 @@ class SpatialComfortResult:
 
         if name == None:
             name = f"Sensor #{point_index}"
-        
-        up_hours_bool = (to_series(self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation) > 0).values
+
+        up_hours_bool = (
+            to_series(
+                self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation
+            )
+            > 0
+        ).values
         daytime_hours = up_hours_bool.sum()
         start_hour = 9
         end_hour = 21
 
-        openf = to_series(self.spatial_comfort.unshaded_typology_result.universal_thermal_climate_index)
+        openf = to_series(
+            self.spatial_comfort.unshaded_typology_result.universal_thermal_climate_index
+        )
         annual_comf_hours_baseline = ((openf >= 9) & (openf <= 26)).sum()
         heat_stress_hours = (openf > 26).sum()
         cold_stress_hours = (openf < 9).sum()
-        daytime_comf_hours_baseline = ((openf >= 9) & (openf <= 26) & (up_hours_bool)).sum()
+        daytime_comf_hours_baseline = (
+            (openf >= 9) & (openf <= 26) & (up_hours_bool)
+        ).sum()
         outstr = []
         outstr.append("Openfield:")
-        outstr.append(f"- No thermal stress is expected for {annual_comf_hours_baseline} hours in the year ({annual_comf_hours_baseline/8760:0.1%}). Heat stress is expected for {heat_stress_hours} hours ({heat_stress_hours/8760:0.1%}) and cold stress for {cold_stress_hours} hours ({cold_stress_hours/8760:0.1%}).")
-        outstr.append(f"- When considering only the hours between {start_hour:02d}:00 and {end_hour:02d}:00, this changes to {daytime_comf_hours_baseline} comfortable hours in the year ({daytime_comf_hours_baseline/daytime_hours:0.1%}).")
+        outstr.append(
+            f"- No thermal stress is expected for {annual_comf_hours_baseline} hours in the year ({annual_comf_hours_baseline/8760:0.1%}). Heat stress is expected for {heat_stress_hours} hours ({heat_stress_hours/8760:0.1%}) and cold stress for {cold_stress_hours} hours ({cold_stress_hours/8760:0.1%})."
+        )
+        outstr.append(
+            f"- When considering only the hours between {start_hour:02d}:00 and {end_hour:02d}:00, this changes to {daytime_comf_hours_baseline} comfortable hours in the year ({daytime_comf_hours_baseline/daytime_hours:0.1%})."
+        )
         outstr.append("")
 
         tgt = self.universal_thermal_climate_index_matrix.iloc[:, point_index]
@@ -1009,14 +1054,26 @@ class SpatialComfortResult:
         heat_stress_hours = (tgt > 26).sum()
         cold_stress_hours = (tgt < 9).sum()
         daytime_comf_hours = ((tgt >= 9) & (tgt <= 26) & (up_hours_bool)).sum()
-        diffr = (annual_comf_hours - annual_comf_hours_baseline) / annual_comf_hours_baseline
-        diffr_daytime = (daytime_comf_hours - daytime_comf_hours_baseline) / daytime_comf_hours_baseline
+        diffr = (
+            annual_comf_hours - annual_comf_hours_baseline
+        ) / annual_comf_hours_baseline
+        diffr_daytime = (
+            daytime_comf_hours - daytime_comf_hours_baseline
+        ) / daytime_comf_hours_baseline
 
         outstr.append(f"{name}:")
-        outstr.append(f"- No thermal stress is expected for {annual_comf_hours} hours in the year ({annual_comf_hours/8760:0.1%}). Heat stress is expected for {heat_stress_hours} hours ({heat_stress_hours/8760:0.1%}) and cold stress for {cold_stress_hours} hours ({cold_stress_hours/8760:0.1%}).")
-        outstr.append(f"- When considering only the hours between {start_hour:02d}:00 and {end_hour:02d}:00, this changes to {daytime_comf_hours} comfortable hours in the year ({daytime_comf_hours/daytime_hours:0.1%}).")
-        outstr.append(f"- Compared to the baseline \"Openfield\" condition this represents an {diffr:0.1%} {'increase' if diffr > 0 else 'decrease'} in comfortable hours in this location annually, and a {diffr_daytime:0.1%} {'increase' if diffr_daytime > 0 else 'decrease'} in comfortable hours between {start_hour:02d}:00 and {end_hour:02d}:00.")
-        outstr.append(f"- A peak UTCI reduction in this location is expected to be around {difference.min():0.1f}°C, occurring on {peak_reduction_time:%B %d} at {peak_reduction_time:%H:%M}.")
+        outstr.append(
+            f"- No thermal stress is expected for {annual_comf_hours} hours in the year ({annual_comf_hours/8760:0.1%}). Heat stress is expected for {heat_stress_hours} hours ({heat_stress_hours/8760:0.1%}) and cold stress for {cold_stress_hours} hours ({cold_stress_hours/8760:0.1%})."
+        )
+        outstr.append(
+            f"- When considering only the hours between {start_hour:02d}:00 and {end_hour:02d}:00, this changes to {daytime_comf_hours} comfortable hours in the year ({daytime_comf_hours/daytime_hours:0.1%})."
+        )
+        outstr.append(
+            f"- Compared to the baseline \"Openfield\" condition this represents an {diffr:0.1%} {'increase' if diffr > 0 else 'decrease'} in comfortable hours in this location annually, and a {diffr_daytime:0.1%} {'increase' if diffr_daytime > 0 else 'decrease'} in comfortable hours between {start_hour:02d}:00 and {end_hour:02d}:00."
+        )
+        outstr.append(
+            f"- A peak UTCI reduction in this location is expected to be around {difference.min():0.1f}°C, occurring on {peak_reduction_time:%B %d} at {peak_reduction_time:%H:%M}."
+        )
         outstr.append("")
 
         return "\n".join(outstr)
@@ -1024,35 +1081,46 @@ class SpatialComfortResult:
     def point_summary_plots(self, point_index: int, name: str = None) -> List[Path]:
         """Create summary plots for the selected point."""
 
-        openfield_utci = self.spatial_comfort.unshaded_typology_result.universal_thermal_climate_index
+        openfield_utci = (
+            self.spatial_comfort.unshaded_typology_result.universal_thermal_climate_index
+        )
         point_utci = self.universal_thermal_climate_index_matrix.iloc[:, point_index]
         point_utci.name = "Universal Thermal Climate Index (C)"
         point_utci = from_series(point_utci)
 
         openfield_fig_path = self.plot_directory / "utci_openfield.png"
         openfield_fig = plot_utci_heatmap_histogram(openfield_utci, title="Openfield")
-        openfield_fig.savefig(openfield_fig_path, dpi=300, transparent=True, bbox_inches="tight")
+        openfield_fig.savefig(
+            openfield_fig_path, dpi=300, transparent=True, bbox_inches="tight"
+        )
 
         if name == None:
             name = f"Sensor #{point_index}"
 
         point_fig_path = self.plot_directory / f"utci_{name}.png"
-        point_fig = plot_utci_heatmap_histogram(
-            point_utci, 
-            title=name
+        point_fig = plot_utci_heatmap_histogram(point_utci, title=name)
+        point_fig.savefig(
+            point_fig_path, dpi=300, transparent=True, bbox_inches="tight"
         )
-        point_fig.savefig(point_fig_path, dpi=300, transparent=True, bbox_inches="tight")
 
         # comparison
         cmap = colormap_sequential(["#00A9E0", "w", "#702F8A"])
         diff_fig_path = self.plot_directory / f"utci_{name}_difference.png"
-        diff_fig = plot_heatmap(point_utci - openfield_utci, colormap=cmap, title=f"Difference between Openfield UTCI and {name}", vlims=[-10, 10])
+        diff_fig = plot_heatmap(
+            point_utci - openfield_utci,
+            colormap=cmap,
+            title=f"Difference between Openfield UTCI and {name}",
+            vlims=[-10, 10],
+        )
         diff_fig.savefig(diff_fig_path, dpi=300, transparent=True, bbox_inches="tight")
 
         # diurnal
         diurnal_fig_path = self.plot_directory / f"utci_{name}_diurnal.png"
-        diurnal_fig = utci_comparison_diurnal([openfield_utci, point_utci], ["Openfield", name])
-        diurnal_fig.savefig(diurnal_fig_path, dpi=300, transparent=True, bbox_inches="tight")
+        diurnal_fig = utci_comparison_diurnal(
+            [openfield_utci, point_utci], ["Openfield", name]
+        )
+        diurnal_fig.savefig(
+            diurnal_fig_path, dpi=300, transparent=True, bbox_inches="tight"
+        )
 
         return [openfield_fig_path, point_fig_path, diff_fig_path, diurnal_fig_path]
-    
