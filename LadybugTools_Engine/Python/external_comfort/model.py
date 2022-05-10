@@ -215,16 +215,20 @@ def create_shade_zone(material: _EnergyMaterialOpaqueBase) -> Room:
 
     for face in shade_zone.faces:
         face: Face
-        face.boundary_condition = boundary_conditions.outdoors
-        face.properties.energy.construction = shade_construction
         if face.normal.z == 1:
             face.identifier = f"SHADE_ZONE_UP"
+            face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.roof_ceiling
+            face.properties.energy.construction = shade_construction
         elif face.normal.z == -1:
             face.identifier = f"SHADE_ZONE_DOWN"
+            face.boundary_condition = boundary_conditions.ground
             face.type = face_types.floor
+            face.properties.energy.construction = shade_construction
         else:
             face.identifier = f"SHADE_ZONE_{face.cardinal_direction().upper()}"
+            face.boundary_condition = boundary_conditions.ground
             face.type = face_types.wall
+            face.properties.energy.construction = shade_construction
 
     return shade_zone

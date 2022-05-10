@@ -1,6 +1,7 @@
 import getpass
 import json
 import os
+import time
 from pathlib import Path
 from typing import Dict
 
@@ -86,18 +87,14 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     Returns:
         A dictionary containing ground and shade (below and above) surface temperature values.
     """
+    time.sleep(1)
+    working_directory = _working_directory(model, epw)
 
-    working_directory = (
-        Path(hb_folders.default_simulation_folder) / f"{model.identifier}"
-    )
-    working_directory.mkdir(exist_ok=True, parents=True)
-
-    # Save associated EPW file to simulation directory
-    epw.save(working_directory / Path(epw.file_path).name)
-
-    if (working_directory / "run" / "eplusout.sql").exists():
+    if _do_energyplus_results_exist(model, epw):
+        print("- Loading previously simulated surface temperature results")
         sql = (working_directory / "run" / "eplusout.sql").as_posix()
     else:
+        print("- Simulating surface temperatures")
         # Write model JSON
         model_dict = model.to_dict(triangulate_sub_faces=True)
         model_json = working_directory / f"{model.identifier}.hbjson"
@@ -198,21 +195,14 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         A dictionary containing radiation values.
     """
 
-    working_directory = (
-        Path(hb_folders.default_simulation_folder) / f"{model.identifier}"
-    )
-    working_directory.mkdir(exist_ok=True, parents=True)
+    working_directory = _working_directory(model, epw)
 
-    if (
-        working_directory / "annual_irradiance" / "results" / "direct" / "UNSHADED.ill"
-    ).exists() and (
-        working_directory / "annual_irradiance" / "results" / "total" / "UNSHADED.ill"
-    ).exists():
-        total_directory = working_directory / "annual_irradiance" / "results" / "total"
-        direct_directory = (
-            working_directory / "annual_irradiance" / "results" / "direct"
-        )
+    if _do_radiance_results_exist(model, epw):
+        print("- Loading previously simulated annual irradiance")
+        total_directory = working_directory / "annual_irradiance/results/total"
+        direct_directory = working_directory / "annual_irradiance/results/direct"
     else:
+        print("- Simulating annual irradiance")
         wea = Wea.from_epw_file(epw.file_path)
 
         recipe = Recipe("annual-irradiance")
@@ -240,6 +230,12 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         "DiffuseHorizontalRadiation (Wh/m2)"
     )
 
+    # Remove files no longer needed (to save on space)
+    for file in list((working_directory / "annual_irradiance").glob("**/*")):
+        if file.is_file():
+            if file.suffix not in [".txt", ".ill", ".hbjson"]:
+                os.remove(file)
+
     return {
         "unshaded_direct_radiation": from_series(unshaded_direct),
         "unshaded_diffuse_radiation": from_series(unshaded_diffuse),
@@ -258,3 +254,144 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
             )
         ),
     }
+
+
+def _working_directory(model: Model, epw: EPW) -> Path:
+    """Return the working directory for the radiance and energyplus simulations.
+
+    Args:
+        model (Model): A HB model to be run through Radiance and Energyplus.
+        epw (EPW): An EPW object to be used for the simulation.
+
+    Returns:
+        Path: The path where the simulation results will be stored.
+    """
+    working_directory = (
+        Path(hb_folders.default_simulation_folder) / f"{model.identifier}"
+    )
+    working_directory.mkdir(exist_ok=True, parents=True)
+
+    # Write EPW to working directory, and stopping if the lockfile exists
+    lockfile = working_directory / "epw.lock"
+    if not lockfile.exists():
+        with open(lockfile, "w+") as fp:
+            pass
+        epw.save(working_directory / Path(epw.file_path).name)
+
+    return working_directory
+
+
+def _do_radiance_results_exist(model: Model, epw: EPW) -> bool:
+    """Check whether results already exist for this configuration of model and EPW.
+
+    Args:
+        model (Model): The model to check for.
+        epw (EPW): The EPW to check for.
+
+    Returns:
+        bool: True if the model and EPW have already been simulated, False otherwise.
+    """
+    working_directory = _working_directory(model, epw)
+
+    # Try to load existing HBJSON file
+    try:
+        existing_model_path = working_directory / f"{working_directory.stem}.hbjson"
+        existing_model = Model.from_hbjson(existing_model_path)
+    except (FileNotFoundError, AssertionError) as e:
+        return False
+
+    # Check that identifiers match
+    model_identifiers_match = existing_model.identifier == model.identifier
+
+    # Check that the directories exist
+    directories_exist = (
+        working_directory / "annual_irradiance" / "results" / "direct" / "UNSHADED.ill"
+    ).exists() and (
+        working_directory / "annual_irradiance" / "results" / "total" / "UNSHADED.ill"
+    ).exists()
+
+    # Check that the EPW file is the same
+    existing_epw_filename = list(working_directory.glob("*.epw"))[0].name
+    epws_match = existing_epw_filename == Path(epw.file_path).name
+
+    # Check the HBJSON materials match
+    existing_ground_material = (
+        existing_model.rooms[0].faces[-1].properties.energy.construction.materials[0]
+    )
+    existing_shade_material = (
+        existing_model.rooms[2].faces[0].properties.energy.construction.materials[0]
+    )
+    proposed_ground_material = (
+        model.rooms[0].faces[-1].properties.energy.construction.materials[0]
+    )
+    proposed_shade_material = (
+        model.rooms[2].faces[0].properties.energy.construction.materials[0]
+    )
+    materials_match = (existing_ground_material == proposed_ground_material) and (
+        existing_shade_material == proposed_shade_material
+    )
+
+    match_found = all(
+        [model_identifiers_match, directories_exist, epws_match, materials_match]
+    )
+
+    if match_found:
+        return True
+    else:
+        return False
+
+
+def _do_energyplus_results_exist(model: Model, epw: EPW) -> bool:
+    """Check whether results already exist for this configuration of model and EPW.
+
+    Args:
+        model (Model): The model to check for.
+        epw (EPW): The EPW to check for.
+
+    Returns:
+        bool: True if the model and EPW have already been simulated, False otherwise.
+    """
+    working_directory = _working_directory(model, epw)
+
+    # Try to load existing HBJSON file
+    try:
+        existing_model_path = working_directory / f"{working_directory.stem}.hbjson"
+        existing_model = Model.from_hbjson(existing_model_path)
+    except (FileNotFoundError, AssertionError) as e:
+        return False
+
+    # Check that identifiers match
+    model_identifiers_match = existing_model.identifier == model.identifier
+
+    # Check that the files exist
+    file_exist = (working_directory / "run" / "eplusout.sql").exists()
+
+    # Check that the EPW file is the same
+    existing_epw_filename = list(working_directory.glob("*.epw"))[0].name
+    epws_match = existing_epw_filename == Path(epw.file_path).name
+
+    # Check the HBJSON materials match
+    existing_ground_material = (
+        existing_model.rooms[0].faces[-1].properties.energy.construction.materials[0]
+    )
+    existing_shade_material = (
+        existing_model.rooms[2].faces[0].properties.energy.construction.materials[0]
+    )
+    proposed_ground_material = (
+        model.rooms[0].faces[-1].properties.energy.construction.materials[0]
+    )
+    proposed_shade_material = (
+        model.rooms[2].faces[0].properties.energy.construction.materials[0]
+    )
+    materials_match = (existing_ground_material == proposed_ground_material) and (
+        existing_shade_material == proposed_shade_material
+    )
+
+    match_found = all(
+        [model_identifiers_match, file_exist, epws_match, materials_match]
+    )
+
+    if match_found:
+        return True
+    else:
+        return False
