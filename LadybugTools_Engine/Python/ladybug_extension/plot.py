@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Union
-
+from datetime import datetime
 from pathlib import Path
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -15,6 +15,9 @@ from matplotlib.colors import (
     Colormap,
     Normalize,
 )
+import matplotlib.patches as mpatches
+import matplotlib.ticker as mtick
+from matplotlib.lines import Line2D
 from ladybug.windrose import Compass, WindRose
 from matplotlib.figure import Figure
 
@@ -219,6 +222,271 @@ def rose(
 
         ax.set_title(title, ha="left", x=0)
 
+    plt.tight_layout()
+
+    return fig
+
+def diurnal(
+    dbt_col: HourlyContinuousCollection,
+    dnr_col: HourlyContinuousCollection,
+    dhr_col: HourlyContinuousCollection,
+    ghr_col: HourlyContinuousCollection,
+    moisture_collection: HourlyContinuousCollection,
+) -> Figure:
+    """Generate a monthly diurnal plot describing daily profiles for key EPW variables.
+
+    Args:
+        dbt_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Dry-Bulb Temperature.
+        dnr_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Direct Normal Radiation.
+        dhr_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Diffuse Horizontal Radiation.
+        ghr_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Global Horizontal Radiation.
+        moisture_collection (HourlyContinuousCollection): An annual hourly ladybug data collection describing either Relative Humidity, Dew Point Temperature or Wet Bulb Temperature.
+
+    Returns:
+        Figure: A matplotlib figure object.
+    """
+
+    dbt_color = "#bc204b"
+    moisture_color = "#006da8"
+    rad_color = "#eb671c"
+
+    # Temperature
+    dbt_min = dbt_col._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=0
+    )
+    dbt_low = dbt_col._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=5
+    )
+    dbt_avg = dbt_col._time_interval_operation("monthlyperhour", "average")
+    dbt_high = dbt_col._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=95
+    )
+    dbt_max = dbt_col._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=100
+    )
+
+    # Moisture
+    mst_min = moisture_collection._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=0
+    )
+    mst_low = moisture_collection._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=5
+    )
+    mst_mid = moisture_collection._time_interval_operation("monthlyperhour", "average")
+    mst_high = moisture_collection._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=95
+    )
+    mst_max = moisture_collection._time_interval_operation(
+        "monthlyperhour", "percentile", percentile=100
+    )
+
+    # Radiation
+    ghr_avg = ghr_col._time_interval_operation("monthlyperhour", "average")
+    dnr_avg = dnr_col._time_interval_operation("monthlyperhour", "average")
+    dhr_avg = dhr_col._time_interval_operation("monthlyperhour", "average")
+
+    # X axis values
+    x_values = range(288)
+    idx = [
+        item
+        for sublist in [
+            [datetime(2021, month, 1, hour, 0, 0) for hour in range(24)]
+            for month in range(1, 13)
+        ]
+        for item in sublist
+    ]
+    idx_str = [i.strftime("%b %H:%M") for i in idx]
+
+    # Instantiate plot
+    fig, axes = plt.subplots(3, 1, figsize=(15, 5 * 1.5), sharex=True)
+
+    for i in range(0, 288)[::24]:
+
+        # Plot temperature
+        axes[0].plot(
+            x_values[i : i + 24],
+            dbt_avg[i : i + 24],
+            color=dbt_color,
+            lw=2,
+            label="Average",
+            zorder=7,
+        )
+        axes[0].plot(
+            x_values[i : i + 24],
+            dbt_low[i : i + 24],
+            color=dbt_color,
+            lw=1,
+            label="Average",
+            ls=":",
+        )
+        axes[0].plot(
+            x_values[i : i + 24],
+            dbt_high[i : i + 24],
+            color=dbt_color,
+            lw=1,
+            label="Average",
+            ls=":",
+        )
+        axes[0].fill_between(
+            x_values[i : i + 24],
+            dbt_min[i : i + 24],
+            dbt_max[i : i + 24],
+            color=dbt_color,
+            alpha=0.2,
+            label="Range",
+        )
+        axes[0].fill_between(
+            x_values[i : i + 24],
+            dbt_low[i : i + 24],
+            dbt_high[i : i + 24],
+            color="white",
+            alpha=0.5,
+            label="Range",
+        )
+        axes[0].set_ylabel(
+            f"{dbt_avg.header.data_type} ({format_unit(dbt_avg.header.unit)})",
+            labelpad=2,
+        )
+
+        # Plot moisture
+        axes[1].plot(
+            x_values[i : i + 24],
+            mst_mid[i : i + 24],
+            color=moisture_color,
+            lw=2,
+            label="Average",
+            zorder=7,
+        )
+        axes[1].plot(
+            x_values[i : i + 24],
+            mst_low[i : i + 24],
+            color=moisture_color,
+            lw=1,
+            label="Average",
+            ls=":",
+        )
+        axes[1].plot(
+            x_values[i : i + 24],
+            mst_high[i : i + 24],
+            color=moisture_color,
+            lw=1,
+            label="Average",
+            ls=":",
+        )
+        axes[1].fill_between(
+            x_values[i : i + 24],
+            mst_min[i : i + 24],
+            mst_max[i : i + 24],
+            color=moisture_color,
+            alpha=0.2,
+            label="Range",
+        )
+        axes[1].fill_between(
+            x_values[i : i + 24],
+            mst_low[i : i + 24],
+            mst_high[i : i + 24],
+            color="white",
+            alpha=0.5,
+            label="Range",
+        )
+        axes[1].set_ylabel(
+            f"{mst_mid.header.data_type} ({format_unit(mst_mid.header.unit)})",
+            labelpad=2,
+        )
+
+        # Plot radiation
+        axes[2].plot(
+            x_values[i : i + 24],
+            dnr_avg[i : i + 24],
+            color=rad_color,
+            lw=1.5,
+            ls="--",
+            label="Direct normal radiation",
+            zorder=7,
+        )
+        axes[2].plot(
+            x_values[i : i + 24],
+            dhr_avg[i : i + 24],
+            color=rad_color,
+            lw=2,
+            ls=":",
+            label="Diffuse horizontal radiation",
+            zorder=7,
+        )
+        axes[2].plot(
+            x_values[i : i + 24],
+            ghr_avg[i : i + 24],
+            color=rad_color,
+            lw=2,
+            ls="-",
+            label="Global horizontal radiation",
+            zorder=7,
+        )
+        axes[2].set_ylabel("Solar Radiation (W/m²)", labelpad=2)
+
+    # Format plot area
+    for n, ax in enumerate(axes):
+        ax.xaxis.set_major_locator(mtick.FixedLocator(range(0, 288, 24)))
+        ax.xaxis.set_minor_locator(mtick.FixedLocator(range(12, 288, 24)))
+        ax.yaxis.set_major_locator(mtick.MaxNLocator(7))
+
+        [ax.spines[spine].set_visible(False) for spine in ["top", "right"]]
+        [ax.spines[j].set_color("k") for j in ["bottom", "left"]]
+
+        ax.set_xlim([0, 287])
+        ax.set_xticklabels(
+            [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ],
+            minor=False,
+            ha="left",
+            color="k",
+        )
+        ax.grid(b=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.2)
+        ax.grid(b=True, which="minor", axis="both", c="k", ls=":", lw=1, alpha=0.1)
+
+    # Legend
+    handles, labels = axes[2].get_legend_handles_labels()
+    handles = [
+        Line2D([0], [0], label="Average", color="k"),
+        Line2D([0], [0], label="5-95%ile", color="k", lw=1, ls=":"),
+        mpatches.Patch(color="grey", label="Range", alpha=0.3),
+    ] + handles[:3]
+
+    lgd = axes[2].legend(
+        handles=handles,
+        bbox_to_anchor=(0.5, -0.3),
+        loc=8,
+        ncol=6,
+        borderaxespad=0,
+        frameon=False,
+    )
+    lgd.get_frame().set_facecolor((1, 1, 1, 0))
+    [plt.setp(text, color="k") for text in lgd.get_texts()]
+
+    # Title
+    loc = f"{get_location_str(dbt_avg)}"
+    fig.suptitle(
+        "{0:}\nMonthly average diurnal profile".format(loc),
+        color="k",
+        ha="left",
+        va="bottom",
+        x=0.05,
+        y=0.92,
+    )
+
+    # Tidy plot
     plt.tight_layout()
 
     return fig
