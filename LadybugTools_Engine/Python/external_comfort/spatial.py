@@ -221,7 +221,8 @@ class SpatialComfortResult:
             ).glob("*.ill")
         )
         total_irradiance = make_annual(load_ill(ill_files)).fillna(0).astype(np.float16)
-        total_irradiance.to_hdf(
+        # The "clip" below ensure the value range is between 
+        total_irradiance.clip(lower=0).to_hdf(
             total_irradiance_path, "df", complevel=9, complib="blosc"
         )
         return total_irradiance
@@ -250,7 +251,7 @@ class SpatialComfortResult:
                 "*.res"
             )
         )
-        sky_view = load_res(res_files).astype(np.float16)
+        sky_view = load_res(res_files).clip(lower=0, upper=100).astype(np.float16)
         sky_view.to_hdf(sky_view_path, "df", complevel=9, complib="blosc")
         return sky_view
 
@@ -581,11 +582,29 @@ class SpatialComfortResult:
     @cached_property
     def moisture_matrix(self) -> pd.DataFrame:
         """Create an annual hourly spatial matrix of moisture source evaporative cooling effectivenessess."""
-        return pd.DataFrame(
+
+        mtx_path = (
+            self.spatial_comfort.simulation_directory
+            / "moisture_matrix.h5"
+        )
+
+        if mtx_path.exists():
+            print(
+                f"- Loading moisture data from {self.spatial_comfort.simulation_directory.name}"
+            )
+            return pd.read_hdf(mtx_path, "df")
+
+        print(
+            f"- Processing moisture matrix data for {self.spatial_comfort.simulation_directory.name}"
+        )
+        mtx = pd.DataFrame(
             self.moisture_source_matrix_unique[self.wind_speed_direction_indices],
             index=self.mean_radiant_temperature_matrix.index,
             columns=self.mean_radiant_temperature_matrix.columns,
         ).astype(np.float16)
+
+        mtx.to_hdf(mtx_path, "df", complevel=9, complib="blosc")
+        return mtx
 
     @cached_property
     def dry_bulb_temperature_matrix(self) -> pd.DataFrame:
@@ -743,9 +762,23 @@ class SpatialComfortResult:
                 f"- Loading universal thermal climate index data from {self.spatial_comfort.simulation_directory.name}"
             )
             return pd.read_hdf(save_path, "df")
-
+        
+        if len(self.spatial_comfort.moisture_sources) == 0:
+            print(
+                f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}, using interpolation method"
+            )
+            utci = self._interpolate_between_unshaded_shaded(
+                self.spatial_comfort.unshaded_typology_result.universal_thermal_climate_index,
+                self.spatial_comfort.shaded_typology_result.universal_thermal_climate_index,
+                self.total_irradiance_matrix,
+                self.sky_view,
+                np.array(self.spatial_comfort.epw.global_horizontal_radiation.values) > 0,
+            ).astype(np.float16)
+            utci.to_hdf(save_path, "df", complevel=9, complib="blosc")
+            return utci
+        
         print(
-            f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}"
+            f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}, using moisture-matrix method"
         )
         utcis = []
         for n, (dbt, mrt, ws, rh) in enumerate(
@@ -796,8 +829,8 @@ class SpatialComfortResult:
             self.plot_directory
             / f"time_comfortable_{'hours' if hours else 'percentage'}_{describe_analysis_period(analysis_period, True)}.png"
         )
-        if save_path.exists():
-            return save_path
+        # if save_path.exists():
+        #     return save_path
         print(f"- Plotting {save_path.stem}")
 
         x, y = self.points_xy.T
@@ -813,7 +846,7 @@ class SpatialComfortResult:
         fig = plot_spatial(
             triangulations=[self._triangulation],
             values=[z],
-            levels=21,
+            levels=np.linspace(10, 90, 101),
             colormap="magma_r",
             extend="both",
             xlims=[x.min(), x.max()],
@@ -828,6 +861,20 @@ class SpatialComfortResult:
 
         return save_path
 
+    def plot_all_utci_comfortable_hours(self, hours: bool = False) -> List[Path]:
+        """Return the paths to the default comfortable-hours plots."""
+        
+        output = []
+        for month in range(1, 13, 1):
+            for st_hour, end_hour in list(zip(*[[0, 8], [23, 18]])):
+                output.append(
+                    self.plot_utci_comfortable_hours(
+                        AnalysisPeriod(st_month=month, end_month=month, st_hour=st_hour, end_hour=end_hour)
+                    )
+                )
+                plt.close("all")
+        return output
+
     def plot_typical_utci(self, month: int, hour: int) -> Path:
         """Return the path to the UTCI plot."""
 
@@ -840,8 +887,8 @@ class SpatialComfortResult:
             self.plot_directory
             / f"universal_thermal_climate_index_{month:02d}_{hour:02d}.png"
         )
-        if save_path.exists():
-            return save_path
+        # if save_path.exists():
+        #     return save_path
         print(f"- Plotting {save_path.stem}")
 
         x, y = self.points_xy.T
@@ -875,13 +922,63 @@ class SpatialComfortResult:
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
 
         return save_path
+    
+    def plot_typical_mrt(self, month: int, hour: int) -> Path:
+        """Return the path to the MRT plot."""
+
+        if not month in range(1, 13, 1):
+            raise ValueError(f"Month must be between 1 and 12 inclusive, got {month}")
+        if not hour in range(0, 24, 1):
+            raise ValueError(f"Hour must be between 0 and 23 inclusive, got {hour}")
+
+        save_path = (
+            self.plot_directory
+            / f"mean_radiant_temperature_{month:02d}_{hour:02d}.png"
+        )
+        # if save_path.exists():
+        #     return save_path
+        print(f"- Plotting {save_path.stem}")
+
+        x, y = self.points_xy.T
+
+        # get the value limits for all MRTs
+        zmin, zmax = self.mean_radiant_temperature_matrix.min().min(), self.mean_radiant_temperature_matrix.max().max()
+
+        # Filter for the analysis period
+        z = (
+            self.mean_radiant_temperature_matrix.groupby(
+                [
+                    self.mean_radiant_temperature_matrix.index.month,
+                    self.mean_radiant_temperature_matrix.index.hour,
+                ],
+                axis=0,
+            )
+            .mean()
+            .loc[month, hour]
+        ).values
+
+        fig = plot_spatial(
+            triangulations=[self._triangulation],
+            values=[z],
+            levels=np.linspace(zmin, zmax, 101),
+            colormap="inferno",
+            extend="both",
+            xlims=[x.min(), x.max()],
+            ylims=[y.min(), y.max()],
+            colorbar_label="Mean radiant temperature (°C)",
+            title=f"{calendar.month_abbr[month]} {hour:02d}:00",
+        )
+
+        fig.savefig(save_path, dpi=200, bbox_inches="tight")
+
+        return save_path
 
     def plot_sky_view(self) -> Path:
         """Return the path to the sky view plot."""
 
         save_path = self.plot_directory / "sky_view.png"
-        if save_path.exists():
-            return save_path
+        # if save_path.exists():
+        #     return save_path
         print(f"- Plotting {save_path.stem}")
 
         min_val = 0

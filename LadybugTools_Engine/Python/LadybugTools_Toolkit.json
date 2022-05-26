@@ -136,6 +136,10 @@
         {
             "Name": "cached_property",
             "Version": "1.5.2"
+        },
+        {
+            "Name": "python-pptx",
+            "Version": "0.6.21"
         }
     ]
 }

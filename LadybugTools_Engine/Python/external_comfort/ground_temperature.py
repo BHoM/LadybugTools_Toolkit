@@ -99,7 +99,7 @@ def ground_temperature_at_depth(
 
     try:
         return to_hourly(epw.monthly_ground_temperature[depth])
-    except ValueError as e:
+    except (KeyError, ValueError) as e:
         dbt = to_series(epw.dry_bulb_temperature)
 
         dbt_range = dbt.max() - dbt.min()
