@@ -233,7 +233,7 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     # Remove files no longer needed (to save on space)
     for file in list((working_directory / "annual_irradiance").glob("**/*")):
         if file.is_file():
-            if file.suffix not in [".txt", ".ill", ".hbjson"]:
+            if file.suffix not in [".txt", ".ill", ".hbjson", ".log"]:
                 os.remove(file)
 
     return {
