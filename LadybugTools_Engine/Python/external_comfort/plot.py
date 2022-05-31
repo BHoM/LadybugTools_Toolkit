@@ -32,6 +32,7 @@ from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import make_interp_spline
 from matplotlib.gridspec import GridSpec
+import matplotlib.patches as mpatches
 
 
 def colormap_sequential(colors: List[Union[str, Tuple]]) -> LinearSegmentedColormap:
@@ -880,9 +881,12 @@ def plot_utci_distance_to_comfortable(
 
 def plot_utci_journey(
     utci_values: List[float],
+    title: str,
     names: List[str] = None,
     curve: bool = False,
     show_legend: bool = True,
+    rotation: float = 0,
+    yscale: float = -1
 ) -> Figure:
     """Create a figure showing the pseudo-journey between different UTCI conditions at a given time of year
 
@@ -891,6 +895,7 @@ def plot_utci_journey(
         names (List[str], optional): A list of names to label each value with. Defaults to None.
         curve (bool, optional): Whether to plot the pseudo-journey as a spline. Defaults to False.
         show_legend (bool, optional): Set to True to plot the UTCI comfort band legend also.
+        rotation (float, optional): Rotates the label of each value by a specified number of degrees. 
 
     Returns:
         Figure: A matplotlib figure object.
@@ -905,14 +910,53 @@ def plot_utci_journey(
     # Convert collections into series and combine
     df_pit = pd.Series(utci_values, index=names)
 
-    fig, ax = plt.subplots(figsize=(10, 2.5))
+    fig, ax = plt.subplots(figsize=(10 , 2.5))
     for n, (idx, val) in enumerate(df_pit.items()):
         ax.scatter(n, val, c="white", s=400, zorder=9)
         ax.text(
-            n, val, idx, c="k", zorder=10, ha="center", va="center", fontsize="medium"
+            n, val, idx, c="k", zorder=10, ha="center", va="center", fontsize="medium", rotation=rotation
         )
 
-    ylims = ax.get_ylim()
+    middf = 0.5 * (utci_values.max() + utci_values.min())
+
+    if yscale == -1:
+        yscale = 1.5 * (utci_values.max() - middf)
+
+    ax.set_ylim(middf - yscale, middf + yscale)
+
+    categories = [
+        " ".join([i.title() for i in p.split("_")]) for p in [
+            "extreme_cold_stress", 
+            "very_strong_cold_stress", 
+            "strong_cold_stress", 
+            "moderate_cold_stress", 
+            "slight_cold_stress", 
+            "no_thermal_stress", 
+            "moderate_heat_stress", 
+            "strong_heat_stress", 
+            "very_strong_heat_stress", 
+            "extreme_heat_stress"
+        ]
+    ]
+    utci_handles = []
+    low_edit = UTCI_LEVELS[0:-1]
+    high_edit = UTCI_LEVELS[1:]
+    for low, high, color, category in list(zip(*[
+        low_edit,
+        high_edit,
+        UTCI_COLORMAP.colors,
+        categories
+        ]
+    )
+    ):
+        utci_handles.append(mpatches.Patch(color=color, label=category))
+        ax.axhspan(low, high, color=color, alpha=0.4, lw=0)
+
+    utci_handles.append(mpatches.Patch(color="#0D104B", label=categories[0]))
+    ax.axhspan(-99, UTCI_LEVELS[0], color="#0D104B", alpha=0.4, lw=0)
+
+    utci_handles.append(mpatches.Patch(color="#580002", label=categories[-1]))
+    ax.axhspan(UTCI_LEVELS[-1], 99, color="#580002", alpha=0.4, lw=0)
 
     if curve:
         # Smooth values
@@ -939,6 +983,14 @@ def plot_utci_journey(
     )  # labels along the bottom edge are off
 
     ax.set_ylabel("UTCI (°C)")
+    ax.set_title(
+        title,
+        color="k",
+        y=1,
+        ha="left",
+        va="bottom",
+        x=0,
+    )
     plt.tight_layout()
 
     return fig
