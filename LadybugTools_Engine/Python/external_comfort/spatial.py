@@ -128,8 +128,13 @@ class SpatialComfort:
     @cached_property
     def model(self) -> Model:
         """Load the honeybee model from the simulation directory."""
-        print(f"Loading the model for {self.simulation_directory.stem}, this can take a while ...")
-        return Model.from_hbjson(self.simulation_directory / f"{self.simulation_directory.stem}.hbjson")
+        print(
+            f"Loading the model for {self.simulation_directory.stem}, this can take a while ..."
+        )
+        return Model.from_hbjson(
+            self.simulation_directory / f"{self.simulation_directory.stem}.hbjson"
+        )
+
 
 class SpatialComfortResult:
     def __init__(self, spatial_comfort: SpatialComfort) -> SpatialComfortResult:
@@ -221,7 +226,7 @@ class SpatialComfortResult:
             ).glob("*.ill")
         )
         total_irradiance = make_annual(load_ill(ill_files)).fillna(0).astype(np.float16)
-        # The "clip" below ensure the value range is between 
+        # The "clip" below ensure the value range is between
         total_irradiance.clip(lower=0).to_hdf(
             total_irradiance_path, "df", complevel=9, complib="blosc"
         )
@@ -583,10 +588,7 @@ class SpatialComfortResult:
     def moisture_matrix(self) -> pd.DataFrame:
         """Create an annual hourly spatial matrix of moisture source evaporative cooling effectivenessess."""
 
-        mtx_path = (
-            self.spatial_comfort.simulation_directory
-            / "moisture_matrix.h5"
-        )
+        mtx_path = self.spatial_comfort.simulation_directory / "moisture_matrix.h5"
 
         if mtx_path.exists():
             print(
@@ -762,7 +764,7 @@ class SpatialComfortResult:
                 f"- Loading universal thermal climate index data from {self.spatial_comfort.simulation_directory.name}"
             )
             return pd.read_hdf(save_path, "df")
-        
+
         if len(self.spatial_comfort.moisture_sources) == 0:
             print(
                 f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}, using interpolation method"
@@ -772,11 +774,12 @@ class SpatialComfortResult:
                 self.spatial_comfort.shaded_typology_result.universal_thermal_climate_index,
                 self.total_irradiance_matrix,
                 self.sky_view,
-                np.array(self.spatial_comfort.epw.global_horizontal_radiation.values) > 0,
+                np.array(self.spatial_comfort.epw.global_horizontal_radiation.values)
+                > 0,
             ).astype(np.float16)
             utci.to_hdf(save_path, "df", complevel=9, complib="blosc")
             return utci
-        
+
         print(
             f"- Processing universal thermal climate index data for {self.spatial_comfort.simulation_directory.name}, using moisture-matrix method"
         )
@@ -863,13 +866,18 @@ class SpatialComfortResult:
 
     def plot_all_utci_comfortable_hours(self, hours: bool = False) -> List[Path]:
         """Return the paths to the default comfortable-hours plots."""
-        
+
         output = []
         for month in range(1, 13, 1):
             for st_hour, end_hour in list(zip(*[[0, 8], [23, 18]])):
                 output.append(
                     self.plot_utci_comfortable_hours(
-                        AnalysisPeriod(st_month=month, end_month=month, st_hour=st_hour, end_hour=end_hour)
+                        AnalysisPeriod(
+                            st_month=month,
+                            end_month=month,
+                            st_hour=st_hour,
+                            end_hour=end_hour,
+                        )
                     )
                 )
                 plt.close("all")
@@ -922,7 +930,7 @@ class SpatialComfortResult:
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
 
         return save_path
-    
+
     def plot_typical_mrt(self, month: int, hour: int) -> Path:
         """Return the path to the MRT plot."""
 
@@ -932,8 +940,7 @@ class SpatialComfortResult:
             raise ValueError(f"Hour must be between 0 and 23 inclusive, got {hour}")
 
         save_path = (
-            self.plot_directory
-            / f"mean_radiant_temperature_{month:02d}_{hour:02d}.png"
+            self.plot_directory / f"mean_radiant_temperature_{month:02d}_{hour:02d}.png"
         )
         # if save_path.exists():
         #     return save_path
@@ -942,7 +949,10 @@ class SpatialComfortResult:
         x, y = self.points_xy.T
 
         # get the value limits for all MRTs
-        zmin, zmax = self.mean_radiant_temperature_matrix.min().min(), self.mean_radiant_temperature_matrix.max().max()
+        zmin, zmax = (
+            self.mean_radiant_temperature_matrix.min().min(),
+            self.mean_radiant_temperature_matrix.max().max(),
+        )
 
         # Filter for the analysis period
         z = (
@@ -1055,7 +1065,9 @@ class SpatialComfortResult:
                 loop=0,
             )
 
-    def plot_wireframe(self, include_points: bool = True, highlight_points: Dict[str, int] = None) -> Figure:
+    def plot_wireframe(
+        self, include_points: bool = True, highlight_points: Dict[str, int] = None
+    ) -> Figure:
         """A method included here to quickly plot a wireframe of the model."""
         from shapely.geometry import Polygon, MultiPolygon
         from shapely.ops import unary_union
@@ -1064,44 +1076,70 @@ class SpatialComfortResult:
         groups = defaultdict(list)
         for obj in self.spatial_comfort.model.faces:
             groups[str(obj)].append(obj)
-        
+
         mps = []
         for k, v in groups.items():
             try:
-                mps.append(MultiPolygon(unary_union([Polygon([i.to_array() for i in face.vertices]) for face in v])))
+                mps.append(
+                    MultiPolygon(
+                        unary_union(
+                            [
+                                Polygon([i.to_array() for i in face.vertices])
+                                for face in v
+                            ]
+                        )
+                    )
+                )
             except:
                 print(f"Failed to create multipolygon for {k}")
                 pass
-        
+
         fig, ax = plt.subplots(1, 1, figsize=(30, 25))
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.axis("off")
 
         for mp in mps:
-            for geom in mp.geoms:    
-                xs, ys = geom.exterior.xy    
+            for geom in mp.geoms:
+                xs, ys = geom.exterior.xy
                 ax.fill(xs, ys, alpha=0.5, fc="none", ec="k", fill=False)
 
-        x, y = self.points_xy.T        
+        x, y = self.points_xy.T
         if include_points:
             ax.scatter(x, y, s=0.05)
-            for n, xy in enumerate(self.points_xy): 
+            for n, xy in enumerate(self.points_xy):
                 if n % 30 == 0:
-                    ax.annotate(n, xy=xy, textcoords='data', fontsize="xx-small", ha="center", va="center", c="r", rotation=45)
-        
+                    ax.annotate(
+                        n,
+                        xy=xy,
+                        textcoords="data",
+                        fontsize="xx-small",
+                        ha="center",
+                        va="center",
+                        c="r",
+                        rotation=45,
+                    )
+
         if highlight_points is not None:
             for k, v in highlight_points.items():
-                for n, xy in enumerate(self.points_xy): 
+                for n, xy in enumerate(self.points_xy):
                     if n != v:
                         pass
                     else:
                         ax.scatter(x[n], y[n], s=10, c="red")
-                        ax.annotate(k, xy=xy, textcoords='data', fontsize="xx-large", ha="left", va="bottom", c="k", rotation=0)
+                        ax.annotate(
+                            k,
+                            xy=xy,
+                            textcoords="data",
+                            fontsize="xx-large",
+                            ha="left",
+                            va="bottom",
+                            c="k",
+                            rotation=0,
+                        )
 
         plt.tight_layout()
 
         return fig
-
 
     def point_summary_str(self, point_index: int, name: str = None) -> str:
         """Create a summary string descirbing the difference between the selected point and an "openfield" condition.
