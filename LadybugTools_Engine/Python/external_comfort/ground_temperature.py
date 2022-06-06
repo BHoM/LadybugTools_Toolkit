@@ -154,7 +154,7 @@ def energyplus_strings(epw: EPW) -> str:
 
     ground_temperature_str = inspect.cleandoc(
         f"""
-            Site:GroundTemperature:Shallow,
+            Site:GroundTemperature:BuildingSurface,
                 {monthly_ground_temperatures[0]}, !- January Surface Ground Temperature {{C}}
                 {monthly_ground_temperatures[1]}, !- February Surface Ground Temperature {{C}}
                 {monthly_ground_temperatures[2]}, !- March Surface Ground Temperature {{C}}
