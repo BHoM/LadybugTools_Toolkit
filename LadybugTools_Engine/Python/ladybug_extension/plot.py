@@ -9,6 +9,7 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW, AnalysisPeriod
 import numpy as np
 from ladybug_extension.datacollection import to_series, to_array
+from ladybug_extension.header import to_string
 from ladybug_extension.analysis_period import describe_analysis_period
 from matplotlib.colors import (
     BoundaryNorm,
@@ -226,21 +227,24 @@ def rose(
 
     return fig
 
+
 def diurnal(
-    dbt_col: HourlyContinuousCollection,
-    dnr_col: HourlyContinuousCollection,
-    dhr_col: HourlyContinuousCollection,
-    ghr_col: HourlyContinuousCollection,
+    dry_bulb_temperature: HourlyContinuousCollection,
+    direct_normal_radiation: HourlyContinuousCollection,
+    diffuse_horizontal_radiation: HourlyContinuousCollection,
+    global_horizontal_radiation: HourlyContinuousCollection,
     moisture_collection: HourlyContinuousCollection,
+    title: str = None,
 ) -> Figure:
     """Generate a monthly diurnal plot describing daily profiles for key EPW variables.
 
     Args:
-        dbt_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Dry-Bulb Temperature.
-        dnr_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Direct Normal Radiation.
-        dhr_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Diffuse Horizontal Radiation.
-        ghr_col (HourlyContinuousCollection): An annual hourly ladybug data collection describing Global Horizontal Radiation.
+        dry_bulb_temperature (HourlyContinuousCollection): An annual hourly ladybug data collection describing Dry-Bulb Temperature.
+        direct_normal_radiation (HourlyContinuousCollection): An annual hourly ladybug data collection describing Direct Normal Radiation.
+        diffuse_horizontal_radiation (HourlyContinuousCollection): An annual hourly ladybug data collection describing Diffuse Horizontal Radiation.
+        global_horizontal_radiation (HourlyContinuousCollection): An annual hourly ladybug data collection describing Global Horizontal Radiation.
         moisture_collection (HourlyContinuousCollection): An annual hourly ladybug data collection describing either Relative Humidity, Dew Point Temperature or Wet Bulb Temperature.
+        title (str, optional): A title to place at the top of the plot. Defaults to None.
 
     Returns:
         Figure: A matplotlib figure object.
@@ -251,17 +255,17 @@ def diurnal(
     rad_color = "#eb671c"
 
     # Temperature
-    dbt_min = dbt_col._time_interval_operation(
+    dbt_min = dry_bulb_temperature._time_interval_operation(
         "monthlyperhour", "percentile", percentile=0
     )
-    dbt_low = dbt_col._time_interval_operation(
+    dbt_low = dry_bulb_temperature._time_interval_operation(
         "monthlyperhour", "percentile", percentile=5
     )
-    dbt_avg = dbt_col._time_interval_operation("monthlyperhour", "average")
-    dbt_high = dbt_col._time_interval_operation(
+    dbt_avg = dry_bulb_temperature._time_interval_operation("monthlyperhour", "average")
+    dbt_high = dry_bulb_temperature._time_interval_operation(
         "monthlyperhour", "percentile", percentile=95
     )
-    dbt_max = dbt_col._time_interval_operation(
+    dbt_max = dry_bulb_temperature._time_interval_operation(
         "monthlyperhour", "percentile", percentile=100
     )
 
@@ -281,9 +285,15 @@ def diurnal(
     )
 
     # Radiation
-    ghr_avg = ghr_col._time_interval_operation("monthlyperhour", "average")
-    dnr_avg = dnr_col._time_interval_operation("monthlyperhour", "average")
-    dhr_avg = dhr_col._time_interval_operation("monthlyperhour", "average")
+    ghr_avg = global_horizontal_radiation._time_interval_operation(
+        "monthlyperhour", "average"
+    )
+    dnr_avg = direct_normal_radiation._time_interval_operation(
+        "monthlyperhour", "average"
+    )
+    dhr_avg = diffuse_horizontal_radiation._time_interval_operation(
+        "monthlyperhour", "average"
+    )
 
     # X axis values
     x_values = range(288)
@@ -344,7 +354,7 @@ def diurnal(
             label="Range",
         )
         axes[0].set_ylabel(
-            f"{dbt_avg.header.data_type} ({format_unit(dbt_avg.header.unit)})",
+            to_string(dry_bulb_temperature.header),
             labelpad=2,
         )
 
@@ -390,7 +400,7 @@ def diurnal(
             label="Range",
         )
         axes[1].set_ylabel(
-            f"{mst_mid.header.data_type} ({format_unit(mst_mid.header.unit)})",
+            to_string(moisture_collection.header),
             labelpad=2,
         )
 
@@ -476,15 +486,24 @@ def diurnal(
     [plt.setp(text, color="k") for text in lgd.get_texts()]
 
     # Title
-    loc = f"{get_location_str(dbt_avg)}"
-    fig.suptitle(
-        "{0:}\nMonthly average diurnal profile".format(loc),
-        color="k",
-        ha="left",
-        va="bottom",
-        x=0.05,
-        y=0.92,
-    )
+    if title is None:
+        fig.suptitle(
+            "Monthly average diurnal profile",
+            color="k",
+            ha="left",
+            va="bottom",
+            x=0.05,
+            y=0.92,
+        )
+    else:
+        fig.suptitle(
+            f"{title}\nMonthly average diurnal profile",
+            color="k",
+            y=1,
+            ha="left",
+            va="bottom",
+            x=0,
+        )
 
     # Tidy plot
     plt.tight_layout()

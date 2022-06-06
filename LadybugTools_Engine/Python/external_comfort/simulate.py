@@ -1,6 +1,7 @@
 import getpass
 import json
 import os
+import shutil
 import time
 from pathlib import Path
 from typing import Dict
@@ -17,32 +18,42 @@ from honeybee_energy.simulation.parameter import (
     SimulationOutput,
     SimulationParameter,
 )
+
 from honeybee_extension.results import load_ill, load_sql, make_annual
 from honeybee_radiance.config import folders as hbr_folders
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
 from ladybug.wea import Wea
 from ladybug_extension.datacollection import from_series
+from ladybug_extension.epw import _epw_equality
 from lbt_recipes.recipe import Recipe, RecipeSettings
 
 from external_comfort.ground_temperature import energyplus_strings
-
-USERNAME = getpass.getuser()
+from external_comfort.model import _model_equality
 
 """
 Where this code is run and IT policies modify the "HOME" environment variable, 
 this part is essential to make sure that HOME is accessible via the Honeybee/
 Queenbee configuration.
 """
+USERNAME = getpass.getuser()
 os.environ["HOME"] = f"C:\\Users\\{USERNAME}"
+
+QUEENBEE_EXE = "C:/ProgramData/BHoM/Extensions/PythonEnvironments/LadybugTools_Toolkit/Scripts/queenbee.exe"
+PYTHON_EXE = (
+    "C:/ProgramData/BHoM/Extensions/PythonEnvironments/LadybugTools_Toolkit/python.exe"
+)
+PYTHON_PACKAGES = "C:/ProgramData/BHoM/Extensions/PythonEnvironments/LadybugTools_Toolkit/Lib/site-packages"
+PYTHON_SCRIPTS = (
+    "C:/ProgramData/BHoM/Extensions/PythonEnvironments/LadybugTools_Toolkit/scripts"
+)
 
 ladybug_tools_folder = Path(f"C:/Users/{USERNAME}/ladybug_tools")
 
 hb_folders.default_simulation_folder = f"C:/Users/{USERNAME}/simulation"
-hb_folders._python_exe_path = (ladybug_tools_folder / "python/python.exe").as_posix()
-hb_folders._python_package_path = (
-    ladybug_tools_folder / "python/Lib/site-packages"
-).as_posix()
-hb_folders._python_scripts_path = (ladybug_tools_folder / "python/Scripts").as_posix()
+Path(hb_folders.default_simulation_folder).mkdir(parents=True, exist_ok=True)
+hb_folders._python_exe_path = PYTHON_EXE
+hb_folders._python_package_path = PYTHON_PACKAGES
+hb_folders._python_scripts_path = PYTHON_SCRIPTS
 
 hbe_folders.openstudio_path = (ladybug_tools_folder / "openstudio/bin").as_posix()
 hbe_folders.energyplus_path = (
@@ -51,9 +62,6 @@ hbe_folders.energyplus_path = (
 hbe_folders.honeybee_openstudio_gem_path = (
     ladybug_tools_folder / "resources/measures/honeybee_openstudio_gem/lib"
 ).as_posix()
-
-QUEENBEE_EXE = (ladybug_tools_folder / "python/Scripts/queenbee.exe").as_posix()
-
 hbr_folders.radiance_path = (ladybug_tools_folder / "radiance").as_posix()
 
 if not (Path(hbr_folders.radiance_path) / "bin/rtrace.exe").exists():
@@ -73,7 +81,7 @@ if not (Path(hbe_folders.openstudio_path) / "openstudio.exe").exists():
 
 if not Path(hbe_folders.honeybee_openstudio_gem_path).exists():
     raise FileNotFoundError(
-        f"honeybee_openstudio_gem measures not found in {hbe_folders.honeybee_openstudio_gem_path}. Ensure that a Ladyubg-tools installation has been completed installation is located in this directory."
+        f"honeybee_openstudio_gem measures not found in {hbe_folders.honeybee_openstudio_gem_path}. Ensure that a Ladybug-tools installation has been completed and this directory exists (with contents!)"
     )
 
 
@@ -87,13 +95,14 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     Returns:
         A dictionary containing ground and shade (below and above) surface temperature values.
     """
-    time.sleep(1)
-    working_directory = _working_directory(model, epw)
 
-    if _do_energyplus_results_exist(model, epw):
-        print("- Loading previously simulated surface temperature results")
-        sql = (working_directory / "run" / "eplusout.sql").as_posix()
-    else:
+    working_directory: Path = (
+        Path(hb_folders.default_simulation_folder) / model.identifier
+    )
+    working_directory.mkdir(parents=True, exist_ok=True)
+    sql_path = working_directory / "run" / "eplusout.sql"
+
+    if not _energyplus_results_exist(model, epw):
         print("- Simulating surface temperatures")
         # Write model JSON
         model_dict = model.to_dict(triangulate_sub_faces=True)
@@ -150,22 +159,23 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         _, idf = run_osw(osw, silent=False)
 
         # Add ground temperature strings to IDF
-        with open(idf, "r") as fp:
-            temp = fp.readlines()
-        with open(idf, "w") as fp:
-            fp.writelines(temp + [energyplus_strings(epw)])
+        with open(idf, "a") as fp:
+            fp.writelines([energyplus_strings(epw)])
+        # TODO - Replace this part with a proper "Other Side Boundary Condition" for
+        # hourly ground temperatures, once possible in HB-energy
+        # (https://github.com/ladybug-tools/honeybee-energy/issues/407)
 
         # Simulate IDF
-        sql, _, _, _, _ = run_idf(idf, epw.file_path, silent=False)
+        _, _, _, _, _ = run_idf(idf, epw.file_path, silent=False)
 
-        # Remove files no longer needed (to save on space)
-        output_directory = Path(sql).parent
-        for file in output_directory.glob("*"):
-            if file.suffix not in [".sql", ".err"]:
-                os.remove(file)
+        # Remove unneeded files
+        _tidy_energyplus_results(working_directory)
+
+        # Save EPW into working directory folder for posterity
+        epw.save(working_directory / "run" / Path(epw.file_path).name)
 
     # Return results
-    df = load_sql(sql)
+    df = load_sql(sql_path)
     return {
         "shaded_below_temperature": from_series(
             df.filter(regex="GROUND_ZONE_UP_SHADED")
@@ -195,13 +205,14 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         A dictionary containing radiation values.
     """
 
-    working_directory = _working_directory(model, epw)
+    working_directory: Path = (
+        Path(hb_folders.default_simulation_folder) / model.identifier
+    )
+    working_directory.mkdir(parents=True, exist_ok=True)
+    total_directory = working_directory / "annual_irradiance/results/total"
+    direct_directory = working_directory / "annual_irradiance/results/direct"
 
-    if _do_radiance_results_exist(model, epw):
-        print("- Loading previously simulated annual irradiance")
-        total_directory = working_directory / "annual_irradiance/results/total"
-        direct_directory = working_directory / "annual_irradiance/results/direct"
-    else:
+    if not _radiance_results_exist(model, epw):
         print("- Simulating annual irradiance")
         wea = Wea.from_epw_file(epw.file_path)
 
@@ -209,10 +220,9 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         recipe.input_value_by_name("model", model)
         recipe.input_value_by_name("wea", wea)
         recipe_settings = RecipeSettings()
-        results = recipe.run(settings=recipe_settings, radiance_check=True)
-
-        total_directory = Path(results) / "annual_irradiance/results/total"
-        direct_directory = Path(results) / "annual_irradiance/results/direct"
+        _ = recipe.run(
+            settings=recipe_settings, radiance_check=True, queenbee_path=QUEENBEE_EXE
+        )
 
     unshaded_total = (
         make_annual(load_ill(total_directory / "UNSHADED.ill"))
@@ -230,11 +240,11 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         "DiffuseHorizontalRadiation (Wh/m2)"
     )
 
-    # Remove files no longer needed (to save on space)
-    for file in list((working_directory / "annual_irradiance").glob("**/*")):
-        if file.is_file():
-            if file.suffix not in [".txt", ".ill", ".hbjson", ".log"]:
-                os.remove(file)
+    # Remove unneeded files
+    _tidy_radiance_results(working_directory)
+
+    # Save EPW into working directory folder for posterity
+    epw.save(working_directory / "annual_irradiance" / Path(epw.file_path).name)
 
     return {
         "unshaded_direct_radiation": from_series(unshaded_direct),
@@ -256,32 +266,7 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     }
 
 
-def _working_directory(model: Model, epw: EPW) -> Path:
-    """Return the working directory for the radiance and energyplus simulations.
-
-    Args:
-        model (Model): A HB model to be run through Radiance and Energyplus.
-        epw (EPW): An EPW object to be used for the simulation.
-
-    Returns:
-        Path: The path where the simulation results will be stored.
-    """
-    working_directory = (
-        Path(hb_folders.default_simulation_folder) / f"{model.identifier}"
-    )
-    working_directory.mkdir(exist_ok=True, parents=True)
-
-    # Write EPW to working directory, and stopping if the lockfile exists
-    lockfile = working_directory / "epw.lock"
-    if not lockfile.exists():
-        with open(lockfile, "w+") as fp:
-            pass
-        epw.save(working_directory / Path(epw.file_path).name)
-
-    return working_directory
-
-
-def _do_radiance_results_exist(model: Model, epw: EPW) -> bool:
+def _radiance_results_exist(model: Model, epw: EPW) -> bool:
     """Check whether results already exist for this configuration of model and EPW.
 
     Args:
@@ -291,57 +276,59 @@ def _do_radiance_results_exist(model: Model, epw: EPW) -> bool:
     Returns:
         bool: True if the model and EPW have already been simulated, False otherwise.
     """
-    working_directory = _working_directory(model, epw)
+    working_directory: Path = (
+        Path(hb_folders.default_simulation_folder) / model.identifier
+    )
 
     # Try to load existing HBJSON file
     try:
-        existing_model_path = working_directory / f"{working_directory.stem}.hbjson"
-        existing_model = Model.from_hbjson(existing_model_path)
+        existing_model = Model.from_hbjson(
+            (
+                working_directory
+                / "annual_irradiance"
+                / f"{working_directory.stem}.hbjson"
+            ).as_posix()
+        )
     except (FileNotFoundError, AssertionError) as e:
         return False
 
-    # Check that identifiers match
-    model_identifiers_match = existing_model.identifier == model.identifier
+    # Try to load existing EPW file
+    try:
+        existing_epw = EPW(
+            (
+                working_directory / "annual_irradiance" / Path(epw.file_path).name
+            ).as_posix()
+        )
+    except (FileNotFoundError, AssertionError) as e:
+        return False
 
-    # Check that the directories exist
-    directories_exist = (
-        working_directory / "annual_irradiance" / "results" / "direct" / "UNSHADED.ill"
-    ).exists() and (
-        working_directory / "annual_irradiance" / "results" / "total" / "UNSHADED.ill"
-    ).exists()
+    # Check that EPW files match
+    epws_match = _epw_equality(epw, existing_epw, include_header=True)
 
-    # Check that the EPW file is the same
-    existing_epw_filename = list(working_directory.glob("*.epw"))[0].name
-    epws_match = existing_epw_filename == Path(epw.file_path).name
+    # Check that HJBSON files match
+    models_match = _model_equality(model, existing_model, include_identifier=True)
 
-    # Check the HBJSON materials match
-    existing_ground_material = (
-        existing_model.rooms[0].faces[-1].properties.energy.construction.materials[0]
-    )
-    existing_shade_material = (
-        existing_model.rooms[2].faces[0].properties.energy.construction.materials[0]
-    )
-    proposed_ground_material = (
-        model.rooms[0].faces[-1].properties.energy.construction.materials[0]
-    )
-    proposed_shade_material = (
-        model.rooms[2].faces[0].properties.energy.construction.materials[0]
-    )
-    materials_match = (existing_ground_material == proposed_ground_material) and (
-        existing_shade_material == proposed_shade_material
+    # Check that the output files necessary to reload exist
+    results_exist = all(
+        [
+            (
+                working_directory / "annual_irradiance/results/direct/UNSHADED.ill"
+            ).exists(),
+            (
+                working_directory / "annual_irradiance/results/total/UNSHADED.ill"
+            ).exists(),
+        ]
     )
 
-    match_found = all(
-        [model_identifiers_match, directories_exist, epws_match, materials_match]
-    )
+    radiance_results_exist = all([epws_match, models_match, results_exist])
 
-    if match_found:
+    if radiance_results_exist:
         return True
     else:
         return False
 
 
-def _do_energyplus_results_exist(model: Model, epw: EPW) -> bool:
+def _energyplus_results_exist(model: Model, epw: EPW) -> bool:
     """Check whether results already exist for this configuration of model and EPW.
 
     Args:
@@ -351,47 +338,115 @@ def _do_energyplus_results_exist(model: Model, epw: EPW) -> bool:
     Returns:
         bool: True if the model and EPW have already been simulated, False otherwise.
     """
-    working_directory = _working_directory(model, epw)
+    working_directory: Path = (
+        Path(hb_folders.default_simulation_folder) / model.identifier
+    )
 
     # Try to load existing HBJSON file
     try:
-        existing_model_path = working_directory / f"{working_directory.stem}.hbjson"
-        existing_model = Model.from_hbjson(existing_model_path)
+        existing_model = Model.from_hbjson(
+            (working_directory / f"{working_directory.stem}.hbjson").as_posix()
+        )
     except (FileNotFoundError, AssertionError) as e:
         return False
 
-    # Check that identifiers match
-    model_identifiers_match = existing_model.identifier == model.identifier
+    # Try to load existing EPW file
+    try:
+        existing_epw = EPW(
+            (working_directory / "run" / Path(epw.file_path).name).as_posix()
+        )
+    except (FileNotFoundError, AssertionError) as e:
+        return False
 
-    # Check that the files exist
-    file_exist = (working_directory / "run" / "eplusout.sql").exists()
+    # Check that EPW files match
+    epws_match = _epw_equality(epw, existing_epw, include_header=True)
 
-    # Check that the EPW file is the same
-    existing_epw_filename = list(working_directory.glob("*.epw"))[0].name
-    epws_match = existing_epw_filename == Path(epw.file_path).name
+    # Check that HJBSON files match
+    models_match = _model_equality(model, existing_model, include_identifier=True)
 
-    # Check the HBJSON materials match
-    existing_ground_material = (
-        existing_model.rooms[0].faces[-1].properties.energy.construction.materials[0]
-    )
-    existing_shade_material = (
-        existing_model.rooms[2].faces[0].properties.energy.construction.materials[0]
-    )
-    proposed_ground_material = (
-        model.rooms[0].faces[-1].properties.energy.construction.materials[0]
-    )
-    proposed_shade_material = (
-        model.rooms[2].faces[0].properties.energy.construction.materials[0]
-    )
-    materials_match = (existing_ground_material == proposed_ground_material) and (
-        existing_shade_material == proposed_shade_material
-    )
+    # Check that the output files necessary to reload exist
+    results_exist = (working_directory / "run" / "eplusout.sql").exists()
 
-    match_found = all(
-        [model_identifiers_match, file_exist, epws_match, materials_match]
-    )
+    energyplus_results_exist = all([epws_match, models_match, results_exist])
 
-    if match_found:
+    if energyplus_results_exist:
         return True
     else:
         return False
+
+
+def _tidy_radiance_results(working_directory: Path) -> None:
+    """Tidy up an radiance results folder created using hb-radiance.
+
+    Args:
+        working_directory (Path): The working directory to tidy.
+    """
+    # Find all files in directory
+    all_files = working_directory.glob("**/*")
+    # Remove files and folders
+    folders_to_delete = [
+        working_directory / "annual_irradiance/resources",
+        working_directory / "annual_irradiance/__logs__",
+        working_directory / "annual_irradiance/__params",
+        working_directory / "annual_irradiance/initial_results",
+        working_directory / "annual_irradiance/metrics",
+        working_directory / "annual_irradiance/model",
+    ]
+    files_to_delete = [
+        "__inputs__.json",
+        "annual_irradiance_raytracing.done",
+        "annual_irradiance_inputs.json",
+    ]
+    files_of_type_to_delete = [".wea", ".done"]
+
+    for file in all_files:
+        if (file.suffix in files_of_type_to_delete) or (file.name in files_to_delete):
+            os.remove(file)
+    for folder in folders_to_delete:
+        shutil.rmtree(folder, ignore_errors=True)
+
+    return None
+
+
+def _tidy_energyplus_results(working_directory: Path) -> None:
+    """Tidy up an energyplus results folder created using hb-energy.
+
+    Args:
+        working_directory (Path): The working directory to tidy.
+    """
+
+    # Find all files in directory
+    all_files = working_directory.glob("**/*")
+    # Remove files and folders
+    files_to_delete = [
+        "run_workflow.bat",
+        "workflow.osw",
+        "out.osw",
+        "simulation_parameter.json",
+        "in.osm",
+        "measure_attributes.json",
+        "run.log",
+        "sqlite.err",
+        "started.job",
+        "data_point.zip",
+        "eplusout.audit",
+        "eplusout.bnd",
+        "eplusout.eio",
+        "eplusout.end",
+        "eplusout.eso",
+        "eplusout.mdd",
+        "eplusout.mtd",
+        "eplusout.rdd",
+        "eplusout.shd",
+        "eplustbl.htm",
+        "finished.job",
+        "in.bat",
+        "in.idf",
+    ]
+    for file in all_files:
+        if file.name in files_to_delete:
+            os.remove(file)
+    (working_directory / "generated_files").rmdir()
+    (working_directory / "reports").rmdir()
+
+    return None
