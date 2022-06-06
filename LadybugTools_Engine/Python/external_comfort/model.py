@@ -17,7 +17,7 @@ from honeybee_radiance.sensorgrid import Sensor, SensorGrid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
 
 
-def create_ground_zone(
+def _create_ground_zone(
     material: _EnergyMaterialOpaqueBase, shaded: bool = False
 ) -> Room:
     """Create a ground zone with boundary conditions and face identifiers named per external comfort workflow.
@@ -113,19 +113,19 @@ def create_model(
     )
 
     # unshaded case
-    ground_zone_unshaded = create_ground_zone(ground_material, shaded=False)
+    ground_zone_unshaded = _create_ground_zone(ground_material, shaded=False)
 
     unshaded_grid = sensor_grid.duplicate()
     unshaded_grid.identifier = "UNSHADED"
 
     # shaded case
-    ground_zone_shaded = create_ground_zone(ground_material, shaded=True)
+    ground_zone_shaded = _create_ground_zone(ground_material, shaded=True)
     ground_zone_shaded.move(displacement_vector)
 
-    shade_zone = create_shade_zone(shade_material)
+    shade_zone = _create_shade_zone(shade_material)
     shade_zone.move(displacement_vector)
 
-    shades = create_shade_valence()
+    shades = _create_shade_valence()
     [i.move(displacement_vector) for i in shades]
 
     if identifier is None:
@@ -142,7 +142,7 @@ def create_model(
     return model
 
 
-def create_shade_valence() -> List[Shade]:
+def _create_shade_valence() -> List[Shade]:
     """Create a massless shade around the location being assessed for a shaded external comfort condition.
 
     Returns:
@@ -191,7 +191,7 @@ def create_shade_valence() -> List[Shade]:
     return shades
 
 
-def create_shade_zone(material: _EnergyMaterialOpaqueBase) -> Room:
+def _create_shade_zone(material: _EnergyMaterialOpaqueBase) -> Room:
     """Create a shade zone with boundary conditions and face identifiers named per external comfort workflow.
 
     Args:
@@ -232,3 +232,37 @@ def create_shade_zone(material: _EnergyMaterialOpaqueBase) -> Room:
             face.properties.energy.construction = shade_construction
 
     return shade_zone
+
+
+def _model_equality(
+    model0: Model, model1: Model, include_identifier: bool = False
+) -> bool:
+    """Check for equality between two models, with reagrds to their material properties.
+
+    Args:
+        model0 (Model): A honeybee model.
+        model1 (Model): A honeybee model.
+        include_identifier (bool, optional): Include the idensifier (name) of the model in the quality check. Defaults to False.
+
+    Returns:
+        bool: True if models are equal.
+    """
+
+    if not isinstance(model0, Model) or not isinstance(model1, Model):
+        raise TypeError("Both inputs must be of type Model.")
+
+    if include_identifier:
+        if model0.identifier != model1.identifier:
+            return False
+
+    # Check ground material properties
+    gnd0_material = model0.faces[5].properties.energy.construction.materials[0]
+    gnd1_material = model1.faces[5].properties.energy.construction.materials[0]
+    gnd_materials_match: bool = str(gnd0_material) == str(gnd1_material)
+
+    # Check shade material properties
+    shd0_material = model0.faces[-6].properties.energy.construction.materials[0]
+    shd1_material = model1.faces[-6].properties.energy.construction.materials[0]
+    shd_materials_match: bool = str(shd0_material) == str(shd1_material)
+
+    return gnd_materials_match and shd_materials_match

@@ -801,3 +801,47 @@ def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
         epw_obj.global_horizontal_illuminance.values = glob_horiz
 
     return epw_obj
+
+
+def _epw_equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
+    """Check for equality between two EPW objects, with regards to the data contained within.
+
+    Args:
+        epw0 (EPW): A ladybug EPW object.
+        epw1 (EPW): A ladybug EPW object.
+        include_header (bool, optional): Include the str repsresentation of the EPW files header in the comparison. Defaults to False.
+
+    Returns:
+        bool: True if the two EPW objects are equal, False otherwise.
+    """
+    if not isinstance(epw0, EPW) or not isinstance(epw1, EPW):
+        raise TypeError("Both inputs must be of type EPW.")
+
+    if include_header:
+        if epw0.header != epw1.header:
+            return False
+
+    # Check key metrics
+    dbt_match = epw0.dry_bulb_temperature == epw1.dry_bulb_temperature
+    rh_match = epw0.relative_humidity == epw1.relative_humidity
+    dpt_match = epw0.dew_point_temperature == epw1.dew_point_temperature
+    ws_match = epw0.wind_speed == epw1.wind_speed
+    wd_match = epw0.wind_direction == epw1.wind_direction
+    ghr_match = epw0.global_horizontal_radiation == epw1.global_horizontal_radiation
+    dnr_match = epw0.direct_normal_radiation == epw1.direct_normal_radiation
+    dhr_match = epw0.diffuse_horizontal_radiation == epw1.diffuse_horizontal_radiation
+    atm_match = epw0.atmospheric_station_pressure == epw1.atmospheric_station_pressure
+
+    return all(
+        [
+            dbt_match,
+            rh_match,
+            dpt_match,
+            ws_match,
+            wd_match,
+            ghr_match,
+            dnr_match,
+            dhr_match,
+            atm_match,
+        ]
+    )

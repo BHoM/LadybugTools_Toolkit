@@ -639,7 +639,7 @@ def plot_utci_distance_to_comfortable(
 
     if not len(comfort_thresholds) == 2:
         raise ValueError("comfort_thresholds must be a list of length 2.")
-        
+
     # Create matrices containing the above/below/within UTCI distances to comfortable
     series = to_series(collection)
 
@@ -647,32 +647,104 @@ def plot_utci_distance_to_comfortable(
     midpoint = np.mean([low, high])
 
     distance_above_comfortable = (series[series > high] - high).to_frame()
-    distance_above_comfortable_matrix = distance_above_comfortable.set_index([distance_above_comfortable.index.dayofyear, distance_above_comfortable.index.hour])["Universal Thermal Climate Index (C)"].astype(np.float64).unstack().T.reindex(range(24), axis=0).reindex(range(365), axis=1)
+    distance_above_comfortable_matrix = (
+        distance_above_comfortable.set_index(
+            [
+                distance_above_comfortable.index.dayofyear,
+                distance_above_comfortable.index.hour,
+            ]
+        )["Universal Thermal Climate Index (C)"]
+        .astype(np.float64)
+        .unstack()
+        .T.reindex(range(24), axis=0)
+        .reindex(range(365), axis=1)
+    )
 
     distance_below_comfortable = (low - series[series < low]).to_frame()
-    distance_below_comfortable_matrix = distance_below_comfortable.set_index([distance_below_comfortable.index.dayofyear, distance_below_comfortable.index.hour])["Universal Thermal Climate Index (C)"].astype(np.float64).unstack().T.reindex(range(24), axis=0).reindex(range(365), axis=1)
+    distance_below_comfortable_matrix = (
+        distance_below_comfortable.set_index(
+            [
+                distance_below_comfortable.index.dayofyear,
+                distance_below_comfortable.index.hour,
+            ]
+        )["Universal Thermal Climate Index (C)"]
+        .astype(np.float64)
+        .unstack()
+        .T.reindex(range(24), axis=0)
+        .reindex(range(365), axis=1)
+    )
 
-    distance_below_midpoint = (midpoint - series[(series >= low) & (series <= midpoint)]).to_frame()
-    distance_below_midpoint_matrix = distance_below_midpoint.set_index([distance_below_midpoint.index.dayofyear, distance_below_midpoint.index.hour])["Universal Thermal Climate Index (C)"].astype(np.float64).unstack().T.reindex(range(24), axis=0).reindex(range(365), axis=1)
+    distance_below_midpoint = (
+        midpoint - series[(series >= low) & (series <= midpoint)]
+    ).to_frame()
+    distance_below_midpoint_matrix = (
+        distance_below_midpoint.set_index(
+            [
+                distance_below_midpoint.index.dayofyear,
+                distance_below_midpoint.index.hour,
+            ]
+        )["Universal Thermal Climate Index (C)"]
+        .astype(np.float64)
+        .unstack()
+        .T.reindex(range(24), axis=0)
+        .reindex(range(365), axis=1)
+    )
 
-    distance_above_midpoint = (series[(series <= high) & (series > midpoint)] - midpoint).to_frame()
-    distance_above_midpoint_matrix = distance_above_midpoint.set_index([distance_above_midpoint.index.dayofyear, distance_above_midpoint.index.hour])["Universal Thermal Climate Index (C)"].astype(np.float64).unstack().T.reindex(range(24), axis=0).reindex(range(365), axis=1)
+    distance_above_midpoint = (
+        series[(series <= high) & (series > midpoint)] - midpoint
+    ).to_frame()
+    distance_above_midpoint_matrix = (
+        distance_above_midpoint.set_index(
+            [
+                distance_above_midpoint.index.dayofyear,
+                distance_above_midpoint.index.hour,
+            ]
+        )["Universal Thermal Climate Index (C)"]
+        .astype(np.float64)
+        .unstack()
+        .T.reindex(range(24), axis=0)
+        .reindex(range(365), axis=1)
+    )
 
-    distance_above_comfortable_cmap = plt.get_cmap("YlOrRd") # Reds
+    distance_above_comfortable_cmap = plt.get_cmap("YlOrRd")  # Reds
     distance_above_comfortable_lims = [0, high_limit]
-    distance_above_comfortable_norm = BoundaryNorm(np.linspace(distance_above_comfortable_lims[0], distance_above_comfortable_lims[1], 100), ncolors=distance_above_comfortable_cmap.N, clip=True)
+    distance_above_comfortable_norm = BoundaryNorm(
+        np.linspace(
+            distance_above_comfortable_lims[0], distance_above_comfortable_lims[1], 100
+        ),
+        ncolors=distance_above_comfortable_cmap.N,
+        clip=True,
+    )
 
-    distance_below_comfortable_cmap = plt.get_cmap("YlGnBu") # Blues
+    distance_below_comfortable_cmap = plt.get_cmap("YlGnBu")  # Blues
     distance_below_comfortable_lims = [0, low_limit]
-    distance_below_comfortable_norm = BoundaryNorm(np.linspace(distance_below_comfortable_lims[0], distance_below_comfortable_lims[1], 100), ncolors=distance_below_comfortable_cmap.N, clip=True)
+    distance_below_comfortable_norm = BoundaryNorm(
+        np.linspace(
+            distance_below_comfortable_lims[0], distance_below_comfortable_lims[1], 100
+        ),
+        ncolors=distance_below_comfortable_cmap.N,
+        clip=True,
+    )
 
-    distance_below_midpoint_cmap = plt.get_cmap("YlGn_r") # Greens_r
+    distance_below_midpoint_cmap = plt.get_cmap("YlGn_r")  # Greens_r
     distance_below_midpoint_lims = [0, midpoint - low]
-    distance_below_midpoint_norm = BoundaryNorm(np.linspace(distance_below_midpoint_lims[0], distance_below_midpoint_lims[1], 100), ncolors=distance_below_midpoint_cmap.N, clip=True)
+    distance_below_midpoint_norm = BoundaryNorm(
+        np.linspace(
+            distance_below_midpoint_lims[0], distance_below_midpoint_lims[1], 100
+        ),
+        ncolors=distance_below_midpoint_cmap.N,
+        clip=True,
+    )
 
-    distance_above_midpoint_cmap = plt.get_cmap("YlGn_r") # Greens_r
+    distance_above_midpoint_cmap = plt.get_cmap("YlGn_r")  # Greens_r
     distance_above_midpoint_lims = [0, high - midpoint]
-    distance_above_midpoint_norm = BoundaryNorm(np.linspace(distance_above_midpoint_lims[0], distance_above_midpoint_lims[1], 100), ncolors=distance_above_midpoint_cmap.N, clip=True)
+    distance_above_midpoint_norm = BoundaryNorm(
+        np.linspace(
+            distance_above_midpoint_lims[0], distance_above_midpoint_lims[1], 100
+        ),
+        ncolors=distance_above_midpoint_cmap.N,
+        clip=True,
+    )
 
     extent = [
         mdates.date2num(series.index.min()),
@@ -689,7 +761,10 @@ def plot_utci_distance_to_comfortable(
     cb_high_ax = fig.add_subplot(gs[1, 2])
 
     distance_below_comfortable_plt = hmap_ax.imshow(
-        np.ma.array(distance_below_comfortable_matrix, mask=np.isnan(distance_below_comfortable_matrix)),
+        np.ma.array(
+            distance_below_comfortable_matrix,
+            mask=np.isnan(distance_below_comfortable_matrix),
+        ),
         extent=extent,
         aspect="auto",
         cmap=distance_below_comfortable_cmap,
@@ -697,7 +772,10 @@ def plot_utci_distance_to_comfortable(
         interpolation="none",
     )
     distance_below_midpoint_plt = hmap_ax.imshow(
-        np.ma.array(distance_below_midpoint_matrix, mask=np.isnan(distance_below_midpoint_matrix)),
+        np.ma.array(
+            distance_below_midpoint_matrix,
+            mask=np.isnan(distance_below_midpoint_matrix),
+        ),
         extent=extent,
         aspect="auto",
         cmap=distance_below_midpoint_cmap,
@@ -705,7 +783,10 @@ def plot_utci_distance_to_comfortable(
         interpolation="none",
     )
     distance_above_comfortable_plt = hmap_ax.imshow(
-        np.ma.array(distance_above_comfortable_matrix, mask=np.isnan(distance_above_comfortable_matrix)),
+        np.ma.array(
+            distance_above_comfortable_matrix,
+            mask=np.isnan(distance_above_comfortable_matrix),
+        ),
         extent=extent,
         aspect="auto",
         cmap=distance_above_comfortable_cmap,
@@ -713,7 +794,10 @@ def plot_utci_distance_to_comfortable(
         interpolation="none",
     )
     distance_above_midpoint_plt = hmap_ax.imshow(
-        np.ma.array(distance_above_midpoint_matrix, mask=np.isnan(distance_above_midpoint_matrix)),
+        np.ma.array(
+            distance_above_midpoint_matrix,
+            mask=np.isnan(distance_above_midpoint_matrix),
+        ),
         extent=extent,
         aspect="auto",
         cmap=distance_above_midpoint_cmap,
@@ -746,7 +830,7 @@ def plot_utci_distance_to_comfortable(
         cmap=distance_below_comfortable_cmap,
         orientation="horizontal",
         norm=distance_below_comfortable_norm,
-        label="Degrees below \"comfortable\"",
+        label='Degrees below "comfortable"',
         extend="max",
     )
     low_cb.outline.set_visible(False)
@@ -757,7 +841,7 @@ def plot_utci_distance_to_comfortable(
         cmap=distance_below_midpoint_cmap,
         orientation="horizontal",
         norm=distance_below_midpoint_norm,
-        label="Degrees about \"comfortable\"",
+        label='Degrees about "comfortable"',
         extend="neither",
     )
     mid_cb.outline.set_visible(False)
@@ -768,7 +852,7 @@ def plot_utci_distance_to_comfortable(
         cmap=distance_above_comfortable_cmap,
         orientation="horizontal",
         norm=distance_above_comfortable_norm,
-        label="Degrees above \"comfortable\"",
+        label='Degrees above "comfortable"',
         extend="max",
     )
     high_cb.outline.set_visible(False)
