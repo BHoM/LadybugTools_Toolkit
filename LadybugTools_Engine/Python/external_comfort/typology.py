@@ -95,11 +95,11 @@ class Typology:
         if (self.evaporative_cooling_effectiveness != 0) and (
             self.wind_speed_multiplier != 1
         ):
-            return f"{self.name}": {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness, and {wind_str}"
+            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness, and {wind_str}"
         elif self.evaporative_cooling_effectiveness != 0:
-            return f"{self.name}": {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness"
+            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness"
         else:
-            return f"{self.name}": {shelter_str}, with {wind_str}"
+            return f"{self.name}: {shelter_str}, with {wind_str}"
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name}, {[i for i in self.shelters]}, {self.evaporative_cooling_effectiveness}, {self.wind_speed_multiplier})"
