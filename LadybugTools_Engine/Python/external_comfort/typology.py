@@ -95,11 +95,11 @@ class Typology:
         if (self.evaporative_cooling_effectiveness != 0) and (
             self.wind_speed_multiplier != 1
         ):
-            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness, and {wind_str}"
+            return f"{self.name}": {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness, and {wind_str}"
         elif self.evaporative_cooling_effectiveness != 0:
-            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness"
+            return f"{self.name}": {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness"
         else:
-            return f"{self.name}: {shelter_str}, with {wind_str}"
+            return f"{self.name}": {shelter_str}, with {wind_str}"
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name}, {[i for i in self.shelters]}, {self.evaporative_cooling_effectiveness}, {self.wind_speed_multiplier})"
@@ -470,7 +470,7 @@ class TypologyResult:
             ws=to_series(self.wind_speed),
             month=month,
             day=day,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
         )
 
     def plot_utci_heatmap(self) -> Figure:
@@ -484,7 +484,7 @@ class TypologyResult:
             collection=self.universal_thermal_climate_index,
             colormap=UTCI_COLORMAP,
             norm=UTCI_BOUNDARYNORM,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
         )
 
         return fig
@@ -494,7 +494,7 @@ class TypologyResult:
 
         fig = plot_utci_heatmap_histogram(
             self.universal_thermal_climate_index,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
         )
 
         return fig
@@ -512,7 +512,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.dry_bulb_temperature,
             colormap=DBT_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
             vlims=vlims,
         )
 
@@ -531,7 +531,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.relative_humidity,
             colormap=RH_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
             vlims=vlims,
         )
 
@@ -550,7 +550,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.wind_speed,
             colormap=WS_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
             vlims=vlims,
         )
 
@@ -569,7 +569,7 @@ class TypologyResult:
         fig = plot_heatmap(
             collection=self.mean_radiant_temperature,
             colormap=MRT_COLORMAP,
-            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.description}",
+            title=f"{describe(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
             vlims=vlims,
         )
 
