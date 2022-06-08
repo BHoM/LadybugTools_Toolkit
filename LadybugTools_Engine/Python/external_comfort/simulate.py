@@ -50,6 +50,8 @@ PYTHON_SCRIPTS = (
 ladybug_tools_folder = Path(f"C:/Users/{USERNAME}/ladybug_tools")
 
 hb_folders.default_simulation_folder = f"C:/Users/{USERNAME}/simulation"
+SIMULATION_DIRECTORY = Path(hb_folders.default_simulation_folder)
+
 Path(hb_folders.default_simulation_folder).mkdir(parents=True, exist_ok=True)
 hb_folders._python_exe_path = PYTHON_EXE
 hb_folders._python_package_path = PYTHON_PACKAGES
@@ -96,9 +98,7 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         A dictionary containing ground and shade (below and above) surface temperature values.
     """
 
-    working_directory: Path = (
-        Path(hb_folders.default_simulation_folder) / model.identifier
-    )
+    working_directory: Path = SIMULATION_DIRECTORY / model.identifier
     working_directory.mkdir(parents=True, exist_ok=True)
     sql_path = working_directory / "run" / "eplusout.sql"
 
@@ -171,8 +171,10 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         # Remove unneeded files
         _tidy_energyplus_results(working_directory)
 
-        # Save EPW into working directory folder for posterity
-        epw.save(working_directory / "run" / Path(epw.file_path).name)
+        # save EPW to working directory
+        epw.save(working_directory / Path(epw.file_path).name)
+    else:
+        print("- Loading surface temperatures")
 
     # Return results
     df = load_sql(sql_path)
@@ -205,9 +207,7 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         A dictionary containing radiation values.
     """
 
-    working_directory: Path = (
-        Path(hb_folders.default_simulation_folder) / model.identifier
-    )
+    working_directory: Path = SIMULATION_DIRECTORY / model.identifier
     working_directory.mkdir(parents=True, exist_ok=True)
     total_directory = working_directory / "annual_irradiance/results/total"
     direct_directory = working_directory / "annual_irradiance/results/direct"
@@ -223,6 +223,11 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         _ = recipe.run(
             settings=recipe_settings, radiance_check=True, queenbee_path=QUEENBEE_EXE
         )
+
+        # save EPW to working directory
+        epw.save(working_directory / Path(epw.file_path).name)
+    else:
+        print("- Loading annual irradiance")
 
     unshaded_total = (
         make_annual(load_ill(total_directory / "UNSHADED.ill"))
@@ -242,9 +247,6 @@ def radiance(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
 
     # Remove unneeded files
     _tidy_radiance_results(working_directory)
-
-    # Save EPW into working directory folder for posterity
-    epw.save(working_directory / "annual_irradiance" / Path(epw.file_path).name)
 
     return {
         "unshaded_direct_radiation": from_series(unshaded_direct),
@@ -276,11 +278,9 @@ def _radiance_results_exist(model: Model, epw: EPW) -> bool:
     Returns:
         bool: True if the model and EPW have already been simulated, False otherwise.
     """
-    working_directory: Path = (
-        Path(hb_folders.default_simulation_folder) / model.identifier
-    )
+    working_directory: Path = SIMULATION_DIRECTORY / model.identifier
 
-    # Try to load existing HBJSON file
+    # Try to load existing HBJSON file and check that it matches
     try:
         existing_model = Model.from_hbjson(
             (
@@ -289,24 +289,24 @@ def _radiance_results_exist(model: Model, epw: EPW) -> bool:
                 / f"{working_directory.stem}.hbjson"
             ).as_posix()
         )
+        models_match = _model_equality(model, existing_model, include_identifier=True)
+        # if models_match:
+        #     print("models match")
     except (FileNotFoundError, AssertionError) as e:
         return False
 
-    # Try to load existing EPW file
+    # Try to load existing EPW file and check that it matches
     try:
         existing_epw = EPW(
             (
-                working_directory / "annual_irradiance" / Path(epw.file_path).name
+                working_directory / Path(epw.file_path).name
             ).as_posix()
         )
+        epws_match = _epw_equality(epw, existing_epw, include_header=True)
+        # if epws_match:
+        #     print("epw match")
     except (FileNotFoundError, AssertionError) as e:
         return False
-
-    # Check that EPW files match
-    epws_match = _epw_equality(epw, existing_epw, include_header=True)
-
-    # Check that HJBSON files match
-    models_match = _model_equality(model, existing_model, include_identifier=True)
 
     # Check that the output files necessary to reload exist
     results_exist = all(
@@ -319,13 +319,11 @@ def _radiance_results_exist(model: Model, epw: EPW) -> bool:
             ).exists(),
         ]
     )
-
     radiance_results_exist = all([epws_match, models_match, results_exist])
+    # if radiance_results_exist:
+    #     print("radiance_results_exist")
 
-    if radiance_results_exist:
-        return True
-    else:
-        return False
+    return radiance_results_exist
 
 
 def _energyplus_results_exist(model: Model, epw: EPW) -> bool:
@@ -338,31 +336,31 @@ def _energyplus_results_exist(model: Model, epw: EPW) -> bool:
     Returns:
         bool: True if the model and EPW have already been simulated, False otherwise.
     """
-    working_directory: Path = (
-        Path(hb_folders.default_simulation_folder) / model.identifier
-    )
+    working_directory: Path = SIMULATION_DIRECTORY / model.identifier
 
-    # Try to load existing HBJSON file
+    # Try to load existing HBJSON file and check that it matches
     try:
         existing_model = Model.from_hbjson(
-            (working_directory / f"{working_directory.stem}.hbjson").as_posix()
+            (
+                working_directory
+                / "annual_irradiance"
+                / f"{working_directory.stem}.hbjson"
+            ).as_posix()
         )
+        models_match = _model_equality(model, existing_model, include_identifier=True)
     except (FileNotFoundError, AssertionError) as e:
         return False
 
-    # Try to load existing EPW file
+    # Try to load existing EPW file and check that it matches
     try:
         existing_epw = EPW(
-            (working_directory / "run" / Path(epw.file_path).name).as_posix()
+            (
+                working_directory / Path(epw.file_path).name
+            ).as_posix()
         )
+        epws_match = _epw_equality(epw, existing_epw, include_header=True)
     except (FileNotFoundError, AssertionError) as e:
         return False
-
-    # Check that EPW files match
-    epws_match = _epw_equality(epw, existing_epw, include_header=True)
-
-    # Check that HJBSON files match
-    models_match = _model_equality(model, existing_model, include_identifier=True)
 
     # Check that the output files necessary to reload exist
     results_exist = (working_directory / "run" / "eplusout.sql").exists()
