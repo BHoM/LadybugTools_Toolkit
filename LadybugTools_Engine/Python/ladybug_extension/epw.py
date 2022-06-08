@@ -235,14 +235,12 @@ def _get_solar_time_datetime(
     _datetimes = pd.to_datetime(
         [f"{ds} {ts}" for ds, ts in list(zip(*[date_str, timestamp_str]))]
     )
+    _datetimes = list(_datetimes)
 
     # Sometimes the first datetime for solar time occurs before the target year - so this moves the first datetime to the previous day
-    if _datetimes[0] > _datetimes[1]:
-        datetimes = [_datetimes[0] - datetime.timedelta(hours=24)] + _datetimes[
-            1:
-        ].to_list()
-    else:
-        datetimes = _datetimes
+    for i in range(12):
+        if (_datetimes[i].year == _datetimes[-1].year) and (_datetimes[i].hour > 12):
+            _datetimes[i] = _datetimes[i] - pd.Timedelta(days=1)
 
     return HourlyContinuousCollection(
         Header(
@@ -254,7 +252,7 @@ def _get_solar_time_datetime(
             analysis_period=AnalysisPeriod(),
             metadata=solar_time_hour.header.metadata,
         ),
-        datetimes,
+        _datetimes,
     )
 
 
