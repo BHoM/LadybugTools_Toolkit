@@ -42,11 +42,11 @@ def to_dataframe(
         except (AttributeError, TypeError, ZeroDivisionError, ValueError) as e:
             pass
 
-    Returns:
-        bool: True if the two EPW objects are equal, False otherwise.
-    """
-    if not isinstance(epw0, EPW) or not isinstance(epw1, EPW):
-        raise TypeError("Both inputs must be of type EPW.")
+    for k, v in epw.monthly_ground_temperature.items():
+        hourly_collection = to_hourly(v)
+        hourly_series = to_series(hourly_collection)
+        hourly_series.name = f"{hourly_series.name} at {k}m"
+        all_series.append(hourly_series)
 
     # Calculate additional solar properties
     sun_position = _get_sun_position(epw)
@@ -61,16 +61,10 @@ def to_dataframe(
     apparent_solar_zenith = _get_apparent_solar_zenith(epw, solar_altitude)
     clearness_index = get_clearness_index(epw, sun_position)
 
-    # Check key metrics
-    dbt_match = epw0.dry_bulb_temperature == epw1.dry_bulb_temperature
-    rh_match = epw0.relative_humidity == epw1.relative_humidity
-    dpt_match = epw0.dew_point_temperature == epw1.dew_point_temperature
-    ws_match = epw0.wind_speed == epw1.wind_speed
-    wd_match = epw0.wind_direction == epw1.wind_direction
-    ghr_match = epw0.global_horizontal_radiation == epw1.global_horizontal_radiation
-    dnr_match = epw0.direct_normal_radiation == epw1.direct_normal_radiation
-    dhr_match = epw0.diffuse_horizontal_radiation == epw1.diffuse_horizontal_radiation
-    atm_match = epw0.atmospheric_station_pressure == epw1.atmospheric_station_pressure
+    # Calculate additional psychrometric properties
+    humidity_ratio = get_humidity_ratio(epw)
+    enthalpy = get_enthalpy(epw, humidity_ratio)
+    wet_bulb_temperature = get_wet_bulb_temperature(epw)
 
     for collection in [
         equation_of_time,
@@ -417,16 +411,12 @@ def get_wet_bulb_temperature(epw: EPW) -> HourlyContinuousCollection:
     return HourlyContinuousCollection.compute_function_aligned(
         wet_bulb_from_db_rh,
         [
-            dbt_match,
-            rh_match,
-            dpt_match,
-            ws_match,
-            wd_match,
-            ghr_match,
-            dnr_match,
-            dhr_match,
-            atm_match,
-        ]
+            epw.dry_bulb_temperature,
+            epw.relative_humidity,
+            epw.atmospheric_station_pressure,
+        ],
+        datatype.temperature.WetBulbTemperature(),
+        "C",
     )
 
 
@@ -450,8 +440,6 @@ def get_humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
         "fraction",
     )
 
-    Args:
-        epw (EPW): The EPW object for which this calculation is made.
 
 def get_enthalpy(
     epw: EPW, humidity_ratio: HourlyContinuousCollection = None
