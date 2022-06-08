@@ -19,7 +19,7 @@ from ladybug_extension.datacollection import from_series, to_series
 
 from external_comfort.encoder import Encoder
 from external_comfort.model import create_model
-from external_comfort.simulate import energyplus, radiance
+from external_comfort.simulate import energyplus, radiance, SIMULATION_DIRECTORY
 
 
 class ExternalComfortEncoder(Encoder):
@@ -47,6 +47,9 @@ class ExternalComfort:
             "model",
             create_model(self.ground_material, self.shade_material, self.identifier),
         )
+        
+        # Save EPW into working directory folder for posterity
+        self.epw.save(SIMULATION_DIRECTORY / self.model.identifier / Path(self.epw.file_path).name)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.identifier}, {self.epw}, {self.ground_material.identifier}, {self.shade_material.identifier})"
@@ -127,7 +130,7 @@ class ExternalComfortResult:
     def __post_init__(self) -> ExternalComfortResult:
         """Calculate the mean radiant tempertaure, and constituent parts of this value from the External Comfort configuration."""
 
-        print(f"- Running simulation for {self}")
+        print(f"- Running external comfort calculation for {self}")
 
         # Run EnergyPlus and Radiance simulations
         results = []
