@@ -797,7 +797,7 @@ class SpatialComfortResult:
             )
         ):
             print(
-                f"- Calculating UTCI matrix - {n + 1/len(self.dry_bulb_temperature):0.2%}",
+                f"- Calculating UTCI matrix - {n/len(self.dry_bulb_temperature):0.2%}",
                 end="\r",
             )
             utcis.append(v_utci(dbt, mrt, ws, rh))
