@@ -1,6 +1,5 @@
 from __future__ import annotations
 import calendar
-from datetime import datetime
 import shutil
 from typing import Dict, List
 import warnings
@@ -16,12 +15,11 @@ from honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from cached_property import cached_property
 import numpy as np
 import pandas as pd
-from external_comfort.encoder import Encoder
 from dataclasses import dataclass
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.analysisperiod import AnalysisPeriod
 from pathlib import Path
-from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult
+from external_comfort.external_comfort import ExternalComfortResult
 from external_comfort.moisture import MoistureSource, evaporative_cooling_effect
 from ladybug_extension.analysis_period import describe_analysis_period
 from external_comfort.typology import Typology, TypologyResult, Shelter
@@ -48,6 +46,9 @@ class SpatialComfort:
     ) -> SpatialComfort:
         self.simulation_directory = Path(simulation_directory)
 
+        self._index = to_series(external_comfort_result.external_comfort.epw.dry_bulb_temperature).index
+        self._columns = None
+
         # Tidy results folder and check for requisite datasets
         self._simulation_validity()
         self._remove_temp_files()
@@ -67,7 +68,6 @@ class SpatialComfort:
         )
 
         self.moisture_sources = self._load_moisture_sources()
-        self.epw = self.external_comfort_result.external_comfort.epw
 
     def _simulation_validity(self) -> None:
 
@@ -93,6 +93,11 @@ class SpatialComfort:
             raise ValueError(
                 f"This process is only possible for a single Analysis Grid - multiple files found {[i.stem for i in res_files]}."
             )
+        
+        # Load the res file to determine n-points, and create the global column names
+        with open(res_files[0], "r") as fp:
+            n_pts = len(fp.readlines())
+        self._columns = pd.MultiIndex.from_product([[res_files[0].stem], range(n_pts)])
 
     def _remove_temp_files(self) -> None:
         """Remove initial results files from simulated case to save on disk space."""
@@ -140,30 +145,32 @@ class SpatialComfortResult:
     def __init__(self, spatial_comfort: SpatialComfort) -> SpatialComfortResult:
         self.spatial_comfort = spatial_comfort
 
+
+
     @cached_property
     def dry_bulb_temperature(self) -> List[float]:
         """Return the hourly dry bulb temperature values from the simulation weatherfile."""
-        return np.array(self.spatial_comfort.epw.dry_bulb_temperature.values)
+        return np.array(self.spatial_comfort.external_comfort_result.external_comfort.epw.dry_bulb_temperature.values)
 
     @cached_property
     def atmospheric_station_pressure(self) -> List[float]:
         """Return the hourly atmospheric station pressure values from the simulation weatherfile."""
-        return np.array(self.spatial_comfort.epw.atmospheric_station_pressure.values)
+        return np.array(self.spatial_comfort.external_comfort_result.external_comfort.epw.atmospheric_station_pressure.values)
 
     @cached_property
     def relative_humidity(self) -> List[float]:
         """Return the hourly relative humidity values from the simulation weatherfile."""
-        return np.array(self.spatial_comfort.epw.relative_humidity.values)
+        return np.array(self.spatial_comfort.external_comfort_result.external_comfort.epw.relative_humidity.values)
 
     @cached_property
     def wind_speed(self) -> List[float]:
         """Return the hourly wind speed values from the simulation weatherfile."""
-        return np.array(self.spatial_comfort.epw.wind_speed.values)
+        return np.array(self.spatial_comfort.external_comfort_result.external_comfort.epw.wind_speed.values)
 
     @cached_property
     def wind_direction(self) -> List[float]:
         """Return the hourly wind direction values from the simulation weatherfile."""
-        return np.array(self.spatial_comfort.epw.wind_direction.values)
+        return np.array(self.spatial_comfort.external_comfort_result.external_comfort.epw.wind_direction.values)
 
     @cached_property
     def points(self) -> pd.DataFrame:
@@ -400,14 +407,14 @@ class SpatialComfortResult:
             self.spatial_comfort.shaded_typology_result.mean_radiant_temperature,
             self.total_irradiance_matrix,
             self.sky_view,
-            np.array(self.spatial_comfort.epw.global_horizontal_radiation.values) > 0,
+            np.array(self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation.values) > 0,
         ).astype(np.float16)
         mrt.to_hdf(mrt_path, "df", complevel=9, complib="blosc")
         return mrt
 
     @cached_property
-    def points_xy(self) -> List[List[float]]:
-        """Return the x and y coordinates of the points in the grid."""
+    def points_xyz(self) -> List[List[float]]:
+        """Return the coordinates of the analysis points."""
         reshaped_points = (
             self.points.unstack()
             .reset_index()
@@ -416,7 +423,12 @@ class SpatialComfortResult:
         )
         reshaped_points.columns.name = None
         reshaped_points.index.names = (None, None)
-        return reshaped_points[["x", "y"]].values
+        return reshaped_points[["x", "y", "z"]].values
+    
+    @cached_property
+    def points_xy(self) -> List[List[float]]:
+        """Return the coordinates of the analysis points."""
+        return self.points_xyz[:, :2]
 
     @cached_property
     def wind_speed_direction(self) -> List[List[float]]:
@@ -601,8 +613,8 @@ class SpatialComfortResult:
         )
         mtx = pd.DataFrame(
             self.moisture_source_matrix_unique[self.wind_speed_direction_indices],
-            index=self.mean_radiant_temperature_matrix.index,
-            columns=self.mean_radiant_temperature_matrix.columns,
+            index=self.spatial_comfort._index,
+            columns=self.spatial_comfort._columns,
         ).astype(np.float16)
 
         mtx.to_hdf(mtx_path, "df", complevel=9, complib="blosc")
@@ -622,11 +634,11 @@ class SpatialComfortResult:
             dbt = pd.DataFrame(
                 np.repeat(
                     [self.dry_bulb_temperature],
-                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    [len(self.spatial_comfort._columns)],
                     axis=0,
                 ).T,
-                index=self.mean_radiant_temperature_matrix.index,
-                columns=self.mean_radiant_temperature_matrix.columns,
+                index=self.spatial_comfort._index,
+                columns=self.spatial_comfort._columns,
             )
             dbt.to_hdf(save_path, "df", complib="blosc", complevel=9)
         else:
@@ -651,20 +663,20 @@ class SpatialComfortResult:
             dbt = pd.DataFrame(
                 np.repeat(
                     [self.dry_bulb_temperature],
-                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    [len(self.spatial_comfort._columns)],
                     axis=0,
                 ).T,
-                index=self.mean_radiant_temperature_matrix.index,
-                columns=self.mean_radiant_temperature_matrix.columns,
+                index=self.spatial_comfort._index,
+                columns=self.spatial_comfort._columns,
             )
             rh = pd.DataFrame(
                 np.repeat(
                     [self.relative_humidity],
-                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    [len(self.spatial_comfort._columns)],
                     axis=0,
                 ).T,
-                index=self.mean_radiant_temperature_matrix.index,
-                columns=self.mean_radiant_temperature_matrix.columns,
+                index=self.spatial_comfort._index,
+                columns=self.spatial_comfort._columns,
             )
         else:
             temp = []
@@ -718,11 +730,11 @@ class SpatialComfortResult:
             rh = pd.DataFrame(
                 np.repeat(
                     [self.relative_humidity],
-                    [len(self.mean_radiant_temperature_matrix.values.T)],
+                    [len(self.spatial_comfort._columns)],
                     axis=0,
                 ).T,
-                index=self.mean_radiant_temperature_matrix.index,
-                columns=self.mean_radiant_temperature_matrix.columns,
+                index=self.spatial_comfort._index,
+                columns=self.spatial_comfort._columns,
             )
             rh.to_hdf(save_path, "df", complib="blosc", complevel=9)
         else:
@@ -733,14 +745,50 @@ class SpatialComfortResult:
         """Return an annual hourly spatial matrix of wind speed."""
         save_path = self.spatial_comfort.simulation_directory / "wind_speed_matrix.h5"
 
+        if save_path.exists():
+            print(
+                f"- Loading wind speed data from {self.spatial_comfort.simulation_directory.name}"
+            )
+            return pd.read_hdf(save_path, "df")
+        
+        print(
+            f"- Processing wind speed data for {self.spatial_comfort.simulation_directory.name}"
+        )
         ws = pd.DataFrame(
             np.repeat(
                 [self.wind_speed],
-                [len(self.mean_radiant_temperature_matrix.values.T)],
+                [len(self.spatial_comfort._columns)],
                 axis=0,
             ).T,
-            index=self.mean_radiant_temperature_matrix.index,
-            columns=self.mean_radiant_temperature_matrix.columns,
+            index=self.spatial_comfort._index,
+            columns=self.spatial_comfort._columns,
+        )
+        ws.to_hdf(save_path, "df", complib="blosc", complevel=9)
+
+        return ws
+    
+    @cached_property
+    def wind_direction_matrix(self) -> pd.DataFrame:
+        """Return an annual hourly spatial matrix of wind direction."""
+        save_path = self.spatial_comfort.simulation_directory / "wind_direction_matrix.h5"
+
+        if save_path.exists():
+            print(
+                f"- Loading wind direction data from {self.spatial_comfort.simulation_directory.name}"
+            )
+            return pd.read_hdf(save_path, "df")
+        
+        print(
+            f"- Processing wind direction data for {self.spatial_comfort.simulation_directory.name}"
+        )
+        ws = pd.DataFrame(
+            np.repeat(
+                [self.wind_direction],
+                [len(self.points)],
+                axis=0,
+            ).T,
+            index=self.spatial_comfort._index,
+            columns=self.spatial_comfort._columns,
         )
         ws.to_hdf(save_path, "df", complib="blosc", complevel=9)
 
@@ -774,7 +822,7 @@ class SpatialComfortResult:
                 self.spatial_comfort.shaded_typology_result.universal_thermal_climate_index,
                 self.total_irradiance_matrix,
                 self.sky_view,
-                np.array(self.spatial_comfort.epw.global_horizontal_radiation.values)
+                np.array(self.spatial_comfort.external_comfort_result.external_comfort.epw.global_horizontal_radiation.values)
                 > 0,
             ).astype(np.float16)
             utci.to_hdf(save_path, "df", complevel=9, complib="blosc")
@@ -804,8 +852,8 @@ class SpatialComfortResult:
 
         utci = pd.DataFrame(
             np.array(utcis),
-            index=self.mean_radiant_temperature_matrix.index,
-            columns=self.mean_radiant_temperature_matrix.columns,
+            index=self.spatial_comfort._index,
+            columns=self.spatial_comfort._columns,
         ).astype(np.float16)
         utci.to_hdf(save_path, "df", complevel=9, complib="blosc")
         return utci
