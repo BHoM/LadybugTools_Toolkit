@@ -689,7 +689,7 @@ def plot_utci_distance_to_comfortable(
     cb_high_ax = fig.add_subplot(gs[1, 2])
 
     distance_below_comfortable_plt = hmap_ax.imshow(
-        np.ma.array(distance_below_comfortable_matrix, mask=np.isnan(distance_below_comfortable_matrix)),
+        np.ma.array(distance_below_comfortable_matrix, mask=np.isnan(distance_below_comfortable_matrix))[::-1],
         extent=extent,
         aspect="auto",
         cmap=distance_below_comfortable_cmap,
@@ -697,7 +697,7 @@ def plot_utci_distance_to_comfortable(
         interpolation="none",
     )
     distance_below_midpoint_plt = hmap_ax.imshow(
-        np.ma.array(distance_below_midpoint_matrix, mask=np.isnan(distance_below_midpoint_matrix)),
+        np.ma.array(distance_below_midpoint_matrix, mask=np.isnan(distance_below_midpoint_matrix))[::-1],
         extent=extent,
         aspect="auto",
         cmap=distance_below_midpoint_cmap,
@@ -705,7 +705,7 @@ def plot_utci_distance_to_comfortable(
         interpolation="none",
     )
     distance_above_comfortable_plt = hmap_ax.imshow(
-        np.ma.array(distance_above_comfortable_matrix, mask=np.isnan(distance_above_comfortable_matrix)),
+        np.ma.array(distance_above_comfortable_matrix, mask=np.isnan(distance_above_comfortable_matrix))[::-1],
         extent=extent,
         aspect="auto",
         cmap=distance_above_comfortable_cmap,
@@ -713,7 +713,7 @@ def plot_utci_distance_to_comfortable(
         interpolation="none",
     )
     distance_above_midpoint_plt = hmap_ax.imshow(
-        np.ma.array(distance_above_midpoint_matrix, mask=np.isnan(distance_above_midpoint_matrix)),
+        np.ma.array(distance_above_midpoint_matrix, mask=np.isnan(distance_above_midpoint_matrix))[::-1],
         extent=extent,
         aspect="auto",
         cmap=distance_above_midpoint_cmap,
@@ -722,7 +722,7 @@ def plot_utci_distance_to_comfortable(
     )
 
     # Axis formatting
-    hmap_ax.invert_yaxis()
+    # hmap_ax.invert_yaxis()
     hmap_ax.xaxis_date()
     hmap_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
     hmap_ax.yaxis_date()
