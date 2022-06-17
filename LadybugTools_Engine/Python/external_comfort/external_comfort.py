@@ -51,6 +51,9 @@ class ExternalComfort:
         # Save EPW into working directory folder for posterity
         self.epw.save(SIMULATION_DIRECTORY / self.model.identifier / Path(self.epw.file_path).name)
 
+        # Rename object based on model identifier
+        object.__setattr__(self, "identifier", self.model.identifier)
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.identifier}, {self.epw}, {self.ground_material.identifier}, {self.shade_material.identifier})"
 
@@ -130,7 +133,7 @@ class ExternalComfortResult:
     def __post_init__(self) -> ExternalComfortResult:
         """Calculate the mean radiant tempertaure, and constituent parts of this value from the External Comfort configuration."""
 
-        print(f"- Running external comfort calculation for {self}")
+        print(f"- Running external comfort calculation for {self.external_comfort.identifier}")
 
         # Run EnergyPlus and Radiance simulations
         results = []

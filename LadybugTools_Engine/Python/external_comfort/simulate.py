@@ -27,7 +27,7 @@ from ladybug_extension.datacollection import from_series
 from ladybug_extension.epw import _epw_equality
 from lbt_recipes.recipe import Recipe, RecipeSettings
 
-from external_comfort.ground_temperature import energyplus_strings
+from external_comfort.ground_temperature import energyplus_strings_otherside_coeff
 from external_comfort.model import _model_equality
 
 """
@@ -159,11 +159,19 @@ def energyplus(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
         _, idf = run_osw(osw, silent=False)
 
         # Add ground temperature strings to IDF
-        with open(idf, "a") as fp:
-            fp.writelines([energyplus_strings(epw)])
-        # TODO - Replace this part with a proper "Other Side Boundary Condition" for
-        # hourly ground temperatures, once possible in HB-energy
-        # (https://github.com/ladybug-tools/honeybee-energy/issues/407)
+        with open(idf, "r") as fp:
+            idf_string = fp.read()
+        idf_string = idf_string.replace(
+            "Ground,                                 !- Outside Boundary Condition", 
+            "OtherSideCoefficients,                  !- Outside Boundary Condition"
+        )
+        idf_string = idf_string.replace(
+            ",                                       !- Outside Boundary Condition Object", 
+            "GroundTemperature,                      !- Outside Boundary Condition Object"
+        )
+        idf_string += f"\n\n{energyplus_strings_otherside_coeff(epw)}"
+        with open(idf, "w") as fp:
+            idf_string = fp.write(idf_string)
 
         # Simulate IDF
         _, _, _, _, _ = run_idf(idf, epw.file_path, silent=False)
@@ -439,7 +447,6 @@ def _tidy_energyplus_results(working_directory: Path) -> None:
         "eplustbl.htm",
         "finished.job",
         "in.bat",
-        "in.idf",
     ]
     for file in all_files:
         if file.name in files_to_delete:

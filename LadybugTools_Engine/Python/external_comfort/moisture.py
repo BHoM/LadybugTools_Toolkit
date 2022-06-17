@@ -36,7 +36,7 @@ class MoistureSource:
         for ws in water_sources:
             objs.append(
                 MoistureSource(
-                    ws["id"], ws["magnitude"], np.array(ws["points"]).astype(np.float16)
+                    ws["id"], ws["magnitude"], np.array(ws["points"]).astype(np.float32)  # < changed to 32 bit to avoid overflow, might cause a crash, who knows?
                 )
             )
         return objs
