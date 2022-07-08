@@ -32,48 +32,35 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
-        [Input("epwFile", "An EPW file.")]
-        [Output("csv", "The generated CSV file.")]
-        public static string EPWtoCSV(string epwFile)
-        {
-            if (string.IsNullOrEmpty(epwFile))
-            {
-                Base.Compute.RecordError($"epwFile input is either null or has 0 length.");
-                return null;
-            }
+        //[Description("Convert an EPW file into a CSV and return the path to that CSV.")]
+        //[Input("epwFile", "An EPW file.")]
+        //[Output("csv", "The generated CSV file.")]
+        //public static string EPWtoCSV(string epwFile)
+        //{
+        //    BH.oM.Python.Environment env = Query.LadybugToolsToolkitEnvironment();
 
-            if (!File.Exists(epwFile))
-            {
-                Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {epwFile}");
-                return null;
-            }
+        //    if (env == null)
+        //    {
+        //        BH.Engine.Base.Compute.RecordError($"{Query.ToolkitName()} not found on this machine. Try installing using \"Query.LadybugToolsToolkitEnvironment()\".");
+        //        return null;
+        //    }
 
-            PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
-            if (!pythonEnvironment.IsInstalled())
-            {
-                BH.Engine.Base.Compute.RecordError($"Install the {Query.ToolkitName()} Python environment before running this method (using {Query.ToolkitName()}.Compute.InstallPythonEnvironment).");
-                return null;
-            }
+        //    string pythonScript = String.Join("\n", new List<string>() 
+        //    {
+        //        "from pathlib import Path",
+        //        "from ladybug.epw import EPW",
+        //        "from LadybugTools_Toolkit.ladybug_extension.epw import to_dataframe",
+        //        "",
+        //        $"epw_path = Path(r'{epwFile}')",
+        //        "csv_path = epw_path.with_suffix('.csv')",
+        //        "to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
+        //        "print(csv_path)",
+        //    });
 
-            string pythonScript = String.Join("\n", new List<string>() 
-            {
-                "from pathlib import Path",
-                "import sys",
-                $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-                "from ladybug_extension.epw import to_dataframe",
-                "from ladybug.epw import EPW",
-                "",
-                $"epw_path = Path(r'{epwFile}')",
-                "csv_path = epw_path.with_suffix('.csv')",
-                "to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
-                "print(csv_path)",
-            });
+        //    string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
 
-            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
-
-            return output;
-        }
+        //    return output;
+        //}
     }
 }
 

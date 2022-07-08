@@ -35,53 +35,53 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Post-process a spatial-comfort simulation and return results.")]
-        [Input("epw", "An EPW file.")]
-        [Output("simulationDirectory", "The directory in which results can be found.")]
-        private static string SpatialComfort(string epw, string simulationDirectory)
-        {
-            PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
-            if (!pythonEnvironment.IsInstalled())
-            {
-                BH.Engine.Base.Compute.RecordError($"Install the {Query.ToolkitName()} Python environment before running this method (using {Query.ToolkitName()}.Compute.InstallPythonEnvironment).");
-                return null;
-            }
+        //[Description("Post-process a spatial-comfort simulation and return results.")]
+        //[Input("epw", "An EPW file.")]
+        //[Output("simulationDirectory", "The directory in which results can be found.")]
+        //private static string SpatialComfort(string epw, string simulationDirectory)
+        //{
+        //    PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
+        //    if (!pythonEnvironment.IsInstalled())
+        //    {
+        //        BH.Engine.Base.Compute.RecordError($"Install the {Query.ToolkitName()} Python environment before running this method (using {Query.ToolkitName()}.Compute.InstallPythonEnvironment).");
+        //        return null;
+        //    }
 
-            if (!SpatialComfortPossible(simulationDirectory))
-                return null;
+        //    if (!SpatialComfortPossible(simulationDirectory))
+        //        return null;
 
             
-            if (!File.Exists(epw))
-            {
-                BH.Engine.Base.Compute.RecordError($"The EPW file given cannot be found.");
-                return null;
-            }
+        //    if (!File.Exists(epw))
+        //    {
+        //        BH.Engine.Base.Compute.RecordError($"The EPW file given cannot be found.");
+        //        return null;
+        //    }
 
-            string epwPath = Path.GetFullPath(epw);
+        //    string epwPath = Path.GetFullPath(epw);
 
-            string pythonScript = String.Join("\n", new List<string>() 
-            {
-                "import sys",
-                $"sys.path.insert(0, '{pythonEnvironment.CodeDirectory()}')",
-                "",
-                "from ladybug.epw import EPW",
-                "from external_comfort.spatial import SpatialComfort, SpatialComfortResult",
-                "from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult",
-                "from external_comfort.material import Material",
-                "",
-                $"epw = EPW(r'{epwPath}')",
-                $"ec = ExternalComfort(epw, ground_material=Material.ConcretePavement.value, shade_material=Material.Fabric.value)",
-                "ecr = ExternalComfortResult(ec)",
-                $"sc = SpatialComfort(r'{simulationDirectory}', ecr)",
-                "scr = SpatialComfortResult(sc)",
-                "scr.generic_output()",
-                "print('Nothing to see here!')",
-            });
+        //    string pythonScript = String.Join("\n", new List<string>() 
+        //    {
+        //        "import sys",
+        //        $"sys.path.insert(0, '{pythonEnvironment.CodeDirectory()}')",
+        //        "",
+        //        "from ladybug.epw import EPW",
+        //        "from external_comfort.spatial import SpatialComfort, SpatialComfortResult",
+        //        "from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult",
+        //        "from external_comfort.material import Material",
+        //        "",
+        //        $"epw = EPW(r'{epwPath}')",
+        //        $"ec = ExternalComfort(epw, ground_material=Material.ConcretePavement.value, shade_material=Material.Fabric.value)",
+        //        "ecr = ExternalComfortResult(ec)",
+        //        $"sc = SpatialComfort(r'{simulationDirectory}', ecr)",
+        //        "scr = SpatialComfortResult(sc)",
+        //        "scr.generic_output()",
+        //        "print('Nothing to see here!')",
+        //    });
 
-            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
+        //    string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
 
-            return simulationDirectory;
-        }
+        //    return simulationDirectory;
+        //}
     }
 }
 

@@ -29,38 +29,38 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Determine whether the External Comfort process is possible.")]
-        [Output("bool", "True if External Comfort simulation is possible.")]
-        public static bool ExternalComfortPossible()
-        {
-            string username = System.Environment.UserName;
+        //[Description("Determine whether the External Comfort process is possible.")]
+        //[Output("bool", "True if External Comfort simulation is possible.")]
+        //public static bool ExternalComfortPossible()
+        //{
+        //    string username = System.Environment.UserName;
 
-            string ladybugToolsFolder = $"C:/Users/{username}/ladybug_tools";
-            string defaultSimulationFolder = $"C:/Users/{username}/simulation";
+        //    string ladybugToolsFolder = $"C:/Users/{username}/ladybug_tools";
+        //    string defaultSimulationFolder = $"C:/Users/{username}/simulation";
 
-            string openstudioPath = System.IO.Path.Combine(ladybugToolsFolder, "openstudio/bin");
-            string energyplusPath = System.IO.Path.Combine(ladybugToolsFolder, "openstudio/EnergyPlus");
-            string honeybeeOpenstudioGemPath = System.IO.Path.Combine(ladybugToolsFolder, "resources/measures/honeybee_openstudio_gem/lib");
-            string radiancePath = System.IO.Path.Combine(ladybugToolsFolder, "radiance");
+        //    string openstudioPath = System.IO.Path.Combine(ladybugToolsFolder, "openstudio/bin");
+        //    string energyplusPath = System.IO.Path.Combine(ladybugToolsFolder, "openstudio/EnergyPlus");
+        //    string honeybeeOpenstudioGemPath = System.IO.Path.Combine(ladybugToolsFolder, "resources/measures/honeybee_openstudio_gem/lib");
+        //    string radiancePath = System.IO.Path.Combine(ladybugToolsFolder, "radiance");
 
-            foreach (string path in new List<string>() {
-                ladybugToolsFolder,
-                defaultSimulationFolder,
-                openstudioPath,
-                energyplusPath,
-                honeybeeOpenstudioGemPath,
-                radiancePath,
-            })
-            {
-                if (!Directory.Exists(path))
-                {
-                    BH.Engine.Base.Compute.RecordError($"Install Ladybug Tools using the instructions found https://www.food4rhino.com/en/app/ladybug-tools in order to be able to run this method.");
-                    return false;
-                }
-            }
+        //    foreach (string path in new List<string>() {
+        //        ladybugToolsFolder,
+        //        defaultSimulationFolder,
+        //        openstudioPath,
+        //        energyplusPath,
+        //        honeybeeOpenstudioGemPath,
+        //        radiancePath,
+        //    })
+        //    {
+        //        if (!Directory.Exists(path))
+        //        {
+        //            BH.Engine.Base.Compute.RecordError($"Install Ladybug Tools using the instructions found https://www.food4rhino.com/en/app/ladybug-tools in order to be able to run this method.");
+        //            return false;
+        //        }
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
     }
 }
 

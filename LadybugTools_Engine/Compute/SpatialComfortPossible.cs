@@ -29,30 +29,30 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Determine whether a spatial comfort post-process is possible.")]
-        [Output("bool", "True if spatial comfort post-process is possible.")]
-        private static bool SpatialComfortPossible(string directory)
-        {
-            if (!ExternalComfortPossible())
-                return false;
+        //[Description("Determine whether a spatial comfort post-process is possible.")]
+        //[Output("bool", "True if spatial comfort post-process is possible.")]
+        //private static bool SpatialComfortPossible(string directory)
+        //{
+        //    if (!ExternalComfortPossible())
+        //        return false;
 
-            string annualIrradiancePath = System.IO.Path.Combine(directory, "annual_irradiance");
-            string skyViewPath = System.IO.Path.Combine(directory, "sky_view");
+        //    string annualIrradiancePath = System.IO.Path.Combine(directory, "annual_irradiance");
+        //    string skyViewPath = System.IO.Path.Combine(directory, "sky_view");
 
-            foreach (string path in new List<string>() {
-                annualIrradiancePath,
-                skyViewPath,
-            })
-            {
-                if (!Directory.Exists(path))
-                {
-                    BH.Engine.Base.Compute.RecordError($"You must run a {new DirectoryInfo(path).Name} simulation in order to make Spatial Comfort post-processing possible.");
-                    return false;
-                }
-            }
+        //    foreach (string path in new List<string>() {
+        //        annualIrradiancePath,
+        //        skyViewPath,
+        //    })
+        //    {
+        //        if (!Directory.Exists(path))
+        //        {
+        //            BH.Engine.Base.Compute.RecordError($"You must run a {new DirectoryInfo(path).Name} simulation in order to make Spatial Comfort post-processing possible.");
+        //            return false;
+        //        }
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
     }
 }
 

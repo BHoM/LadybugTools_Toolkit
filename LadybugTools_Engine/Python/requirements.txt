@@ -1,0 +1,4 @@
+﻿ipykernel
+shapely
+tables
+scipy

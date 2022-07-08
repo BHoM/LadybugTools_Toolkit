@@ -117,7 +117,7 @@
     <Compile Include="Compute\SpatialComfort.cs" />
     <Compile Include="Compute\ExternalComfortTypology.cs" />
     <Compile Include="Compute\ExternalComfort.cs" />
-    <Compile Include="Compute\InstallLadybugToolsPythonEnvironment.cs" />
+    <Compile Include="Compute\LadybugToolsToolkitEnvironment.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
@@ -128,7 +128,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Python\LadybugTools_Toolkit.json" />
+    <None Include="Python\README.md" />
+    <Content Include="Python\requirements.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_oM\LadybugTools_oM.csproj">
@@ -137,31 +138,74 @@
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <Content Include="Python\external_comfort\encoder.py" />
-    <Content Include="Python\external_comfort\external_comfort.py" />
-    <Content Include="Python\external_comfort\ground_temperature.py" />
-    <Content Include="Python\external_comfort\material.py" />
-    <Content Include="Python\external_comfort\model.py" />
-    <Content Include="Python\external_comfort\moisture.py" />
-    <Content Include="Python\external_comfort\plot.py" />
-    <Content Include="Python\external_comfort\shelter.py" />
-    <Content Include="Python\external_comfort\simulate.py" />
-    <Content Include="Python\external_comfort\spatial.py" />
-    <Content Include="Python\external_comfort\typology.py" />
-    <Content Include="Python\external_comfort\wind.py" />
-    <Content Include="Python\external_comfort\__init__.py" />
-    <Content Include="Python\honeybee_extension\results.py" />
-    <Content Include="Python\honeybee_extension\__init__.py" />
-    <Content Include="Python\ladybug_extension\analysis_period.py" />
-    <Content Include="Python\ladybug_extension\datacollection.py" />
-    <Content Include="Python\ladybug_extension\dt.py" />
-    <Content Include="Python\ladybug_extension\epw.py" />
-    <Content Include="Python\ladybug_extension\header.py" />
-    <Content Include="Python\ladybug_extension\location.py" />
-    <Content Include="Python\ladybug_extension\plot.py" />
-    <Content Include="Python\ladybug_extension\__init__.py" />
+    <Folder Include="Python\data\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\encoder.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\external_comfort.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\ground_temperature.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\material.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\model.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\moisture.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\plot.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\shelter.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\simulate.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\wind.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\honeybee_extension\results.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\honeybee_extension\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\analysis_period\describe.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\analysis_period\from_datetimes.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\analysis_period\to_datetimes.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\analysis_period\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\from_json.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\from_series.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\to_array.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\to_json.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\to_series.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\monthlycollection\to_hourly.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\monthlycollection\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\dt\from_datetime.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\dt\to_datetime.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\dt\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\apparent_solar_zenith.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\apparent_zolar_zenith_radians.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\clearness_index.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\enthalpy.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\equality.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\equation_of_time.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\from_dataframe.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\humidity_ratio.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\radiation_tilt_orientation_matrix.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\solar_altitude.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\solar_altitude_radians.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\solar_azimuth.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\solar_azimuth_radians.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\solar_declination.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\solar_time_datetime.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\solar_time_hour.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\sun_position_collection.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\sun_position_list.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\to_dataframe.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\wet_bulb_temperature.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\from_string.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\to_string.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\location\to_string.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\location\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\radiation_tilt_orientation_factor.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\rose.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\__init__.py" />
+    <Content Include="Python\setup.py" />
+    <Content Include="Python\tests\__init__.py" />
     <Content Include="Python\__init__.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -173,20 +217,19 @@
     <Error Condition="!Exists('..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets'))" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /Y
+    <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)" "C:\\ProgramData\\BHoM\\Assemblies" /Y
+xcopy "$(TargetDir)Python.Runtime.dll"  "C:\\ProgramData\\BHoM\\Assemblies" /Y
 
-:: remove any old versions within target directory for current toolkits Python code
-if exist "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" rmdir "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /S /Q
+:: create infrastructure necessary to support Python environments
+if not exist "C:\ProgramData\BHoM\Extensions\PythonEnvironments" mkdir "C:\ProgramData\BHoM\Extensions\PythonEnvironments"
+if not exist "C:\ProgramData\BHoM\Extensions\PythonCode" mkdir "C:\ProgramData\BHoM\Extensions\PythonCode"
+if not exist "C:\ProgramData\BHoM\Extensions\PythonCode\__init__.py" type nul &gt; "C:\ProgramData\BHoM\Extensions\PythonCode\__init__.py"
 
 :: remove any old versions within target directory for current toolkits Python code
 if exist "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" rmdir "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /S /Q
 
 :: move Python code over to toolkit extensions folder, redirecting output to temp log file to silence it
-robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /s /purge /xf "*.pyc" "*.ipynb" /xd "\__pycache__\" &gt; output.log
-
-:: copy local Python config JSON to BHoM/Settings/Python
-if not exist "C:\ProgramData\BHoM\Settings\Python" mkdir "C:\ProgramData\BHoM\Settings\Python"
-robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Settings\Python" "$(SolutionName).json" &gt; output.log
+robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /s /purge /xf "*.pyc" /xd "\__pycache__\" &gt; output.log
 
 :: remove temporary log file
 del output.log</PostBuildEvent>
