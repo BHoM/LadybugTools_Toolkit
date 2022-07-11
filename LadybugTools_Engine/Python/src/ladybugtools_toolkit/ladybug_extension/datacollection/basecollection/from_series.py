@@ -2,7 +2,7 @@ import pandas as pd
 from ladybug._datacollectionbase import BaseCollection
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 
-from ...header import from_string
+from ...header import from_multiindex
 
 
 def from_series(series: pd.Series) -> BaseCollection:
@@ -17,7 +17,7 @@ def from_series(series: pd.Series) -> BaseCollection:
 
     leap_yr = True if series.index.is_leap_year.any() else False
 
-    header = from_string(series.name)
+    header = from_multiindex(series.name)
     header.metadata["source"] = "From custom pd.Series"
 
     freq = pd.infer_freq(series.index)

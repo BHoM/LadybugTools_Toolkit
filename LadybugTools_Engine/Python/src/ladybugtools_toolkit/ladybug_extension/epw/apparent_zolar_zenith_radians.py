@@ -18,6 +18,6 @@ def apparent_solar_zenith_radians(
     """
 
     collection = apparent_solar_zenith(epw, sun_position)
-    collection = collection.convert_to_unit("radians")
+    collection = collection.to_unit("radians")
 
     return collection

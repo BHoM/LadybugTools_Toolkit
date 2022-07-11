@@ -18,6 +18,6 @@ def solar_azimuth_radians(
     """
 
     collection = solar_azimuth(epw, sun_position)
-    collection = collection.convert_to_unit("radians")
+    collection = collection.to_unit("radians")
 
     return collection

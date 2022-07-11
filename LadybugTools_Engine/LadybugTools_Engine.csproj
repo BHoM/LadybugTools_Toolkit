@@ -195,6 +195,8 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\wet_bulb_temperature.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\from_string.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\from_multiindex.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\to_multiindex.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\to_string.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\location\to_string.py" />

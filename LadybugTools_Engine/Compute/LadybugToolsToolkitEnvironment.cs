@@ -20,11 +20,11 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base.Attributes;
+using BH.oM.Python;
+using BH.Engine.Python;
 using System.ComponentModel;
 using System.IO;
-
-using BH.oM.Python;
-using BH.oM.Base.Attributes;
 using System.Collections.Generic;
 
 namespace BH.Engine.LadybugTools
@@ -36,45 +36,55 @@ namespace BH.Engine.LadybugTools
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code added.")]
         public static PythonEnvironment LadybugToolsPythonEnvironment(bool run = false)
         {
-            // install Python_Toolkit BHoM Environment if it's not already installed
-            BH.Engine.Python.Compute.PythonToolkitEnvironment(true);
-
+            // set-up bits and pieces describing the env, prior to running checks/processes
             string toolkitName = Query.ToolkitName();
-            string toolkitEnvironmentDirectory = @"C:\Program Files\ladybug_tools\python";
+            string envsDir = Engine.Python.Query.EnvironmentsDirectory();
+            string codeDir = Engine.Python.Query.CodeDirectory();
+            string toolkitEnvDir = Path.Combine(envsDir, toolkitName);
+            oM.Python.PythonEnvironment thisEnv = new oM.Python.PythonEnvironment()
+            {
+                Name = Query.ToolkitName(),
+                Executable = Path.Combine(@"C:\Program Files\ladybug_tools\python\python.exe"),
+            };
+            bool thisEnvExists = Engine.Python.Query.EnvironmentExists(@"C:\Program Files\ladybug_tools", "python");
+
+            if (!thisEnvExists)
+            {
+                BH.Engine.Base.Compute.RecordError("It seems that Ladybug Tools/Pollination has not been installed. " +
+                    "Please run the Pollination installer in order to use the Python Environment associated with this toolkit.");
+                return null;
+            }
 
             if (run)
             {
-                if (!Directory.Exists(toolkitEnvironmentDirectory))
+                // check that the env contains BHoM code references already, and if it does, then return the existing env
+                string installedPkgsCmd = $"{Engine.Python.Modify.AddQuotesIfRequired(thisEnv.Executable)} -m pip list";
+                string installedPkgs = Engine.Python.Compute.RunCommandStdout(installedPkgsCmd);
+                if (
+                    installedPkgs.Contains("ladybugtools-toolkit") &&
+                    installedPkgs.Contains("python-toolkit") &&
+                    installedPkgs.Contains("ipykernel")
+                )
                 {
-                    BH.Engine.Base.Compute.RecordError("It seems that Ladybug Tools/Pollination has not been installed. " +
-                        "Please run the installer from https://app.pollination.cloud in order to access the Python Environment " +
-                        "associated with this toolkit.");
-                    return null;
+                    return thisEnv;
                 }
 
-                // obtain the environment
-                oM.Python.PythonEnvironment env = new oM.Python.PythonEnvironment()
-                {
-                    Name = Query.ToolkitName(),
-                    Executable = Path.Combine(toolkitEnvironmentDirectory, "python.exe"),
-                };
+                // reference the BHoM code within this environment
+                List<string> additionalPackages = new List<string>() {
+                        Path.Combine(BH.Engine.Python.Query.CodeDirectory(), "Python_Toolkit"),
+                        Path.Combine(BH.Engine.Python.Query.CodeDirectory(), toolkitName),
+                    };
+                string installedPkgsResult = thisEnv.InstallLocalPackages(additionalPackages);
 
-                // install the BHoM code into this environment
-                List<string> additionalPackages = new List<string>() { 
-                    Path.Combine(BH.Engine.Python.Query.CodeDirectory(), "Python_Toolkit"),
-                    Path.Combine(BH.Engine.Python.Query.CodeDirectory(), toolkitName),
-                };
-                foreach (string pkg in additionalPackages)
-                {
-                    Engine.Python.Compute.InstallLocalPackage(env, pkg, true);
-                }
+                // load base Python environment to ensure additional BHoM code is available
+                oM.Python.PythonEnvironment baseEnv = BH.Engine.Python.Compute.PythonToolkitEnvironment(run);
 
-                // install ipykernel and register environment with the base BHoM Python environment
-                Engine.Python.Compute.InstallPackages(env, new List<string>() { "ipykernel" });
-                string kernelCreateCmd = $"{Engine.Python.Modify.AddQuotesIfRequired(env.Executable)} -m ipykernel install --name={toolkitName}";
+                // install ipykernel into this env and register with the base BHoM Python environment
+                Engine.Python.Compute.InstallPackages(thisEnv, new List<string>() { "ipykernel" });
+                string kernelCreateCmd = $"{Engine.Python.Modify.AddQuotesIfRequired(thisEnv.Executable)} -m ipykernel install --name={toolkitName}";
                 Engine.Python.Compute.RunCommandStdout(kernelCreateCmd);
 
-                return env;
+                return thisEnv;
             }
 
             return null;

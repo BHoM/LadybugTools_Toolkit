@@ -18,6 +18,6 @@ def solar_altitude_radians(
     """
 
     collection = solar_altitude(epw, sun_position)
-    collection = collection.convert_to_unit("radians")
+    collection = collection.to_unit("radians")
 
     return collection

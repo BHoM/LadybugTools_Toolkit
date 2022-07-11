@@ -1,9 +1,8 @@
 import pandas as pd
 from ladybug._datacollectionbase import BaseCollection
 
-
-from ...header import to_string
 from ...analysis_period import to_datetimes
+from ...header import to_multiindex
 
 
 def to_series(collection: BaseCollection) -> pd.Series:
@@ -23,5 +22,5 @@ def to_series(collection: BaseCollection) -> pd.Series:
     return pd.Series(
         data=collection.values,
         index=index,
-        name=to_string(collection.header),
+        name=to_multiindex(collection.header),
     )
