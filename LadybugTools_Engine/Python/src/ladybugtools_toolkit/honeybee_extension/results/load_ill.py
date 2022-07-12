@@ -4,7 +4,7 @@ from typing import List, Union
 import pandas as pd
 
 from .load_files import load_files
-from .load_ill_file import _load_ill_file
+from .load_ill_file import load_ill_file
 
 
 def load_ill(ill_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
@@ -16,4 +16,4 @@ def load_ill(ill_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFram
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .ill files.
     """
-    return load_files(_load_ill_file, ill_files)
+    return load_files(load_ill_file, ill_files)

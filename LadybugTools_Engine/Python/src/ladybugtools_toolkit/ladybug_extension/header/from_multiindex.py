@@ -16,7 +16,7 @@ def from_multiindex(multiindex: pd.MultiIndex) -> Header:
     # ensure that the multiindex only contains a single "column"
     if len(multiindex) > 1:
         raise ValueError(
-            f'The multiindex passed contains more than one column and cannot be interpreted as a single "Header" object.'
+            'The multiindex passed contains more than one column and cannot be interpreted as a single "Header" object.'
         )
 
     # get the datatype and value

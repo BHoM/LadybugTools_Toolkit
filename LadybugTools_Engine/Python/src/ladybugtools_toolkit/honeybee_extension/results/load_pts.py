@@ -4,7 +4,7 @@ from typing import List, Union
 import pandas as pd
 
 from .load_files import load_files
-from .load_pts_file import _load_pts_file
+from .load_pts_file import load_pts_file
 
 
 def load_pts(pts_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
@@ -16,4 +16,4 @@ def load_pts(pts_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFram
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .pts files.
     """
-    return load_files(_load_pts_file, pts_files)
+    return load_files(load_pts_file, pts_files)

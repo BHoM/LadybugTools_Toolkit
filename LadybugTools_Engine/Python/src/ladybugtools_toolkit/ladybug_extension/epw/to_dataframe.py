@@ -1,7 +1,7 @@
 import pandas as pd
 from ladybug.epw import EPW
 
-from ..datacollection.basecollection import to_series
+from ..datacollection import to_series
 from ..datacollection.monthlycollection import to_hourly
 from .apparent_solar_zenith import apparent_solar_zenith as asz
 from .clearness_index import clearness_index as ci
@@ -35,7 +35,7 @@ def to_dataframe(
     for p in dir(epw):
         try:
             all_series.append(to_series(getattr(epw, p)))
-        except (AttributeError, TypeError, ZeroDivisionError, ValueError) as e:
+        except (AttributeError, TypeError, ZeroDivisionError, ValueError):
             pass
 
     for k, v in epw.monthly_ground_temperature.items():

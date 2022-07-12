@@ -24,7 +24,6 @@ def radiation_tilt_orientation_factor(
     y = np.tile(radiation_matrix.columns, [len(radiation_matrix.index), 1])
     z = radiation_matrix.values
 
-    z_min = radiation_matrix.min().min()
     z_max = radiation_matrix.max().max()
     z_percent = z / z_max * 100
 
@@ -56,7 +55,8 @@ def radiation_tilt_orientation_factor(
         c="w",
     )
 
-    [ax.spines[spine].set_visible(False) for spine in ["top", "right"]]
+    for spine in ["top", "right"]:
+        ax.spines[spine].set_visible(False)
 
     ax.xaxis.set_major_locator(mtick.MultipleLocator(base=30))
 
@@ -80,7 +80,7 @@ def radiation_tilt_orientation_factor(
 
     # Title
     if title is None:
-        ax.set_title(f"Annual cumulative radiation", x=0, ha="left", va="bottom")
+        ax.set_title("Annual cumulative radiation", x=0, ha="left", va="bottom")
     else:
         ax.set_title(
             f"{title}\nAnnual cumulative radiation", x=0, ha="left", va="bottom"

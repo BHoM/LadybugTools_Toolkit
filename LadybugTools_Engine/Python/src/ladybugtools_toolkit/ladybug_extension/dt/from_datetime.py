@@ -3,24 +3,24 @@ from datetime import datetime
 from ladybug.dt import DateTime
 
 
-def from_datetime(datetime: datetime) -> DateTime:
+def from_datetime(date_time: datetime) -> DateTime:
     """Convert a Python datetime object into a Ladybug DateTime object.
 
     Args:
-        datetime (datetime): A Python datetime object.
+        date_time (datetime): A Python datetime object.
 
     Returns:
         DateTime: A Ladybug DateTime object.
     """
 
-    leap_year = (datetime.year % 4 == 0 and datetime.year % 100 != 0) or (
-        datetime.year % 400 == 0
+    leap_year = (date_time.year % 4 == 0 and date_time.year % 100 != 0) or (
+        date_time.year % 400 == 0
     )
 
     return DateTime(
-        month=datetime.month,
-        day=datetime.day,
-        hour=datetime.hour,
-        minute=datetime.minute,
+        month=date_time.month,
+        day=date_time.day,
+        hour=date_time.hour,
+        minute=date_time.minute,
         leap_year=leap_year,
     )

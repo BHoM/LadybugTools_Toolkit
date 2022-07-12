@@ -17,10 +17,10 @@ def from_string(string: str) -> Header:
         str_elements = string.split(" ")
         _unit = str_elements[-1].replace("(", "").replace(")", "")
         _data_type = " ".join(str_elements[:-1])
-    except AttributeError:
+    except AttributeError as exc:
         raise ValueError(
             'The input series must have a name in the format "variable (unit)".'
-        )
+        ) from exc
     try:
         _data_type = TYPESDICT[_data_type.replace(" ", "")]()
     except KeyError:

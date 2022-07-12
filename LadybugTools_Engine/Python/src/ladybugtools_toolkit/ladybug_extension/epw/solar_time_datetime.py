@@ -1,4 +1,3 @@
-from ladybug.sunpath import Sunpath
 import pandas as pd
 import numpy as np
 from ladybug.epw import EPW

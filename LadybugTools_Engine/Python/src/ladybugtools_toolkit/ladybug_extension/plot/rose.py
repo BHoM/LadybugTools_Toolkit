@@ -6,10 +6,11 @@ import numpy as np
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW, AnalysisPeriod
 from ladybug.windrose import Compass, WindRose
-from ladybug_extension.analysis_period import describe_analysis_period
-from ladybug_extension.datacollection import to_array, to_series
 from matplotlib.colors import BoundaryNorm, Colormap, Normalize
 from matplotlib.figure import Figure
+
+from ..analysis_period import describe as describe_analysis_period
+from ..datacollection import to_array, to_series
 
 
 def rose(

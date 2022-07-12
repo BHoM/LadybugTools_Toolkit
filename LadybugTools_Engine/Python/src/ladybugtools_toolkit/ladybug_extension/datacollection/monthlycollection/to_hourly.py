@@ -1,7 +1,7 @@
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 
-from ..basecollection import to_series
+from ..to_series import to_series
 
 
 def to_hourly(

@@ -1,9 +1,9 @@
-from ladybug.sunpath import Sunpath
+from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datatype.time import Time
 from ladybug.epw import EPW
 from ladybug.header import Header
-from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datatype.time import Time
-from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.sunpath import Sunpath
 
 
 def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
@@ -17,7 +17,7 @@ def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
     """
     sunpath = Sunpath.from_location(epw.location)
 
-    _, equation_of_time = list(
+    _, eot = list(
         zip(
             *[
                 list(sunpath._calculate_solar_geometry(i))
@@ -33,5 +33,5 @@ def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
             analysis_period=AnalysisPeriod(),
             metadata=epw.dry_bulb_temperature.header.metadata,
         ),
-        equation_of_time,
+        eot,
     )

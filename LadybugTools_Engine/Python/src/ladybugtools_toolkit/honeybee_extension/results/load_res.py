@@ -4,7 +4,7 @@ from typing import List, Union
 import pandas as pd
 
 from .load_files import load_files
-from .load_res_file import _load_res_file
+from .load_res_file import load_res_file
 
 
 def load_res(res_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
@@ -18,4 +18,4 @@ def load_res(res_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFram
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .res files.
     """
-    return load_files(_load_res_file, res_files)
+    return load_files(load_res_file, res_files)

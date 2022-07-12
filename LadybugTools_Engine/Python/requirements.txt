@@ -2,3 +2,5 @@
 shapely
 tables
 scipy
+cached-property
+pylint
