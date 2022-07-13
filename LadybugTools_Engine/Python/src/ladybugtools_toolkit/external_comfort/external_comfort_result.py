@@ -17,7 +17,7 @@ from ladybug_comfort.parameter.solarcal import SolarCalParameter
 from ..ladybug_extension.datacollection import from_series, to_series
 from .encoder import Encoder
 from .external_comfort import ExternalComfort
-from .simulate import surface_temperature, solar_radiation
+from .simulate import solar_radiation, surface_temperature
 
 
 @dataclass(frozen=True)
@@ -170,111 +170,6 @@ class ExternalComfortResult:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.external_comfort.identifier})"
-
-    @staticmethod
-    def _mean_radiant_temperature(
-        epw: EPW,
-        surface_temperature: HourlyContinuousCollection,
-        direct_radiation: HourlyContinuousCollection,
-        diffuse_radiation: HourlyContinuousCollection,
-    ) -> HourlyContinuousCollection:
-        """Using the SolarCal method, convert surrounding surface temperature and direct/diffuse radiation into mean radiant temperature.
-
-        Args:
-            epw (EPW): A ladybug EPW object.
-            surface_temperature (HourlyContinuousCollection): A ladybug surface temperature data collection.
-            direct_radiation (HourlyContinuousCollection): A ladybug radiation data collection representing direct solar radiation.
-            diffuse_radiation (HourlyContinuousCollection): A ladybug radiation data collection representing diffuse solar radiation.
-
-        Returns:
-            HourlyContinuousCollection: A ladybug mean radiant temperature data collection.
-        """
-        fract_body_exp = 0
-        ground_reflectivity = 0
-
-        if not isinstance(surface_temperature.header.data_type, Temperature):
-            surface_temperature.header.data_type = Temperature
-
-        solar_body_par = SolarCalParameter()
-        solar_mrt_obj = HorizontalSolarCal(
-            epw.location,
-            direct_radiation,
-            diffuse_radiation,
-            surface_temperature,
-            fract_body_exp,
-            ground_reflectivity,
-            solar_body_par,
-        )
-
-        mrt = solar_mrt_obj.mean_radiant_temperature
-
-        return mrt
-
-    @staticmethod
-    def _radiant_temperature_from_collections(
-        collections: List[HourlyContinuousCollection], view_factors: List[float]
-    ) -> HourlyContinuousCollection:
-        """Calculate the radiant temperature from a list of hourly continuous collections and view factors to each of those collections.
-
-        Args:
-            collections (List[HourlyContinuousCollection]): A list of hourly continuous collections.
-            view_factors (List[float]): A list of view factors to each of the collections.
-
-        Returns:
-            HourlyContinuousCollection: An HourlyContinuousCollection of the effective radiant temperature.
-        """
-
-        if len(collections) != len(view_factors):
-            raise ValueError(
-                "The number of collections and view factors must be the same."
-            )
-        if sum(view_factors) != 1:
-            raise ValueError("The sum of view factors must be 1.")
-
-        mrt_series = (
-            np.power(
-                (
-                    np.power(
-                        pd.concat([to_series(i) for i in collections], axis=1) + 273.15,
-                        4,
-                    )
-                    * view_factors
-                ).sum(axis=1),
-                0.25,
-            )
-            - 273.15
-        )
-        mrt_series.name = "Temperature (C)"
-        return from_series(mrt_series)
-
-    @staticmethod
-    def _mean_radiant_temperature_from_surfaces(
-        surface_temperatures: List[float], view_factors: List[float]
-    ) -> float:
-        """Calculate Mean Radiant Temperature from a list of surface temperature and view factors to those surfaces.
-
-        Args:
-            surface_temperatures (List[float]): A list of surface temperatures.
-            view_factors (List[float]): A list of view-factors (one per surface)
-
-        Returns:
-            float: A value describing resultant radiant temperature.
-        """
-
-        if len(surface_temperatures) != len(view_factors):
-            raise ValueError(
-                "The number of surface temperatures and view factors must be the same."
-            )
-
-        resultant_temperature = 0
-        for i, temp in enumerate(surface_temperatures):
-            temperature_kelvin = temp + 273.15
-            resultant_temperature = (
-                resultant_temperature + np.pow(temperature_kelvin, 4) * view_factors[i]
-            )
-        mean_radiant_temperature_kelvin = np.pow(resultant_temperature, 0.25)
-        mean_radiant_temperature = mean_radiant_temperature_kelvin - 273.15
-        return mean_radiant_temperature
 
     def to_dataframe(self) -> pd.DataFrame:
         """Create a dataframe from the simulation results.

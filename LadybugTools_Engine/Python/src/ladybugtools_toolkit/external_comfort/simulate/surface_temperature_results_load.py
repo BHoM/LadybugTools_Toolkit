@@ -22,8 +22,6 @@ def surface_temperature_results_load(
         Dict[str, HourlyContinuousCollection]: A dictionary containing surface temperature-related collections.
     """
 
-    print("- Loading surface temperatures")
-
     # Return results
     df = load_sql(sql_path)
 

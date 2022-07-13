@@ -1,6 +1,6 @@
-import getpass
 import json
 from pathlib import Path
+from typing import Dict
 
 from honeybee.config import folders as hb_folders
 from honeybee.model import Model
@@ -12,14 +12,17 @@ from honeybee_energy.simulation.parameter import (
     SimulationOutput,
     SimulationParameter,
 )
-from ladybug.epw import EPW, AnalysisPeriod
+from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
 
 from ..ground_temperature import energyplus_strings_otherside_coefficient
+from .surface_temperature_results_exist import surface_temperature_results_exist
+from .surface_temperature_results_load import surface_temperature_results_load
+from .working_directory import working_directory as wd
 
-hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"
 
-
-def surface_temperature(model: Model, epw: EPW) -> Path:
+def surface_temperature(
+    model: Model, epw: EPW
+) -> Dict[str, HourlyContinuousCollection]:
     """Run EnergyPlus on a model and return the results.
 
     Args:
@@ -27,16 +30,19 @@ def surface_temperature(model: Model, epw: EPW) -> Path:
         epw (EPW): An EPW object to be used for the simulation.
 
     Returns:
-        A dictionary containing ground and shade (below and above) surface temperature values.
+        Dict[str, HourlyContinuousCollection]: A dictionary containing surface temperature-related collections.
     """
 
-    working_directory: Path = (
-        Path(hb_folders.default_simulation_folder) / model.identifier
-    )
-    working_directory.mkdir(parents=True, exist_ok=True)
+    working_directory = wd(model)
+
     sql_path = working_directory / "run" / "eplusout.sql"
 
-    print("- Simulating surface temperatures")
+    if surface_temperature_results_exist(model, epw):
+        print(f"[{model.identifier}] - Loading surface temperature")
+        return surface_temperature_results_load(sql_path, epw)
+
+    print(f"[{model.identifier}] - Simulating surface temperature")
+
     # Write model JSON
     model_dict = model.to_dict(triangulate_sub_faces=True)
     model_json = working_directory / f"{model.identifier}.hbjson"
@@ -109,7 +115,4 @@ def surface_temperature(model: Model, epw: EPW) -> Path:
     # Simulate IDF
     _, _, _, _, _ = run_idf(idf, epw.file_path, silent=False)
 
-    # save EPW to working directory
-    epw.save(working_directory / Path(epw.file_path).name)
-
-    return sql_path
+    return surface_temperature_results_load(sql_path, epw)

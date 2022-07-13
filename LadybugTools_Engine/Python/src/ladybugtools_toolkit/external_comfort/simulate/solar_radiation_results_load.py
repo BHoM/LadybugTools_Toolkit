@@ -20,7 +20,6 @@ def solar_radiation_results_load(
     Returns:
         Dict[str, HourlyContinuousCollection]: A dictionary containing radiation-related collections.
     """
-    print("- Loading annual irradiance")
 
     unshaded_total = (
         make_annual(load_ill(total_irradiance))

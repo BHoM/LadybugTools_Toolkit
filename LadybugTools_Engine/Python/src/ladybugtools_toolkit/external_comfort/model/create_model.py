@@ -30,7 +30,8 @@ def create_model(
         Model: A model containing geometry describing a shaded and unshaded external comfort
             scenario, including sensor grids for simulation.
     """
-    displacement_vector = Vector3D(0, 500, 0)
+    displacement_vector = Vector3D()
+    displacement_vector._y = 500  # necessary due to issue setting property in 1.5.0
 
     sensor_grid = SensorGrid(
         identifier="_",
