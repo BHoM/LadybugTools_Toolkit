@@ -1,58 +1,54 @@
 from enum import Enum
-from .typology import Typology
+
 from ..shelter import Shelter
+from .typology import Typology
 
 
 class Typologies(Enum):
-    Openfield = Typology(
+    """A list of pre-defined Typology objects."""
+
+    OPENFIELD = Typology(
         name="Openfield",
         evaporative_cooling_effectiveness=0,
         shelters=[],
-        wind_speed_multiplier=1,
     )
-    Enclosed = Typology(
+    ENCLOSED = Typology(
         name="Enclosed",
         evaporative_cooling_effectiveness=0,
         shelters=[Shelter(altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0)],
-        wind_speed_multiplier=1,
     )
-    PorousEnclosure = Typology(
+    POROUS_ENCLOSURE = Typology(
         name="Porous enclosure",
         evaporative_cooling_effectiveness=0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[0, 360], porosity=0.5)
         ],
-        wind_speed_multiplier=1,
     )
-    SkyShelter = Typology(
+    SKY_SHELTER = Typology(
         name="Sky-shelter",
         evaporative_cooling_effectiveness=0,
         shelters=[Shelter(altitude_range=[45, 90], azimuth_range=[0, 360], porosity=0)],
-        wind_speed_multiplier=1,
     )
-    FrittedSkyShelter = Typology(
+    FRITTED_SKY_SHELTER = Typology(
         name="Fritted sky-shelter",
         evaporative_cooling_effectiveness=0,
         shelters=[
             Shelter(altitude_range=[45, 90], azimuth_range=[0, 360], porosity=0.5),
         ],
-        wind_speed_multiplier=1,
     )
-    NearWater = Typology(
+    NEAR_WATER = Typology(
         name="Near water",
         evaporative_cooling_effectiveness=0.15,
         shelters=[
             Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
         ],
-        wind_speed_multiplier=1.2,
     )
-    Misting = Typology(
+    MISTING = Typology(
         name="Misting",
         evaporative_cooling_effectiveness=0.3,
         shelters=[
             Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
         ],
-        wind_speed_multiplier=0.5,
     )
     PDEC = Typology(
         name="PDEC",
@@ -60,151 +56,132 @@ class Typologies(Enum):
         shelters=[
             Shelter(altitude_range=[0, 0], azimuth_range=[0, 0], porosity=1),
         ],
-        wind_speed_multiplier=0.5,
     )
-    NorthShelter = Typology(
+    NORTH_SHELTER = Typology(
         name="North shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[337.5, 22.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    NortheastShelter = Typology(
+    NORTHEAST_SHELTER = Typology(
         name="Northeast shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[22.5, 67.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    EastShelter = Typology(
+    EAST_SHELTER = Typology(
         name="East shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[67.5, 112.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    SoutheastShelter = Typology(
+    SOUTHEAST_SHELTER = Typology(
         name="Southeast shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[112.5, 157.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    SouthShelter = Typology(
+    SOUTH_SHELTER = Typology(
         name="South shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[157.5, 202.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    SouthwestShelter = Typology(
+    SOUTHWEST_SHELTER = Typology(
         name="Southwest shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[202.5, 247.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    WestShelter = Typology(
+    WEST_SHELTER = Typology(
         name="West shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[247.5, 292.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    NorthwestShelter = Typology(
+    NORTHWEST_SHELTER = Typology(
         name="Northwest shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[292.5, 337.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    NorthShelterWithCanopy = Typology(
+    NORTH_SHELTER_WITH_CANOPY = Typology(
         name="North shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[337.5, 22.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    NortheastShelterWithCanopy = Typology(
+    NORTHEAST_SHELTER_WITH_CANOPY = Typology(
         name="Northeast shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[22.5, 67.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    EastShelterWithCanopy = Typology(
+    EAST_SHELTER_WITH_CANOPY = Typology(
         name="East shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[67.5, 112.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    SoutheastShelterWithCanopy = Typology(
+    SOUTHEAST_SHELTER_WITH_CANOPY = Typology(
         name="Southeast shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[112.5, 157.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    SouthShelterWithCanopy = Typology(
+    SOUTH_SHELTER_WITH_CANOPY = Typology(
         name="South shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[157.5, 202.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    SouthwestShelterWithCanopy = Typology(
+    SOUTHWEST_SHELTER_WITH_CANOPY = Typology(
         name="Southwest shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[202.5, 247.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    WestShelterWithCanopy = Typology(
+    WEST_SHELTER_WITH_CANOPY = Typology(
         name="West shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[247.5, 292.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    NorthwestShelterWithCanopy = Typology(
+    NORTHWEST_SHELTER_WITH_CANOPY = Typology(
         name="Northwest shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[292.5, 337.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    EastWestShelter = Typology(
+    EAST_WEST_SHELTER = Typology(
         name="East-west shelter",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 70], azimuth_range=[67.5, 112.5], porosity=0),
             Shelter(altitude_range=[0, 70], azimuth_range=[247.5, 292.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )
-    EastWestShelterWithCanopy = Typology(
+    EAST_WEST_SHELTER_WITH_CANOPY = Typology(
         name="East-west shelter (with canopy)",
         evaporative_cooling_effectiveness=0.0,
         shelters=[
             Shelter(altitude_range=[0, 90], azimuth_range=[67.5, 112.5], porosity=0),
             Shelter(altitude_range=[0, 90], azimuth_range=[247.5, 292.5], porosity=0),
         ],
-        wind_speed_multiplier=1,
     )

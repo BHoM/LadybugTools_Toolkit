@@ -7,10 +7,10 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ...ladybug_extension.datacollection import from_series, to_series
 
 
-def radiant_temperature_from_surfaces(
+def longwave_mean_radiant_temperature(
     collections: List[HourlyContinuousCollection], view_factors: List[float]
 ) -> HourlyContinuousCollection:
-    """Calculate the radiant temperature from a list of surface temperature collections, and view
+    """Calculate the LW MRT from a list of surface temperature collections, and view
         factors to each of those surfaces.
 
     Args:
@@ -40,5 +40,5 @@ def radiant_temperature_from_surfaces(
         )
         - 273.15
     )
-    mrt_series.name = "Radiant Temperature (C)"
+    mrt_series.name = "Mean Radiant Temperature (C)"
     return from_series(mrt_series)

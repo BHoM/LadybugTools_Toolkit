@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from honeybee.model import Model
 from ladybug.epw import EPW
 
@@ -11,12 +13,12 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
 
     Args:
         model (Model): The model to check for.
-        epw (EPW): The EPW to check for. Currently unused.
+        epw (EPW): The EPW to check for.
 
     Returns:
         bool: True if the model and EPW have already been simulated, False otherwise.
     """
-    working_directory = wd(model)
+    working_directory = wd(model, False)
 
     # Try to load existing HBJSON file and check that it matches
     try:
@@ -27,12 +29,21 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
                 / f"{working_directory.stem}.hbjson"
             ).as_posix()
         )
-        models_match = model_eq(model, existing_model, include_identifier=True)
-    except (FileNotFoundError, AssertionError) as e:
+        if not model_eq(model, existing_model, include_identifier=True):
+            return False
+    except (FileNotFoundError, AssertionError):
+        return False
+
+    # Try to load existing EPW file and check that it matches
+    try:
+        existing_epw = EPW((working_directory / Path(epw.file_path).name).as_posix())
+        if not epw_eq(epw, existing_epw, include_header=True):
+            return False
+    except (FileNotFoundError, AssertionError):
         return False
 
     # Check that the output files necessary to reload exist
-    results_exist = all(
+    if not all(
         [
             (
                 working_directory / "annual_irradiance/results/direct/UNSHADED.ill"
@@ -41,6 +52,7 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
                 working_directory / "annual_irradiance/results/total/UNSHADED.ill"
             ).exists(),
         ]
-    )
+    ):
+        return False
 
-    return all([models_match, results_exist])
+    return True

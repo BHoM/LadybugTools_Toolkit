@@ -30,16 +30,19 @@ def surface_temperature(
         epw (EPW): An EPW object to be used for the simulation.
 
     Returns:
-        Dict[str, HourlyContinuousCollection]: A dictionary containing surface temperature-related collections.
+        Dict[str, HourlyContinuousCollection]: A dictionary containing surface temperature-related
+            collections.
     """
 
-    working_directory = wd(model)
+    working_directory = wd(model, True)
 
     sql_path = working_directory / "run" / "eplusout.sql"
 
     if surface_temperature_results_exist(model, epw):
         print(f"[{model.identifier}] - Loading surface temperature")
         return surface_temperature_results_load(sql_path, epw)
+
+    epw.save((working_directory / Path(epw.file_path).name).as_posix())
 
     print(f"[{model.identifier}] - Simulating surface temperature")
 

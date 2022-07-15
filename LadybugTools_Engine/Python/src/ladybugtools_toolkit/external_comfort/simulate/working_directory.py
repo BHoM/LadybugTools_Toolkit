@@ -5,14 +5,16 @@ from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 
 
-def working_directory(model: Model) -> Path:
-    """Get the working directory (where simulation results will be stored) for the given model.
+def working_directory(model: Model, create: bool = False) -> Path:
+    """Get the working directory (where simulation results will be stored) for the given model, and
+        create it if it doesnt already exist.
 
     Args:
         model (Model): A honeybee Model.
+        create (bool, optional): Set to True to create the directory. Default is False.
 
     Returns:
-         Path: The simulation directory associated with the given model.
+        Path: The simulation directory associated with the given model.
     """
 
     hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"
@@ -20,6 +22,7 @@ def working_directory(model: Model) -> Path:
     working_directory: Path = (
         Path(hb_folders.default_simulation_folder) / model.identifier
     )
-    working_directory.mkdir(parents=True, exist_ok=True)
+    if create:
+        working_directory.mkdir(parents=True, exist_ok=True)
 
     return working_directory

@@ -19,10 +19,11 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
         epw (EPW): An EPW object to be used for the simulation.
 
     Returns:
-         Dict[str, HourlyContinuousCollection]: A dictionary containing radiation-related collections.
+        Dict[str, HourlyContinuousCollection]: A dictionary containing radiation-related
+            collections.
     """
 
-    working_directory = wd(model)
+    working_directory = wd(model, True)
 
     total_irradiance = (
         working_directory / "annual_irradiance/results/total/UNSHADED.ill"
@@ -34,6 +35,8 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
     if solar_radiation_results_exist(model, epw):
         print(f"[{model.identifier}] - Loading annual irradiance")
         return solar_radiation_results_load(total_irradiance, direct_irradiance)
+
+    epw.save((working_directory / Path(epw.file_path).name).as_posix())
 
     print(f"[{model.identifier}] - Simulating annual irradiance")
     wea = Wea.from_epw_file(epw.file_path)

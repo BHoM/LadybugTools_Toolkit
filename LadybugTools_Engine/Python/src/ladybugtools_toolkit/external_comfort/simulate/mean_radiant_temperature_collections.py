@@ -6,14 +6,15 @@ from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import HorizontalSolarCal
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
 
-from .mean_radiant_temperature_inputs import mean_radiant_temperature_inputs
-from .radiant_temperature_from_surfaces import radiant_temperature_from_surfaces
+from .longwave_mean_radiant_temperature import longwave_mean_radiant_temperature
+from .solar_radiation import solar_radiation
+from .surface_temperature import surface_temperature
 
 
-def mean_radiant_temperature(
+def mean_radiant_temperature_collections(
     model: Model, epw: EPW
 ) -> Dict[str, HourlyContinuousCollection]:
-    """Run both a surface temperature and solar radiation simulation concurrently and return the
+    """Run both a surface temperature and solar radiation simulation and return the
         combined results, plus the mean radiant temperature for both shaded and unshaded conditions.
 
     Args:
@@ -25,11 +26,16 @@ def mean_radiant_temperature(
             shaded and unshaded mean-radiant-temperature.
     """
 
-    mrt_collections = mean_radiant_temperature_inputs(model, epw)
+    # Run surface temperature and radiation simulations
+    solar_radiation_results = solar_radiation(model, epw)
+    surface_temperature_results = surface_temperature(model, epw)
 
+    mrt_collections = {**solar_radiation_results, **surface_temperature_results}
+
+    # Calculate LW MRT from surface temperatures
     mrt_collections[
         "shaded_longwave_mean_radiant_temperature"
-    ] = radiant_temperature_from_surfaces(
+    ] = longwave_mean_radiant_temperature(
         [
             mrt_collections["shaded_below_temperature"],
             mrt_collections["shaded_above_temperature"],
@@ -39,7 +45,7 @@ def mean_radiant_temperature(
 
     mrt_collections[
         "unshaded_longwave_mean_radiant_temperature"
-    ] = radiant_temperature_from_surfaces(
+    ] = longwave_mean_radiant_temperature(
         [
             mrt_collections["unshaded_below_temperature"],
             mrt_collections["unshaded_above_temperature"],

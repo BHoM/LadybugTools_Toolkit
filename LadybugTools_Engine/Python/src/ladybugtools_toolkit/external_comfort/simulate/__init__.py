@@ -1,3 +1,3 @@
-from .mean_radiant_temperature import mean_radiant_temperature
+from .mean_radiant_temperature_collections import mean_radiant_temperature_collections
 from .solar_radiation import solar_radiation
 from .surface_temperature import surface_temperature

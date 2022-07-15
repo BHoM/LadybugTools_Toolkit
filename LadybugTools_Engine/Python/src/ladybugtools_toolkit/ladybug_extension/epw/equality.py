@@ -12,6 +12,7 @@ def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
     Returns:
         bool: True if the two EPW objects are equal, False otherwise.
     """
+
     if not isinstance(epw0, EPW) or not isinstance(epw1, EPW):
         raise TypeError("Both inputs must be of type EPW.")
 
@@ -32,6 +33,7 @@ def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
         "atmospheric_station_pressure",
     ]:
         if getattr(epw0, var) != getattr(epw1, var):
+            print(f"{__file__}, {var}")
             return False
 
     return True

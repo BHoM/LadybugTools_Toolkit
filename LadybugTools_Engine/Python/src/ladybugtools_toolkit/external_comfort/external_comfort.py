@@ -1,49 +1,54 @@
 from __future__ import annotations
 
-import getpass
 import json
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict
 
-from honeybee.config import folders as hb_folders
-from honeybee.model import Model
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
+from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 
+from ..external_comfort.simulate.mean_radiant_temperature_collections import (
+    mean_radiant_temperature_collections,
+)
 from .encoder import Encoder
 from .model import create_model
-from .simulate import surface_temperature_results_exist, solar_radiation_results_exist
-
-hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"
 
 
-@dataclass(frozen=True)
 class ExternalComfort:
-    epw: EPW = field(init=True, repr=True)
-    ground_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True)
-    shade_material: _EnergyMaterialOpaqueBase = field(init=True, repr=True)
-    identifier: str = field(init=True, repr=False, default=None)
-    model: Model = field(init=False, repr=False)
+    """An object containing the configuration for an ExternalComfortResult.
 
-    def __post_init__(self) -> ExternalComfort:
-        object.__setattr__(
-            self,
-            "model",
-            create_model(self.ground_material, self.shade_material, self.identifier),
+    Args:
+        epw (EPW): An EPW object to be used for the mean radiant temperature simulation.
+        ground_material (_EnergyMaterialOpaqueBase): A material to use for the ground surface.
+        shade_material (_EnergyMaterialOpaqueBase): A material to use for any shade surface.
+        identifier (str, optional): A unique identifier for this configuration. If not provided,
+            then one will be created.
+
+    Returns:
+        ExternalComfort: An object containing the configuration for an ExternalComfortResult.
+    """
+
+    def __init__(
+        self,
+        epw: EPW,
+        ground_material: _EnergyMaterialOpaqueBase,
+        shade_material: _EnergyMaterialOpaqueBase,
+        identifier: str = None,
+    ) -> ExternalComfort:
+
+        self.epw = epw
+        self.ground_material = ground_material
+        self.shade_material = shade_material
+        self.identifier = identifier
+
+        self.model = create_model(
+            self.ground_material, self.shade_material, self.identifier
         )
 
-        # Save EPW into working directory folder for posterity and reloading when necessary
-        self.epw.save(
-            Path(hb_folders.default_simulation_folder)
-            / self.model.identifier
-            / Path(self.epw.file_path).name
-        )
-
-        object.__setattr__(
-            self,
-            "identifier",
-            self.model.identifier,
+        # get results from MRT simulation
+        self._mrt_collections = mean_radiant_temperature_collections(
+            self.model, self.epw
         )
 
     def __repr__(self):
@@ -57,10 +62,13 @@ class ExternalComfort:
         """
 
         return {
-            "epw": self.epw,
-            "ground_material": self.ground_material,
-            "shade_material": self.shade_material,
-            "model": self.model,
+            **{
+                "epw": self.epw,
+                "ground_material": self.ground_material,
+                "shade_material": self.shade_material,
+                "model": self.model,
+            },
+            **self._mrt_collections,
         }
 
     def to_json(self, file_path: str) -> Path:
@@ -78,7 +86,50 @@ class ExternalComfort:
 
         return file_path
 
-    def results_already_exist(self) -> bool:
-        # check for results and model and epw equality
+    @property
+    def shaded_below_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["shaded_below_temperature"]
 
-        return None
+    @property
+    def shaded_above_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["shaded_above_temperature"]
+
+    @property
+    def shaded_direct_radiation(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["shaded_direct_radiation"]
+
+    @property
+    def shaded_diffuse_radiation(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["shaded_diffuse_radiation"]
+
+    @property
+    def shaded_longwave_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["shaded_longwave_mean_radiant_temperature"]
+
+    @property
+    def shaded_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["shaded_mean_radiant_temperature"]
+
+    @property
+    def unshaded_below_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["unshaded_below_temperature"]
+
+    @property
+    def unshaded_above_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["unshaded_above_temperature"]
+
+    @property
+    def unshaded_direct_radiation(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["unshaded_direct_radiation"]
+
+    @property
+    def unshaded_diffuse_radiation(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["unshaded_diffuse_radiation"]
+
+    @property
+    def unshaded_longwave_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["unshaded_longwave_mean_radiant_temperature"]
+
+    @property
+    def unshaded_mean_radiant_temperature(self) -> HourlyContinuousCollection:
+        return self._mrt_collections["unshaded_mean_radiant_temperature"]

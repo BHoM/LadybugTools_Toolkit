@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List
@@ -9,125 +8,333 @@ from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import Temperature
-from ladybug.epw import EPW
-from ladybug_comfort.collection.solarcal import HorizontalSolarCal
-from ladybug_comfort.parameter.solarcal import SolarCalParameter
+from ladybug.sunpath import Sunpath
+from ladybug_comfort.collection.pmv import PMV
+from ladybug_comfort.collection.utci import UTCI
+from ladybugtools_toolkit.ladybug_extension.helpers.decay_rate_smoother import (
+    decay_rate_smoother,
+)
+from matplotlib.figure import Figure
+from python_toolkit.plot.chart import timeseries_heatmap
 
 from ..ladybug_extension.datacollection import from_series, to_series
+from ..ladybug_extension.location import to_string
 from .encoder import Encoder
 from .external_comfort import ExternalComfort
-from .simulate import solar_radiation, surface_temperature
+from .moisture import evaporative_cooling_effect_collection
+from .plot import plot_typology_day, plot_utci_heatmap_histogram
+from .plot.colormaps import (
+    DBT_COLORMAP,
+    MRT_COLORMAP,
+    RH_COLORMAP,
+    UTCI_BOUNDARYNORM,
+    UTCI_COLORMAP,
+    WS_COLORMAP,
+)
+from .shelter.effective_wind_speed import effective_wind_speed
+from .typology import Typology
 
 
-@dataclass(frozen=True)
 class ExternalComfortResult:
-    external_comfort: ExternalComfort = field(init=True, repr=True, compare=True)
+    """An object containing the results from an external comfort simulation applied to a
+        Typology containing shelters and evaporative cooling effects.
 
-    shaded_below_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    shaded_above_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    shaded_direct_radiation: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    shaded_diffuse_radiation: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    shaded_longwave_mean_radiant_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    shaded_mean_radiant_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
+    Args:
+        external_comfort (ExternalComfort): An ExternalComfort object.
+        typology (Typology): A Typology object.
 
-    unshaded_below_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    unshaded_above_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    unshaded_direct_radiation: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    unshaded_diffuse_radiation: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    unshaded_longwave_mean_radiant_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
-    unshaded_mean_radiant_temperature: HourlyContinuousCollection = field(
-        init=False, repr=False, compare=False
-    )
+    Returns:
+        ExternalComfortResult: An External Comfort Result object.
+    """
 
-    def __post_init__(self) -> ExternalComfortResult:
-        """Calculate the mean radiant tempertaure, and constituent parts of this value from the External Comfort configuration."""
+    def __init__(
+        self, external_comfort: ExternalComfort, typology: Typology
+    ) -> ExternalComfortResult:
 
-        print(f"- Running external comfort calculation for {self}")
+        self.external_comfort = external_comfort
+        self.typology = typology
 
-        # Run EnergyPlus and Radiance simulations
-        results = []
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            for f in [solar_radiation, surface_temperature]:
-                results.append(
-                    executor.submit(
-                        f, self.external_comfort.model, self.external_comfort.epw
+        # calculate properties
+        self._sky_exposure = self.typology.sky_exposure()
+        self._sun_exposure = self.typology.sun_exposure(self.external_comfort.epw)
+
+        self.wind_speed = effective_wind_speed(
+            self.typology.shelters, self.external_comfort.epw
+        )
+        (
+            self.dry_bulb_temperature,
+            self.relative_humidity,
+        ) = evaporative_cooling_effect_collection(
+            self.external_comfort.epw, self.typology.evaporative_cooling_effect
+        )
+        self.mean_radiant_temperature = self._mean_radiant_temperature()
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} for {self.typology}"
+
+    def _mean_radiant_temperature(self) -> HourlyContinuousCollection:
+        """Return the effective mean radiant temperature for the given typology.
+
+        Returns:
+            HourlyContinuousCollection: An calculated mean radiant temperature based on the shelter configuration for the given typology.
+        """
+
+        shaded_mrt = to_series(self.external_comfort.shaded_mean_radiant_temperature)
+        unshaded_mrt = to_series(
+            self.external_comfort.unshaded_mean_radiant_temperature
+        )
+
+        daytime = np.array(
+            [
+                True if i > 0 else False
+                for i in self.external_comfort.epw.global_horizontal_radiation
+            ]
+        )
+        mrts = []
+        for hour in range(8760):
+            if daytime[hour]:
+                mrts.append(
+                    np.interp(
+                        self._sun_exposure[hour],
+                        [0, 1],
+                        [shaded_mrt[hour], unshaded_mrt[hour]],
+                    )
+                )
+            else:
+                mrts.append(
+                    np.interp(
+                        self._sky_exposure,
+                        [0, 1],
+                        [shaded_mrt[hour], unshaded_mrt[hour]],
                     )
                 )
 
-        # Populate simulation results
-        for x in results:
-            for k, v in x.result().items():
-                object.__setattr__(self, k, v)
+        # Fill any gaps where sun-visible/sun-occluded values are missing, and apply an exponentially weighted moving average to account for transition betwen shaded/unshaded periods.
+        mrt_series = pd.Series(
+            mrts, index=shaded_mrt.index, name=shaded_mrt.name
+        ).interpolate()
 
-        # Populate calculated results
-        object.__setattr__(
-            self,
-            "shaded_longwave_mean_radiant_temperature",
-            self._radiant_temperature_from_collections(
-                [
-                    self.shaded_below_temperature,
-                    self.shaded_above_temperature,
-                ],
-                [0.5, 0.5],
-            ),
+        mrt_series = decay_rate_smoother(
+            mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25
         )
 
+        return from_series(mrt_series)
+
+
+@dataclass(frozen=True)
+class TypologyResult:
+    typology: Typology = field(init=True, repr=True)
+    external_comfort_result: ExternalComfortResult = field(init=True, repr=True)
+
+    dry_bulb_temperature: HourlyContinuousCollection = field(init=False, repr=False)
+    relative_humidity: HourlyContinuousCollection = field(init=False, repr=False)
+    wind_speed: HourlyContinuousCollection = field(init=False, repr=False)
+    mean_radiant_temperature: HourlyContinuousCollection = field(init=False, repr=False)
+    ground_surface_temperature: HourlyContinuousCollection = field(
+        init=False, repr=False
+    )
+    universal_thermal_climate_index: HourlyContinuousCollection = field(
+        init=False, repr=False
+    )
+    standard_effective_temperature: HourlyContinuousCollection = field(
+        init=False, repr=False
+    )
+
+    def __post_init__(self) -> TypologyResult:
+        print(f"- Calculating {self}")
+        dbt, rh = evaporative_cooling_effect_collection(
+            self.external_comfort_result.external_comfort.epw,
+            self.typology.evaporative_cooling_effectiveness,
+        )
+        object.__setattr__(self, "dry_bulb_temperature", dbt)
+        object.__setattr__(self, "relative_humidity", rh)
+        object.__setattr__(self, "wind_speed", self._wind_speed())
+        object.__setattr__(
+            self, "ground_surface_temperature", self._ground_surface_temperature()
+        )
+        object.__setattr__(
+            self, "mean_radiant_temperature", self._mean_radiant_temperature()
+        )
         object.__setattr__(
             self,
-            "unshaded_longwave_mean_radiant_temperature",
-            self._radiant_temperature_from_collections(
-                [
-                    self.unshaded_below_temperature,
-                    self.unshaded_above_temperature,
-                ],
-                [0.5, 0.5],
-            ),
+            "universal_thermal_climate_index",
+            self._universal_thermal_climate_index(),
+        )
+        # object.__setattr__(
+        #     self,
+        #     "standard_effective_temperature",
+        #     self._standard_effective_temperature(),
+        # )
+
+    def _ground_surface_temperature(self) -> HourlyContinuousCollection:
+        """Calculate the ground surface temperature based on the external comfort result and typology set-up.
+
+        Returns:
+            HourlyContinuousCollection: An HourlyContinuousCollection of ground surface temperature.
+        """
+
+        sky_visible = self._sky_visibility()
+        sky_blocked = 1 - sky_visible
+
+        return (
+            self.external_comfort_result.unshaded_below_temperature * sky_visible
+        ) + (self.external_comfort_result.shaded_below_temperature * sky_blocked)
+
+    def _mean_radiant_temperature(self) -> HourlyContinuousCollection:
+        """Return the effective mean radiant temperature for the given typology.
+
+        Returns:
+            HourlyContinuousCollection: An calculated mean radiant temperature based on the shelter configuration for the given typology.
+        """
+
+        shaded_mrt = to_series(
+            self.external_comfort_result.shaded_mean_radiant_temperature
+        )
+        unshaded_mrt = to_series(
+            self.external_comfort_result.unshaded_mean_radiant_temperature
         )
 
-        object.__setattr__(
-            self,
-            "shaded_mean_radiant_temperature",
-            self._mean_radiant_temperature(
-                self.external_comfort.epw,
-                self.shaded_longwave_mean_radiant_temperature,
-                self.shaded_direct_radiation,
-                self.shaded_diffuse_radiation,
-            ),
+        sun_exposure = self._annual_hourly_sun_exposure()
+        effective_sky_visibility = self._sky_visibility()
+        daytime = np.array(
+            [
+                True if i > 0 else False
+                for i in self.external_comfort_result.external_comfort.epw.global_horizontal_radiation
+            ]
+        )
+        mrts = []
+        for hour in range(8760):
+            if daytime[hour]:
+                mrts.append(
+                    np.interp(
+                        sun_exposure[hour],
+                        [0, 1],
+                        [shaded_mrt[hour], unshaded_mrt[hour]],
+                    )
+                )
+            else:
+                mrts.append(
+                    np.interp(
+                        effective_sky_visibility,
+                        [0, 1],
+                        [shaded_mrt[hour], unshaded_mrt[hour]],
+                    )
+                )
+
+        # Fill any gaps where sun-visible/sun-occluded values are missing, and apply an exponentially weighted moving average to account for transition betwen shaded/unshaded periods.
+        mrt_series = pd.Series(
+            mrts, index=shaded_mrt.index, name=shaded_mrt.name
+        ).interpolate()
+
+        def __smoother(
+            series: pd.Series,
+            difference_threshold: float = -10,
+            transition_window: int = 4,
+            ewm_span: float = 1.25,
+        ) -> pd.Series:
+            """Helper function that adds a decay rate to a time-series for values dropping significantly below the previous values.
+
+            Args:
+                series (pd.Series): The series to modify
+                difference_threshold (float, optional): The difference between current/prtevious values which class as a "transition". Defaults to -10.
+                transition_window (int, optional): The number of values after the "transition" within which an exponentially weighted mean should be applied. Defaults to 4.
+                ewm_span (float, optional): The rate of decay. Defaults to 1.25.
+
+            Returns:
+                pd.Series: A modified series
+            """
+            # Find periods of major transition (where values drop signifigantly from loss of radiation mainly)
+            transition_index = series.diff() < difference_threshold
+
+            # Get boolean index for all periods within window from the transition indices
+            ewm_mask = []
+            n = 0
+            for i in transition_index:
+                if i:
+                    n = 0
+                if n < transition_window:
+                    ewm_mask.append(True)
+                else:
+                    ewm_mask.append(False)
+                n += 1
+
+            # Run an EWM to get the smoothed values following changes to values
+            ewm_smoothed: pd.Series = series.ewm(span=ewm_span).mean()
+
+            # Choose from ewm or original values based on ewm mask
+            new_series = ewm_smoothed.where(ewm_mask, series)
+            return new_series
+
+        mrt_series = __smoother(
+            mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25
         )
 
-        object.__setattr__(
-            self,
-            "unshaded_mean_radiant_temperature",
-            self._mean_radiant_temperature(
-                self.external_comfort.epw,
-                self.unshaded_longwave_mean_radiant_temperature,
-                self.unshaded_direct_radiation,
-                self.unshaded_diffuse_radiation,
-            ),
+        return from_series(mrt_series)
+
+    def _universal_thermal_climate_index(self) -> HourlyContinuousCollection:
+        """Return the effective UTCI for the given typology.
+
+        Returns:
+            HourlyContinuousCollection: The calculated UTCI based on the shelter configuration for the given typology.
+        """
+        utci_collection: HourlyContinuousCollection = UTCI(
+            air_temperature=self.dry_bulb_temperature,
+            rel_humidity=self.relative_humidity,
+            rad_temperature=self.mean_radiant_temperature,
+            wind_speed=self.wind_speed,
+        ).universal_thermal_climate_index
+        utci_collection.header.metadata["description"] = self.typology.name
+        return utci_collection
+
+    def _standard_effective_temperature(self) -> HourlyContinuousCollection:
+        """Return the standard effective temperature for the given typology.
+
+        Returns:
+            HourlyContinuousCollection: The calculated standard effective temperature based on the shelter configuration for the given typology.
+        """
+
+        return PMV(
+            air_temperature=self.dry_bulb_temperature,
+            rel_humidity=self.relative_humidity,
+            rad_temperature=self.mean_radiant_temperature,
+            air_speed=self.wind_speed,
+            met_rate=1.1,
+            clo_value=0.7,
+            external_work=0,
+        ).standard_effective_temperature
+
+    def to_dataframe(
+        self, include_external_comfort_results: bool = True
+    ) -> pd.DataFrame:
+        """Create a dataframe from the typology results.
+
+        Args:
+            include_external_comfort_results (bool, optional): Whether to include the external comfort results in the dataframe. Defaults to True.
+
+        Returns:
+            pd.DataFrame: A dataframe containing the typology results.
+        """
+
+        attributes = [
+            "dry_bulb_temperature",
+            "relative_humidity",
+            "wind_speed",
+            "mean_radiant_temperature",
+            "universal_thermal_climate_index",
+        ]
+        series: List[pd.Series] = []
+        for attribute in attributes:
+            series.append(to_series(getattr(self, attribute)))
+        df = pd.concat(
+            series,
+            axis=1,
+            keys=[f"{self.__class__.__name__} - {i}" for i in attributes],
         )
+
+        if include_external_comfort_results:
+            df = pd.concat([df, self.external_comfort_result.to_dataframe()], axis=1)
+
+        return df
 
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
@@ -137,19 +344,14 @@ class ExternalComfortResult:
         """
 
         attributes = [
-            "external_comfort",
-            "shaded_below_temperature",
-            "shaded_above_temperature",
-            "shaded_direct_radiation",
-            "shaded_diffuse_radiation",
-            "shaded_longwave_mean_radiant_temperature",
-            "shaded_mean_radiant_temperature",
-            "unshaded_below_temperature",
-            "unshaded_above_temperature",
-            "unshaded_direct_radiation",
-            "unshaded_diffuse_radiation",
-            "unshaded_longwave_mean_radiant_temperature",
-            "unshaded_mean_radiant_temperature",
+            "typology",
+            "external_comfort_result",
+            "dry_bulb_temperature",
+            "relative_humidity",
+            "wind_speed",
+            "mean_radiant_temperature",
+            "universal_thermal_climate_index",
+            # "standard_effective_temperature",
         ]
         return {attribute: getattr(self, attribute) for attribute in attributes}
 
@@ -169,34 +371,127 @@ class ExternalComfortResult:
         return file_path
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.external_comfort.identifier})"
+        return f"{self.__class__.__name__}({self.typology.name})"
 
-    def to_dataframe(self) -> pd.DataFrame:
-        """Create a dataframe from the simulation results.
+    def plot_utci_day(self, month: int = 6, day: int = 21) -> Figure:
+        """Plot a single day UTCI and composite components
+
+        Args:
+            month (int, optional): The month to plot. Defaults to 6.
+            day (int, optional): The day to plot. Defaults to 21.
 
         Returns:
-            pd.DataFrame: A dataframe containing the simulation results.
+            Figure: A figure showing UTCI and component parts for the given day.
+        """
+        return plot_typology_day(
+            utci=to_series(self.universal_thermal_climate_index),
+            dbt=to_series(self.dry_bulb_temperature),
+            mrt=to_series(self.mean_radiant_temperature),
+            rh=to_series(self.relative_humidity),
+            ws=to_series(self.wind_speed),
+            month=month,
+            day=day,
+            title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+        )
+
+    def plot_utci_heatmap(self) -> Figure:
+        """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
+
+        Returns:
+            Figure: A matplotlib Figure object.
         """
 
-        attributes = [
-            "shaded_below_temperature",
-            "shaded_above_temperature",
-            "shaded_direct_radiation",
-            "shaded_diffuse_radiation",
-            "shaded_longwave_mean_radiant_temperature",
-            "shaded_mean_radiant_temperature",
-            "unshaded_below_temperature",
-            "unshaded_above_temperature",
-            "unshaded_direct_radiation",
-            "unshaded_diffuse_radiation",
-            "unshaded_longwave_mean_radiant_temperature",
-            "unshaded_mean_radiant_temperature",
-        ]
-        series: List[pd.Series] = []
-        for attribute in attributes:
-            series.append(to_series(getattr(self, attribute)))
-        return pd.concat(
-            series,
-            axis=1,
-            keys=[f"{self.__class__.__name__} - {i}" for i in attributes],
+        fig = timeseries_heatmap(
+            series=to_series(self.universal_thermal_climate_index),
+            cmap=UTCI_COLORMAP,
+            norm=UTCI_BOUNDARYNORM,
+            title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
         )
+
+        return fig
+
+    def plot_utci_histogram(self) -> Figure:
+        """Create a histogram showing the annual hourly UTCI values associated with this Typology."""
+
+        fig = plot_utci_heatmap_histogram(
+            self.universal_thermal_climate_index,
+            title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+        )
+
+        return fig
+
+    def plot_dbt_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly DBT values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = timeseries_heatmap(
+            series=to_series(self.dry_bulb_temperature),
+            cmap=DBT_COLORMAP,
+            title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig
+
+    def plot_rh_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly RH values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = timeseries_heatmap(
+            series=to_series(self.relative_humidity),
+            cmap=RH_COLORMAP,
+            title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig
+
+    def plot_ws_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly WS values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = timeseries_heatmap(
+            series=to_series(self.wind_speed),
+            cmap=WS_COLORMAP,
+            title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig
+
+    def plot_mrt_heatmap(self, vlims: List[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly MRT values associated with this Typology.
+
+        Args:
+            vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
+
+        fig = timeseries_heatmap(
+            series=to_series(self.mean_radiant_temperature),
+            cmap=MRT_COLORMAP,
+            title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
+            vlims=vlims,
+        )
+
+        return fig

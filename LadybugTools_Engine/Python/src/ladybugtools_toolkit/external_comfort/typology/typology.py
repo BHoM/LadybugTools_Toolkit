@@ -1,62 +1,53 @@
 from __future__ import annotations
 
-import json
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Dict, List
 
-from ..encoder import Encoder
+from ladybug.epw import EPW
+
 from ..shelter import Shelter
+from ..shelter.any_shelters_overlap import any_shelters_overlap
+from ..shelter.sky_exposure import sky_exposure
+from ..shelter.sun_exposure import sun_exposure
 
 
-@dataclass(frozen=True)
 class Typology:
-    name: str = field(init=True, repr=True)
-    shelters: List[Shelter] = field(init=True, repr=True, default_factory=list)
-    evaporative_cooling_effectiveness: float = field(init=True, repr=True, default=0)
-    wind_speed_multiplier: float = field(init=True, repr=True, default=1)
+    """An external comfort typology, described by shelters and a proportion of evaporative
+        cooling.
 
-    def __post_init__(self) -> Typology:
-        if self.shelters is None:
-            object.__setattr__(self, "shelters", [])
+    Args:
+        name (str): The name of the external comfort typology.
+        shelters (List[Shelter], optional): A list of shelters modifying exposure to the
+            elements. Defaults to None.
+        evaporative_cooling_effect (float, optional): An amount of evaporative cooling to add to
+            results calculated by this typology. Defaults to 0.
 
-        if Shelter._overlaps(self.shelters):
+
+    Returns:
+        Typology: An external comfort typology.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        shelters: List[Shelter] = None,
+        evaporative_cooling_effectiveness: float = 0,
+    ) -> Typology:
+
+        self.name = name
+        self.shelters = shelters
+        self.evaporative_cooling_effect = evaporative_cooling_effectiveness
+
+        if any_shelters_overlap(shelters):
             raise ValueError("Shelters overlap")
 
-        if self.wind_speed_multiplier < 0:
-            raise ValueError("Wind speed multiplier must be greater than 0")
-
-    @property
-    def description(self) -> str:
-        """Return a human readable description of the Typology object."""
-
-        if self.wind_speed_multiplier == 1:
-            wind_str = "wind speed per weatherfile"
-        elif self.wind_speed_multiplier > 1:
-            wind_str = f"wind speed increased by {self.wind_speed_multiplier - 1:0.0%}"
-        else:
-            wind_str = f"wind speed decreased by {1 - self.wind_speed_multiplier:0.0%}"
-
-        # Remove shelters that provide no shelter
-        shelters = [i for i in self.shelters if i.description != "unsheltered"]
-        if len(shelters) > 0:
-            shelter_str = " and ".join(
-                [i.description for i in self.shelters]
-            ).capitalize()
-        else:
-            shelter_str = "unsheltered".capitalize()
-
-        if (self.evaporative_cooling_effectiveness != 0) and (
-            self.wind_speed_multiplier != 1
+        if (
+            evaporative_cooling_effectiveness < 0
+            or evaporative_cooling_effectiveness > 1
         ):
-            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness, and {wind_str}"
-        elif self.evaporative_cooling_effectiveness != 0:
-            return f"{self.name}: {shelter_str}, with {self.evaporative_cooling_effectiveness} evaporative cooling effectiveness"
-        else:
-            return f"{self.name}: {shelter_str}, with {wind_str}"
+            raise ValueError("Evaporative cooling effect must be between 0 and 1.")
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.name}, {[i for i in self.shelters]}, {self.evaporative_cooling_effectiveness}, {self.wind_speed_multiplier})"
+        return f"{self.__class__.__name__} - {self.name}"
 
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as a dictionary
@@ -67,23 +58,15 @@ class Typology:
 
         d = {
             "name": self.name,
-            "shelters": [i.to_dict() for i in self.shelters],
-            "evaporative_cooling_effectiveness": self.evaporative_cooling_effectiveness,
-            "wind_speed_multiplier": self.wind_speed_multiplier,
+            "shelters": self.shelters,
+            "evaporative_cooling_effect": self.evaporative_cooling_effect,
         }
         return d
 
-    def to_json(self, file_path: str) -> Path:
-        """Write the content of this object to a JSON file
+    def sky_exposure(self) -> float:
+        """Direct access to "sky_exposure" method for this typology object."""
+        return sky_exposure(self.shelters)
 
-        Returns:
-            Path: The path to the newly created JSON file.
-        """
-
-        file_path: Path = Path(file_path)
-        file_path.parent.mkdir(exist_ok=True, parents=True)
-
-        with open(file_path, "w", encoding="utf-8") as fp:
-            json.dump(self.to_dict(), fp, cls=Encoder, indent=4)
-
-        return file_path
+    def sun_exposure(self, epw: EPW) -> List[float]:
+        """Direct access to "sun_exposure" method for this typology object."""
+        return sun_exposure(self.shelters, epw)
