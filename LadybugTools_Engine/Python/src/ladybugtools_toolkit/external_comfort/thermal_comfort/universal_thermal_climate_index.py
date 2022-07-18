@@ -5,11 +5,10 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug_comfort.collection.utci import UTCI
-from numpy.typing import NDArray
-
-from .universal_thermal_climate_index_vectorised import (
+from ladybugtools_toolkit.external_comfort.thermal_comfort.universal_thermal_climate_index_vectorised import (
     universal_thermal_climate_index_vectorised,
 )
+from numpy.typing import NDArray
 
 
 def universal_thermal_climate_index(
@@ -38,7 +37,7 @@ def universal_thermal_climate_index(
         wind_speed,
     ]
 
-    if all([isinstance(i, HourlyContinuousCollection) for i in _inputs]):
+    if all((isinstance(i, HourlyContinuousCollection) for i in _inputs)):
         return UTCI(
             air_temperature=air_temperature,
             rel_humidity=relative_humidity,
@@ -46,7 +45,7 @@ def universal_thermal_climate_index(
             wind_speed=wind_speed,
         ).universal_thermal_climate_index
 
-    if all([isinstance(i, (float, int)) for i in _inputs]):
+    if all((isinstance(i, (float, int)) for i in _inputs)):
         return universal_thermal_climate_index_vectorised(
             ta=air_temperature,
             rh=relative_humidity,
@@ -54,7 +53,7 @@ def universal_thermal_climate_index(
             vel=np.clip([wind_speed], 0, 17)[0],
         )
 
-    if all([isinstance(i, pd.DataFrame) for i in _inputs]):
+    if all((isinstance(i, pd.DataFrame) for i in _inputs)):
         return pd.DataFrame(
             universal_thermal_climate_index_vectorised(
                 ta=air_temperature.values,
@@ -68,7 +67,7 @@ def universal_thermal_climate_index(
             index=_inputs[0].index,
         )
 
-    if all([isinstance(i, pd.Series) for i in _inputs]):
+    if all((isinstance(i, pd.Series) for i in _inputs)):
         return pd.Series(
             universal_thermal_climate_index_vectorised(
                 ta=air_temperature,
@@ -80,7 +79,7 @@ def universal_thermal_climate_index(
             index=_inputs[0].index,
         )
 
-    if all([isinstance(i, (List, Tuple)) for i in _inputs]):
+    if all((isinstance(i, (List, Tuple)) for i in _inputs)):
         return universal_thermal_climate_index_vectorised(
             ta=np.array(air_temperature),
             rh=np.array(relative_humidity),
@@ -88,7 +87,6 @@ def universal_thermal_climate_index(
             vel=np.clip(np.array(wind_speed), 0, 17),
         )
 
-    print([type(i) for i in _inputs])
     raise ValueError(
         "No possible means of calculating UTCI from that combination of inputs was found."
     )

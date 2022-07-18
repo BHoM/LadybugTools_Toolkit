@@ -3,9 +3,11 @@ from typing import Dict
 
 import pandas as pd
 from ladybug.epw import HourlyContinuousCollection
-
-from ...honeybee_extension.results import load_ill, make_annual
-from ...ladybug_extension.datacollection import from_series
+from ladybugtools_toolkit.honeybee_extension.results.load_ill import load_ill
+from ladybugtools_toolkit.honeybee_extension.results.make_annual import make_annual
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
+    from_series,
+)
 
 
 def solar_radiation_results_load(

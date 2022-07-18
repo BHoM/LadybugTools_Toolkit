@@ -1,8 +1,11 @@
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-
-from ...ladybug_extension.datacollection.monthlycollection import to_hourly
-from .ground_temperature_at_depth import ground_temperature_at_depth
+from ladybugtools_toolkit.external_comfort.ground_temperature.ground_temperature_at_depth import (
+    ground_temperature_at_depth,
+)
+from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import (
+    to_hourly,
+)
 
 
 def hourly_ground_temperature(

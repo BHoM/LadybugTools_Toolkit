@@ -3,8 +3,8 @@ from typing import List, Union
 
 import pandas as pd
 
-from .load_files import load_files
-from .load_pts_file import load_pts_file
+from ladybugtools_toolkit.honeybee_extension.results.load_files import load_files
+from ladybugtools_toolkit.honeybee_extension.results.load_pts_file import load_pts_file
 
 
 def load_pts(pts_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:

@@ -3,8 +3,10 @@ from typing import List
 import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-
-from ...ladybug_extension.datacollection import from_series, to_series
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
+    from_series,
+)
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
 def longwave_mean_radiant_temperature(

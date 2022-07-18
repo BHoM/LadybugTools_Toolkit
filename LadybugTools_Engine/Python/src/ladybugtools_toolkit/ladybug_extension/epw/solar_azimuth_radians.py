@@ -1,7 +1,7 @@
 from ladybug.epw import EPW
 from ladybug.datacollection import HourlyContinuousCollection
 
-from .solar_azimuth import solar_azimuth
+from ladybugtools_toolkit.ladybug_extension.epw.solar_azimuth import solar_azimuth
 
 
 def solar_azimuth_radians(

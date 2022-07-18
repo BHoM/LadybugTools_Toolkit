@@ -1,13 +1,16 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datatype.generic import GenericType
 from ladybug.epw import EPW
 from ladybug.header import Header
-from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datatype.generic import GenericType
-from ladybug.datacollection import HourlyContinuousCollection
-
-from .solar_time_hour import solar_time_hour as sth
-from ..analysis_period import to_datetimes
+from ladybugtools_toolkit.ladybug_extension.analysis_period.to_datetimes import (
+    to_datetimes,
+)
+from ladybugtools_toolkit.ladybug_extension.epw.solar_time_hour import (
+    solar_time_hour as sth,
+)
 
 
 def solar_time_datetime(

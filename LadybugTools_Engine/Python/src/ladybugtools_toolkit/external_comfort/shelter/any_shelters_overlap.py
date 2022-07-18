@@ -1,7 +1,9 @@
 from typing import List
 
-from .shelter import Shelter
-from .shelters_overlap import shelters_overlap
+from ladybugtools_toolkit.external_comfort.shelter import Shelter
+from ladybugtools_toolkit.external_comfort.shelter.shelters_overlap import (
+    shelters_overlap,
+)
 
 
 def any_shelters_overlap(shelters: List[Shelter]) -> bool:

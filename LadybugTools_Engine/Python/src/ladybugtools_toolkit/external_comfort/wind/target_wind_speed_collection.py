@@ -1,7 +1,8 @@
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-
-from .wind_speed_at_height import wind_speed_at_height
+from ladybugtools_toolkit.external_comfort.wind.wind_speed_at_height import (
+    wind_speed_at_height,
+)
 
 
 def target_wind_speed_collection(

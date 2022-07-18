@@ -1,8 +1,7 @@
 import pandas as pd
 from ladybug._datacollectionbase import BaseCollection
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
-
-from ..header import from_string
+from ladybugtools_toolkit.ladybug_extension.header.from_string import from_string
 
 
 def from_series(series: pd.Series) -> BaseCollection:

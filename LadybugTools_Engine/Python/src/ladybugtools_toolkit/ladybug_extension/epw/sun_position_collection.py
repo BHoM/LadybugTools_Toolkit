@@ -4,7 +4,9 @@ from ladybug.datatype.generic import GenericType
 from ladybug.epw import EPW
 from ladybug.header import Header
 
-from .sun_position_list import sun_position_list
+from ladybugtools_toolkit.ladybug_extension.epw.sun_position_list import (
+    sun_position_list,
+)
 
 
 def sun_position_collection(epw: EPW) -> HourlyContinuousCollection:

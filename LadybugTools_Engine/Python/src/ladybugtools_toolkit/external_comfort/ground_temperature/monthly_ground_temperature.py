@@ -2,8 +2,9 @@ from warnings import warn
 
 from ladybug.datacollection import MonthlyCollection
 from ladybug.epw import EPW
-
-from .ground_temperature_at_depth import ground_temperature_at_depth
+from ladybugtools_toolkit.external_comfort.ground_temperature.ground_temperature_at_depth import (
+    ground_temperature_at_depth,
+)
 
 
 def monthly_ground_temperature(

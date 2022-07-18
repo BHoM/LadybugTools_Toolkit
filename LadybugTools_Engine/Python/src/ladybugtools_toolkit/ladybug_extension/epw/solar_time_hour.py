@@ -5,7 +5,9 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype.time import Time
 from ladybug.datacollection import HourlyContinuousCollection
 
-from .equation_of_time import equation_of_time as eot
+from ladybugtools_toolkit.ladybug_extension.epw.equation_of_time import (
+    equation_of_time as eot,
+)
 
 
 def solar_time_hour(

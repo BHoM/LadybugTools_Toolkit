@@ -3,7 +3,9 @@ from ladybug.datatype.specificenergy import Enthalpy
 from ladybug.epw import EPW
 from ladybug.psychrometrics import enthalpy_from_db_hr
 
-from .humidity_ratio import humidity_ratio as hr
+from ladybugtools_toolkit.ladybug_extension.epw.humidity_ratio import (
+    humidity_ratio as hr,
+)
 
 
 def enthalpy(

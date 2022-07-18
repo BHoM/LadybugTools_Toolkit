@@ -6,12 +6,16 @@ import matplotlib.ticker as mticker
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
+from ladybugtools_toolkit.external_comfort.plot.colormaps import (
+    UTCI_BOUNDARYNORM,
+    UTCI_COLORMAP,
+    UTCI_LABELS,
+    UTCI_LEVELS,
+)
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-from ...ladybug_extension.datacollection import to_series
-from .colormaps import UTCI_BOUNDARYNORM, UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
 
 def plot_utci_heatmap_histogram(

@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from typing import Dict
 
-from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
 from honeybee_energy.simulation.parameter import (
@@ -13,11 +12,18 @@ from honeybee_energy.simulation.parameter import (
     SimulationParameter,
 )
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
-
-from ..ground_temperature import energyplus_strings_otherside_coefficient
-from .surface_temperature_results_exist import surface_temperature_results_exist
-from .surface_temperature_results_load import surface_temperature_results_load
-from .working_directory import working_directory as wd
+from ladybugtools_toolkit.external_comfort.ground_temperature.energyplus_strings_otherside_coefficient import (
+    energyplus_strings_otherside_coefficient,
+)
+from ladybugtools_toolkit.external_comfort.simulate.surface_temperature_results_exist import (
+    surface_temperature_results_exist,
+)
+from ladybugtools_toolkit.external_comfort.simulate.surface_temperature_results_load import (
+    surface_temperature_results_load,
+)
+from ladybugtools_toolkit.external_comfort.simulate.working_directory import (
+    working_directory as wd,
+)
 
 
 def surface_temperature(

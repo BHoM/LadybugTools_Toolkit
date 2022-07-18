@@ -2,9 +2,13 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-
-from ...ladybug_extension.datacollection import from_series, to_series
-from ...ladybug_extension.datacollection.monthlycollection import to_hourly
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
+    from_series,
+)
+from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import (
+    to_hourly,
+)
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
 def ground_temperature_at_depth(

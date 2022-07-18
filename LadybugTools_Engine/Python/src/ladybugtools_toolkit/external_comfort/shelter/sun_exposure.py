@@ -3,11 +3,10 @@ from typing import List
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW
+from ladybugtools_toolkit.external_comfort.shelter import Shelter
 from ladybugtools_toolkit.ladybug_extension.epw.sun_position_list import (
     sun_position_list,
 )
-
-from .shelter import Shelter
 
 
 def sun_exposure(shelters: List[Shelter], epw: EPW) -> List[float]:
@@ -32,8 +31,7 @@ def sun_exposure(shelters: List[Shelter], epw: EPW) -> List[float]:
 
     blocked = []
     for shelter in shelters:
-        shelter_blocking = shelter.sun_blocked(suns)
-        temp = np.where(shelter_blocking, shelter.porosity, nans)
+        temp = np.where(shelter.sun_blocked(suns), shelter.porosity, nans)
         temp = np.where(np.logical_and(np.isnan(temp), sun_is_up), 1, temp)
         blocked.append(temp)
 

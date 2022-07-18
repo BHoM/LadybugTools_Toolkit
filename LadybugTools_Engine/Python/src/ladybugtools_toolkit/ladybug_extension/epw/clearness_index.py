@@ -5,8 +5,10 @@ from ladybug.datatype.fraction import Fraction
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.skymodel import clearness_index as lb_ci
 
-from .sun_position_collection import sun_position_collection
-from .solar_altitude import solar_altitude
+from ladybugtools_toolkit.ladybug_extension.epw.sun_position_collection import (
+    sun_position_collection,
+)
+from ladybugtools_toolkit.ladybug_extension.epw.solar_altitude import solar_altitude
 
 
 def clearness_index(

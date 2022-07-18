@@ -1,7 +1,9 @@
 from ladybug.epw import EPW
 from ladybug.datacollection import HourlyContinuousCollection
 
-from .apparent_solar_zenith import apparent_solar_zenith
+from ladybugtools_toolkit.ladybug_extension.epw.apparent_solar_zenith import (
+    apparent_solar_zenith,
+)
 
 
 def apparent_solar_zenith_radians(

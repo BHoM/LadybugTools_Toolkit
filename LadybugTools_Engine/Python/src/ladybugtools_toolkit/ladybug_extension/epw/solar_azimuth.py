@@ -4,7 +4,9 @@ from ladybug.datatype.angle import Angle
 from ladybug.epw import EPW
 from ladybug.header import Header
 
-from .sun_position_collection import sun_position_collection
+from ladybugtools_toolkit.ladybug_extension.epw.sun_position_collection import (
+    sun_position_collection,
+)
 
 
 def solar_azimuth(

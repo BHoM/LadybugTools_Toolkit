@@ -2,8 +2,7 @@ from datetime import datetime
 from typing import List
 
 from ladybug.analysisperiod import AnalysisPeriod
-
-from ..dt import from_datetime
+from ladybugtools_toolkit.ladybug_extension.dt.from_datetime import from_datetime
 
 
 def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:

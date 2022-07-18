@@ -4,10 +4,15 @@ from honeybee.model import Model
 from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 from honeybee_radiance.sensorgrid import Sensor, SensorGrid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
-
-from .create_ground_zone import create_ground_zone
-from .create_shade_valence import create_shade_valence
-from .create_shade_zone import create_shade_zone
+from ladybugtools_toolkit.external_comfort.model.create_ground_zone import (
+    create_ground_zone,
+)
+from ladybugtools_toolkit.external_comfort.model.create_shade_valence import (
+    create_shade_valence,
+)
+from ladybugtools_toolkit.external_comfort.model.create_shade_zone import (
+    create_shade_zone,
+)
 
 
 def create_model(

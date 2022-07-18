@@ -4,11 +4,14 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
+from ladybugtools_toolkit.external_comfort.plot.colormaps import (
+    UTCI_COLORMAP,
+    UTCI_LABELS,
+    UTCI_LEVELS,
+)
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from python_toolkit.plot.color import lighten_color
-
-from .colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
 
 def utci_comparison_diurnal(
@@ -32,9 +35,10 @@ def utci_comparison_diurnal(
     ), "The length of collections_ids must match the number of collections."
 
     for n, col in enumerate(collections):
-        assert (
-            type(col.header.data_type) == UniversalThermalClimateIndex
-        ), f"Collection {n} data type is not UTCI and cannot be used in this plot."
+        if not isinstance(col.header.data_type, UniversalThermalClimateIndex):
+            raise ValueError(
+                f"Collection {n} data type is not UTCI and cannot be used in this plot."
+            )
 
     months = [
         "January",

@@ -2,8 +2,9 @@ from pathlib import Path
 from typing import Union
 
 import pandas as pd
-
-from .load_sun_up_hours import load_sun_up_hours
+from ladybugtools_toolkit.honeybee_extension.results.load_sun_up_hours import (
+    load_sun_up_hours,
+)
 
 
 def load_ill_file(ill_file: Union[str, Path]) -> pd.Series:

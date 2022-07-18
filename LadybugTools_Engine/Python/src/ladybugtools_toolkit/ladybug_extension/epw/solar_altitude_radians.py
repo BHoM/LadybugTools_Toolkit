@@ -1,7 +1,7 @@
 from ladybug.epw import EPW
 from ladybug.datacollection import HourlyContinuousCollection
 
-from .solar_altitude import solar_altitude
+from ladybugtools_toolkit.ladybug_extension.epw.solar_altitude import solar_altitude
 
 
 def solar_altitude_radians(

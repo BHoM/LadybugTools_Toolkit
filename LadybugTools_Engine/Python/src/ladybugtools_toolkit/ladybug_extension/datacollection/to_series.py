@@ -1,8 +1,9 @@
 import pandas as pd
 from ladybug._datacollectionbase import BaseCollection
-
-from ..analysis_period import to_datetimes
-from ..header import to_string
+from ladybugtools_toolkit.ladybug_extension.analysis_period.to_datetimes import (
+    to_datetimes,
+)
+from ladybugtools_toolkit.ladybug_extension.header.to_string import to_string
 
 
 def to_series(collection: BaseCollection) -> pd.Series:

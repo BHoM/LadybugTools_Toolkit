@@ -5,7 +5,7 @@ from typing import Union
 import pandas as pd
 from ladybug.sql import SQLiteResult
 
-from ...ladybug_extension.datacollection import to_series
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
 def load_sql_file(sql_file: Union[str, Path]) -> pd.DataFrame:

@@ -1,8 +1,9 @@
 import inspect
 
 from ladybug.epw import EPW
-
-from .monthly_ground_temperature import monthly_ground_temperature
+from ladybugtools_toolkit.external_comfort.ground_temperature.monthly_ground_temperature import (
+    monthly_ground_temperature,
+)
 
 
 def energyplus_strings(epw: EPW) -> str:
