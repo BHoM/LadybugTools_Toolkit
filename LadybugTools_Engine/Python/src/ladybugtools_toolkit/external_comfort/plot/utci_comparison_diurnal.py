@@ -5,10 +5,7 @@ import matplotlib.pyplot as plt
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybugtools_toolkit.external_comfort.plot.colormaps import (
-    UTCI_COLORMAP,
-    UTCI_LABELS,
-    UTCI_LEVELS,
-)
+    UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS)
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from python_toolkit.plot.color import lighten_color
@@ -73,8 +70,8 @@ def utci_comparison_diurnal(
             ax.spines[spine].set_color("k")
 
     # Get plotted values attributes
-    ylim = ax.get_ylim()
-    mitigation_handles, mitigation_labels = ax.get_legend_handles_labels()
+    ylim = axes.flat[-1].get_ylim()
+    mitigation_handles, mitigation_labels = axes.flat[-1].get_legend_handles_labels()
 
     # Fill between ranges
     for n, ax in enumerate(axes.flat):

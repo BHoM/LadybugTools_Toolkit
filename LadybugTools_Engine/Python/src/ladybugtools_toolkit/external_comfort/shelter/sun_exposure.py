@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.shelter import Shelter
+from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 from ladybugtools_toolkit.ladybug_extension.epw.sun_position_list import (
     sun_position_list,
 )

@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
-def plot_typology_day(
+def utci_day_comfort_metrics(
     utci: pd.Series,
     dbt: pd.Series,
     mrt: pd.Series,

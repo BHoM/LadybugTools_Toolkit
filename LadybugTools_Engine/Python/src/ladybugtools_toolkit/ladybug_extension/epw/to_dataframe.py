@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import (
@@ -59,9 +61,9 @@ def to_dataframe(
     """
 
     all_series = []
-    for p in dir(epw):
+    for prop in dir(epw):
         try:
-            all_series.append(to_series(getattr(epw, p)))
+            all_series.append(to_series(getattr(epw, prop)))
         except (AttributeError, TypeError, ZeroDivisionError, ValueError):
             pass
 
@@ -109,6 +111,9 @@ def to_dataframe(
         all_series.append(to_series(collection))
 
     # Compile all the data into a dataframe
-    df = pd.concat(all_series, axis=1).sort_index(axis=1)
-
+    df = pd.concat(
+        {Path(epw.file_path).stem: pd.concat(all_series, axis=1).sort_index(axis=1)},
+        names=["", ""],
+        axis=1,
+    )
     return df

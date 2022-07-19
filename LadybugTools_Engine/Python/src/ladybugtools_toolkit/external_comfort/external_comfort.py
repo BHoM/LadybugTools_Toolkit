@@ -1,341 +1,304 @@
-# from __future__ import annotations
+from __future__ import annotations
 
-# import json
-# from pathlib import Path
-# from typing import Any, Dict, List
+from pathlib import Path
+from typing import Dict, Tuple
 
-# import numpy as np
-# import pandas as pd
-# from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
-# from ladybug.datacollection import HourlyContinuousCollection
-# from ladybug.epw import EPW
-# from ladybugtools_toolkit.external_comfort.encoder import Encoder
-# from ladybugtools_toolkit.external_comfort.moisture.evaporative_cooling_effect_collection import (
-#     evaporative_cooling_effect_collection,
-# )
-# from ladybugtools_toolkit.external_comfort.shelter.effective_wind_speed import (
-#     effective_wind_speed,
-# )
-# from ladybugtools_toolkit.external_comfort.simulate.mean_radiant_temperature_result import (
-#     MeanRadiantTemperatureResult,
-# )
-# from ladybugtools_toolkit.external_comfort.thermal_comfort.universal_thermal_climate_index import (
-#     universal_thermal_climate_index,
-# )
-# from ladybugtools_toolkit.external_comfort.typology import Typology
-# from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
-#     from_series,
-# )
-# from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-# from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe
-# from ladybugtools_toolkit.ladybug_extension.helpers.decay_rate_smoother import (
-#     decay_rate_smoother,
-# )
+import pandas as pd
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybugtools_toolkit.external_comfort.plot.colormaps import (
+    DBT_COLORMAP,
+    MRT_COLORMAP,
+    RH_COLORMAP,
+    WS_COLORMAP,
+)
+from ladybugtools_toolkit.external_comfort.plot.utci_comparison_diurnal import (
+    utci_comparison_diurnal,
+)
+from ladybugtools_toolkit.external_comfort.plot.utci_day_comfort_metrics import (
+    utci_day_comfort_metrics,
+)
+from ladybugtools_toolkit.external_comfort.plot.utci_distance_to_comfortable import (
+    utci_distance_to_comfortable,
+)
+from ladybugtools_toolkit.external_comfort.plot.utci_heatmap import utci_heatmap
+from ladybugtools_toolkit.external_comfort.plot.utci_heatmap_histogram import (
+    utci_heatmap_histogram,
+)
+from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
+    SimulationResult,
+)
+from ladybugtools_toolkit.external_comfort.thermal_comfort.universal_thermal_climate_index import (
+    universal_thermal_climate_index,
+)
+from ladybugtools_toolkit.external_comfort.typology.typology import Typology
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe
+from matplotlib.figure import Figure
+from python_toolkit.plot.chart.timeseries_heatmap import timeseries_heatmap
 
 
-# class ExternalComfort(MeanRadiantTemperatureResult):
-#     """An object containing the results from an external comfort simulation applied to a
-#         Typology containing shelters and evaporative cooling effects.
+class ExternalComfort:
+    """An object containing all inputs and results of an external MRT simulation and resultant
+        thermal comfort metrics.
 
-#     Args:
-#         epw (EPW): An EPW object to be used for the mean radiant temperature simulation.
-#         ground_material (_EnergyMaterialOpaqueBase): A material to use for the ground surface.
-#         shade_material (_EnergyMaterialOpaqueBase): A material to use for the shade surface.
-#         typology (Typology): A Typology object.
-#         identifier (str, optional): A unique identifier for this case. If not provided,
-#             then one will be created.
+    Args:
+        simulation_result (SimulationResult): A set of simulation results.
+        typology (Typology): A typology object.
 
-#     Returns:
-#         ExternalComfort: An External Comfort object.
-#     """
+    Returns:
+        ExternalComfort: An object containing all inputs and results of an external MRT simulation
+        and resultant thermal comfort metrics.
+    """
 
-#     def __init__(
-#         self,
-#         epw: EPW,
-#         ground_material: _EnergyMaterialOpaqueBase,
-#         shade_material: _EnergyMaterialOpaqueBase,
-#         typology: Typology,
-#         identifier: str = None,
-#     ) -> ExternalComfort:
-#         super().__init__(epw, ground_material, shade_material, identifier)
-#         self.typology = typology
+    def __init__(
+        self, simulation_result: SimulationResult, typology: Typology
+    ) -> ExternalComfort:
 
-#         # calculate properties
-#         self._sky_exposure = self.typology.sky_exposure()
-#         self._sun_exposure = self.typology.sun_exposure(
-#             self.mean_radiant_temperature_result.epw
-#         )
+        self.simulation_result = simulation_result
+        self.typology = typology
 
-#         self.wind_speed = effective_wind_speed(
-#             self.typology.shelters, self.mean_radiant_temperature_result.epw
-#         )
-#         (
-#             self.dry_bulb_temperature,
-#             self.relative_humidity,
-#         ) = evaporative_cooling_effect_collection(
-#             self.mean_radiant_temperature_result.epw,
-#             self.typology.evaporative_cooling_effect,
-#         )
-#         self.mean_radiant_temperature = self._mean_radiant_temperature()
-#         self.universal_thermal_climate_index = self._universal_thermal_climate_index()
+        # calculate inputs to thermal comfort calculations
+        self.dry_bulb_temperature = self.typology.dry_bulb_temperature(
+            self.simulation_result.epw
+        )
+        self.relative_humidity = self.typology.relative_humidity(
+            self.simulation_result.epw
+        )
+        self.wind_speed = self.typology.wind_speed(self.simulation_result.epw)
+        self.mean_radiant_temperature = self.typology.mean_radiant_temperature(
+            self.simulation_result
+        )
 
-#     def __repr__(self) -> str:
-#         return f"{self.__class__.__name__} for {self.typology}"
+        # calculate UTCI
+        self.universal_thermal_climate_index = universal_thermal_climate_index(
+            self.dry_bulb_temperature,
+            self.relative_humidity,
+            self.mean_radiant_temperature,
+            self.wind_speed,
+        )
 
-#     def _mean_radiant_temperature(self) -> HourlyContinuousCollection:
-#         """Return the effective mean radiant temperature for the given typology.
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.simulation_result.identifer} - {self.typology.name})"
 
-#         Returns:
-#             HourlyContinuousCollection: An calculated mean radiant temperature based on the shelter configuration for the given typology.
-#         """
+    def to_dict(self) -> Dict[str, HourlyContinuousCollection]:
+        """Return this object as a dictionary
 
-#         shaded_mrt = to_series(
-#             self.mean_radiant_temperature_result.shaded_mean_radiant_temperature
-#         )
-#         unshaded_mrt = to_series(
-#             self.mean_radiant_temperature_result.unshaded_mean_radiant_temperature
-#         )
+        Returns:
+            Dict: The dict representation of this object.
+        """
 
-#         daytime = np.array(
-#             [
-#                 True if i > 0 else False
-#                 for i in self.mean_radiant_temperature_result.epw.global_horizontal_radiation
-#             ]
-#         )
-#         mrts = []
-#         for hour in range(8760):
-#             if daytime[hour]:
-#                 mrts.append(
-#                     np.interp(
-#                         self._sun_exposure[hour],
-#                         [0, 1],
-#                         [shaded_mrt[hour], unshaded_mrt[hour]],
-#                     )
-#                 )
-#             else:
-#                 mrts.append(
-#                     np.interp(
-#                         self._sky_exposure,
-#                         [0, 1],
-#                         [shaded_mrt[hour], unshaded_mrt[hour]],
-#                     )
-#                 )
+        variables = [
+            "universal_thermal_climate_index",
+            "dry_bulb_temperature",
+            "relative_humidity",
+            "mean_radiant_temperature",
+            "wind_speed",
+        ]
 
-#         # Fill any gaps where sun-visible/sun-occluded values are missing, and apply an exponentially weighted moving average to account for transition betwen shaded/unshaded periods.
-#         mrt_series = pd.Series(
-#             mrts, index=shaded_mrt.index, name=shaded_mrt.name
-#         ).interpolate()
+        return {
+            **{var: getattr(self, var) for var in variables},
+            **self.typology.to_dict(),
+            **self.simulation_result.to_dict(),
+        }
 
-#         mrt_series = decay_rate_smoother(
-#             mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25
-#         )
+    def to_dataframe(
+        self, include_epw: bool = False, include_simulation_results: bool = False
+    ) -> pd.DataFrame:
+        """Create a Pandas DataFrame from this object.
 
-#         return from_series(mrt_series)
+        Args:
+            include_epw (bool, optional): Set to True to include the dataframe for the EPW file
+                also.
+            include_simulation_results(bool, optional): Set to True to include the dataframe for
+                the simulation results also.
 
-#     def _universal_thermal_climate_index(self) -> HourlyContinuousCollection:
-#         return universal_thermal_climate_index(
-#             self.dry_bulb_temperature,
-#             self.relative_humidity,
-#             self.mean_radiant_temperature,
-#             self.wind_speed,
-#         )
+        Returns:
+            pd.DataFrame: A Pandas DataFrame with this objects properties.
+        """
 
-#     def to_dict(self) -> Dict[str, Any]:
-#         """Return this object as a dictionary
+        df = pd.DataFrame()
 
-#         Returns:
-#             Dict: The dict representation of this object.
-#         """
+        if include_simulation_results:
+            df = pd.concat(
+                [df, self.simulation_result.to_dataframe(include_epw)], axis=1
+            )
+        elif include_epw:
+            df = pd.concat([df, to_dataframe(self.simulation_result.epw)], axis=1)
 
-#         attributes = [
-#             "dry_bulb_temperature",
-#             "relative_humidity",
-#             "wind_speed",
-#             "mean_radiant_temperature",
-#             "universal_thermal_climate_index",
-#         ]
+        variables = [
+            "universal_thermal_climate_index",
+            "dry_bulb_temperature",
+            "relative_humidity",
+            "mean_radiant_temperature",
+            "wind_speed",
+        ]
+        obj_series = []
+        for var in variables:
+            _ = to_series(getattr(self, var))
+            obj_series.append(
+                _.rename(
+                    (
+                        f"{Path(self.simulation_result.epw.file_path).stem}",
+                        f"{var} - {self.simulation_result.ground_material.display_name} ground, {self.simulation_result.shade_material.display_name} shade - {self.typology.name}",
+                    )
+                )
+            )
+        df = pd.concat([df, pd.concat(obj_series, axis=1)], axis=1)
 
-#         return {
-#             **{
-#                 attribute: getattr(self, attribute).to_dict()
-#                 for attribute in attributes
-#             },
-#             **{"external_comfort": self.mean_radiant_temperature_result},
-#         }
+        return df
 
-#     def to_json(self, file_path: str) -> Path:
-#         """Return this object as a json file
+    @property
+    def plot_title_string(self) -> str:
+        """Return the description of this result suitable for use in plotting titles."""
+        return f"{self.simulation_result.ground_material.display_name} ground, {self.simulation_result.shade_material.display_name} shade\n{self.typology.name}"
 
-#         Returns:
-#             Path: The json file path.
-#         """
+    def plot_utci_day_comfort_metrics(self, month: int = 3, day: int = 21) -> Figure:
+        """Plot a single day UTCI and composite components
 
-#         file_path: Path = Path(file_path)
-#         file_path.parent.mkdir(exist_ok=True, parents=True)
+        Args:
+            month (int, optional): The month to plot. Defaults to 3.
+            day (int, optional): The day to plot. Defaults to 21.
 
-#         with open(file_path, "w", encoding="utf-8") as fp:
-#             json.dump(self.to_dict(), fp, cls=Encoder, indent=4)
+        Returns:
+            Figure: A figure showing UTCI and component parts for the given day.
+        """
 
-#         return file_path
+        return utci_day_comfort_metrics(
+            to_series(self.universal_thermal_climate_index),
+            to_series(self.dry_bulb_temperature),
+            to_series(self.mean_radiant_temperature),
+            self.relative_humidity,
+            self.wind_speed,
+            month,
+            day,
+            self.plot_title_string,
+        )
 
-#     def to_dataframe(
-#         self, include_external_comfort_results: bool = True
-#     ) -> pd.DataFrame:
-#         """Create a dataframe from the typology results.
+    def plot_utci_heatmap(self) -> Figure:
+        """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
-#         Args:
-#             include_external_comfort_results (bool, optional): Whether to include the external
-#                 comfort results in the dataframe. Defaults to True.
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
 
-#         Returns:
-#             pd.DataFrame: A dataframe containing the typology results.
-#         """
+        return utci_heatmap(
+            self.universal_thermal_climate_index,
+            self.plot_title_string,
+        )
 
-#         attributes = [
-#             "dry_bulb_temperature",
-#             "relative_humidity",
-#             "wind_speed",
-#             "mean_radiant_temperature",
-#             "universal_thermal_climate_index",
-#         ]
-#         series: List[pd.Series] = []
-#         for attribute in attributes:
-#             series.append(to_series(getattr(self, attribute)))
-#         df = pd.concat(
-#             series,
-#             axis=1,
-#             keys=[(self.typology.name, i) for i in attributes],
-#         )
+    def plot_utci_heatmap_histogram(self) -> Figure:
+        """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
-#         if include_external_comfort_results:
-#             temp_df = to_dataframe(self.mean_radiant_temperature_result.epw)
-#             temp_df.columns = [
-#                 (Path(self.mean_radiant_temperature_result.epw.file_path).stem, i)
-#                 for i in temp_df.columns
-#             ]
-#             df = pd.concat([df, temp_df], axis=1)
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
 
-#         return df
+        return utci_heatmap_histogram(
+            self.universal_thermal_climate_index,
+            self.plot_title_string,
+        )
 
-#     # def plot_utci_day(self, month: int = 6, day: int = 21) -> Figure:
-#     #     """Plot a single day UTCI and composite components
+    def plot_utci_distance_to_comfortable(
+        self,
+        comfort_thresholds: Tuple[float] = (9, 26),
+        low_limit: float = 15,
+        high_limit: float = 25,
+    ) -> Figure:
+        """Create a heatmap showing the "distance" in C from the "no thermal stress" UTCI comfort
+            band.
 
-#     #     Args:
-#     #         month (int, optional): The month to plot. Defaults to 6.
-#     #         day (int, optional): The day to plot. Defaults to 21.
+        Args:
+            comfort_thresholds (List[float], optional): The comfortable band of UTCI temperatures.
+                Defaults to [9, 26].
+            low_limit (float, optional): The distance from the lower edge of the comfort threshold
+                to include in the "too cold" part of the heatmap. Defaults to 15.
+            high_limit (float, optional): The distance from the upper edge of the comfort threshold
+                to include in the "too hot" part of the heatmap. Defaults to 25.
 
-#     #     Returns:
-#     #         Figure: A figure showing UTCI and component parts for the given day.
-#     #     """
-#     #     return plot_typology_day(
-#     #         utci=to_series(self.universal_thermal_climate_index),
-#     #         dbt=to_series(self.dry_bulb_temperature),
-#     #         mrt=to_series(self.mean_radiant_temperature),
-#     #         rh=to_series(self.relative_humidity),
-#     #         ws=to_series(self.wind_speed),
-#     #         month=month,
-#     #         day=day,
-#     #         title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
-#     #     )
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
 
-#     # def plot_utci_heatmap(self) -> Figure:
-#     #     """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
+        return utci_distance_to_comfortable(
+            collection=self.universal_thermal_climate_index,
+            title=self.plot_title_string,
+            comfort_thresholds=comfort_thresholds,
+            low_limit=low_limit,
+            high_limit=high_limit,
+        )
 
-#     #     Returns:
-#     #         Figure: A matplotlib Figure object.
-#     #     """
+    def plot_dbt_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly DBT values associated with this Typology.
 
-#     #     fig = timeseries_heatmap(
-#     #         series=to_series(self.universal_thermal_climate_index),
-#     #         cmap=UTCI_COLORMAP,
-#     #         norm=UTCI_BOUNDARYNORM,
-#     #         title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
-#     #     )
+        Args:
+            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
 
-#     #     return fig
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
 
-#     # def plot_utci_histogram(self) -> Figure:
-#     #     """Create a histogram showing the annual hourly UTCI values associated with this Typology."""
+        fig = timeseries_heatmap(
+            series=to_series(self.dry_bulb_temperature),
+            cmap=DBT_COLORMAP,
+            title=self.plot_title_string,
+            vlims=vlims,
+        )
 
-#     #     fig = plot_utci_heatmap_histogram(
-#     #         self.universal_thermal_climate_index,
-#     #         title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
-#     #     )
+        return fig
 
-#     #     return fig
+    def plot_rh_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly RH values associated with this Typology.
 
-#     # def plot_dbt_heatmap(self, vlims: List[float] = None) -> Figure:
-#     #     """Create a heatmap showing the annual hourly DBT values associated with this Typology.
+        Args:
+            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
 
-#     #     Args:
-#     #         vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
 
-#     #     Returns:
-#     #         Figure: A matplotlib Figure object.
-#     #     """
+        fig = timeseries_heatmap(
+            series=to_series(self.relative_humidity),
+            cmap=RH_COLORMAP,
+            title=self.plot_title_string,
+            vlims=vlims,
+        )
 
-#     #     fig = timeseries_heatmap(
-#     #         series=to_series(self.dry_bulb_temperature),
-#     #         cmap=DBT_COLORMAP,
-#     #         title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
-#     #         vlims=vlims,
-#     #     )
+        return fig
 
-#     #     return fig
+    def plot_ws_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly WS values associated with this Typology.
 
-#     # def plot_rh_heatmap(self, vlims: List[float] = None) -> Figure:
-#     #     """Create a heatmap showing the annual hourly RH values associated with this Typology.
+        Args:
+            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
 
-#     #     Args:
-#     #         vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
 
-#     #     Returns:
-#     #         Figure: A matplotlib Figure object.
-#     #     """
+        fig = timeseries_heatmap(
+            series=to_series(self.wind_speed),
+            cmap=WS_COLORMAP,
+            title=self.plot_title_string,
+            vlims=vlims,
+        )
 
-#     #     fig = timeseries_heatmap(
-#     #         series=to_series(self.relative_humidity),
-#     #         cmap=RH_COLORMAP,
-#     #         title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
-#     #         vlims=vlims,
-#     #     )
+        return fig
 
-#     #     return fig
+    def plot_mrt_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+        """Create a heatmap showing the annual hourly MRT values associated with this Typology.
 
-#     # def plot_ws_heatmap(self, vlims: List[float] = None) -> Figure:
-#     #     """Create a heatmap showing the annual hourly WS values associated with this Typology.
+        Args:
+            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
 
-#     #     Args:
-#     #         vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+        Returns:
+            Figure: A matplotlib Figure object.
+        """
 
-#     #     Returns:
-#     #         Figure: A matplotlib Figure object.
-#     #     """
+        fig = timeseries_heatmap(
+            series=to_series(self.mean_radiant_temperature),
+            cmap=MRT_COLORMAP,
+            title=self.plot_title_string,
+            vlims=vlims,
+        )
 
-#     #     fig = timeseries_heatmap(
-#     #         series=to_series(self.wind_speed),
-#     #         cmap=WS_COLORMAP,
-#     #         title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
-#     #         vlims=vlims,
-#     #     )
-
-#     #     return fig
-
-#     # def plot_mrt_heatmap(self, vlims: List[float] = None) -> Figure:
-#     #     """Create a heatmap showing the annual hourly MRT values associated with this Typology.
-
-#     #     Args:
-#     #         vlims (List[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
-
-#     #     Returns:
-#     #         Figure: A matplotlib Figure object.
-#     #     """
-
-#     #     fig = timeseries_heatmap(
-#     #         series=to_series(self.mean_radiant_temperature),
-#     #         cmap=MRT_COLORMAP,
-#     #         title=f"{to_string(self.external_comfort_result.external_comfort.epw.location)}\n{self.typology.name}",
-#     #         vlims=vlims,
-#     #     )
-
-#     #     return fig
+        return fig

@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
 
-def plot_utci_distance_to_comfortable(
+def utci_distance_to_comfortable(
     collection: HourlyContinuousCollection,
     title: str = None,
     comfort_thresholds: Tuple[float] = (9, 26),
@@ -260,7 +260,7 @@ def plot_utci_distance_to_comfortable(
         )
     else:
         hmap_ax.set_title(
-            "{0:} - {1:}".format('Distance to "comfortable"', title),
+            f"Distance to comfortable - {title}",
             color="k",
             y=1,
             ha="left",

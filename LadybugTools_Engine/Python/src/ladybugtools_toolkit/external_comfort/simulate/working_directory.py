@@ -19,10 +19,8 @@ def working_directory(model: Model, create: bool = False) -> Path:
 
     hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"
 
-    working_directory: Path = (
-        Path(hb_folders.default_simulation_folder) / model.identifier
-    )
+    working_dir: Path = Path(hb_folders.default_simulation_folder) / model.identifier
     if create:
-        working_directory.mkdir(parents=True, exist_ok=True)
+        working_dir.mkdir(parents=True, exist_ok=True)
 
-    return working_directory
+    return working_dir

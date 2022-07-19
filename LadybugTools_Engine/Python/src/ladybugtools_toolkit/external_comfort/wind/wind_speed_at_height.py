@@ -26,7 +26,7 @@ def wind_speed_at_height(
             / np.log(reference_height / terrain_roughness_length)
         )
     else:
-        windShearExponent = 1 / 7
+        wind_shear_exponent = 1 / 7
         return reference_wind_speed * (
-            np.pow((target_height / reference_height), windShearExponent)
+            np.pow((target_height / reference_height), wind_shear_exponent)
         )

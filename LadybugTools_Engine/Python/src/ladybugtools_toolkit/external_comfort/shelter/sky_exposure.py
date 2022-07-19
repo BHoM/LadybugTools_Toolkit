@@ -1,8 +1,9 @@
 from typing import List
 
-from ladybugtools_toolkit.external_comfort.shelter import Shelter
-
-from .any_shelters_overlap import any_shelters_overlap
+from ladybugtools_toolkit.external_comfort.shelter.any_shelters_overlap import (
+    any_shelters_overlap,
+)
+from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 
 
 def sky_exposure(shelters: List[Shelter]) -> float:

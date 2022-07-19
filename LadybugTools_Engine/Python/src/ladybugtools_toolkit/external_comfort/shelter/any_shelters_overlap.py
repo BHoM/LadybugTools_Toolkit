@@ -1,6 +1,6 @@
 from typing import List
 
-from ladybugtools_toolkit.external_comfort.shelter import Shelter
+from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 from ladybugtools_toolkit.external_comfort.shelter.shelters_overlap import (
     shelters_overlap,
 )

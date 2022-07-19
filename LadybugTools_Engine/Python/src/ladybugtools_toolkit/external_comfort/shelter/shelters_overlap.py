@@ -1,4 +1,4 @@
-from ladybugtools_toolkit.external_comfort.shelter import Shelter
+from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 
 
 def shelters_overlap(shelter1: Shelter, shelter2: Shelter) -> bool:

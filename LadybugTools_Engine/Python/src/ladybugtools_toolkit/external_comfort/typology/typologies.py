@@ -1,7 +1,7 @@
 from enum import Enum
 
-from ladybugtools_toolkit.external_comfort.shelter import Shelter
-from ladybugtools_toolkit.external_comfort.typology import Typology
+from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
+from ladybugtools_toolkit.external_comfort.typology.typology import Typology
 
 
 class Typologies(Enum):

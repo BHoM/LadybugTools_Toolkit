@@ -18,7 +18,7 @@ from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def plot_utci_heatmap_histogram(
+def utci_heatmap_histogram(
     collection: HourlyContinuousCollection, title: str = None
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
@@ -159,7 +159,7 @@ def plot_utci_heatmap_histogram(
         histogram_ax.text(
             n,
             1.02,
-            "{0:0.1f}%".format(i * 100),
+            f"{i:0.1%}",
             va="bottom",
             ha="center",
             color="#3C65AF",
@@ -168,7 +168,7 @@ def plot_utci_heatmap_histogram(
         histogram_ax.text(
             n,
             1.02,
-            "{0:0.1f}%\n".format(j * 100),
+            f"{j:0.1%}\n",
             va="bottom",
             ha="center",
             color="#2EB349",
@@ -177,7 +177,7 @@ def plot_utci_heatmap_histogram(
         histogram_ax.text(
             n,
             1.02,
-            "{0:0.1f}%\n\n".format(k * 100),
+            f"{k:0.1%}\n\n",
             va="bottom",
             ha="center",
             color="#C31F25",

@@ -38,22 +38,21 @@ def solar_radiation_results_load(
     unshaded_diffuse = (unshaded_total - unshaded_direct).rename(
         "DiffuseHorizontalRadiation (Wh/m2)"
     )
+    _shaded = pd.Series(
+        [0] * len(unshaded_total), index=unshaded_total.index, name="base"
+    )
 
     return {
         "unshaded_direct_radiation": from_series(unshaded_direct),
         "unshaded_diffuse_radiation": from_series(unshaded_diffuse),
+        "unshaded_total_radiation": from_series(unshaded_total),
         "shaded_direct_radiation": from_series(
-            pd.Series(
-                [0] * 8760,
-                index=unshaded_total.index,
-                name="DirectNormalRadiation (Wh/m2)",
-            )
+            _shaded.rename("DirectNormalRadiation (Wh/m2)")
         ),
         "shaded_diffuse_radiation": from_series(
-            pd.Series(
-                [0] * 8760,
-                index=unshaded_total.index,
-                name="DiffuseHorizontalRadiation (Wh/m2)",
-            )
+            _shaded.rename("DiffuseHorizontalRadiation (Wh/m2)")
+        ),
+        "shaded_total_radiation": from_series(
+            _shaded.rename("GlobalHorizontalRadiation (Wh/m2)")
         ),
     }
