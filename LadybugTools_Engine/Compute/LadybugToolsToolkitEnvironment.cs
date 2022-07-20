@@ -74,7 +74,7 @@ namespace BH.Engine.LadybugTools
                         Path.Combine(BH.Engine.Python.Query.CodeDirectory(), "Python_Toolkit"),
                         Path.Combine(BH.Engine.Python.Query.CodeDirectory(), toolkitName),
                     };
-                string installedPkgsResult = thisEnv.InstallLocalPackages(additionalPackages);
+                string installedPkgsResult = thisEnv.InstallLocalPackages(additionalPackages, true);
 
                 // load base Python environment to ensure additional BHoM code is available
                 oM.Python.PythonEnvironment baseEnv = BH.Engine.Python.Compute.PythonToolkitEnvironment(run);
