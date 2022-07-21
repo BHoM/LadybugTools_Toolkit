@@ -1,29 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Dict, Tuple
 
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybugtools_toolkit.external_comfort.plot.colormaps import (
-    DBT_COLORMAP,
-    MRT_COLORMAP,
-    RH_COLORMAP,
-    WS_COLORMAP,
-)
-from ladybugtools_toolkit.external_comfort.plot.utci_comparison_diurnal import (
-    utci_comparison_diurnal,
-)
-from ladybugtools_toolkit.external_comfort.plot.utci_day_comfort_metrics import (
-    utci_day_comfort_metrics,
-)
-from ladybugtools_toolkit.external_comfort.plot.utci_distance_to_comfortable import (
-    utci_distance_to_comfortable,
-)
-from ladybugtools_toolkit.external_comfort.plot.utci_heatmap import utci_heatmap
-from ladybugtools_toolkit.external_comfort.plot.utci_heatmap_histogram import (
-    utci_heatmap_histogram,
-)
 from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
     SimulationResult,
 )
@@ -32,9 +12,25 @@ from ladybugtools_toolkit.external_comfort.thermal_comfort.universal_thermal_cli
 )
 from ladybugtools_toolkit.external_comfort.typology.typology import Typology
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe
+from ladybugtools_toolkit.ladybug_extension.location.to_string import (
+    to_string as location_to_string,
+)
+from ladybugtools_toolkit.plot.colormaps import (
+    DBT_COLORMAP,
+    MRT_COLORMAP,
+    RH_COLORMAP,
+    WS_COLORMAP,
+)
+from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
+from ladybugtools_toolkit.plot.utci_day_comfort_metrics import utci_day_comfort_metrics
+from ladybugtools_toolkit.plot.utci_distance_to_comfortable import (
+    utci_distance_to_comfortable,
+)
+from ladybugtools_toolkit.plot.utci_heatmap import utci_heatmap
+from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histogram
 from matplotlib.figure import Figure
-from python_toolkit.plot.chart.timeseries_heatmap import timeseries_heatmap
 
 
 class ExternalComfort:
@@ -138,7 +134,7 @@ class ExternalComfort:
             obj_series.append(
                 _.rename(
                     (
-                        f"{Path(self.simulation_result.epw.file_path).stem}",
+                        f"{filename(self.simulation_result.epw)}",
                         f"{var} - {self.simulation_result.ground_material.display_name} ground, {self.simulation_result.shade_material.display_name} shade - {self.typology.name}",
                     )
                 )
@@ -150,7 +146,7 @@ class ExternalComfort:
     @property
     def plot_title_string(self) -> str:
         """Return the description of this result suitable for use in plotting titles."""
-        return f"{self.simulation_result.ground_material.display_name} ground, {self.simulation_result.shade_material.display_name} shade\n{self.typology.name}"
+        return f"{location_to_string(self.simulation_result.epw.location)}\n{self.simulation_result.ground_material.display_name} ground, {self.simulation_result.shade_material.display_name} shade\n{self.typology.name}"
 
     def plot_utci_day_comfort_metrics(self, month: int = 3, day: int = 21) -> Figure:
         """Plot a single day UTCI and composite components
@@ -167,8 +163,8 @@ class ExternalComfort:
             to_series(self.universal_thermal_climate_index),
             to_series(self.dry_bulb_temperature),
             to_series(self.mean_radiant_temperature),
-            self.relative_humidity,
-            self.wind_speed,
+            to_series(self.relative_humidity),
+            to_series(self.wind_speed),
             month,
             day,
             self.plot_title_string,

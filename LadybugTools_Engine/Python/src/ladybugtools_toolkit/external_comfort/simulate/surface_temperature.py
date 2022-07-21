@@ -24,6 +24,7 @@ from ladybugtools_toolkit.external_comfort.simulate.surface_temperature_results_
 from ladybugtools_toolkit.external_comfort.simulate.working_directory import (
     working_directory as wd,
 )
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 
 
 def surface_temperature(
@@ -48,7 +49,7 @@ def surface_temperature(
         print(f"[{model.identifier}] - Loading surface temperature")
         return surface_temperature_results_load(sql_path, epw)
 
-    epw.save((working_directory / Path(epw.file_path).name).as_posix())
+    epw.save((working_directory / filename(epw, True)).as_posix())
 
     print(f"[{model.identifier}] - Simulating surface temperature")
 

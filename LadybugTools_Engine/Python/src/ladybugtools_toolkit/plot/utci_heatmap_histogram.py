@@ -6,7 +6,7 @@ import matplotlib.ticker as mticker
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
-from ladybugtools_toolkit.external_comfort.plot.colormaps import (
+from ladybugtools_toolkit.plot.colormaps import (
     UTCI_BOUNDARYNORM,
     UTCI_COLORMAP,
     UTCI_LABELS,

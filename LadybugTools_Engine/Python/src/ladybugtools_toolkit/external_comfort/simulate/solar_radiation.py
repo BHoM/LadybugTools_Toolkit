@@ -13,6 +13,7 @@ from ladybugtools_toolkit.external_comfort.simulate.solar_radiation_results_load
 from ladybugtools_toolkit.external_comfort.simulate.working_directory import (
     working_directory as wd,
 )
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from lbt_recipes.recipe import Recipe, RecipeSettings
 
 
@@ -41,7 +42,7 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
         print(f"[{model.identifier}] - Loading annual irradiance")
         return solar_radiation_results_load(total_irradiance, direct_irradiance)
 
-    epw.save((working_directory / Path(epw.file_path).name).as_posix())
+    epw.save((working_directory / filename(epw, True)).as_posix())
 
     print(f"[{model.identifier}] - Simulating annual irradiance")
     wea = Wea.from_epw_file(epw.file_path)

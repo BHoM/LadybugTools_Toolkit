@@ -11,6 +11,7 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period import (
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_array import to_array
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from matplotlib.colors import BoundaryNorm, Colormap, Normalize
 from matplotlib.figure import Figure
 
@@ -70,7 +71,7 @@ def rose(
     if title is None:
         title = "\n".join(
             [
-                f"{to_series(collection).name} for {Path(epw.file_path).stem}",
+                f"{to_series(collection).name} for {filename(epw)}",
                 describe_analysis_period(analysis_period),
                 f"Calm for {n_calm_hours / len(ws_values):0.2%} of the time ({n_calm_hours} hours)",
             ]

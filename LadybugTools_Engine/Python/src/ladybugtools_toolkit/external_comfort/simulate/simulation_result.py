@@ -19,6 +19,7 @@ from ladybugtools_toolkit.external_comfort.simulate.surface_temperature import (
     surface_temperature,
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe
 
 
@@ -185,7 +186,7 @@ class SimulationResult:
             obj_series.append(
                 _.rename(
                     (
-                        f"{Path(self.epw.file_path).stem}",
+                        f"{filename(self.epw)}",
                         f"{var} - {self.ground_material.display_name} ground, {self.shade_material.display_name} shade",
                     )
                 )

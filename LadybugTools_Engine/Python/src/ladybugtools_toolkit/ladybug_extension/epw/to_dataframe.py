@@ -16,6 +16,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.enthalpy import enthalpy as ent
 from ladybugtools_toolkit.ladybug_extension.epw.equation_of_time import (
     equation_of_time as eot,
 )
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from ladybugtools_toolkit.ladybug_extension.epw.humidity_ratio import (
     humidity_ratio as hr,
 )
@@ -112,7 +113,7 @@ def to_dataframe(
 
     # Compile all the data into a dataframe
     df = pd.concat(
-        {Path(epw.file_path).stem: pd.concat(all_series, axis=1).sort_index(axis=1)},
+        {filename(epw): pd.concat(all_series, axis=1).sort_index(axis=1)},
         names=["", ""],
         axis=1,
     )

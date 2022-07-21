@@ -7,6 +7,7 @@ from ladybugtools_toolkit.external_comfort.simulate.working_directory import (
     working_directory as wd,
 )
 from ladybugtools_toolkit.ladybug_extension.epw.equality import equality as epw_eq
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 
 
 def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
@@ -37,7 +38,7 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
 
     # Try to load existing EPW file and check that it matches
     try:
-        existing_epw = EPW((working_directory / Path(epw.file_path).name).as_posix())
+        existing_epw = EPW((working_directory / filename(epw, True)).as_posix())
         if not epw_eq(epw, existing_epw, include_header=True):
             return False
     except (FileNotFoundError, AssertionError):
