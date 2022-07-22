@@ -7,9 +7,7 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
     SimulationResult,
 )
-from ladybugtools_toolkit.external_comfort.thermal_comfort.universal_thermal_climate_index import (
-    universal_thermal_climate_index,
-)
+from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
 from ladybugtools_toolkit.external_comfort.typology.typology import Typology
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
@@ -66,7 +64,7 @@ class ExternalComfort:
         )
 
         # calculate UTCI
-        self.universal_thermal_climate_index = universal_thermal_climate_index(
+        self.universal_thermal_climate_index = utci(
             self.dry_bulb_temperature,
             self.relative_humidity,
             self.mean_radiant_temperature,

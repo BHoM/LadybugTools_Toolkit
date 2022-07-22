@@ -5,7 +5,9 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.spatial import unshaded_shaded_interpolation
+from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import (
+    unshaded_shaded_interpolation,
+)
 
 
 def load_universal_thermal_climate_index_interpolated(
@@ -21,7 +23,6 @@ def load_universal_thermal_climate_index_interpolated(
 
     Args:
         simulation_directory (Union[str, Path]): The simulation directory.
-        unshaded_universal_thermal_climate_index (HourlyContinuousCollection): A collection
             containing unshaded UTCI values.
         shaded_universal_thermal_climate_index (HourlyContinuousCollection): A collection containing
             shaded UTCI values.
@@ -35,17 +36,15 @@ def load_universal_thermal_climate_index_interpolated(
 
     simulation_directory = Path(simulation_directory)
 
-    mrt_path = simulation_directory / "universal_thermal_climate_index_interpolated.h5"
+    utci_path = simulation_directory / "universal_thermal_climate_index_interpolated.h5"
 
-    if mrt_path.exists():
-        print(
-            f"- Loading mean-radiant-temperature data from {simulation_directory.name}"
-        )
-        return pd.read_hdf(mrt_path, "df")
+    if utci_path.exists():
+        print(f"- Loading UTCI (interpolated) data from {simulation_directory.name}")
+        return pd.read_hdf(utci_path, "df")
 
-    print(f"- Processing mean-radiant-temperature data for {simulation_directory.name}")
+    print(f"- Processing UTCI (interpolated) data for {simulation_directory.name}")
 
-    mrt = unshaded_shaded_interpolation(
+    utci = unshaded_shaded_interpolation(
         unshaded_universal_thermal_climate_index,
         shaded_universal_thermal_climate_index,
         total_irradiance,
@@ -53,5 +52,5 @@ def load_universal_thermal_climate_index_interpolated(
         np.array(epw.global_horizontal_radiation.values) > 0,
     )
 
-    mrt.to_hdf(mrt_path, "df", complevel=9, complib="blosc")
-    return mrt
+    utci.to_hdf(utci_path, "df", complevel=9, complib="blosc")
+    return utci

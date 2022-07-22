@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug_comfort.collection.utci import UTCI
-from ladybugtools_toolkit.external_comfort.thermal_comfort.universal_thermal_climate_index_vectorised import (
-    universal_thermal_climate_index_vectorised,
+from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci_vectorised import (
+    utci_vectorised,
 )
 from numpy.typing import NDArray
 
 
-def universal_thermal_climate_index(
+def utci(
     air_temperature: Union[
         HourlyContinuousCollection, pd.DataFrame, pd.Series, NDArray[np.float64]
     ],
@@ -45,7 +45,7 @@ def universal_thermal_climate_index(
         ).universal_thermal_climate_index
 
     if all((isinstance(i, (float, int)) for i in _inputs)):
-        return universal_thermal_climate_index_vectorised(
+        return utci_vectorised(
             ta=air_temperature,
             rh=relative_humidity,
             tr=mean_radiant_temperature,
@@ -54,7 +54,7 @@ def universal_thermal_climate_index(
 
     if all((isinstance(i, pd.DataFrame) for i in _inputs)):
         return pd.DataFrame(
-            universal_thermal_climate_index_vectorised(
+            utci_vectorised(
                 ta=air_temperature.values,
                 rh=relative_humidity.values,
                 tr=mean_radiant_temperature.values,
@@ -68,7 +68,7 @@ def universal_thermal_climate_index(
 
     if all((isinstance(i, pd.Series) for i in _inputs)):
         return pd.Series(
-            universal_thermal_climate_index_vectorised(
+            utci_vectorised(
                 ta=air_temperature,
                 rh=relative_humidity,
                 tr=mean_radiant_temperature,
@@ -79,7 +79,7 @@ def universal_thermal_climate_index(
         )
 
     if all((isinstance(i, (List, Tuple)) for i in _inputs)):
-        return universal_thermal_climate_index_vectorised(
+        return utci_vectorised(
             ta=np.array(air_temperature),
             rh=np.array(relative_humidity),
             tr=np.array(mean_radiant_temperature),

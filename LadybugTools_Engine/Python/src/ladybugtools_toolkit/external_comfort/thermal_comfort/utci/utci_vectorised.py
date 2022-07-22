@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def universal_thermal_climate_index_vectorised(
+def utci_vectorised(
     ta: np.ndarray, tr: np.ndarray, vel: np.ndarray, rh: np.ndarray
 ) -> np.ndarray:
     """This method is a vectorised version of the universal_thermal_climate_index method defined in ladybug-tools

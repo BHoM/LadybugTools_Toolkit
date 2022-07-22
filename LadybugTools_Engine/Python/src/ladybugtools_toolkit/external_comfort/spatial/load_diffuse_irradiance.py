@@ -2,12 +2,10 @@ from pathlib import Path
 from typing import Union
 
 import pandas as pd
-from ladybugtools_toolkit.external_comfort.spatial.load_direct_irradiance import (
-    load_direct_irradiance,
-)
-from ladybugtools_toolkit.external_comfort.spatial.load_total_irradiance import (
-    load_total_irradiance,
-)
+from ladybugtools_toolkit.external_comfort.spatial.load_direct_irradiance import \
+    load_direct_irradiance
+from ladybugtools_toolkit.external_comfort.spatial.load_total_irradiance import \
+    load_total_irradiance
 
 
 def load_diffuse_irradiance(
@@ -35,10 +33,10 @@ def load_diffuse_irradiance(
     diffuse_irradiance_path = simulation_directory / "diffuse_irradiance.h5"
 
     if diffuse_irradiance_path.exists():
-        print(f"- Loading irradiance data from {simulation_directory.name}")
+        print(f"- Loading diffuse irradiance data from {simulation_directory.name}")
         return pd.read_hdf(diffuse_irradiance_path, "df")
 
-    print(f"- Processing irradiance data for {simulation_directory.name}")
+    print(f"- Processing diffuse irradiance data for {simulation_directory.name}")
     if (total_irradiance is None) and (direct_irradiance is None):
         total_irradiance = load_total_irradiance(simulation_directory)
         direct_irradiance = load_direct_irradiance(simulation_directory)

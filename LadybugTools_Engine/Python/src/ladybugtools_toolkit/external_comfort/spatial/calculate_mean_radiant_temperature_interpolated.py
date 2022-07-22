@@ -5,11 +5,12 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.spatial import \
-    unshaded_shaded_interpolation
+from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import (
+    unshaded_shaded_interpolation,
+)
 
 
-def load_mean_radiant_temperature_interpolated(
+def calculate_mean_radiant_temperature_interpolated(
     simulation_directory: Union[str, Path],
     unshaded_mean_radiant_temperature: HourlyContinuousCollection,
     shaded_mean_radiant_temperature: HourlyContinuousCollection,
@@ -27,7 +28,7 @@ def load_mean_radiant_temperature_interpolated(
         shaded_mean_radiant_temperature (HourlyContinuousCollection): A collection containing
             shaded MRT values.
         total_irradiance (pd.DataFrame): A dataframe containing spatial total irradiance values.
-        sky_view (pd.DataFrame): A dataframe containign point-wise sky-view values.
+        sky_view (pd.DataFrame): A dataframe containing point-wise sky-view values.
         epw (EPW): The associate EPW file.
 
     Returns:
@@ -55,4 +56,5 @@ def load_mean_radiant_temperature_interpolated(
     )
 
     mrt.to_hdf(mrt_path, "df", complevel=9, complib="blosc")
+
     return mrt

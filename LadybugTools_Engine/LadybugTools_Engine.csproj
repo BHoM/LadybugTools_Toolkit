@@ -263,6 +263,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\cardinality.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\decay_rate_smoother.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\scrape_weather.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\location\to_string.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\location\__init__.py" />

@@ -23,10 +23,10 @@ def load_total_irradiance(simulation_directory: Union[str, Path]) -> pd.DataFram
     total_irradiance_path = simulation_directory / "total_irradiance.h5"
 
     if total_irradiance_path.exists():
-        print(f"- Loading irradiance data from {simulation_directory.name}")
+        print(f"- Loading total irradiance data from {simulation_directory.name}")
         return pd.read_hdf(total_irradiance_path, "df")
 
-    print(f"- Processing irradiance data for {simulation_directory.name}")
+    print(f"- Processing total irradiance data for {simulation_directory.name}")
     ill_files = list(
         (simulation_directory / "annual_irradiance" / "results" / "total").glob("*.ill")
     )
