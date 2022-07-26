@@ -7,7 +7,6 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
 
 
-# TODO - Enable auto-rescaling of X-axis (date) based on length of data being visualised
 def timeseries_heatmap(
     series: pd.Series,
     cmap: Colormap = "viridis",
@@ -29,7 +28,7 @@ def timeseries_heatmap(
     """
 
     if not isinstance(series.index, pd.DatetimeIndex):
-        raise ValueError(f"Series passed is not datetime indexed.")
+        raise ValueError("Series passed is not datetime indexed.")
 
     if norm and vlims:
         raise ValueError("You cannot pass both vlims and a norm value to this method.")
@@ -40,18 +39,17 @@ def timeseries_heatmap(
     fig, ax = plt.subplots(1, 1, figsize=(15, 5))
 
     # Reshape data into time/day matrix
-    day_time_matrix = (
-        series.to_frame()
-        .pivot_table(columns=series.index.date, index=series.index.time)
-        .values[::-1]
+    series = series.dropna()
+    day_time_matrix = series.to_frame().pivot_table(
+        columns=series.index.date, index=series.index.time
     )
 
     # Plot data
     heatmap = ax.imshow(
-        day_time_matrix,
+        day_time_matrix.values[::-1],
         extent=[
-            mdates.date2num(series.index.min()),
-            mdates.date2num(series.index.max()),
+            mdates.date2num(day_time_matrix.columns.get_level_values(-1).min()),
+            mdates.date2num(day_time_matrix.columns.get_level_values(-1).max()),
             726449,
             726450,
         ],
@@ -64,7 +62,8 @@ def timeseries_heatmap(
     )
 
     ax.xaxis_date()
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+    date_formatter = mdates.DateFormatter("%b %Y")
+    ax.xaxis.set_major_formatter(date_formatter)
     ax.yaxis_date()
     ax.yaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 
@@ -79,6 +78,21 @@ def timeseries_heatmap(
 
     ax.grid(b=True, which="major", color="white", linestyle=":", alpha=1)
 
+    # check if colorbar needs to be extended
+    if vlims is not None:
+        actual_min = series.values.min()
+        actual_max = series.values.max()
+        if (vlims[0] > actual_min) and (vlims[1] < actual_max):
+            extend = "both"
+        elif (vlims[0] > actual_min) and (vlims[1] >= actual_max):
+            extend = "min"
+        elif (vlims[0] <= actual_min) and (vlims[1] < actual_max):
+            extend = "max"
+        else:
+            extend = "both"
+    else:
+        extend = "neither"
+
     cb = fig.colorbar(
         heatmap,
         orientation="horizontal",
@@ -86,6 +100,7 @@ def timeseries_heatmap(
         fraction=0.05,
         aspect=100,
         pad=0.075,
+        extend=extend,
     )
     plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
     cb.outline.set_visible(False)

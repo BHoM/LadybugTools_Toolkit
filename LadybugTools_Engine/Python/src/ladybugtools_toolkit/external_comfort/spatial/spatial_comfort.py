@@ -28,9 +28,6 @@ from ladybugtools_toolkit.external_comfort.spatial.load_total_irradiance import 
 from ladybugtools_toolkit.external_comfort.spatial.load_universal_thermal_climate_index_interpolated import (
     load_universal_thermal_climate_index_interpolated,
 )
-from ladybugtools_toolkit.external_comfort.spatial.proximity_decay import (
-    proximity_decay,
-)
 from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort_possible import (
     spatial_comfort_possible,
 )
@@ -44,6 +41,7 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
 from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
     from_series,
 )
+from ladybugtools_toolkit.plot.colormap_sequential import colormap_sequential
 from ladybugtools_toolkit.plot.colormaps import (
     UTCI_BOUNDARYNORM,
     UTCI_COLORMAP,
@@ -56,6 +54,7 @@ from ladybugtools_toolkit.plot.utci_distance_to_comfortable import (
 )
 from ladybugtools_toolkit.plot.utci_heatmap_difference import utci_heatmap_difference
 from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histogram
+from matplotlib import pyplot as plt
 
 PLOT_DPI = 300
 
@@ -142,6 +141,10 @@ class SpatialComfort:
     def points(self) -> pd.DataFrame:
         """Obtain the point locations for this SpatialComfort case."""
         return load_points(self.spatial_simulation_directory)
+
+    @property
+    def points_xy(self) -> np.ndarray:
+        return np.stack([self._points_x, self._points_y], axis=1)
 
     @cached_property
     def total_rad(self) -> pd.DataFrame:
@@ -422,9 +425,6 @@ class SpatialComfort:
         ]:
             raise ValueError("This method only applicable for UTCI metrics.")
 
-        # plot point location on total rad plot
-        # TODO - add this part here!
-
         # create the collection for the given point index
         point_utci = from_series(
             self._get_temporospatial_metric(metric)
@@ -432,10 +432,30 @@ class SpatialComfort:
             .rename("Universal Thermal Climate Index (C)")
         )
 
+        print(f"- Creating pt-location-summary for {point_identifier}")
+
+        # plot point location on total rad plot
+        f = spatial_heatmap(
+            triangulations=[self._triangulation],
+            values=[self.total_rad.mean(axis=0)],
+            levels=100,
+            cmap=colormap_sequential("grey", "white"),
+            xlims=[self._points_x.min(), self._points_x.max()],
+            ylims=[self._points_y.min(), self._points_y.max()],
+            highlight_pts={point_identifier: point_index},
+            show_legend_title=False,
+        )
+        f.savefig(
+            self._plot_directory / f"{point_identifier}_location.png",
+            dpi=PLOT_DPI,
+            transparent=True,
+            bbox_inches="tight",
+        )
+
         # create openfield UTCI plot
         f = utci_heatmap_histogram(self._unshaded_utci, "Openfield")
         f.savefig(
-            self._plot_directory / f"Openfield_utci.png",
+            self._plot_directory / "Openfield_utci.png",
             dpi=PLOT_DPI,
             transparent=True,
             bbox_inches="tight",
@@ -444,7 +464,7 @@ class SpatialComfort:
         # create openfield UTCI distance to comfortable plot
         f = utci_distance_to_comfortable(self._unshaded_utci, "Openfield")
         f.savefig(
-            self._plot_directory / f"Openfield_distance_to_comfortable.png",
+            self._plot_directory / "Openfield_distance_to_comfortable.png",
             dpi=PLOT_DPI,
             transparent=True,
             bbox_inches="tight",
@@ -480,5 +500,7 @@ class SpatialComfort:
             transparent=True,
             bbox_inches="tight",
         )
+
+        plt.close("all")
 
         return None
