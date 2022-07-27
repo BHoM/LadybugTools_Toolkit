@@ -18,13 +18,11 @@ from ladybugtools_toolkit.external_comfort.shelter.sun_exposure import sun_expos
 from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
     SimulationResult,
 )
+from ladybugtools_toolkit.helpers.decay_rate_smoother import decay_rate_smoother
 from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
     from_series,
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.ladybug_extension.helpers.decay_rate_smoother import (
-    decay_rate_smoother,
-)
 
 
 class Typology:

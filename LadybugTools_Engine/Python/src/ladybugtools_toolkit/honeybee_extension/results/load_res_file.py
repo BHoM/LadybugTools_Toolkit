@@ -16,6 +16,6 @@ def load_res_file(res_file: Union[str, Path]) -> pd.Series:
         pd.DataFrame: A DataFrame containing the data from the .res file.
     """
     res_file = Path(res_file)
-    series = pd.read_csv(res_file, header=None, sep="\s+").squeeze()
+    series = pd.read_csv(res_file, header=None, sep=r"\s+").squeeze()
     series.name = res_file.stem
     return series

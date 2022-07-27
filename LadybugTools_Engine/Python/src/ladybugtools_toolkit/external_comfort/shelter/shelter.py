@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.sunpath import Sun
+from ladybugtools_toolkit.helpers.cardinality import cardinality
 from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
     from_series,
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.ladybug_extension.helpers.cardinality import cardinality
 from shapely.geometry import Polygon
 
 

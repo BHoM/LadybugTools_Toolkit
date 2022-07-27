@@ -4,3 +4,5 @@ tables
 scipy
 cached-property
 pylint
+pytest
+pytest-cov

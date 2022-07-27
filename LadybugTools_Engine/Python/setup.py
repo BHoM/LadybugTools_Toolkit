@@ -10,7 +10,7 @@ setup(
     name="ladybugtools_toolkit",
     author="BHoM",
     author_email="bhombot@burohappold.com",
-    description="A Python library that enables Python to be used within BHoM workflows",
+    description="A Python library that enables Ladybug Tools to be used within BHoM workflows",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/BHoM/LadybugTools_Toolkit",

@@ -10,13 +10,9 @@ from ladybug.epw import EPW
 from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.unique_wind_speed_direction import (
     unique_wind_speed_direction,
 )
+from ladybugtools_toolkit.helpers.angle_from_north import angle_from_north
+from ladybugtools_toolkit.helpers.proximity_decay import proximity_decay
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.ladybug_extension.helpers.angle_from_north import (
-    angle_from_north,
-)
-from ladybugtools_toolkit.ladybug_extension.helpers.proximity_decay import (
-    proximity_decay,
-)
 from scipy.spatial.distance import cdist
 
 

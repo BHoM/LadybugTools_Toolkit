@@ -15,7 +15,7 @@ def load_pts_file(pts_file: Union[str, Path]) -> pd.DataFrame:
     """
     pts_file = Path(pts_file)
     df = pd.read_csv(
-        pts_file, header=None, names=["x", "y", "z", "vx", "vy", "vz"], sep="\s+"
+        pts_file, header=None, names=["x", "y", "z", "vx", "vy", "vz"], sep=r"\s+"
     )
     df.columns = pd.MultiIndex.from_product([[pts_file.stem], df.columns])
     return df

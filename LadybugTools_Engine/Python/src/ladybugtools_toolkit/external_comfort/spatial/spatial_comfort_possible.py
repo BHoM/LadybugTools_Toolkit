@@ -6,11 +6,12 @@ def spatial_comfort_possible(simulation_directory: Union[str, Path]) -> bool:
     """Checks whether spatial_comfort processing is possible for a given simulation_directory.
 
     Args:
-        simulation_directory (Union[str, Path]): A folder containing Honeybee-Radiance Sky-View and
-            Annual Irradiance results.
+        simulation_directory (Union[str, Path]):
+            A folder containing Honeybee-Radiance Sky-View and Annual Irradiance results.
 
     Returns:
-        bool: True if possible. If imporssible, then an error is raised instead.
+        bool:
+            True if possible. If impossible, then an error is raised instead.
     """
 
     simulation_directory = Path(simulation_directory)
@@ -21,7 +22,7 @@ def spatial_comfort_possible(simulation_directory: Union[str, Path]) -> bool:
         not annual_irradiance_directory.exists()
         or len(list((annual_irradiance_directory / "results").glob("**/*.ill"))) == 0
     ):
-        raise ValueError(
+        raise FileNotFoundError(
             f"Annual-irradiance data is not available in {annual_irradiance_directory}."
         )
 
@@ -31,12 +32,14 @@ def spatial_comfort_possible(simulation_directory: Union[str, Path]) -> bool:
         not (sky_view_directory).exists()
         or len(list((sky_view_directory / "results").glob("**/*.res"))) == 0
     ):
-        raise ValueError(f"Sky-view data is not available in {sky_view_directory}.")
+        raise FileNotFoundError(
+            f"Sky-view data is not available in {sky_view_directory}."
+        )
 
     res_files = list((sky_view_directory / "results").glob("*.res"))
     if len(res_files) != 1:
         raise ValueError(
-            f"This process is currently only possible for a single Analysis Grid - multiple files found."
+            "This process is currently only possible for a single Analysis Grid - multiple files found."
         )
 
     return True

@@ -17,16 +17,21 @@ def unshaded_shaded_interpolation(
         view as proportional values for each point.
 
     Args:
-        unshaded (HourlyContinuousCollection): A collection of hourly values for the unshaded case.
-        shaded (HourlyContinuousCollection): A collection of hourly values for the shaded case.
-        total_irradiance (pd.DataFrame): A dataframe with the total irradiance for each point for
-            each hour.
-        sky_view (pd.DataFrame): A dataframe with the sky view for each point.
-        sun_up_bool (np.ndarray): A list if booleans stating whether the sun is up.
+        unshaded (HourlyContinuousCollection):
+            A collection of hourly values for the unshaded case.
+        shaded (HourlyContinuousCollection):
+            A collection of hourly values for the shaded case.
+        total_irradiance (pd.DataFrame):
+            A dataframe with the total irradiance for each point for each hour.
+        sky_view (pd.DataFrame):
+            A dataframe with the sky view for each point.
+        sun_up_bool (np.ndarray):
+            A list if booleans stating whether the sun is up.
 
     Returns:
-        pd.DataFrame: A dataframe containing interpolated values, corresponding with the proportion
-            of shade for each value in the input total_irradiance.
+        pd.DataFrame:
+            A dataframe containing interpolated values, corresponding with the proportion of shade
+            for each value in the input total_irradiance.
     """
 
     y_original = np.stack([shaded.values, unshaded.values], axis=1)

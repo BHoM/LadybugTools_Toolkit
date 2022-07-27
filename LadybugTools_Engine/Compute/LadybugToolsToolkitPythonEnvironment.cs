@@ -39,7 +39,7 @@ namespace BH.Engine.LadybugTools
             return BH.Engine.Python.Compute.InstallReferencedVirtualenv(
                 name: Query.ToolkitName(),
                 executable: @"C:\Program Files\ladybug_tools\python\python.exe",
-                localPackage: $@"C:\ProgramData\BHoM\Extensions\PythonCode\{Query.ToolkitName()}",
+                localPackage: Path.Combine(Engine.Python.Query.CodeDirectory(), Query.ToolkitName()),
                 run: run
             );
         }

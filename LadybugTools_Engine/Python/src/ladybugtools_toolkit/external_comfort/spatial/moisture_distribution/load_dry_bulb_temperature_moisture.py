@@ -3,10 +3,12 @@ from typing import List, Union
 
 import pandas as pd
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.calculate_evaporatively_cooled_dbt_rh import \
-    calculate_evaporatively_cooled_dbt_rh
-from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.moisture_directory import \
-    moisture_directory as md
+from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.calculate_evaporatively_cooled_dbt_rh import (
+    calculate_evaporatively_cooled_dbt_rh,
+)
+from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.moisture_directory import (
+    moisture_directory as md,
+)
 
 
 def load_dry_bulb_temperature_moisture(
@@ -14,6 +16,20 @@ def load_dry_bulb_temperature_moisture(
     spatial_points: List[List[float]],
     epw: EPW = None,
 ) -> pd.DataFrame:
+    """Read (or calculate) evaporatively cooled DBT.
+
+    Args:
+        simulation_directory (Union[str, Path]):
+            The directory in which spatial simulation results exist.
+        spatial_points (List[List[float]]):
+            A list of [[x0, y0], [x1, y1], ...] points locations.
+        epw (EPW):
+            A Ladybug EPW object.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame containing spatial DBT adjusted by moisture addition into the air.
+    """
 
     moisture_directory = md(simulation_directory)
     dbt_path = moisture_directory / "dry_bulb_temperature_evap.h5"

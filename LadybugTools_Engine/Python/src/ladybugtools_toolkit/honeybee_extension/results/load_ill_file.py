@@ -18,7 +18,7 @@ def load_ill_file(ill_file: Union[str, Path]) -> pd.Series:
     """
     ill_file = Path(ill_file)
     sun_up_hours_file = ill_file.parent / "sun-up-hours.txt"
-    df = pd.read_csv(ill_file, sep="\s+", header=None, index_col=None).T
+    df = pd.read_csv(ill_file, sep=r"\s+", header=None, index_col=None).T
     df.columns = pd.MultiIndex.from_product([[ill_file.stem], df.columns])
     df.index = load_sun_up_hours(sun_up_hours_file)
     return df

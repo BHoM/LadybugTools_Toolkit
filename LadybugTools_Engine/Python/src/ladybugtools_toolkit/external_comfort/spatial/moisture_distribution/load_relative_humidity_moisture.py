@@ -14,8 +14,22 @@ from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.moistur
 def load_relative_humidity_moisture(
     simulation_directory: Union[str, Path],
     spatial_points: List[List[float]],
-    epw: EPW = None,
+    epw: EPW,
 ) -> pd.DataFrame:
+    """Read (or calculate) evaporatively cooled RH.
+
+    Args:
+        simulation_directory (Union[str, Path]):
+            The directory in which spatial simulation results exist.
+        spatial_points (List[List[float]]):
+            A list of [[x0, y0], [x1, y1], ...] points locations.
+        epw (EPW):
+            A Ladybug EPW object.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame containing spatial RH adjusted by moisture addition into the air.
+    """
 
     moisture_directory = md(simulation_directory)
     rh_path = moisture_directory / "relative_humidity_evap.h5"

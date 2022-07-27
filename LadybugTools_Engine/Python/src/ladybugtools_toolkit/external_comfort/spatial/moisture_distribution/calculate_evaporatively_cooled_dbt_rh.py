@@ -57,10 +57,12 @@ def calculate_evaporatively_cooled_dbt_rh(
             rh_matrix.append(rh)
 
     idx = to_series(epw.dry_bulb_temperature).index
-    dbt_df = pd.DataFrame(dbt_matrix, index=idx)
+    print("- Saving DBT matrix")
+    dbt_df = pd.DataFrame(np.array(dbt_matrix), index=idx)
     dbt_df.to_hdf(dbt_matrix_path, "df", complevel=9, complib="blosc")
 
-    rh_df = pd.DataFrame(rh_matrix, index=idx)
+    print("- Saving RH matrix")
+    rh_df = pd.DataFrame(np.array(rh_matrix), index=idx)
     rh_df.to_hdf(rh_matrix_path, "df", complevel=9, complib="blosc")
 
     return dbt_df, rh_df

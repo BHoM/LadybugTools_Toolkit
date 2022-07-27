@@ -15,10 +15,12 @@ def load_moisture_sources(
     """Get/create the moisture directory for a spatial simulation.
 
     Args:
-        simulation_directory (Union[Path, str]): The associated simulation directory.
+        simulation_directory (Union[Path, str]):
+            The associated simulation directory.
 
     Returns:
-        List[MoistureSource]: A list of moisture sources in the simulato directory.
+        List[MoistureSource]:
+            A list of moisture sources in the simulation directory.
     """
 
     return MoistureSource.from_json(
