@@ -9,27 +9,41 @@ from matplotlib.tri.triangulation import Triangulation
 def create_triangulation(
     x: List[float],
     y: List[float],
-    alpha: float = 1.1,
+    alpha: float = None,
     max_iterations: int = 250,
     increment: float = 0.01,
 ) -> Triangulation:
-    """Create a matplotlib Triangulation from a list of x and y coordinates, including a mask to remove elements with edges larger than alpha.
+    """Create a matplotlib Triangulation from a list of x and y coordinates, including a mask to
+        remove elements with edges larger than alpha.
 
     Args:
-        x (List[float]): A list of x coordinates.
-        y (List[float]): A list of y coordinates.
-        alpha (float, optional): A value to start alpha at. Defaults to 1.1.
-        max_iterations (int, optional): The number of iterations to run to check against triangulation validity. Defaults to 250.
-        increment (int, optional): The value by which to increment alpha by when searching for a valid triangulation. Defaults to 0.01.
+        x (List[float]):
+            A list of x coordinates.
+        y (List[float]):
+            A list of y coordinates.
+        alpha (float, optional):
+            A value to start alpha at.
+            Defaults to None, with an estimate made for a suitable starting point.
+        max_iterations (int, optional):
+            The number of iterations to run to check against triangulation validity.
+            Defaults to 250.
+        increment (int, optional):
+            The value by which to increment alpha by when searching for a valid triangulation.
+            Defaults to 0.01.
 
     Returns:
-        Triangulation: A matplotlib Triangulation object.
+        Triangulation:
+            A matplotlib Triangulation object.
     """
+
+    if alpha is None:
+        # TODO - add method here to automatically determine appropriate alpha value
+        alpha = 1.1
 
     if len(x) != len(y):
         raise ValueError("x and y must be the same length")
 
-    # Traingulate X, Y locations
+    # Triangulate X, Y locations
     triang = Triangulation(x, y)
 
     xtri = x[triang.triangles] - np.roll(x[triang.triangles], 1, axis=1)

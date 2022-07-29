@@ -8,8 +8,6 @@ from matplotlib.figure import Figure
 from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-# TODO - make the colorbar labelling nices (no zero padding if unecessary, or levels passed)
-
 
 def spatial_heatmap(
     triangulations: List[Triangulation],
@@ -125,7 +123,7 @@ def spatial_heatmap(
         cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
 
         cbar = plt.colorbar(
-            tcf, cax=cax, format=mticker.StrMethodFormatter("{x:04.1f}")
+            tcf, cax=cax  # , format=mticker.StrMethodFormatter("{x:04.1f}")
         )
         cbar.outline.set_visible(False)
         cbar.set_label(colorbar_label)
