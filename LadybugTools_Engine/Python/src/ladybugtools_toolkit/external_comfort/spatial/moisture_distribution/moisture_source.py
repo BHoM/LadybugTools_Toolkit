@@ -214,6 +214,7 @@ class MoistureSource:
         # for each time period in the year construct the resultant moisture matrix
         moisture_matrix = []
         for n, (ws, wd) in enumerate(list(zip(*[epw.wind_speed, epw.wind_direction]))):
+            print(f"- [{n/8760:03.2%}] Calculating {self.identifier} moisture effects")
             if n not in self.schedule:
                 moisture_matrix.append(np.zeros_like(pt_distances[0]))
             else:

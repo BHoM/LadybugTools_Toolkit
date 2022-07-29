@@ -26,10 +26,14 @@ from ladybugtools_toolkit.external_comfort.spatial.load.rad_total import rad_tot
 from ladybugtools_toolkit.external_comfort.spatial.load.rh_epw import rh_epw
 from ladybugtools_toolkit.external_comfort.spatial.load.rh_evap import rh_evap
 from ladybugtools_toolkit.external_comfort.spatial.load.sky_view import sky_view
+from ladybugtools_toolkit.external_comfort.spatial.load.utci_calculated import (
+    utci_calculated,
+)
 from ladybugtools_toolkit.external_comfort.spatial.load.utci_interpolated import (
     utci_interpolated,
 )
 from ladybugtools_toolkit.external_comfort.spatial.load.wd_epw import wd_epw
+from ladybugtools_toolkit.external_comfort.spatial.load.ws_cfd import ws_cfd
 from ladybugtools_toolkit.external_comfort.spatial.load.ws_epw import ws_epw
 from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
     SpatialMetric,
@@ -128,10 +132,10 @@ class SpatialComfort:
             )
 
         if spatial_metric == SpatialMetric.RAD_DIRECT:
-            return rad_total(self.spatial_simulation_directory)
+            return rad_direct(self.spatial_simulation_directory)
 
         if spatial_metric == SpatialMetric.RAD_TOTAL:
-            return rad_direct(self.spatial_simulation_directory)
+            return rad_total(self.spatial_simulation_directory)
 
         if spatial_metric == SpatialMetric.MRT_INTERPOLATED:
             return mrt_interpolated(
@@ -158,7 +162,7 @@ class SpatialComfort:
             return ws_epw(self.spatial_simulation_directory, self.simulation_result.epw)
 
         if spatial_metric == SpatialMetric.WS_CFD:
-            return NotImplementedError()
+            return ws_cfd(self.spatial_simulation_directory, self.simulation_result.epw)
 
         if spatial_metric == SpatialMetric.EVAP_CLG:
             return evap_clg_magnitude(
@@ -176,7 +180,14 @@ class SpatialComfort:
             )
 
         if spatial_metric == SpatialMetric.UTCI_CALCULATED:
-            return NotImplementedError()
+            return utci_calculated(
+                self.spatial_simulation_directory,
+                self.simulation_result.epw,
+                self._unshaded_utci,
+                self._shaded_utci,
+                self.irradiance_total,
+                self.sky_view,
+            )
 
         if spatial_metric == SpatialMetric.UTCI_INTERPOLATED:
             return utci_interpolated(

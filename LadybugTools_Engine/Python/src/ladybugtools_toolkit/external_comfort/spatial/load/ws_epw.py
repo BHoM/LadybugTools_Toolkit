@@ -42,7 +42,7 @@ def ws_epw(
 
     print(f"- Generating {metric.value} for {simulation_directory.name}")
     spatial_points = points(simulation_directory)
-    n_pts = len(spatial_points.columns)
+    n_pts = len(spatial_points.index)
 
     ws_series = to_series(epw.wind_speed)
     ws_df = pd.DataFrame(np.tile(ws_series.values, (n_pts, 1)).T, index=ws_series.index)

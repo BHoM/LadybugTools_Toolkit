@@ -10,11 +10,11 @@ from ladybugtools_toolkit.external_comfort.moisture.evaporative_cooling_effect i
 from ladybugtools_toolkit.external_comfort.spatial.load.evap_clg_magnitude import (
     evap_clg_magnitude,
 )
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
-    spatial_metric_filepath,
-)
 from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
     SpatialMetric,
+)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
+    spatial_metric_filepath,
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
@@ -50,7 +50,7 @@ def dbt_rh_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
     # this calculates both dbt and rh, as the both are linked and should be calculated in parallel
     dbt_matrix = []
     rh_matrix = []
-    for n, row in enumerate(moisture_matrix):
+    for n, (dt, row) in enumerate(moisture_matrix.iterrows()):
         print(f"- Calculating evaporatively cooled DBT/RH [{n / 8760:0.1%}]", end="\r")
         dbt_base = epw.dry_bulb_temperature[n]
         rh_base = epw.relative_humidity[n]

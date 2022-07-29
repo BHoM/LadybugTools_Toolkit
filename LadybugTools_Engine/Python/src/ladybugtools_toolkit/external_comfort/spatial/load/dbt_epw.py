@@ -41,7 +41,7 @@ def dbt_epw(
 
     print(f"- Generating {metric.value} for {simulation_directory.name}")
     spatial_points = points(simulation_directory)
-    n_pts = len(spatial_points.columns)
+    n_pts = len(spatial_points.index)
 
     dbt_series = to_series(epw.dry_bulb_temperature)
     dbt_df = pd.DataFrame(

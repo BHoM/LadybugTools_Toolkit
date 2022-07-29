@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import List
+
+import numpy as np
+import pandas as pd
+from ladybug.epw import EPW
+from ladybugtools_toolkit.external_comfort.spatial.cfd.cfd_directory import (
+    cfd_directory,
+)
 
 
 class CFDResult:
@@ -11,9 +19,15 @@ class CFDResult:
 
     def __init__(self) -> CFDResult:
         self.i = None
-    
+
     @classmethod
     def from_directory(cls, cfd_directory: Path) -> CFDResult:
         return None
-    
-    def wind
+
+    @staticmethod
+    def _unique_wind_speed_direction(epw: EPW) -> List[List[float]]:
+        """Create a list of unique Wind Speed and Wind Direction values for a given EPW"""
+        wind_speed_directions = np.stack(
+            [epw.wind_speed.values, epw.wind_direction.values], axis=1
+        )
+        return np.unique(wind_speed_directions, axis=0)

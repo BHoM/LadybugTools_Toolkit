@@ -42,7 +42,7 @@ def rh_epw(
     print(f"- Generating {metric.value} for {simulation_directory.name}")
 
     spatial_points = points(simulation_directory)
-    n_pts = len(spatial_points.columns)
+    n_pts = len(spatial_points.index)
 
     rh_series = to_series(epw.relative_humidity)
     rh_df = pd.DataFrame(np.tile(rh_series.values, (n_pts, 1)).T, index=rh_series.index)
