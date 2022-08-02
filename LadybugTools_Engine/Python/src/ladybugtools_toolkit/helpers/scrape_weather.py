@@ -37,7 +37,8 @@ def scrape_weather(
             Set to True to resample the data to 0 and 30 minutes past the hour. Defaults to False.
 
     Returns:
-        pd.DataFrame: Pandas DataFrame containing time-indexed weather data.
+        pd.DataFrame:
+            A Pandas DataFrame containing time-indexed weather data.
     """
 
     start_date = datetime.strptime(start_date, "%Y-%m-%d")
@@ -169,7 +170,7 @@ def scrape_weather(
     df["global_horizontal_radiation"].fillna(0, inplace=True)
 
     vals = []
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         vals.append(
             estimate_illuminance_from_irradiance(
                 row.solar_altitude * 180 / math.pi,

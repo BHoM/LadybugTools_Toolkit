@@ -1,10 +1,7 @@
 from typing import Tuple, Union
 
 import matplotlib.dates as md
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from matplotlib.figure import Figure
@@ -18,17 +15,22 @@ def week_profile(
     """Plot a profile aggregated across days of week in a given Series.
 
     Args:
-        series (pd.Series): A time-indexed Pandas Series object.
-        color (Union[str, Tuple], optional): The color to use for this plot.
-        ylabel (str, optional): A label to be placed on the y-axis.
-        title (str, optional): A title to place at the top of the plot. Defaults to None.
+        series (pd.Series):
+            A time-indexed Pandas Series object.
+        color (Union[str, Tuple], optional):
+            The color to use for this plot.
+        ylabel (str, optional):
+            A label to be placed on the y-axis.
+        title (str, optional):
+            A title to place at the top of the plot. Defaults to None.
 
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     if not isinstance(series.index, pd.DatetimeIndex):
-        raise ValueError(f"Series passed is not datetime indexed.")
+        raise ValueError("Series passed is not datetime indexed.")
 
     minmax_range = [0.0001, 0.9999]
     q_range = [0.05, 0.95]
@@ -73,7 +75,7 @@ def week_profile(
     for day, hour, minute in list(
         zip(
             *[
-                (df.Timestamp + 1).values,
+                [i + 1 for i in df.level_0.values],
                 [i.hour for i in df.level_1.values],
                 [i.minute for i in df.level_1.values],
             ]
@@ -81,7 +83,7 @@ def week_profile(
     ):
         idx.append(pd.to_datetime(f"2007-01-{day:02d} {hour:02d}:{minute:02d}:00"))
     df.index = idx
-    df.drop(columns=["Timestamp", "level_1"], inplace=True)
+    df.drop(columns=["level_0", "level_1"], inplace=True)
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 
@@ -123,8 +125,10 @@ def week_profile(
 
     # format axes
     ax.set_xlim(df.index.min(), df.index.max())
-    [ax.spines[spine].set_visible(False) for spine in ["top", "right"]]
-    [ax.spines[j].set_color("k") for j in ["bottom", "left"]]
+    for spine in ["top", "right"]:
+        ax.spines[spine].set_visible(False)
+    for spine in ["bottom", "left"]:
+        ax.spines[spine].set_color("k")
 
     ax.grid(visible=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.2)
     ax.grid(visible=True, which="minor", axis="both", c="k", ls=":", lw=1, alpha=0.1)
@@ -140,7 +144,8 @@ def week_profile(
         frameon=False,
     )
     lgd.get_frame().set_facecolor((1, 1, 1, 0))
-    [plt.setp(text, color="k") for text in lgd.get_texts()]
+    for text in lgd.get_texts():
+        plt.setp(text, color="k")
 
     ti = f"Typical week between {start_idx:%Y-%m-%d} and {end_idx:%Y-%m-%d} (~{n_samples:0.1f} samples per timestep)"
     if title is not None:

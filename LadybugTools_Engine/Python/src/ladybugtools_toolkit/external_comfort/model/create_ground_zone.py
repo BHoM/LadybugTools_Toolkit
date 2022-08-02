@@ -13,17 +13,24 @@ def create_ground_zone(
     depth: float = 10,
     thickness: float = 1,
 ) -> Room:
-    """Create a ground zone with boundary conditions and face identifiers named per external comfort workflow.
+    """Create a ground zone with boundary conditions and face identifiers named per external
+        comfort workflow.
 
     Args:
-        material (_EnergyMaterialOpaqueBase): A surface material for the ground zones topmost face.
-        shaded (bool, optional): A flag to describe whether this zone is shaded. Defaults to False.
-        width (float, optional): The width (x-dimension) of the ground zone. Defaults to 10m.
-        depth (float, optional): The depth (y-dimension) of the ground zone. Defaults to 10m.
-        thickness (float, optional): The thickness (z-dimension) of the ground zone. Defaults to 1m.
+        material (_EnergyMaterialOpaqueBase):
+            A surface material for the ground zones topmost face.
+        shaded (bool, optional):
+            A flag to describe whether this zone is shaded. Defaults to False.
+        width (float, optional):
+            The width (x-dimension) of the ground zone. Defaults to 10m.
+        depth (float, optional):
+            The depth (y-dimension) of the ground zone. Defaults to 10m.
+        thickness (float, optional):
+            The thickness (z-dimension) of the ground zone. Defaults to 1m.
 
     Returns:
-        Room: A zone representing the ground beneath a person.
+        Room:
+            A zone representing the ground beneath a person.
     """
 
     shade_id = "SHADED" if shaded else "UNSHADED"

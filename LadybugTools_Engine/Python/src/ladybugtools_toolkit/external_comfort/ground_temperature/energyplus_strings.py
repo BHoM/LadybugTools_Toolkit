@@ -7,13 +7,16 @@ from ladybugtools_toolkit.external_comfort.ground_temperature.monthly_ground_tem
 
 
 def energyplus_strings(epw: EPW) -> str:
-    """Generate strings to add into EnergyPlus simulation for more accurate ground surface temperature results.
+    """Generate strings to add into EnergyPlus simulation for more accurate ground surface
+        temperature results.
 
     Args:
-        epw (EPW): A ladybug EPW object.
+        epw (EPW):
+            A ladybug EPW object.
 
     Returns:
-        List[str]: Strings to append to the EnergyPlus IDF simulation input file.
+        List[str]:
+            Strings to append to the EnergyPlus IDF simulation input file.
     """
 
     monthly_ground_temperatures = monthly_ground_temperature(epw, 0.5)

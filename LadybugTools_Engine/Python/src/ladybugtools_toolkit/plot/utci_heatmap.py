@@ -1,12 +1,8 @@
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import UniversalThermalClimateIndex
-from ladybugtools_toolkit.plot.colormaps import (
-    UTCI_BOUNDARYNORM,
-    UTCI_COLORMAP,
-)
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from matplotlib.figure import Figure
+from ladybugtools_toolkit.plot.colormaps import UTCI_BOUNDARYNORM, UTCI_COLORMAP
 from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
+from matplotlib.figure import Figure
 
 
 def utci_heatmap(
@@ -15,11 +11,14 @@ def utci_heatmap(
     """Create a heatmap showing the annual hourly UTCI for this HourlyContinuousCollection.
 
     Args:
-        collection (HourlyContinuousCollection): An HourlyContinuousCollection containing UTCI.
-        title (str, optional): Default is None.
+        collection (HourlyContinuousCollection):
+            An HourlyContinuousCollection containing UTCI.
+        title (str, optional):
+            Default is None.
 
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     return timeseries_heatmap(

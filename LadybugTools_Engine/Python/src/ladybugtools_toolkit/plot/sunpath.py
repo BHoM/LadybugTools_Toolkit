@@ -25,7 +25,28 @@ def sunpath(
     data_collection: HourlyContinuousCollection = None,
     cmap: str = None,
     show_title: bool = True,
+    sun_size: float = 0.2,
 ) -> Figure:
+    """Plot a sun-path for the given EPW and analysis period.
+
+    Args:
+        epw (EPW):
+            An EPW object.
+        analysis_period (AnalysisPeriod, optional):
+            _description_. Defaults to None.
+        data_collection (HourlyContinuousCollection, optional):
+            An aligned data collection. Defaults to None.
+        cmap (str, optional):
+            The colormap to apply to the aligned data_collection. Defaults to None.
+        show_title (bool, optional):
+            Set to True to include a title in the plot. Defaults to True.
+        sun_size (float, optional):
+            The size of each sun in the plot. Defaults to 0.2.
+
+    Returns:
+        Figure:
+            A matplotlib Figure object.
+    """
 
     if cmap is None:
         cmap = "viridis"
@@ -33,20 +54,34 @@ def sunpath(
     if analysis_period is None:
         analysis_period = AnalysisPeriod()
 
-    # Create sunpath object
-    sunpath = Sunpath.from_location(epw.location)
+    if (data_collection is not None) and (
+        len(data_collection) < len(epw.dry_bulb_temperature)
+    ):
+        raise ValueError(
+            "The data collection passed is not for an entire year and cannot "
+            "be used in conjunction with this EPW object.",
+        )
 
-    # create suns for each hour in analysis period
-    suns = [sunpath.calculate_sun_from_hoy(i, False) for i in analysis_period.hoys]
+    idx = to_datetimes(analysis_period)
 
-    # Construct sun position dataframe
-    df = pd.DataFrame(index=to_datetimes(analysis_period))
-    df["altitude_rad"] = [i.altitude_in_radians for i in suns]
-    df["altitude_deg"] = [i.altitude for i in suns]
-    df["azimuth_rad"] = [i.azimuth_in_radians for i in suns]
-    df["azimuth_deg"] = [i.azimuth for i in suns]
-    df["apparent_zenith_rad"] = np.pi / 2 - df["altitude_rad"]
-    df["apparent_zenith_deg"] = np.degrees(df["apparent_zenith_rad"])
+    # calculate sun positions for times in analysis_period
+    sunpath_obj = Sunpath.from_location(epw.location)
+    suns = np.array(
+        [sunpath_obj.calculate_sun_from_hoy(i, False) for i in analysis_period.hoys]
+    )
+    df = pd.DataFrame(index=idx)
+    df["altitude_deg"] = np.vectorize(lambda x: x.altitude)(suns)
+    df["altitude_rad"] = np.deg2rad(df.altitude_deg)
+    df["azimuth_deg"] = np.vectorize(lambda x: x.azimuth)(suns)
+    df["azimuth_rad"] = np.deg2rad(df.azimuth_deg)
+    df["apparent_zenith_rad"] = np.pi / 2 - df.altitude_rad
+    df["apparent_zenith_deg"] = np.rad2deg(df.apparent_zenith_rad)
+
+    # calculate color mapping values if datacollection passed
+    if data_collection is not None:
+        series = (
+            to_series(data_collection).reindex(idx).interpolate()[df.altitude_deg >= 0]
+        )
     df = df[df.altitude_deg >= 0]
 
     # Create plot
@@ -79,13 +114,14 @@ def sunpath(
         day_idx = pd.date_range(
             date, date + pd.Timedelta(hours=24), freq="1T", closed="left"
         )
-        day_sun_positions = [sunpath.calculate_sun_from_date_time(i) for i in day_idx]
+        day_sun_positions = [
+            sunpath_obj.calculate_sun_from_date_time(i) for i in day_idx
+        ]
         day_df = pd.DataFrame(index=day_idx)
         day_df["altitude_rad"] = [i.altitude_in_radians for i in day_sun_positions]
         day_df["azimuth_rad"] = [i.azimuth_in_radians for i in day_sun_positions]
         day_df["apparent_zenith_deg"] = np.degrees(np.pi / 2 - day_df.altitude_rad)
         day_sun_up_mask = day_df.altitude_rad >= 0
-        label = label
         ax.plot(
             day_df.azimuth_rad[day_sun_up_mask],
             day_df.apparent_zenith_deg[day_sun_up_mask],
@@ -103,20 +139,34 @@ def sunpath(
         cmap = None
         main_title = location_to_string(epw.location)
     else:
-        series = to_series(data_collection.filter_by_analysis_period(analysis_period))
         color = series.values
         main_title = series.name
-        cmap = cmap
 
-    points = ax.scatter(
-        df.azimuth_rad,
-        df.apparent_zenith_deg,
-        s=0.2,
-        label=None,
-        c=color,
-        zorder=5,
-        cmap=cmap,
-    )
+    if data_collection is None:
+        points = ax.scatter(
+            df.azimuth_rad,
+            df.apparent_zenith_deg,
+            s=sun_size,
+            label=None,
+            c=color,
+            zorder=5,
+            cmap=cmap,
+        )
+    else:
+        temp = pd.DataFrame()
+        temp["a"] = df.azimuth_rad
+        temp["b"] = df.apparent_zenith_deg
+        temp["z"] = color
+        temp.sort_values(by="z", inplace=True, ascending=True)
+        points = ax.scatter(
+            temp["a"].values,
+            temp["b"].values,
+            s=sun_size,
+            label=None,
+            c=temp["z"].values,
+            zorder=5,
+            cmap=cmap,
+        )
 
     if data_collection is not None:
         cb = ax.figure.colorbar(
@@ -128,6 +178,8 @@ def sunpath(
         )
         cb.outline.set_visible(False)
 
+    ax.set_yticklabels([])
+
     # Add title
     if show_title:
         title_string = "\n".join(
@@ -137,14 +189,6 @@ def sunpath(
             ]
         )
         ax.set_title(title_string, ha="left", x=0)
-
-        # ax.legend(
-        #     ncol=3,
-        #     bbox_to_anchor=(0.5, -0.14),
-        #     loc=8,
-        #     borderaxespad=0,
-        #     frameon=False,
-        # )
 
     plt.tight_layout()
 

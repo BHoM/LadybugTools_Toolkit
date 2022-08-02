@@ -5,12 +5,17 @@ def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
     """Check for equality between two EPW objects, with regards to the data contained within.
 
     Args:
-        epw0 (EPW): A ladybug EPW object.
-        epw1 (EPW): A ladybug EPW object.
-        include_header (bool, optional): Include the str repsresentation of the EPW files header in the comparison. Defaults to False.
+        epw0 (EPW):
+            A ladybug EPW object.
+        epw1 (EPW):
+            A ladybug EPW object.
+        include_header (bool, optional):
+            Include the str representation of the EPW files header in the comparison.
+            Defaults to False.
 
     Returns:
-        bool: True if the two EPW objects are equal, False otherwise.
+        bool:
+            True if the two EPW objects are equal, False otherwise.
     """
 
     if not isinstance(epw0, EPW) or not isinstance(epw1, EPW):

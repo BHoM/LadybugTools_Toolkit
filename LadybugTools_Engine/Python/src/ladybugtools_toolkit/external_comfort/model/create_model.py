@@ -25,15 +25,18 @@ def create_model(
     including sensor grids for simulation.
 
     Args:
-        ground_material (_EnergyMaterialOpaqueBase): A surface material for the ground zones topmost
-            face.
-        shade_material (_EnergyMaterialOpaqueBase): A surface material for the shade zones faces.
-        identifier (str, optional): A unique identifier for the model. Defaults to None which will
-            generate a unique identifier. This is useful for testing purposes!
+        ground_material (_EnergyMaterialOpaqueBase):
+            A surface material for the ground zones topmost face.
+        shade_material (_EnergyMaterialOpaqueBase):
+            A surface material for the shade zones faces.
+        identifier (str, optional):
+            A unique identifier for the model. Defaults to None which will generate a unique
+            identifier. This is useful for testing purposes!
 
     Returns:
-        Model: A model containing geometry describing a shaded and unshaded external comfort
-            scenario, including sensor grids for simulation.
+        Model:
+            A model containing geometry describing a shaded and unshaded external comfort scenario,
+            including sensor grids for simulation.
     """
     displacement_vector = Vector3D()
     displacement_vector._y = 500  # necessary due to issue setting property in 1.5.0

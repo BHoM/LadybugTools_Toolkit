@@ -1,14 +1,9 @@
-from pathlib import Path
-
 import pandas as pd
 from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import (
     to_hourly,
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.ladybug_extension.epw.apparent_solar_zenith import (
-    apparent_solar_zenith as asz,
-)
 from ladybugtools_toolkit.ladybug_extension.epw.clearness_index import (
     clearness_index as ci,
 )
@@ -55,10 +50,12 @@ def to_dataframe(
     """Create a Pandas DataFrame from an EPW object, including additional calculated properties.
 
     Args:
-        epw (EPW): An EPW object.
+        epw (EPW):
+            An EPW object.
 
     Returns:
-        pd.DataFrame: A Pandas DataFrame with the EPW data and additional calculated properties.
+        pd.DataFrame:
+            A Pandas DataFrame with the EPW data and additional calculated properties.
     """
 
     all_series = []
@@ -84,7 +81,6 @@ def to_dataframe(
     solar_time_datetime = stda(epw, solar_time_hour)
     solar_azimuth = saz(epw, sun_position)
     solar_azimuth_in_radians = sazr(epw, sun_position)
-    apparent_solar_zenith = asz(epw, solar_altitude)
     clearness_index = ci(epw, sun_position)
 
     # Calculate additional psychrometric properties
@@ -101,7 +97,6 @@ def to_dataframe(
         solar_time_datetime,
         solar_azimuth,
         solar_azimuth_in_radians,
-        apparent_solar_zenith,
         solar_altitude,
         solar_altitude_in_radians,
         humidity_ratio,

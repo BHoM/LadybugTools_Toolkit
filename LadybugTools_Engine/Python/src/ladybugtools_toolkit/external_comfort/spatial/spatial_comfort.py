@@ -2,69 +2,64 @@ from __future__ import annotations
 
 import calendar
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 import numpy as np
 import pandas as pd
 from cached_property import cached_property
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
-    SimulationResult,
-)
+from ladybugtools_toolkit.external_comfort.simulate.simulation_result import \
+    SimulationResult
 from ladybugtools_toolkit.external_comfort.spatial.load.dbt_epw import dbt_epw
-from ladybugtools_toolkit.external_comfort.spatial.load.dbt_evap import dbt_evap
-from ladybugtools_toolkit.external_comfort.spatial.load.evap_clg_magnitude import (
-    evap_clg_magnitude,
-)
-from ladybugtools_toolkit.external_comfort.spatial.load.mrt_interpolated import (
-    mrt_interpolated,
-)
+from ladybugtools_toolkit.external_comfort.spatial.load.dbt_evap import \
+    dbt_evap
+from ladybugtools_toolkit.external_comfort.spatial.load.evap_clg_magnitude import \
+    evap_clg_magnitude
+from ladybugtools_toolkit.external_comfort.spatial.load.mrt_interpolated import \
+    mrt_interpolated
 from ladybugtools_toolkit.external_comfort.spatial.load.points import points
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_diffuse import rad_diffuse
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_direct import rad_direct
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_total import rad_total
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_diffuse import \
+    rad_diffuse
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_direct import \
+    rad_direct
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_total import \
+    rad_total
 from ladybugtools_toolkit.external_comfort.spatial.load.rh_epw import rh_epw
 from ladybugtools_toolkit.external_comfort.spatial.load.rh_evap import rh_evap
-from ladybugtools_toolkit.external_comfort.spatial.load.sky_view import sky_view
-from ladybugtools_toolkit.external_comfort.spatial.load.utci_calculated import (
-    utci_calculated,
-)
-from ladybugtools_toolkit.external_comfort.spatial.load.utci_interpolated import (
-    utci_interpolated,
-)
+from ladybugtools_toolkit.external_comfort.spatial.load.sky_view import \
+    sky_view
+from ladybugtools_toolkit.external_comfort.spatial.load.utci_calculated import \
+    utci_calculated
+from ladybugtools_toolkit.external_comfort.spatial.load.utci_interpolated import \
+    utci_interpolated
 from ladybugtools_toolkit.external_comfort.spatial.load.wd_epw import wd_epw
 from ladybugtools_toolkit.external_comfort.spatial.load.ws_cfd import ws_cfd
 from ladybugtools_toolkit.external_comfort.spatial.load.ws_epw import ws_epw
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
-    SpatialMetric,
-)
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_boundarynorm import (
-    spatial_metric_boundarynorm,
-)
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_colormap import (
-    spatial_metric_colormap,
-)
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_levels import (
-    spatial_metric_levels,
-)
-from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort_possible import (
-    spatial_comfort_possible,
-)
-from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
-from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
-    describe as describe_analysis_period,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
-    from_series,
-)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import \
+    SpatialMetric
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_boundarynorm import \
+    spatial_metric_boundarynorm
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_colormap import \
+    spatial_metric_colormap
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_levels import \
+    spatial_metric_levels
+from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort_possible import \
+    spatial_comfort_possible
+from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import \
+    utci
+from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import \
+    describe as describe_analysis_period
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import \
+    from_series
 from ladybugtools_toolkit.plot.colormap_sequential import colormap_sequential
 from ladybugtools_toolkit.plot.create_triangulation import create_triangulation
 from ladybugtools_toolkit.plot.spatial_heatmap import spatial_heatmap
-from ladybugtools_toolkit.plot.utci_distance_to_comfortable import (
-    utci_distance_to_comfortable,
-)
-from ladybugtools_toolkit.plot.utci_heatmap_difference import utci_heatmap_difference
-from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histogram
+from ladybugtools_toolkit.plot.utci_distance_to_comfortable import \
+    utci_distance_to_comfortable
+from ladybugtools_toolkit.plot.utci_heatmap_difference import \
+    utci_heatmap_difference
+from ladybugtools_toolkit.plot.utci_heatmap_histogram import \
+    utci_heatmap_histogram
 from matplotlib import pyplot as plt
 
 PLOT_DPI = 300
@@ -345,6 +340,7 @@ class SpatialComfort:
         levels: List[float] = None,
         hours: bool = False,
         metric: SpatialMetric = SpatialMetric.UTCI_INTERPOLATED,
+        extension: str = ".png",
     ) -> Path:
         """Return the path to the comfortable-hours plot."""
 
@@ -356,9 +352,14 @@ class SpatialComfort:
                 "This type of plot is not possible for the requested metric."
             )
 
+        if extension not in [".pdf", ".png"]:
+            raise ValueError(
+                f"You cannot plot an image with the extension '{extension}'."
+            )
+
         save_path = (
             self._plot_directory
-            / f"time_comfortable_{'hours' if hours else 'percentage'}_{describe_analysis_period(analysis_period, True)}.png"
+            / f"time_comfortable_{'hours' if hours else 'percentage'}_{describe_analysis_period(analysis_period, True)}{extension}"
         )
 
         z_temp = self._get_spatial_property(metric).iloc[
@@ -389,13 +390,25 @@ class SpatialComfort:
         return save_path
 
     def plot_typical_point_in_time(
-        self, metric: SpatialMetric, month: int, hour: int
+        self,
+        metric: SpatialMetric,
+        month: int,
+        hour: int,
+        levels: List[float] = None,
+        cmap: Any = None,
+        extension: str = ".png",
+        contours: List[float] = None,
     ) -> Path:
         """Create a typical point-in-time plot of the given metric."""
 
         if metric in [SpatialMetric.POINTS, SpatialMetric.SKY_VIEW]:
             raise ValueError(
                 "This type of plot is not possible for the requested metric."
+            )
+
+        if extension not in [".pdf", ".png"]:
+            raise ValueError(
+                f"You cannot plot an image with the extension '{extension}'."
             )
 
         if not month in range(1, 13, 1):
@@ -405,9 +418,11 @@ class SpatialComfort:
 
         df = self._get_spatial_property(metric)
 
-        levels = spatial_metric_levels(metric)
+        if levels is None:
+            levels = spatial_metric_levels(metric)
         boundary_norm = spatial_metric_boundarynorm(metric)
-        cmap = spatial_metric_colormap(metric)
+        if cmap is None:
+            cmap = spatial_metric_colormap(metric)
         if (levels is None) and (boundary_norm is None):
             levels = np.linspace(df.min().min(), df.max().max(), 101)
 
@@ -424,7 +439,8 @@ class SpatialComfort:
         ).values
 
         save_path = (
-            self._plot_directory / f"{metric.name.lower()}_{month:02d}_{hour:02d}.png"
+            self._plot_directory
+            / f"{metric.name.lower()}_{month:02d}_{hour:02d}{extension}"
         )
 
         fig = spatial_heatmap(
@@ -438,16 +454,22 @@ class SpatialComfort:
             ylims=[self._points_y.min(), self._points_y.max()],
             colorbar_label=metric.value,
             title=f"{calendar.month_abbr[month]} {hour:02d}:00",
+            contours=contours
         )
 
         fig.savefig(save_path, dpi=PLOT_DPI, bbox_inches="tight", transparent=True)
 
         return save_path
 
-    def plot_sky_view(self) -> Path:
+    def plot_sky_view(self, extension: str = ".png") -> Path:
         """Return the path to the sky view plot."""
 
-        save_path = self._plot_directory / "sky_view.png"
+        if extension not in [".pdf", ".png"]:
+            raise ValueError(
+                f"You cannot plot an image with the extension '{extension}'."
+            )
+
+        save_path = self._plot_directory / f"sky_view{extension}"
 
         metric = SpatialMetric.SKY_VIEW
         z = self.sky_view.squeeze().values
@@ -468,11 +490,31 @@ class SpatialComfort:
 
         return save_path
 
+    def plot_spatial_point_locations(self, n: int = 25) -> Path:
+        x = self._points_x
+        y = self._points_y
+        fig, ax = plt.subplots(1, 1, figsize=(20, 20))
+        ax.set_aspect("equal")
+        ax.scatter(x, y, c="#555555", s=1)
+        for i in np.arange(0, len(self._points_x), n):
+            ax.scatter(x[i], y[i], c="red", s=2)
+            ax.text(
+                x[i],
+                y[i],
+                i,
+                ha="center",
+                va="center",
+                fontsize="small",
+            )
+        plt.tight_layout()
+        return fig
+
     def summarise_point(
         self,
         point_index: int,
         point_identifier: str,
         metric: SpatialMetric = SpatialMetric.UTCI_INTERPOLATED,
+        extension: str = ".png",
     ) -> None:
 
         if metric not in [
@@ -480,6 +522,11 @@ class SpatialComfort:
             SpatialMetric.UTCI_INTERPOLATED,
         ]:
             raise ValueError("This method only applicable for UTCI metrics.")
+
+        if extension not in [".pdf", ".png"]:
+            raise ValueError(
+                f"You cannot plot an image with the extension '{extension}'."
+            )
 
         # create the collection for the given point index
         point_utci = from_series(
@@ -500,7 +547,7 @@ class SpatialComfort:
             show_legend_title=False,
         )
         f.savefig(
-            self._plot_directory / f"{point_identifier}_location.png",
+            self._plot_directory / f"{point_identifier}_location{extension}",
             dpi=PLOT_DPI,
             transparent=True,
             bbox_inches="tight",
@@ -518,7 +565,7 @@ class SpatialComfort:
         # create openfield UTCI distance to comfortable plot
         f = utci_distance_to_comfortable(self._unshaded_utci, "Openfield")
         f.savefig(
-            self._plot_directory / "Openfield_distance_to_comfortable.png",
+            self._plot_directory / f"Openfield_distance_to_comfortable{extension}",
             dpi=PLOT_DPI,
             transparent=True,
             bbox_inches="tight",
@@ -527,7 +574,7 @@ class SpatialComfort:
         # create point location UTCI plot
         f = utci_heatmap_histogram(point_utci, point_identifier)
         f.savefig(
-            self._plot_directory / f"{point_identifier}_utci.png",
+            self._plot_directory / f"{point_identifier}_utci{extension}",
             dpi=PLOT_DPI,
             transparent=True,
             bbox_inches="tight",
@@ -536,7 +583,8 @@ class SpatialComfort:
         # create pt location UTCI distance to comfortable plot
         f = utci_distance_to_comfortable(point_utci, point_identifier)
         f.savefig(
-            self._plot_directory / f"{point_identifier}_distance_to_comfortable.png",
+            self._plot_directory
+            / f"{point_identifier}_distance_to_comfortable{extension}",
             dpi=PLOT_DPI,
             transparent=True,
             bbox_inches="tight",
@@ -549,7 +597,7 @@ class SpatialComfort:
             f"Difference between Openfield UTCI and {point_identifier} UTCI",
         )
         f.savefig(
-            self._plot_directory / f"{point_identifier}_difference.png",
+            self._plot_directory / f"{point_identifier}_difference{extension}",
             dpi=PLOT_DPI,
             transparent=True,
             bbox_inches="tight",

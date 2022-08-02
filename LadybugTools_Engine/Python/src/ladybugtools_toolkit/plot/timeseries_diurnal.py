@@ -17,17 +17,22 @@ def timeseries_diurnal(
     """Plot a heatmap for a Pandas Series object.
 
     Args:
-        series (pd.Series): A time-indexed Pandas Series object.
-        color (Union[str, Tuple], optional): The color to use for this diurnal plot.
-        ylabel (str, optional): A label to be placed on the y-axis.
-        title (str, optional): A title to place at the top of the plot. Defaults to None.
+        series (pd.Series):
+            A time-indexed Pandas Series object.
+        color (Union[str, Tuple], optional):
+            The color to use for this diurnal plot.
+        ylabel (str, optional):
+            A label to be placed on the y-axis.
+        title (str, optional):
+            A title to place at the top of the plot. Defaults to None.
 
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     if not isinstance(series.index, pd.DatetimeIndex):
-        raise ValueError(f"Series passed is not datetime indexed.")
+        raise ValueError("Series passed is not datetime indexed.")
 
     target_index = pd.MultiIndex.from_arrays(
         [
@@ -48,14 +53,6 @@ def timeseries_diurnal(
     fig, ax = plt.subplots(1, 1, figsize=(15, 4))
 
     x_values = range(288)
-    idx = [
-        x
-        for xs in [
-            pd.date_range(f"2021-{i+1:02d}-01 00:00:00", periods=24, freq="60T")
-            for i in range(12)
-        ]
-        for x in xs
-    ]
 
     # for each month, plot the diurnal profile
     for i in range(0, 288)[::24]:
@@ -107,8 +104,12 @@ def timeseries_diurnal(
     ax.xaxis.set_major_locator(mticker.FixedLocator(range(0, 288, 24)))
     ax.xaxis.set_minor_locator(mticker.FixedLocator(range(12, 288, 24)))
     ax.yaxis.set_major_locator(mticker.MaxNLocator(7))
-    [ax.spines[spine].set_visible(False) for spine in ["top", "right"]]
-    [ax.spines[j].set_color("k") for j in ["bottom", "left"]]
+
+    for spine in ["top", "right"]:
+        ax.spines[spine].set_visible(False)
+    for spine in ["bottom", "left"]:
+        ax.spines[spine].set_color("k")
+
     ax.set_xlim([0, 287])
     ax.set_xticklabels(
         [
@@ -147,7 +148,8 @@ def timeseries_diurnal(
         frameon=False,
     )
     lgd.get_frame().set_facecolor((1, 1, 1, 0))
-    [plt.setp(text, color="k") for text in lgd.get_texts()]
+    for text in lgd.get_texts():
+        plt.setp(text, color="k")
 
     if ylabel is not None:
         ax.set_ylabel(ylabel)

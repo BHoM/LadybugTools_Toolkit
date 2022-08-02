@@ -139,7 +139,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Python\data\" />
     <Folder Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\" />
   </ItemGroup>
   <ItemGroup>
@@ -179,33 +178,51 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\simulate\surface_temperature_results_load.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\simulate\working_directory.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\simulate\__init__.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\calculate_mean_radiant_temperature_interpolated.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\cfd_directory.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\cfd_result.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\load_cfd_extract.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\load_cfd_results.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\spatial_wind_speed.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\__init__.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\create_epw_dbt_matrix.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load_diffuse_irradiance.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load_direct_irradiance.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load_points.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load_sky_view.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load_total_irradiance.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load_universal_thermal_climate_index_interpolated.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\calculate_evaporatively_cooled_dbt_rh.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\load_dry_bulb_temperature_moisture.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\dbt_epw.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\dbt_evap.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\dbt_rh_evap.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\evap_clg_magnitude.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\mrt_interpolated.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\points.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\rad_diffuse.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\rad_direct.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\rad_total.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\rh_epw.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\rh_evap.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\sky_view.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\utci_calculated.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\utci_interpolated.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\wd_epw.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\ws_cfd.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\ws_epw.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\load\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\metric\spatial_metric.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\metric\spatial_metric_boundarynorm.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\metric\spatial_metric_colormap.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\metric\spatial_metric_filepath.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\metric\spatial_metric_levels.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\metric\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\load_moisture_sources.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\load_relative_humidity_moisture.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\moisture_directory.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\moisture_source.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\unique_wind_speed_direction.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\spatial_comfort.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\spatial_comfort_old.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\spatial_comfort_possible.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\temporospatial_metric.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\unshaded_shaded_interpolation.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\__init__.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\universal_thermal_climate_index.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\universal_thermal_climate_index_vectorised.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\utci\compare_utci_collections.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\utci\describe_utci_collection.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\utci\utci.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\utci\utci_vectorised.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\utci\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\__init__.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\calculate_typology_results.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\typologies.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\typology.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\__init__.py" />
@@ -213,6 +230,12 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\wind\wind_speed_at_height.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\wind\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\helpers\angle_from_north.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\helpers\cardinality.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\helpers\decay_rate_smoother.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\helpers\proximity_decay.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\helpers\scrape_weather.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\helpers\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\honeybee_extension\results\load_files.py" />
     <Content Include="Python\src\ladybugtools_toolkit\honeybee_extension\results\load_ill.py" />
     <Content Include="Python\src\ladybugtools_toolkit\honeybee_extension\results\load_ill_file.py" />
@@ -243,8 +266,6 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\dt\from_datetime.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\dt\to_datetime.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\dt\__init__.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\apparent_solar_zenith.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\apparent_zolar_zenith_radians.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\filename.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\clearness_index.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\enthalpy.py" />
@@ -270,15 +291,9 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\to_multiindex.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\to_string.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\__init__.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\angle_from_north.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\cardinality.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\decay_rate_smoother.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\scrape_weather.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\helpers\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\location\to_string.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\location\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\radiation_tilt_orientation_factor.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\rose.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps.py" />
@@ -296,10 +311,11 @@
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_difference.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_histogram.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_journey.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\week_profile.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\windrose.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\__init__.py" />
     <Content Include="Python\setup.py" />
-    <Content Include="Python\tests\__init__.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets')" />

@@ -12,11 +12,14 @@ def radiation_tilt_orientation_factor(
     """Convert a radiation matrix to a figure showing the radiation tilt and orientation.
 
     Args:
-        radiation_matrix (pd.DataFrame): A matrix with altitude index, azimuth columns, and radiation values in Wh/m2.
-        title (str, optional): A title for the figure. Defaults to None.
+        radiation_matrix (pd.DataFrame):
+            A matrix with altitude index, azimuth columns, and radiation values in Wh/m2.
+        title (str, optional):
+            A title for the figure. Defaults to None.
 
     Returns:
-        Figure: A figure.
+        Figure:
+            A figure.
     """
 
     # Construct input values

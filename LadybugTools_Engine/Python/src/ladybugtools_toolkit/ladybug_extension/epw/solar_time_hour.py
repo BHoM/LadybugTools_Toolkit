@@ -1,10 +1,9 @@
-from ladybug.sunpath import Sunpath
+from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datatype.time import Time
 from ladybug.epw import EPW
 from ladybug.header import Header
-from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datatype.time import Time
-from ladybug.datacollection import HourlyContinuousCollection
-
+from ladybug.sunpath import Sunpath
 from ladybugtools_toolkit.ladybug_extension.epw.equation_of_time import (
     equation_of_time as eot,
 )
@@ -16,11 +15,14 @@ def solar_time_hour(
     """Calculate solar time (in hour-of-day) for each hour of the year.
 
     Args:
-        epw (EPW): An EPW object.
-        equation_of_time (HourlyContinuousCollection, optional): A pre-calculated equation of time HourlyContinuousCollection. Defaults to None.
+        epw (EPW):
+            An EPW object.
+        equation_of_time (HourlyContinuousCollection, optional):
+            A pre-calculated equation of time HourlyContinuousCollection. Defaults to None.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of solar time (in hour-of-day).
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of solar time (in hour-of-day).
     """
 
     if equation_of_time is None:

@@ -3,12 +3,7 @@ from typing import Any, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ladybugtools_toolkit.plot.colormaps import (
-    UTCI_BOUNDARYNORM,
-    UTCI_COLORMAP,
-    UTCI_LABELS,
-    UTCI_LEVELS,
-)
+from ladybugtools_toolkit.plot.colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 from ladybugtools_toolkit.plot.lighten_color import lighten_color
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
@@ -24,7 +19,8 @@ def utci_journey(
     title: str = None,
     show_grid: bool = False,
 ) -> Figure:
-    """Create a figure showing the pseudo-journey between different UTCI conditions at a given time of year
+    """Create a figure showing the pseudo-journey between different UTCI conditions at a
+        given time of year
 
     Args:
         utci_values (float):
@@ -74,7 +70,7 @@ def utci_journey(
             List[List[Any]]:
                 The resulting, "windowed" list.
         """
-        a = np.array(array)
+        a: np.ndarray = np.array(array)
         shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
         strides = a.strides + (a.strides[-1],)
         return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)

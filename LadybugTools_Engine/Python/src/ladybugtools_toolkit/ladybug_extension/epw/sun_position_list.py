@@ -1,6 +1,7 @@
 from typing import List
-from ladybug.sunpath import Sun, Sunpath
+
 from ladybug.epw import EPW
+from ladybug.sunpath import Sun, Sunpath
 
 
 def sun_position_list(epw: EPW) -> List[Sun]:
@@ -8,9 +9,11 @@ def sun_position_list(epw: EPW) -> List[Sun]:
     Calculate sun positions for a given epw file.
 
     Args:
-        epw (EPW): An epw object.
+        epw (EPW):
+            An epw object.
     Returns:
-        List[Sun]: A list of Sun objects.
+        List[Sun]:
+            A list of Sun objects.
     """
 
     sunpath = Sunpath.from_location(epw.location)

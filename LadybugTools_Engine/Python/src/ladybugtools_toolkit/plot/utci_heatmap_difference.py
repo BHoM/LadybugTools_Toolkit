@@ -16,12 +16,16 @@ def utci_heatmap_difference(
     """Create a heatmap showing the annual hourly UTCI difference between collections.
 
     Args:
-        utci_collection1 (HourlyContinuousCollection): The first UTCI collection.
-        utci_collection2 (HourlyContinuousCollection): The second UTCI collection.
-        title (str, optional): Default is None.
+        utci_collection1 (HourlyContinuousCollection):
+            The first UTCI collection.
+        utci_collection2 (HourlyContinuousCollection):
+            The second UTCI collection.
+        title (str, optional):
+            Default is None.
 
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     if len(vlims) != 2:

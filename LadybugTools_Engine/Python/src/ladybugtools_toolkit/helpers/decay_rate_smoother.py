@@ -11,15 +11,20 @@ def decay_rate_smoother(
         below the previous values.
 
     Args:
-        series (pd.Series): The series to modify
-        difference_threshold (float, optional): The difference between current/prtevious values
-            which class as a "transition". Defaults to -10.
-        transition_window (int, optional): The number of values after the "transition" within which
-            an exponentially weighted mean should be applied. Defaults to 4.
-        ewm_span (float, optional): The rate of decay. Defaults to 1.25.
+        series (pd.Series):
+            The series to modify
+        difference_threshold (float, optional):
+            The difference between current/previous values which class as a "transition".
+            Defaults to -10.
+        transition_window (int, optional):
+            The number of values after the "transition" within which an exponentially weighted mean
+             should be applied. Defaults to 4.
+        ewm_span (float, optional):
+            The rate of decay. Defaults to 1.25.
 
     Returns:
-        pd.Series: A modified series
+        pd.Series:
+            A modified series
     """
 
     # Find periods of major transition (where values vary signifigantly)

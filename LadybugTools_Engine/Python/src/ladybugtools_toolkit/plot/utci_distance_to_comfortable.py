@@ -20,16 +20,25 @@ def utci_distance_to_comfortable(
     low_limit: float = 15,
     high_limit: float = 25,
 ) -> Figure:
-    """Plot the distance (in C) to comfortable for a given Ladybug HourlyContinuousCollection containing UTCI values.
+    """Plot the distance (in C) to comfortable for a given Ladybug HourlyContinuousCollection
+        containing UTCI values.
 
     Args:
-        collection (HourlyContinuousCollection): A Ladybug Universal Thermal Climate Index HourlyContinuousCollection object.
-        title (str, optional): A title to place at the top of the plot. Defaults to None.
-        comfort_thresholds (List[float], optional): The comfortable band of UTCI temperatures. Defaults to [9, 26].
-        low_limit (float, optional): The distance from the lower edge of the comfort threshold to include in the "too cold" part of the heatmap. Defaults to 15.
-        high_limit (float, optional): The distance from the upper edge of the comfort threshold to include in the "too hot" part of the heatmap. Defaults to 25.
+        collection (HourlyContinuousCollection):
+            A Ladybug Universal Thermal Climate Index HourlyContinuousCollection object.
+        title (str, optional):
+            A title to place at the top of the plot. Defaults to None.
+        comfort_thresholds (List[float], optional):
+            The comfortable band of UTCI temperatures. Defaults to [9, 26].
+        low_limit (float, optional):
+            The distance from the lower edge of the comfort threshold to include in the "too cold"
+            part of the heatmap. Defaults to 15.
+        high_limit (float, optional):
+            The distance from the upper edge of the comfort threshold to include in the "too hot"
+            part of the heatmap. Defaults to 25.
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     if not isinstance(collection.header.data_type, UniversalThermalClimateIndex):

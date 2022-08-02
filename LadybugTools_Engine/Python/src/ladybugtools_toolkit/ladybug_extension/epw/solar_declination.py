@@ -1,19 +1,21 @@
-from ladybug.sunpath import Sunpath
+from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datatype.angle import Angle
 from ladybug.epw import EPW
 from ladybug.header import Header
-from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datatype.angle import Angle
-from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.sunpath import Sunpath
 
 
 def solar_declination(epw: EPW) -> HourlyContinuousCollection:
     """Calculate solar declination for each hour of the year.
 
     Args:
-        epw (EPW): An EPW object.
+        epw (EPW):
+            An EPW object.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of solar declinations.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of solar declinations.
     """
     sunpath = Sunpath.from_location(epw.location)
 

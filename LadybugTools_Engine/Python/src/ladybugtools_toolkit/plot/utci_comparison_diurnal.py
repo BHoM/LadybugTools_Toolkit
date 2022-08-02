@@ -17,11 +17,14 @@ def utci_comparison_diurnal(
     """Plot a set of UTCI collections on a single figure for monthly diurnal periods.
 
     Args:
-        collections (List[HourlyContinuousCollection]): A list of UTCI collections.
-        collection_ids (List[str], optional): A list of descriptions for each of the input collections. Defaults to None.
+        collections (List[HourlyContinuousCollection]):
+            A list of UTCI collections.
+        collection_ids (List[str], optional):
+            A list of descriptions for each of the input collections. Defaults to None.
 
     Returns:
-        Figure: A matplotlib figure object.
+        Figure:
+            A matplotlib figure object.
     """
 
     if collection_ids is None:
@@ -93,8 +96,10 @@ def utci_comparison_diurnal(
             # Get fille color attributes
             utci_labels.append(category)
             utci_handles.append(mpatches.Patch(color=cc, label=category))
-        ax.grid(b=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.1)
-        ax.grid(b=True, which="minor", axis="x", c="k", ls=":", lw=1, alpha=0.1)
+        ax.grid(
+            visible=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.1
+        )
+        ax.grid(visible=True, which="minor", axis="x", c="k", ls=":", lw=1, alpha=0.1)
         if n in [0, 3, 6, 9]:
             ax.set_ylabel("UTCI (C)")
         if n in [9, 10, 11]:

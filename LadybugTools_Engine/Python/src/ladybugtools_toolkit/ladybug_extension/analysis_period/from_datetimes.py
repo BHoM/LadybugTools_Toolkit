@@ -25,7 +25,8 @@ def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
 
     if len(analysis_period.datetimes) != len(datetimes):
         raise ValueError(
-            f"The number of datetimes ({len(datetimes)}) does not match the number of datetimes in the AnalysisPeriod ({len(analysis_period.datetimes)})."
+            f"The number of datetimes ({len(datetimes)}) does not match the number of datetimes in "
+            "the AnalysisPeriod ({len(analysis_period.datetimes)}), which probably means your "
+            "datetime-list has an irregular time-step and cannot be coerced into an AnalysisPeriod."
         )
-
     return analysis_period

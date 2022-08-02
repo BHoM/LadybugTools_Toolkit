@@ -13,17 +13,24 @@ def create_shade_zone(
     shade_height: float = 3,
     shade_thickness: float = 0.2,
 ) -> Room:
-    """Create a shade zone with boundary conditions and face identifiers named per external comfort workflow.
+    """Create a shade zone with boundary conditions and face identifiers named per external
+        comfort workflow.
 
     Args:
-        material (_EnergyMaterialOpaqueBase): A surface material for the shade zones faces.
-        width (float, optional): The width (x-dimension) of the shaded zone. Defaults to 10m.
-        depth (float, optional): The depth (y-dimension) of the shaded zone. Defaults to 10m.
-        shade_height (float, optional): The height of the shade. Default is 3m.
-        shade_thickness (float, optional): The thickness of the shade. Default is 0.2m.
+        material (_EnergyMaterialOpaqueBase):
+            A surface material for the shade zones faces.
+        width (float, optional):
+            The width (x-dimension) of the shaded zone. Defaults to 10m.
+        depth (float, optional):
+            The depth (y-dimension) of the shaded zone. Defaults to 10m.
+        shade_height (float, optional):
+            The height of the shade. Default is 3m.
+        shade_thickness (float, optional):
+            The thickness of the shade. Default is 0.2m.
 
     Returns:
-        Room: A zone representing a massive shade above a person.
+        Room:
+            A zone representing a massive shade above a person.
     """
 
     shade_zone = Room.from_box(

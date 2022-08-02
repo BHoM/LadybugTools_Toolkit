@@ -10,6 +10,14 @@ from ladybug.epw import EPW
 
 
 class Encoder(json.JSONEncoder):
+    """A custom encoder for converting LadybugTools_Toolkit.external_comfort objects into
+        serialisable JSON.
+
+    Args:
+        o (_type_):
+            The object for conversion.
+    """
+
     def default(self, o):
 
         # Path encoding

@@ -1,7 +1,6 @@
 from typing import Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import numpy as np
 from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure

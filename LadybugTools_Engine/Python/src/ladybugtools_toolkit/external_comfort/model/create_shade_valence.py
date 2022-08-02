@@ -7,15 +7,20 @@ from ladybug_geometry.geometry3d import Point3D
 def create_shade_valence(
     width: float = 10, depth: float = 10, shade_height: float = 3
 ) -> List[Shade]:
-    """Create a massless shade around the location being assessed for a shaded external comfort condition.
+    """Create a massless shade around the location being assessed for a shaded external comfort
+        condition.
 
     Args:
-        width (float, optional): The width (x-dimension) of the shaded zone. Defaults to 10m.
-        depth (float, optional): The depth (y-dimension) of the shaded zone. Defaults to 10m.
-        shade_height (float, optional): The height of the shade. Default is 3m.
+        width (float, optional):
+            The width (x-dimension) of the shaded zone. Defaults to 10m.
+        depth (float, optional):
+            The depth (y-dimension) of the shaded zone. Defaults to 10m.
+        shade_height (float, optional):
+            The height of the shade. Default is 3m.
 
     Returns:
-        List[Shade]: A list of shading surfaces.
+        List[Shade]:
+            A list of shading surfaces.
     """
 
     shades = [

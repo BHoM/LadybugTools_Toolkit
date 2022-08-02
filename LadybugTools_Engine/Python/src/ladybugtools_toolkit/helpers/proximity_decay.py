@@ -10,15 +10,19 @@ def proximity_decay(
     """Calculate the "decayed" value based on proximity (up to a maximum distance).
 
     Args:
-        value (float): The value to be distributed.
-        distance_to_value (float): A distance at which to return the magnitude.
-        max_distance (float): The maximum distance to which magnitude is to be distributed.
-            Beyond this, the input value is 0.
-        decay_method (str, optional): A type of distribution (the shape of the distribution
-            profile). Defaults to "linear".
+        value (float):
+            The value to be distributed.
+        distance_to_value (float):
+            A distance at which to return the magnitude.
+        max_distance (float):
+            The maximum distance to which magnitude is to be distributed. Beyond this, the input
+            value is 0.
+        decay_method (str, optional):
+            A type of distribution (the shape of the distribution profile). Defaults to "linear".
 
     Returns:
-        float: The value at the given distance.
+        float:
+            The value at the given distance.
     """
 
     distance_to_value = np.interp(distance_to_value, [0, max_distance], [0, 1])

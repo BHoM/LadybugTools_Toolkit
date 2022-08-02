@@ -8,10 +8,12 @@ def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly humidity ratio for a given EPW.
 
     Args:
-        epw (EPW): An EPW object.
+        epw (EPW):
+            An EPW object.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of humidity ratios.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of humidity ratios.
     """
     return HourlyContinuousCollection.compute_function_aligned(
         humid_ratio_from_db_rh,

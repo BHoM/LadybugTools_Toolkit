@@ -12,9 +12,12 @@ def sky_exposure(shelters: List[Shelter]) -> float:
         mean 50% sky exposure).
 
     Args:
-        shelters (List[Shelter]): Shelters that could block the sun.
+        shelters (List[Shelter]):
+            Shelters that could block the sun.
 
-    Returns: The proportion of sky visible beneath shelters.
+    Returns:
+        float:
+            The proportion of sky visible beneath shelters.
     """
 
     if any_shelters_overlap(shelters):

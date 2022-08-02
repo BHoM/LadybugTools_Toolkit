@@ -12,10 +12,15 @@ def evaporative_cooling_effect_collection(
 
     Args:
         epw (EPW): A ladybug EPW object.
-        evaporative_cooling_effectiveness (float, optional): The proportion of difference betwen DBT and WBT by which to adjust DBT. Defaults to 0.3 which equates to 30% effective evaporative cooling, roughly that of Misting.
+        evaporative_cooling_effectiveness (float, optional):
+            The proportion of difference between DBT and WBT by which to adjust DBT.
+            Defaults to 0.3 which equates to 30% effective evaporative cooling, roughly that
+            of Misting.
 
     Returns:
-        List[HourlyContinuousCollection]: Adjusted dry-bulb temperature and relative humidity collections incorporating evaporative cooling effect.
+        List[HourlyContinuousCollection]:
+            Adjusted dry-bulb temperature and relative humidity collections incorporating
+            evaporative cooling effect.
     """
 
     if (evaporative_cooling_effectiveness > 1) or (

@@ -2,12 +2,15 @@ def cardinality(angle_from_north: float, directions: int = 16):
     """Returns the cardinal orientation of a given angle, where that angle is related to north at
         0 degrees.
     Args:
-        angle_from_north (float): The angle to north in degrees (+Ve is interpreted as clockwise
-            from north at 0.0 degrees).
-        directions (int): The number of cardinal directions into which angles shall be binned
-            (This value should be one of 4, 8, 16 or 32, and is centred about "north").
+        angle_from_north (float):
+            The angle to north in degrees (+Ve is interpreted as clockwise from north at 0.0
+            degrees).
+        directions (int):
+            The number of cardinal directions into which angles shall be binned (This value should
+            be one of 4, 8, 16 or 32, and is centred about "north").
     Returns:
-        int: The cardinal direction the angle represents.
+        int:
+            The cardinal direction the angle represents.
     """
 
     if angle_from_north > 360 or angle_from_north < 0:

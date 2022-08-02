@@ -1,10 +1,7 @@
 ﻿import colorsys
 from typing import Tuple, Union
 
-from matplotlib.colors import (
-    cnames,
-    to_rgb,
-)
+from matplotlib.colors import cnames, to_rgb
 
 
 def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]:
@@ -12,11 +9,14 @@ def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]
     Lightens the given color by multiplying (1-luminosity) by the given amount.
 
     Args:
-        color (str): A clolor-like string.
-        amount (float): The amount of lightening to apply.
+        color (str):
+            A color-like string.
+        amount (float):
+            The amount of lightening to apply.
 
     Returns:
-        Tuple[float]: An RGB value.
+        Tuple[float]:
+            An RGB value.
 
     Examples:
     >> lighten_color('g', 0.3)
@@ -25,7 +25,7 @@ def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]
     """
     try:
         c = cnames[color]
-    except:
+    except KeyError:
         c = color
     c = colorsys.rgb_to_hls(*to_rgb(c))
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])

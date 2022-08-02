@@ -8,22 +8,27 @@ def from_string(string: str) -> Header:
     """Convert a string into a Ladybug header object.
 
     Args:
-        string (str): A Ladybug header string.
+        string (str):
+            A Ladybug header string.
 
     Returns:
-        Header: A Ladybug header object."""
+        Header:
+            A Ladybug header object."""
 
-    try:
-        str_elements = string.split(" ")
-        _unit = str_elements[-1].replace("(", "").replace(")", "")
-        _data_type = " ".join(str_elements[:-1])
-    except AttributeError as exc:
+    str_elements = string.split(" ")
+
+    if (len(str_elements) < 2) or ("(" not in string) or (")" not in string):
         raise ValueError(
-            'The input series must have a name in the format "variable (unit)".'
-        ) from exc
-    try:
-        _data_type = TYPESDICT[_data_type.replace(" ", "")]()
-    except KeyError:
-        _data_type = GenericType(name=_data_type, unit=_unit)
+            "The string to be converted into a LB Header must be in the format 'variable (unit)'"
+        )
 
-    return Header(data_type=_data_type, unit=_unit, analysis_period=AnalysisPeriod())
+    str_elements = string.split(" ")
+    unit = str_elements[-1].replace("(", "").replace(")", "")
+    data_type = " ".join(str_elements[:-1])
+
+    try:
+        data_type = TYPESDICT[data_type.replace(" ", "")]()
+    except KeyError:
+        data_type = GenericType(name=data_type, unit=unit)
+
+    return Header(data_type=data_type, unit=unit, analysis_period=AnalysisPeriod())
