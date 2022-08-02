@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2022, the respective contributors. All rights reserved.
  *
@@ -20,39 +20,30 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Base.Attributes;
+
+using BH.oM.Base;
+using BH.oM.LadybugTools;
 using System.Collections.Generic;
-using System.IO;
 using System.ComponentModel;
 
-namespace BH.Engine.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public static partial class Compute
+    public class ExternalComfortShelter : IObject
     {
-        //[Description("Determine whether a spatial comfort post-process is possible.")]
-        //[Output("bool", "True if spatial comfort post-process is possible.")]
-        //private static bool SpatialComfortPossible(string directory)
-        //{
-        //    if (!ExternalComfortPossible())
-        //        return false;
+        [Description("Shelter porosity (0-1).")]
+        public virtual double Porosity { get; set; } = 0.0;
 
-        //    string annualIrradiancePath = System.IO.Path.Combine(directory, "annual_irradiance");
-        //    string skyViewPath = System.IO.Path.Combine(directory, "sky_view");
+        [Description("Shelter start azimuth.")]
+        public virtual double StartAzimuth { get; set; } = 0;
 
-        //    foreach (string path in new List<string>() {
-        //        annualIrradiancePath,
-        //        skyViewPath,
-        //    })
-        //    {
-        //        if (!Directory.Exists(path))
-        //        {
-        //            BH.Engine.Base.Compute.RecordError($"You must run a {new DirectoryInfo(path).Name} simulation in order to make Spatial Comfort post-processing possible.");
-        //            return false;
-        //        }
-        //    }
+        [Description("Shelter end azimuth.")]
+        public virtual double EndAzimuth { get; set; } = 0;
 
-        //    return true;
-        //}
+        [Description("Shelter start altitude.")]
+        public virtual double StartAltitude { get; set; } = 0;
+
+        [Description("Shelter end altitude.")]
+        public virtual double EndAltitude { get; set; } = 0;
     }
 }
 

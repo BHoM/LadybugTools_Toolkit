@@ -20,26 +20,41 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+
+using BH.oM.Base;
+using BH.oM.LadybugTools;
 using System.ComponentModel;
 
-namespace BH.oM.Ladybug
+namespace BH.oM.LadybugTools
 {
-    [Description("An external comfort material type to be assigned to either the ground or shade, for use in the Python \"external_comfort\" workflow.")]
-    public enum ExternalComfortMaterial
+    public class ExternalComfortMaterial : IObject
     {
-        Undefined,
-        AsphaltPavement,
-        ConcretePavement,
-        DryDust,
-        DrySand,
-        MetalSurface,
-        MetalSurfaceHighlyReflective,
-        MoistSoil,
-        Mud,
-        SolidRock,
-        WoodSiding,
-        Fabric,
-        Shrubs,
-        Travertine,
+        [Description("The name of this ExternalComfortMaterial.")]
+        public virtual string Identifier { get; set; } = string.Empty;
+
+        [Description("The roughness of the material.")]
+        public virtual Roughness Roughness { get; set; } = Roughness.Undefined;
+
+        [Description("Thickness of material (m).")]
+        public virtual double Thickness { get; set; } = double.NaN;
+
+        [Description("Conductivity of material (W/mK).")]
+        public virtual double Conductivity { get; set; } = double.NaN;
+
+        [Description("Density of material (kg/m3).")]
+        public virtual double Density { get; set; } = double.NaN;
+
+        [Description("Specific heat capacity of material (J/kgK).")]
+        public virtual double SpecificHeat { get; set; } = double.NaN;
+
+        [Description("Thermal absorptivity (emissivity) of material (0-1).")]
+        public virtual double ThermalAbsorptance { get; set; } = double.NaN;
+
+        [Description("Solar absorptivity of material (0-1).")]
+        public virtual double SolarAbsorptance { get; set; } = double.NaN;
+
+        [Description("Light absorptivity (1 - albedo) of material (0-1).")]
+        public virtual double VisibleAbsorptance { get; set; } = double.NaN;
     }
 }
+

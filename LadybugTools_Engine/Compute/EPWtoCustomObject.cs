@@ -33,43 +33,29 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        //[Description("Convert an EPW file into a time-indexed CSV version.")]
-        //[Input("epwFile", "An EPW file.")]
-        //[Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
-        //public static CustomObject EPWtoCustomObject(string epwFile)
-        //{
-        //    if (string.IsNullOrEmpty(epwFile))
-        //    {
-        //        Base.Compute.RecordError($"epwFile input is either null or has 0 length.");
-        //        return null;
-        //    }
+        [Description("Convert an EPW file into a time-indexed CSV version.")]
+        [Input("epwFile", "An EPW file.")]
+        [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
+        public static CustomObject EPWtoCustomObject(string epwFile)
+        {
+            BH.oM.Python.PythonEnvironment env = Compute.LadybugToolsToolkitPythonEnvironment(true);
 
-        //    if (!File.Exists(epwFile))
-        //    {
-        //        Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {epwFile}");
-        //        return null;
-        //    }
+            string pythonScript = string.Join("\n", new List<string>()
+            {
+                "import json",
+                "from pathlib import Path",
+                "from ladybug.epw import EPW",
+                "",
+                $"epw_path = Path(r'{epwFile}')",
+                "try:",
+                "    print(json.dumps(EPW(epw_path.as_posix()).to_dict()))",
+                "except Exception as exc:",
+                "    print(exc)",
+            });
 
-        //    PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
-        //    if (!pythonEnvironment.IsInstalled())
-        //    {
-        //        BH.Engine.Base.Compute.RecordError("Install the LadybugTools_Toolkit Python environment before running this method (using LadybugTools_Toolkit.Compute.InstallPythonEnvironment).");
-        //        return null;
-        //    }
+            string output = env.RunCommandPythonString(pythonScript).Trim();
 
-        //    string pythonScript = string.Join("\n", new List<string>()
-        //    {
-        //        "import sys",
-        //        $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-        //        "from ladybug.epw import EPW",
-        //        "import json",
-        //        "",
-        //        $"print(json.dumps(EPW(r'{epwFile}').to_dict()))",
-        //    });
-
-        //    string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
-
-        //    return Serialiser.Convert.FromJson(output) as CustomObject;
-        //}
+            return Serialiser.Convert.FromJson(output) as CustomObject;
+        }
     }
 }

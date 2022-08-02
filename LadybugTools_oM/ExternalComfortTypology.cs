@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2022, the respective contributors. All rights reserved.
  *
@@ -20,40 +20,24 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.Engine.Python;
-using BH.oM.Base.Attributes;
 
-using System;
+using BH.oM.Base;
+using BH.oM.LadybugTools;
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace BH.Engine.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public static partial class Compute
+    public class ExternalComfortTypology : IObject
     {
-        [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
-        [Input("epwFile", "An EPW file.")]
-        [Output("csv", "The generated CSV file.")]
-        public static string EPWtoCSV(string epwFile)
-        {
-            BH.oM.Python.PythonEnvironment env = Compute.LadybugToolsToolkitPythonEnvironment(true);
+        [Description("The name of this ExternalComfortTypology.")]
+        public virtual string Name { get; set; } = string.Empty;
 
-            string pythonScript = String.Join("\n", new List<string>()
-            {
-                "from pathlib import Path",
-                "from ladybug.epw import EPW",
-                "from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe",
-                "",
-                $"epw_path = Path(r'{epwFile}')",
-                "csv_path = epw_path.with_suffix('.csv')",
-                "try:",
-                "    to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
-                "    print(csv_path)",
-                "except Exception as exc:",
-                "    print(exc)",
-            });
+        [Description("The shelters for this ExternalComfortTypology.")]
+        public virtual List<ExternalComfortShelter> Shelters { get; set; } = new List<ExternalComfortShelter>();
 
-            return env.RunCommandPythonString(pythonScript).Trim();
-        }
+        [Description("The proportion of evaporative cooling to add to this ExternalComfortTYpology.")]
+        public virtual double EvaporativeCoolingEffectiveness { get; set; } = 0;
     }
 }
+

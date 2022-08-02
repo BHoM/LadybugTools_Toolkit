@@ -20,39 +20,16 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using System.ComponentModel;
-
-namespace BH.oM.Ladybug
-{
-    [Description("An external comfort typology to be simulated using the Python \"external_comfort\" workflow.")]
-    public enum ExternalComfortTypology
+namespace BH.oM.LadybugTools
+{ 
+    public enum Roughness
     {
         Undefined,
-        Openfield,
-        Enclosed,
-        PorousEnclosure,
-        SkyShelter,
-        FrittedSkyShelter,
-        NearWater,
-        Misting,
-        PDEC,
-        NorthShelter,
-        NortheastShelter,
-        EastShelter,
-        SoutheastShelter,
-        SouthShelter,
-        SouthwestShelter,
-        WestShelter,
-        NorthwestShelter,
-        NorthShelterWithCanopy,
-        NortheastShelterWithCanopy,
-        EastShelterWithCanopy,
-        SoutheastShelterWithCanopy,
-        SouthShelterWithCanopy,
-        SouthwestShelterWithCanopy,
-        WestShelterWithCanopy,
-        NorthwestShelterWithCanopy,
-        EastWestShelter,
-        EastWestShelterWithCanopy,
-    }
+        VeryRough,
+        Rough,
+        MediumRough,
+        MediumSmooth,
+        Smooth,
+        VerySmooth
+    };
 }

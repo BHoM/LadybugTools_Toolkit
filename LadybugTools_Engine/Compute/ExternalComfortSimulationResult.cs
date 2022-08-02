@@ -21,39 +21,55 @@
  */
 
 using BH.Engine.Python;
+using BH.oM.Python;
 using BH.oM.Base.Attributes;
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using BH.oM.Base;
+using System.IO;
+using BH.oM.LadybugTools;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
+        [Description("Run an External Comfort simulation and return results.")]
+        [Input("identifier", "An identifier used to make these results unique. If the materials and epwFile given match a results set with the same identifier, then those reuslts will be returned instead of running the simulation again.")]
         [Input("epwFile", "An EPW file.")]
-        [Output("csv", "The generated CSV file.")]
-        public static string EPWtoCSV(string epwFile)
+        [Input("groundMaterial", "A pre-defined ground material.")]
+        [Input("shadeMaterial", "A pre-defined shade material.")]
+        [Output("externalComfortResult", "An external comfort result object containing simulation results.")]
+        public static CustomObject ExternalComfortSimulationResult(string identifier, string epwFile, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial)
         {
             BH.oM.Python.PythonEnvironment env = Compute.LadybugToolsToolkitPythonEnvironment(true);
 
-            string pythonScript = String.Join("\n", new List<string>()
+            string pythonScript = string.Join("\n", new List<string>()
             {
                 "from pathlib import Path",
                 "from ladybug.epw import EPW",
-                "from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe",
+                "from ladybugtools_toolkit.external_comfort import SimulationResult",
+                "from ladybugtools_toolkit.external_comfort.encoder.encoder import Encoder",
+                "from honeybee_energy.material.opaque import EnergyMaterial",
+                "import json",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
-                "csv_path = epw_path.with_suffix('.csv')",
+                "epw = EPW(epw_path.as_posix())",
+                $"gnd_mat = {groundMaterial.PythonString()}",
+                $"shd_mat = {shadeMaterial.PythonString()}",
+                "",
+                $"simulation_result = SimulationResult(epw, gnd_mat, shd_mat, identifier='{identifier}')",
                 "try:",
-                "    to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
-                "    print(csv_path)",
+                "    print(json.dumps(simulation_result.to_dict(), cls=Encoder))",
                 "except Exception as exc:",
                 "    print(exc)",
             });
 
-            return env.RunCommandPythonString(pythonScript).Trim();
+            string output = env.RunCommandPythonString(pythonScript).Trim().Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
+
+            return Serialiser.Convert.FromJson(output) as CustomObject;
         }
     }
 }
+
