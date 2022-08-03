@@ -26,9 +26,9 @@ def sunpath(
     cmap: str = None,
     show_title: bool = True,
     sun_size: float = 0.2,
+    show_legend: bool = True,
 ) -> Figure:
     """Plot a sun-path for the given EPW and analysis period.
-
     Args:
         epw (EPW):
             An EPW object.
@@ -40,9 +40,10 @@ def sunpath(
             The colormap to apply to the aligned data_collection. Defaults to None.
         show_title (bool, optional):
             Set to True to include a title in the plot. Defaults to True.
+        show_legend (bool, optional):
+            Set to True to include a legend in the plot if data_collection passed. Defaults to True.
         sun_size (float, optional):
             The size of each sun in the plot. Defaults to 0.2.
-
     Returns:
         Figure:
             A matplotlib Figure object.
@@ -99,6 +100,7 @@ def sunpath(
     ax.set_xticklabels(Compass.MAJOR_TEXT, minor=False, **{"fontsize": "medium"})
     ax.set_xticks(np.radians(Compass.MINOR_AZIMUTHS), minor=True)
     ax.set_xticklabels(Compass.MINOR_TEXT, minor=True, **{"fontsize": "x-small"})
+    ax.set_yticklabels([])
 
     # Add solstice and equinox lines
     day_lines = {
@@ -169,16 +171,21 @@ def sunpath(
         )
 
     if data_collection is not None:
-        cb = ax.figure.colorbar(
-            points,
-            pad=0.09,
-            shrink=0.8,
-            aspect=30,
-            label=f"{series.name}",
-        )
-        cb.outline.set_visible(False)
-
-    ax.set_yticklabels([])
+        if show_legend:
+            cb = ax.figure.colorbar(
+                points,
+                pad=0.09,
+                shrink=0.8,
+                aspect=30,
+                label=f"{series.name}",
+            )
+            cb.outline.set_visible(False)
+        else:
+            plt.axis("off")
+        #     ax.set_xticks([])
+        #     ax.set_yticks([])
+        #     # ax.set_zticks([])
+        #     ax.grid(False, which="both", ls="--", alpha=0.5)
 
     # Add title
     if show_title:

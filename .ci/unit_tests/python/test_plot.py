@@ -59,6 +59,7 @@ def test_spatial_heatmap():
     zz = (np.sin(xx) * np.cos(yy)).flatten()
     tri = create_triangulation(xx.flatten(), yy.flatten())
     assert isinstance(spatial_heatmap([tri], [zz], contours=[0]), plt.Figure)
+    plt.close("all")
 
 
 def test_sunpath():
@@ -73,18 +74,21 @@ def test_sunpath():
         ),
         plt.Figure,
     )
+    plt.close("all")
 
 
 def test_timeseries_diurnal():
     assert isinstance(
         timeseries_diurnal(to_series(EPW_OBJ.dry_bulb_temperature)), plt.Figure
     )
+    plt.close("all")
 
 
 def test_timeseries_heatmap():
     assert isinstance(
         timeseries_heatmap(to_series(EPW_OBJ.dry_bulb_temperature)), plt.Figure
     )
+    plt.close("all")
 
 
 def test_utci_comparison_diurnal():
@@ -92,6 +96,7 @@ def test_utci_comparison_diurnal():
         utci_comparison_diurnal([LB_UTCI_COLLECTION - 12, LB_UTCI_COLLECTION]),
         plt.Figure,
     )
+    plt.close("all")
 
 
 def test_utci_day_comfort_metrics():
@@ -109,34 +114,41 @@ def test_utci_day_comfort_metrics():
         ),
         plt.Figure,
     )
+    plt.close("all")
 
 
 def test_utci_distance_to_comfortable():
     assert isinstance(utci_distance_to_comfortable(LB_UTCI_COLLECTION), plt.Figure)
+    plt.close("all")
 
 
 def test_utci_heatmap_difference():
     assert isinstance(
         utci_heatmap_difference(LB_UTCI_COLLECTION, LB_UTCI_COLLECTION - 3), plt.Figure
     )
+    plt.close("all")
 
 
 def test_utci_heatmap_histogram():
     assert isinstance(utci_heatmap_histogram(LB_UTCI_COLLECTION), plt.Figure)
+    plt.close("all")
 
 
 def test_utci_heatmap():
     assert isinstance(utci_heatmap(LB_UTCI_COLLECTION), plt.Figure)
+    plt.close("all")
 
 
 def test_utci_journey():
     assert isinstance(
         utci_journey([10, 30, 15, 0], ["A", "B", "C", "D"], curve=True), plt.Figure
     )
+    plt.close("all")
 
 
 def test_week_profile():
     assert isinstance(week_profile(to_series(EPW_OBJ.dry_bulb_temperature)), plt.Figure)
+    plt.close("all")
 
 
 def test_windrose():
@@ -148,3 +160,4 @@ def test_windrose():
             ),
             plt.Figure,
         )
+    plt.close("all")

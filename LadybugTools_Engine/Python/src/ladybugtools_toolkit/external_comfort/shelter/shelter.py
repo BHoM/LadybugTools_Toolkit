@@ -93,9 +93,9 @@ class Shelter:
             Dict: The dict representation of this object.
         """
         return {
-            "porosity": self.porosity,
-            "altitude_range": self.altitude_range,
-            "azimuth_range": self.azimuth_range,
+            "porosity": float(self.porosity),
+            "altitude_range": [float(i) for i in self.altitude_range],
+            "azimuth_range": [float(i) for i in self.azimuth_range],
         }
 
     def polygons(self) -> List[Polygon]:

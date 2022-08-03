@@ -33,7 +33,7 @@ class Typology:
         name (str): The name of the external comfort typology.
         shelters (List[Shelter], optional): A list of shelters modifying exposure to the
             elements. Defaults to None.
-        evaporative_cooling_effect (float, optional): An amount of evaporative cooling to add to
+        evaporative_cooling_effectiveness (float, optional): An amount of evaporative cooling to add to
             results calculated by this typology. Defaults to 0.
 
     Returns:
@@ -49,7 +49,7 @@ class Typology:
 
         self.name = name
         self.shelters = shelters
-        self.evaporative_cooling_effect = evaporative_cooling_effectiveness
+        self.evaporative_cooling_effectiveness = evaporative_cooling_effectiveness
 
         if any_shelters_overlap(shelters):
             raise ValueError("Shelters overlap")
@@ -73,7 +73,9 @@ class Typology:
         d = {
             "name": self.name,
             "shelters": self.shelters,
-            "evaporative_cooling_effect": self.evaporative_cooling_effect,
+            "evaporative_cooling_effectiveness": float(
+                self.evaporative_cooling_effectiveness,
+            ),
         }
         return d
 
@@ -97,7 +99,7 @@ class Typology:
                 cooling effects.
         """
         return evaporative_cooling_effect_collection(
-            epw, self.evaporative_cooling_effect
+            epw, self.evaporative_cooling_effectiveness
         )[0]
 
     def relative_humidity(self, epw: EPW) -> HourlyContinuousCollection:
@@ -112,7 +114,7 @@ class Typology:
                 cooling effects.
         """
         return evaporative_cooling_effect_collection(
-            epw, self.evaporative_cooling_effect
+            epw, self.evaporative_cooling_effectiveness
         )[1]
 
     def wind_speed(self, epw: EPW) -> HourlyContinuousCollection:

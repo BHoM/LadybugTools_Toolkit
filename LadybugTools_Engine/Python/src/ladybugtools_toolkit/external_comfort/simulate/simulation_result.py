@@ -24,7 +24,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe
 
 
 class SimulationResult:
-    """An object containing akll the results of a mean radiant temperature simulation.
+    """An object containing all the results of a mean radiant temperature simulation.
 
     Args:
         epw (EPW): An EPW object.
@@ -52,7 +52,7 @@ class SimulationResult:
 
         # create simulation model and obtain identifier property
         self.model = create_model(ground_material, shade_material, identifier)
-        self.identifer = self.model.identifier
+        self.identifier = self.model.identifier
 
         # run surface temperature and radiation simulations (or load results if they already exist)
         solar_radiation_results = solar_radiation(self.model, epw)
@@ -120,7 +120,7 @@ class SimulationResult:
         ).mean_radiant_temperature
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.identifer})"
+        return f"{self.__class__.__name__}({self.identifier})"
 
     def to_dict(self) -> Dict[str, HourlyContinuousCollection]:
         """Return this object as a dictionary
