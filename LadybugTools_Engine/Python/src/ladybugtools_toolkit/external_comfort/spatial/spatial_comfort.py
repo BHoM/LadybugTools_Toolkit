@@ -7,59 +7,73 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 from cached_property import cached_property
+from honeybee.model import Model
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybugtools_toolkit.external_comfort.simulate.simulation_result import \
-    SimulationResult
+from ladybug_geometry.geometry3d import Point3D
+from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
+    SimulationResult,
+)
 from ladybugtools_toolkit.external_comfort.spatial.load.dbt_epw import dbt_epw
-from ladybugtools_toolkit.external_comfort.spatial.load.dbt_evap import \
-    dbt_evap
-from ladybugtools_toolkit.external_comfort.spatial.load.evap_clg_magnitude import \
-    evap_clg_magnitude
-from ladybugtools_toolkit.external_comfort.spatial.load.mrt_interpolated import \
-    mrt_interpolated
+from ladybugtools_toolkit.external_comfort.spatial.load.dbt_evap import dbt_evap
+from ladybugtools_toolkit.external_comfort.spatial.load.evap_clg_magnitude import (
+    evap_clg_magnitude,
+)
+from ladybugtools_toolkit.external_comfort.spatial.load.mrt_interpolated import (
+    mrt_interpolated,
+)
 from ladybugtools_toolkit.external_comfort.spatial.load.points import points
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_diffuse import \
-    rad_diffuse
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_direct import \
-    rad_direct
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_total import \
-    rad_total
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_diffuse import rad_diffuse
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_direct import rad_direct
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_total import rad_total
 from ladybugtools_toolkit.external_comfort.spatial.load.rh_epw import rh_epw
 from ladybugtools_toolkit.external_comfort.spatial.load.rh_evap import rh_evap
-from ladybugtools_toolkit.external_comfort.spatial.load.sky_view import \
-    sky_view
-from ladybugtools_toolkit.external_comfort.spatial.load.utci_calculated import \
-    utci_calculated
-from ladybugtools_toolkit.external_comfort.spatial.load.utci_interpolated import \
-    utci_interpolated
+from ladybugtools_toolkit.external_comfort.spatial.load.sky_view import sky_view
+from ladybugtools_toolkit.external_comfort.spatial.load.utci_calculated import (
+    utci_calculated,
+)
+from ladybugtools_toolkit.external_comfort.spatial.load.utci_interpolated import (
+    utci_interpolated,
+)
 from ladybugtools_toolkit.external_comfort.spatial.load.wd_epw import wd_epw
 from ladybugtools_toolkit.external_comfort.spatial.load.ws_cfd import ws_cfd
 from ladybugtools_toolkit.external_comfort.spatial.load.ws_epw import ws_epw
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import \
-    SpatialMetric
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_boundarynorm import \
-    spatial_metric_boundarynorm
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_colormap import \
-    spatial_metric_colormap
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_levels import \
-    spatial_metric_levels
-from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort_possible import \
-    spatial_comfort_possible
-from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import \
-    utci
-from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import \
-    describe as describe_analysis_period
-from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import \
-    from_series
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
+    SpatialMetric,
+)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_boundarynorm import (
+    spatial_metric_boundarynorm,
+)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_colormap import (
+    spatial_metric_colormap,
+)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_levels import (
+    spatial_metric_levels,
+)
+from ladybugtools_toolkit.external_comfort.spatial.sky_view_pov import sky_view_pov
+from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort_possible import (
+    spatial_comfort_possible,
+)
+from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
+from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
+    describe as describe_analysis_period,
+)
+from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
+    describe as describe_ap,
+)
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
+    from_series,
+)
+from ladybugtools_toolkit.ladybug_extension.location.to_string import (
+    to_string as describe_loc,
+)
 from ladybugtools_toolkit.plot.colormap_sequential import colormap_sequential
 from ladybugtools_toolkit.plot.create_triangulation import create_triangulation
 from ladybugtools_toolkit.plot.spatial_heatmap import spatial_heatmap
-from ladybugtools_toolkit.plot.utci_distance_to_comfortable import \
-    utci_distance_to_comfortable
-from ladybugtools_toolkit.plot.utci_heatmap_difference import \
-    utci_heatmap_difference
-from ladybugtools_toolkit.plot.utci_heatmap_histogram import \
-    utci_heatmap_histogram
+from ladybugtools_toolkit.plot.utci_distance_to_comfortable import (
+    utci_distance_to_comfortable,
+)
+from ladybugtools_toolkit.plot.utci_heatmap_difference import utci_heatmap_difference
+from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histogram
 from matplotlib import pyplot as plt
 
 PLOT_DPI = 300
@@ -454,7 +468,7 @@ class SpatialComfort:
             ylims=[self._points_y.min(), self._points_y.max()],
             colorbar_label=metric.value,
             title=f"{calendar.month_abbr[month]} {hour:02d}:00",
-            contours=contours
+            contours=contours,
         )
 
         fig.savefig(save_path, dpi=PLOT_DPI, bbox_inches="tight", transparent=True)
@@ -508,6 +522,35 @@ class SpatialComfort:
             )
         plt.tight_layout()
         return fig
+
+    def plot_sky_view_pov(
+        self,
+        point_index: int,
+        point_identifier: str,
+        analysis_period: AnalysisPeriod = AnalysisPeriod(),
+        show_sunpath: bool = True,
+        show_skymatrix: bool = True,
+    ) -> Path:
+        img = sky_view_pov(
+            model=Model.from_hbjson(
+                list(self.spatial_simulation_directory.glob("**/*.hbjson"))[0]
+            ),
+            sensor=Point3D.from_array(
+                self.points.iloc[point_index].droplevel(0)[["x", "y", "z"]].values
+            ),
+            epw=self.simulation_result.epw,
+            analysis_period=AnalysisPeriod(timestep=5),
+            cmap=None,
+            norm=None,
+            data_collection=None,
+            density=4,
+            show_sunpath=show_sunpath,
+            show_skymatrix=show_skymatrix,
+            title=f"{describe_loc(self.simulation_result.epw.location)}\n{self.spatial_simulation_directory.stem}\n{describe_ap(analysis_period)}\n{point_identifier}",
+        )
+        save_path = self._plot_directory / f"{point_identifier}_skyview.png"
+        img.save(save_path, dpi=(500, 500))
+        return save_path
 
     def summarise_point(
         self,
@@ -602,6 +645,9 @@ class SpatialComfort:
             transparent=True,
             bbox_inches="tight",
         )
+
+        # create pt location sky view
+        self.plot_sky_view_pov(point_index, point_identifier)
 
         plt.close("all")
 
