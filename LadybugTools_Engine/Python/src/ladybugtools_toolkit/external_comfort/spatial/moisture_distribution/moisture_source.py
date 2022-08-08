@@ -192,10 +192,10 @@ class MoistureSource:
         if simulation_directory is not None:
             output_dir = simulation_directory / "moisture"
             if (output_dir / f"{self.pathsafe_id}_matrix.h5").exists():
-                print(f"- Loading moisture data for {self.identifier}")
+                print(
+                    f"[{simulation_directory.stem}] - Loading moisture effectiveness data for {self.identifier}"
+                )
                 return pd.read_hdf(output_dir / f"{self.pathsafe_id}_matrix.h5", "df")
-
-        print(f"- Calculating moisture data for {self.identifier}")
 
         # get point distances
         pt_distances = self.point_distances(spatial_points)
@@ -214,7 +214,9 @@ class MoistureSource:
         # for each time period in the year construct the resultant moisture matrix
         moisture_matrix = []
         for n, (ws, wd) in enumerate(list(zip(*[epw.wind_speed, epw.wind_direction]))):
-            print(f"- [{n/8760:03.2%}] Calculating {self.identifier} moisture effects")
+            print(
+                f"[{simulation_directory.stem}] - Calculating moisture effectiveness data for {self.identifier} ({n/8760:03.2%})"
+            )
             if n not in self.schedule:
                 moisture_matrix.append(np.zeros_like(pt_distances[0]))
             else:

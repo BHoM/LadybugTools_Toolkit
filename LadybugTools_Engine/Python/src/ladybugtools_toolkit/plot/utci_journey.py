@@ -1,8 +1,9 @@
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from ladybugtools_toolkit.helpers.rolling_window import rolling_window
 from ladybugtools_toolkit.plot.colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 from ladybugtools_toolkit.plot.lighten_color import lighten_color
 from matplotlib.colors import rgb2hex
@@ -57,31 +58,13 @@ def utci_journey(
     # instantiate figure
     fig, ax = plt.subplots(figsize=(10, 2.5))
 
-    def _rolling_window(array: List[Any], window: int):
-        """Throwaway function here to roll a window along a list.
-
-        Args:
-            array (List[Any]):
-                A 1D list of some kind.
-            window (int):
-                The size of the window to apply to the list.
-
-        Returns:
-            List[List[Any]]:
-                The resulting, "windowed" list.
-        """
-        a: np.ndarray = np.array(array)
-        shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-        strides = a.strides + (a.strides[-1],)
-        return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
-
     # Add UTCI background colors to the canvas
     background_colors = np.array(
         [rgb2hex(UTCI_COLORMAP.get_under())]
         + UTCI_COLORMAP.colors
         + [rgb2hex(UTCI_COLORMAP.get_over())]
     )
-    background_ranges = _rolling_window(np.array([-100] + UTCI_LEVELS + [100]), 2)
+    background_ranges = rolling_window(np.array([-100] + UTCI_LEVELS + [100]), 2)
     for bg_color, (bg_start, bg_end), label in list(
         zip(*[background_colors, background_ranges, UTCI_LABELS])
     ):

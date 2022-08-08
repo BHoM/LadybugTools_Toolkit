@@ -37,9 +37,9 @@ def rh_epw(
     rh_path = spatial_metric_filepath(simulation_directory, metric)
 
     if rh_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(rh_path, "df")
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     spatial_points = points(simulation_directory)
     n_pts = len(spatial_points.index)

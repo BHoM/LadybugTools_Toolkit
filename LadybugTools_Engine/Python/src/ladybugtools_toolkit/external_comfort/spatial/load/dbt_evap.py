@@ -32,8 +32,8 @@ def dbt_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
     dbt_matrix_path = spatial_metric_filepath(simulation_directory, metric)
 
     if dbt_matrix_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(dbt_matrix_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
     return dbt_rh_evap(simulation_directory, epw)[0]

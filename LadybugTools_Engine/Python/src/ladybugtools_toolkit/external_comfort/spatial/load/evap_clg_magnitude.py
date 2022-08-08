@@ -34,10 +34,10 @@ def evap_clg_magnitude(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     evap_clg_path = spatial_metric_filepath(simulation_directory, metric)
 
     if evap_clg_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(evap_clg_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     # create an index to attribute calculated values
     idx = to_series(epw.dry_bulb_temperature).index

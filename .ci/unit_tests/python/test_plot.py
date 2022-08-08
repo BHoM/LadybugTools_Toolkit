@@ -5,10 +5,14 @@ import numpy as np
 import pytest
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug_comfort.collection.utci import UTCI
+from ladybug_geometry.geometry3d import Point3D
+from ladybugtools_toolkit.external_comfort.model.create_model import create_model
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from ladybugtools_toolkit.plot.colormap_sequential import colormap_sequential
 from ladybugtools_toolkit.plot.create_triangulation import create_triangulation
+from ladybugtools_toolkit.plot.fisheye_sky import fisheye_sky
 from ladybugtools_toolkit.plot.lighten_color import lighten_color
+from ladybugtools_toolkit.plot.skymatrix import skymatrix
 from ladybugtools_toolkit.plot.spatial_heatmap import spatial_heatmap
 from ladybugtools_toolkit.plot.sunpath import sunpath
 from ladybugtools_toolkit.plot.timeseries_diurnal import timeseries_diurnal
@@ -24,8 +28,9 @@ from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histog
 from ladybugtools_toolkit.plot.utci_journey import utci_journey
 from ladybugtools_toolkit.plot.week_profile import week_profile
 from ladybugtools_toolkit.plot.windrose import windrose
+from PIL.Image import Image
 
-from . import EPW_OBJ
+from . import EPW_OBJ, GROUND_MATERIAL
 
 LB_UTCI_COLLECTION = UTCI(
     EPW_OBJ.dry_bulb_temperature,
@@ -160,4 +165,16 @@ def test_windrose():
             ),
             plt.Figure,
         )
+    plt.close("all")
+
+
+def test_fisheye_sky():
+    model = create_model(GROUND_MATERIAL, GROUND_MATERIAL, "pytest")
+    img = fisheye_sky(model, Point3D(0, 0, 1.2))
+    assert isinstance(img, Image)
+    img.close()
+
+
+def test_skymatrix():
+    assert isinstance(skymatrix(EPW_OBJ), plt.Figure)
     plt.close("all")

@@ -114,6 +114,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compute\GEMtoHBJSON.cs" />
+    <Compile Include="Compute\HBJSONtoGEM.cs" />
     <Compile Include="Compute\ExternalComfort.cs" />
     <Compile Include="Compute\ExternalComfortSimulationResult.cs" />
     <Compile Include="Compute\LadybugToolsToolkitPythonEnvironment.cs" />
@@ -328,7 +330,6 @@
   </Target>
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetDir)$(TargetFileName)" "C:\\ProgramData\\BHoM\\Assemblies" /Y
-xcopy "$(TargetDir)Python.Runtime.dll"  "C:\\ProgramData\\BHoM\\Assemblies" /Y
 
 :: create infrastructure necessary to support Python environments
 if not exist "C:\ProgramData\BHoM\Extensions\PythonEnvironments" mkdir "C:\ProgramData\BHoM\Extensions\PythonEnvironments"

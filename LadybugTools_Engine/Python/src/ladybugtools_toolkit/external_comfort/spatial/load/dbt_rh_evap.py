@@ -51,7 +51,10 @@ def dbt_rh_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
     dbt_matrix = []
     rh_matrix = []
     for n, (dt, row) in enumerate(moisture_matrix.iterrows()):
-        print(f"- Calculating evaporatively cooled DBT/RH [{n / 8760:0.1%}]", end="\r")
+        print(
+            f"[{simulation_directory.name}] - Calculating evaporatively cooled DBT/RH ({n / 8760:0.1%})",
+            end="\r",
+        )
         dbt_base = epw.dry_bulb_temperature[n]
         rh_base = epw.relative_humidity[n]
         atm_base = epw.atmospheric_station_pressure[n]

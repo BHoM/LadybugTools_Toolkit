@@ -1,19 +1,16 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from ladybug.epw import EPW
 from ladybugtools_toolkit.external_comfort.spatial.cfd.spatial_wind_speed import (
     spatial_wind_speed,
 )
-from ladybugtools_toolkit.external_comfort.spatial.load.points import points
 from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
     SpatialMetric,
 )
 from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
     spatial_metric_filepath,
 )
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
 def ws_cfd(
@@ -39,10 +36,10 @@ def ws_cfd(
     ws_path = spatial_metric_filepath(simulation_directory, metric)
 
     if ws_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(ws_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     ws_df = spatial_wind_speed(simulation_directory, epw)
 

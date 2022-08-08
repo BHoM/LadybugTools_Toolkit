@@ -4,12 +4,15 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import \
-    SpatialMetric
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import \
-    spatial_metric_filepath
-from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import \
-    unshaded_shaded_interpolation
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
+    SpatialMetric,
+)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
+    spatial_metric_filepath,
+)
+from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import (
+    unshaded_shaded_interpolation,
+)
 
 
 def mrt_interpolated(
@@ -42,15 +45,13 @@ def mrt_interpolated(
             A dataframe containing spatial MRT values.
     """
     metric = SpatialMetric.MRT_INTERPOLATED
-    mrt_path = spatial_metric_filepath(
-        simulation_directory, metric
-    )
+    mrt_path = spatial_metric_filepath(simulation_directory, metric)
 
     if mrt_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(mrt_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
     mrt = unshaded_shaded_interpolation(
         unshaded_mean_radiant_temperature,
         shaded_mean_radiant_temperature,

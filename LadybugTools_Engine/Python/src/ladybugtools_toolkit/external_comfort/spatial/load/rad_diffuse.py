@@ -38,10 +38,10 @@ def rad_diffuse(
     rad_diffuse_path = spatial_metric_filepath(simulation_directory, metric)
 
     if rad_diffuse_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(rad_diffuse_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     if (total_irradiance is None) and (direct_irradiance is None):
         total_irradiance = rad_total(simulation_directory)

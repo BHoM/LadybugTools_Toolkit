@@ -27,10 +27,10 @@ def sky_view(simulation_directory: Path) -> pd.DataFrame:
     sky_view_path = spatial_metric_filepath(simulation_directory, metric)
 
     if sky_view_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(sky_view_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     res_files = list((simulation_directory / "sky_view" / "results").glob("*.res"))
     sky_view_df = load_res(res_files).clip(lower=0, upper=100)

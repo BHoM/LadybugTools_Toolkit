@@ -29,10 +29,10 @@ def rad_total(simulation_directory: Path) -> pd.DataFrame:
     rad_total_path = spatial_metric_filepath(simulation_directory, metric)
 
     if rad_total_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(rad_total_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     ill_files = list(
         (simulation_directory / "annual_irradiance" / "results" / "total").glob("*.ill")

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -49,7 +48,7 @@ def spatial_wind_speed(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     vals = []
     for n, (ws, wd) in enumerate(list(zip(*[epw.wind_speed, epw.wind_direction]))):
         print(
-            f"- Calculating spatial wind speed [{n/len(epw.wind_speed):04.1%}]",
+            f"[{simulation_directory.stem}] - Calculating spatial wind speed ({n/len(epw.wind_speed):04.1%})",
             end="\r",
         )
         vals.append(d[(ws, wd)])

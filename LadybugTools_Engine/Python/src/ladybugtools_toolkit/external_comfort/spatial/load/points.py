@@ -27,10 +27,10 @@ def points(simulation_directory: Path) -> pd.DataFrame:
     points_path = spatial_metric_filepath(simulation_directory, metric)
 
     if points_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(points_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
     points_files = list(
         (simulation_directory / "sky_view" / "model" / "grid").glob("*.pts")
     )

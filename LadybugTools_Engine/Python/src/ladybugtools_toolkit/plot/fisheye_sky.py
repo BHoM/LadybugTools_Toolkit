@@ -1,5 +1,5 @@
-﻿import cv2
-import numpy as np
+﻿import numpy as np
+from cv2 import IMREAD_ANYDEPTH, imread
 from honeybee.model import Model
 from honeybee_radiance.lightsource.sky import CertainIrradiance
 from honeybee_radiance.modifier.material import Plastic
@@ -60,7 +60,7 @@ def fisheye_sky(
 
     # load HDR image
     pth = result[0]
-    img = cv2.imread(pth, flags=cv2.IMREAD_ANYDEPTH)
+    img = imread(pth, flags=IMREAD_ANYDEPTH)
 
     # convert RGB values per pixel into single values per pixel
     normalised = np.interp(img, [img.min(), img.max()], [0, 255]).astype("uint8")

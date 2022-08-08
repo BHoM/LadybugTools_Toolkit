@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
@@ -18,9 +17,6 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import 
 )
 from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
     spatial_metric_filepath,
-)
-from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import (
-    unshaded_shaded_interpolation,
 )
 from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
 
@@ -59,10 +55,10 @@ def utci_calculated(
     utci_path = spatial_metric_filepath(simulation_directory, metric)
 
     if utci_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(utci_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     # check that moisture impacted RH/DBT is available, and use that if it is
     if spatial_metric_filepath(simulation_directory, SpatialMetric.DBT_EVAP).exists():

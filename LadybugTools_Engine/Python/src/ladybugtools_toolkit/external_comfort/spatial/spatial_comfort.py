@@ -57,9 +57,6 @@ from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
 from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
     describe as describe_analysis_period,
 )
-from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
-    describe as describe_ap,
-)
 from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
     from_series,
 )
@@ -546,7 +543,7 @@ class SpatialComfort:
             density=4,
             show_sunpath=show_sunpath,
             show_skymatrix=show_skymatrix,
-            title=f"{describe_loc(self.simulation_result.epw.location)}\n{self.spatial_simulation_directory.stem}\n{describe_ap(analysis_period)}\n{point_identifier}",
+            title=f"{describe_loc(self.simulation_result.epw.location)}\n{self.spatial_simulation_directory.stem}\n{describe_analysis_period(analysis_period)}\n{point_identifier}",
         )
         save_path = self._plot_directory / f"{point_identifier}_skyview.png"
         img.save(save_path, dpi=(500, 500))

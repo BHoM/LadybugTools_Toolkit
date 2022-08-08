@@ -37,10 +37,10 @@ def ws_epw(
     ws_path = spatial_metric_filepath(simulation_directory, metric)
 
     if ws_path.exists():
-        print(f"- Loading {metric.value} from {simulation_directory.name}")
+        print(f"[{simulation_directory.name}] - Loading {metric.value}")
         return pd.read_hdf(ws_path, "df")
 
-    print(f"- Generating {metric.value} for {simulation_directory.name}")
+    print(f"[{simulation_directory.name}] - Generating {metric.value}")
     spatial_points = points(simulation_directory)
     n_pts = len(spatial_points.index)
 
