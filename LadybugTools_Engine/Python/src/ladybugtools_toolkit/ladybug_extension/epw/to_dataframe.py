@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import warnings
 import pandas as pd
 from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import (
@@ -62,14 +65,17 @@ def to_dataframe(
     for prop in dir(epw):
         try:
             all_series.append(to_series(getattr(epw, prop)))
-        except (AttributeError, TypeError, ZeroDivisionError, ValueError):
-            pass
+        except (AttributeError, TypeError, ZeroDivisionError, ValueError) as exc:
+            pass #warnings.warn(str(exc))
 
-    for k, v in epw.monthly_ground_temperature.items():
-        hourly_collection = to_hourly(v)
-        hourly_series = to_series(hourly_collection)
-        hourly_series.name = f"{hourly_series.name} at {k}m"
-        all_series.append(hourly_series)
+    try:  
+        for k, v in epw.monthly_ground_temperature.items():
+            hourly_collection = to_hourly(v)
+            hourly_series = to_series(hourly_collection)
+            hourly_series.name = f"{hourly_series.name} at {k}m"
+            all_series.append(hourly_series)
+    except AttributeError as exc:
+        warnings.warn(str(exc))
 
     # Calculate additional solar properties
     sun_position = sun_position_collection(epw)
