@@ -8,15 +8,18 @@ def from_multiindex(multiindex: pd.MultiIndex) -> Header:
     """Convert a Pandas MultiIndex into a Ladybug header object.
 
     Args:
-        multiindex (pd.MultiIndex): A Pandas MultiIndex object.
+        multiindex (pd.MultiIndex):
+            A Pandas MultiIndex object.
 
     Returns:
-        Header: A Ladybug header object."""
+        Header:
+            A Ladybug header object."""
 
-    # ensure that the multiindex only contains a single "column"
+    # ensure that the multi-index only contains a single "column"
     if len(multiindex) > 1:
         raise ValueError(
-            'The multiindex passed contains more than one column and cannot be interpreted as a single "Header" object.'
+            "The multi-index passed contains more than one column and cannot be interpreted as a ",
+            'single "Header" object.',
         )
 
     # get the datatype and value

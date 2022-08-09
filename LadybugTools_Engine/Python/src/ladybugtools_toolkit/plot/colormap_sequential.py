@@ -1,11 +1,7 @@
 ﻿from typing import Tuple, Union
 
 import numpy as np
-from matplotlib.colors import (
-    LinearSegmentedColormap,
-    is_color_like,
-    rgb2hex,
-)
+from matplotlib.colors import LinearSegmentedColormap, is_color_like, rgb2hex
 
 
 def colormap_sequential(
@@ -15,10 +11,13 @@ def colormap_sequential(
     Create a sequential colormap from a list of input colors.
 
     Args:
-        colors (Union[str, float, int, Tuple]): A list of colors according to their hex-code, string name, character code or RGBA values.
+        colors (Union[str, float, int, Tuple]):
+            A list of colors according to their hex-code, string name, character code or
+            RGBA values.
 
     Returns:
-        LinearSegmentedColormap: A matplotlib colormap.
+        LinearSegmentedColormap:
+            A matplotlib colormap.
 
     Examples:
     >> colormap_sequential("green", "#F034A3", (0.5, 0.2, 0.8), "y")
@@ -35,7 +34,7 @@ def colormap_sequential(
         if is_color_like(c):
             try:
                 fixed_colors.append(rgb2hex(c))
-            except:
+            except ValueError:
                 fixed_colors.append(c)
         else:
             raise KeyError(f"{c} not recognised as a valid color string.")

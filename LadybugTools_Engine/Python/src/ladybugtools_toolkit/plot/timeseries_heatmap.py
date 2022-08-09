@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 
 def timeseries_heatmap(
     series: pd.Series,
-    cmap: Colormap = "viridis",
+    cmap: Union[Colormap, str] = "viridis",
     norm: BoundaryNorm = None,
     vlims: List[float] = None,
     title: str = None,
@@ -17,14 +17,20 @@ def timeseries_heatmap(
     """Plot a heatmap for a Pandas Series object.
 
     Args:
-        series (pd.Series): A time-indexed Pandas Series object.
-        cmap (Colormap, optional): The colormap to use in this heatmap. Defaults to "viridis".
-        norm (BoundaryNorm, optional): A matplotlib BoundaryNorm object describing value thresholds. Defaults to None.
-        vlims (List[float], optional): The limits to which values should be plotted (useful for comparing between different cases). Defaults to None.
-        title (str, optional): A title to place at the top of the plot. Defaults to None.
+        series (pd.Series):
+            A time-indexed Pandas Series object.
+        cmap (Union[Colormap, str], optional):
+            The colormap to use in this heatmap. Defaults to "viridis".
+        norm (BoundaryNorm, optional):
+            A matplotlib BoundaryNorm object describing value thresholds. Defaults to None.
+        vlims (List[float], optional):
+            The limits to which values should be plotted (useful for comparing between different cases). Defaults to None.
+        title (str, optional):
+            A title to place at the top of the plot. Defaults to None.
 
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     if not isinstance(series.index, pd.DatetimeIndex):
@@ -71,12 +77,10 @@ def timeseries_heatmap(
     plt.setp(ax.get_xticklabels(), ha="left", color="k")
     plt.setp(ax.get_yticklabels(), color="k")
 
-    [
+    for spine in ["top", "bottom", "left", "right"]:
         ax.spines[spine].set_visible(False)
-        for spine in ["top", "bottom", "left", "right"]
-    ]
 
-    ax.grid(b=True, which="major", color="white", linestyle=":", alpha=1)
+    ax.grid(visible=True, which="major", color="white", linestyle=":", alpha=1)
 
     # check if colorbar needs to be extended
     if vlims is not None:

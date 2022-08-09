@@ -1,14 +1,13 @@
-from ladybug.epw import EPW
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.header import Header
-from ladybug.datatype.fraction import Fraction
 from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datatype.fraction import Fraction
+from ladybug.epw import EPW
+from ladybug.header import Header
 from ladybug.skymodel import clearness_index as lb_ci
-
+from ladybugtools_toolkit.ladybug_extension.epw.solar_altitude import solar_altitude
 from ladybugtools_toolkit.ladybug_extension.epw.sun_position_collection import (
     sun_position_collection,
 )
-from ladybugtools_toolkit.ladybug_extension.epw.solar_altitude import solar_altitude
 
 
 def clearness_index(
@@ -17,11 +16,14 @@ def clearness_index(
     """Calculate the clearness index value for each hour of the year.
 
     Args:
-        epw (EPW): An EPW object.
-        sun_position (HourlyContinuousCollection, optional): A pre-calculated HourlyContinuousCollection of Sun objects. Defaults to None.
+        epw (EPW):
+            An EPW object.
+        sun_position (HourlyContinuousCollection, optional):
+            A pre-calculated HourlyContinuousCollection of Sun objects. Defaults to None.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of clearness indices.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of clearness indices.
     """
 
     if not sun_position:

@@ -93,9 +93,9 @@ class Shelter:
             Dict: The dict representation of this object.
         """
         return {
-            "porosity": self.porosity,
-            "altitude_range": self.altitude_range,
-            "azimuth_range": self.azimuth_range,
+            "porosity": float(self.porosity),
+            "altitude_range": [float(i) for i in self.altitude_range],
+            "azimuth_range": [float(i) for i in self.azimuth_range],
         }
 
     def polygons(self) -> List[Polygon]:
@@ -179,7 +179,8 @@ class Shelter:
         """Return the proportion of the sky occluded by the shelter (including porosity to increase
             sky visibility if the shelter is porous).
 
-        Returns: The proportion of sky occluded by the spherical patch
+        Returns:
+            The proportion of sky occluded by the spherical patch
         """
 
         if self._width_radians < 0:

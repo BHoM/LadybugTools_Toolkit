@@ -14,11 +14,14 @@ def enthalpy(
     """Calculate an annual hourly enthalpy for a given EPW.
 
     Args:
-        epw (EPW): _description_
-        humidity_ratio (HourlyContinuousCollection, optional): A pre-calculated HourlyContinuousCollection of humidity ratios. Defaults to None.
+        epw (EPW):
+            An EPW object.
+        humidity_ratio (HourlyContinuousCollection, optional):
+            A pre-calculated HourlyContinuousCollection of humidity ratios. Defaults to None.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of enthalpies.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of enthalpies.
     """
 
     if not humidity_ratio:

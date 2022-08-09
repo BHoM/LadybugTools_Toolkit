@@ -10,10 +10,12 @@ def any_shelters_overlap(shelters: List[Shelter]) -> bool:
     """Check whether any shelter in a list overlaps with any other shelter in the list.
 
     Args:
-        shelters (List[Shelter]): A list of shelter objects.
+        shelters (List[Shelter]):
+            A list of shelter objects.
 
     Returns:
-        bool: True if any shelter in the list overlaps with any other shelter in the list.
+        bool:
+            True if any shelter in the list overlaps with any other shelter in the list.
     """
 
     for shelter1 in shelters:

@@ -1,11 +1,13 @@
+﻿from typing import Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.compass import Compass
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 from ladybug.sunpath import Sunpath
-from ladybug.windrose import Compass
 from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
     describe as describe_analysis_period,
 )
@@ -16,135 +18,131 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_s
 from ladybugtools_toolkit.ladybug_extension.location.to_string import (
     to_string as location_to_string,
 )
+from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
 
 
 def sunpath(
     epw: EPW,
-    analysis_period: AnalysisPeriod = None,
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
     data_collection: HourlyContinuousCollection = None,
-    cmap: str = None,
+    cmap: Union[Colormap, str] = "viridis",
+    norm: BoundaryNorm = None,
     show_title: bool = True,
+    sun_size: float = 10,
+    show_grid: bool = True,
+    show_legend: bool = True,
 ) -> Figure:
+    """Plot a sun-path for the given EPW and analysis period.
+    Args:
+        epw (EPW):
+            An EPW object.
+        analysis_period (AnalysisPeriod, optional):
+            _description_. Defaults to None.
+        data_collection (HourlyContinuousCollection, optional):
+            An aligned data collection. Defaults to None.
+        cmap (str, optional):
+            The colormap to apply to the aligned data_collection. Defaults to None.
+        show_title (bool, optional):
+            Set to True to include a title in the plot. Defaults to True.
+        show_legend (bool, optional):
+            Set to True to include a legend in the plot if data_collection passed. Defaults to True.
+        sun_size (float, optional):
+            The size of each sun in the plot. Defaults to 0.2.
+        norm (BoundaryNorm, optional):
+            A matploltib BoundaryNorm object containing colormap boundary mapping information.
+            Defaults to None.
+    Returns:
+        Figure:
+            A matplotlib Figure object.
+    """
 
-    if cmap is None:
-        cmap = "viridis"
+    sp = Sunpath.from_location(epw.location)
+    all_suns = [sp.calculate_sun_from_date_time(i) for i in analysis_period.datetimes]
+    suns = [i for i in all_suns if i.altitude > 0]
+    suns_x, suns_y = np.array([sun.position_2d().to_array() for sun in suns]).T
 
-    if analysis_period is None:
-        analysis_period = AnalysisPeriod()
-
-    # Create sunpath object
-    sunpath = Sunpath.from_location(epw.location)
-
-    # create suns for each hour in analysis period
-    suns = [sunpath.calculate_sun_from_hoy(i, False) for i in analysis_period.hoys]
-
-    # Construct sun position dataframe
-    df = pd.DataFrame(index=to_datetimes(analysis_period))
-    df["altitude_rad"] = [i.altitude_in_radians for i in suns]
-    df["altitude_deg"] = [i.altitude for i in suns]
-    df["azimuth_rad"] = [i.azimuth_in_radians for i in suns]
-    df["azimuth_deg"] = [i.azimuth for i in suns]
-    df["apparent_zenith_rad"] = np.pi / 2 - df["altitude_rad"]
-    df["apparent_zenith_deg"] = np.degrees(df["apparent_zenith_rad"])
-    df = df[df.altitude_deg >= 0]
-
-    # Create plot
-    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-    ax = plt.subplot(1, 1, 1, projection="polar")
-    ax.set_theta_zero_location("N")
-    ax.set_theta_direction(-1)
-    ax.set_rmax(90)
-    ax.spines["polar"].set_visible(False)
-    ax.grid(True, which="both", ls="--", alpha=0.5)
-    ax.set_facecolor((1, 1, 1, 0))
-
-    # Add ticks
-    ax.set_xticks(np.radians(Compass.MAJOR_AZIMUTHS), minor=False)
-    ax.set_xticklabels(Compass.MAJOR_TEXT, minor=False, **{"fontsize": "medium"})
-    ax.set_xticks(np.radians(Compass.MINOR_AZIMUTHS), minor=True)
-    ax.set_xticklabels(Compass.MINOR_TEXT, minor=True, **{"fontsize": "x-small"})
-
-    # Add solstice and equinox lines
-    day_lines = {
-        f"{'Summer' if epw.location.latitude > 0 else 'Winter'} solstice": pd.to_datetime(
-            f"{df.index.year[0]}-06-21"
-        ),
-        "Equinox": pd.to_datetime(f"{df.index.year[0]}-03-21"),
-        f"{'Summer' if epw.location.latitude < 0 else 'Winter'} solstice": pd.to_datetime(
-            f"{df.index.year[0]}-12-21"
-        ),
-    }
-    for label, date in day_lines.items():
+    day_suns = []
+    for month in [6, 9, 12]:
+        date = pd.to_datetime(f"2017-{month:02d}-21")
         day_idx = pd.date_range(
             date, date + pd.Timedelta(hours=24), freq="1T", closed="left"
         )
-        day_sun_positions = [sunpath.calculate_sun_from_date_time(i) for i in day_idx]
-        day_df = pd.DataFrame(index=day_idx)
-        day_df["altitude_rad"] = [i.altitude_in_radians for i in day_sun_positions]
-        day_df["azimuth_rad"] = [i.azimuth_in_radians for i in day_sun_positions]
-        day_df["apparent_zenith_deg"] = np.degrees(np.pi / 2 - day_df.altitude_rad)
-        day_sun_up_mask = day_df.altitude_rad >= 0
-        label = label
+        _ = []
+        for idx in day_idx:
+            s = sp.calculate_sun_from_date_time(idx)
+            if s.altitude > 0:
+                _.append(np.array(s.position_2d().to_array()))
+        day_suns.append(np.array(_))
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.set_aspect("equal")
+    ax.set_xlim(-101, 101)
+    ax.set_ylim(-101, 101)
+    ax.axis("off")
+
+    if show_grid:
+        compass = Compass()
+        ax.add_patch(
+            plt.Circle(
+                (0, 0), 100, zorder=1, lw=0.5, ec="#555555", fc=(0, 0, 0, 0), ls="--"
+            )
+        )
+        pts = compass.minor_azimuth_points + compass.major_azimuth_points
+        pt_labels = compass.MINOR_TEXT + compass.MAJOR_TEXT
+        for pt, lab in zip(*[pts, pt_labels]):
+            _x, _y = np.array([[0, 0]] + [pt.to_array()]).T
+            ax.plot(_x, _y, zorder=1, lw=0.5, ls="--", c="#555555")
+            ax.text(_x[1], _y[1], lab, ha="center", va="center")
+
+    if data_collection is not None:
+        new_idx = to_datetimes(analysis_period)
+        series = to_series(data_collection)
+        vals = (
+            series.reindex(new_idx)
+            .interpolate()
+            .values[[i.altitude > 0 for i in all_suns]]
+        )
+        dat = ax.scatter(
+            suns_x, suns_y, c=vals, s=sun_size, cmap=cmap, norm=norm, zorder=3
+        )
+
+        if show_legend:
+            cb = ax.figure.colorbar(
+                dat,
+                pad=0.09,
+                shrink=0.8,
+                aspect=30,
+                label=f"{series.name}",
+            )
+            cb.outline.set_visible(False)
+    else:
+        ax.scatter(suns_x, suns_y, c="#FFCF04", s=sun_size, zorder=3)
+
+    # add equinox/solstice curves
+    for day_sun in day_suns:
+        _x, _y = day_sun.T
         ax.plot(
-            day_df.azimuth_rad[day_sun_up_mask],
-            day_df.apparent_zenith_deg[day_sun_up_mask],
+            _x,
+            _y,
             c="k",
-            label=label,
             alpha=0.6,
             zorder=1,
             ls=":",
             lw=0.75,
         )
 
-    # Add suns
-    if data_collection is None:
-        color = "#FFCF04"
-        cmap = None
-        main_title = location_to_string(epw.location)
-    else:
-        series = to_series(data_collection.filter_by_analysis_period(analysis_period))
-        color = series.values
-        main_title = series.name
-        cmap = cmap
-
-    points = ax.scatter(
-        df.azimuth_rad,
-        df.apparent_zenith_deg,
-        s=0.2,
-        label=None,
-        c=color,
-        zorder=5,
-        cmap=cmap,
-    )
-
-    if data_collection is not None:
-        cb = ax.figure.colorbar(
-            points,
-            pad=0.09,
-            shrink=0.8,
-            aspect=30,
-            label=f"{series.name}",
-        )
-        cb.outline.set_visible(False)
-
-    # Add title
     if show_title:
         title_string = "\n".join(
             [
-                main_title,
+                location_to_string(epw.location),
                 describe_analysis_period(analysis_period),
             ]
         )
-        ax.set_title(title_string, ha="left", x=0)
-
-        # ax.legend(
-        #     ncol=3,
-        #     bbox_to_anchor=(0.5, -0.14),
-        #     loc=8,
-        #     borderaxespad=0,
-        #     frameon=False,
-        # )
+        if show_grid:
+            ax.set_title(title_string, ha="left", x=0, y=1.05)
+        else:
+            ax.set_title(title_string, ha="left", x=0)
 
     plt.tight_layout()
 

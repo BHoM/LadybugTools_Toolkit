@@ -71,8 +71,27 @@ class ExternalComfort:
             self.wind_speed,
         )
 
+        # add typology descriptions to collection metadata
+        if typology.sky_exposure() != 1:
+            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.identifier} ground and {self.simulation_result.shade_material.identifier} shade)"
+        else:
+            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.identifier} ground)"
+        for attr in [
+            "dry_bulb_temperature",
+            "relative_humidity",
+            "wind_speed",
+            "mean_radiant_temperature",
+            "universal_thermal_climate_index",
+        ]:
+            old_metadata = getattr(self, attr).header.metadata
+            new_metadata = {
+                **old_metadata,
+                **{"typology": typology_description},
+            }
+            setattr(getattr(self, attr).header, "metadata", new_metadata)
+
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.simulation_result.identifer} - {self.typology.name})"
+        return f"{self.__class__.__name__}({self.simulation_result.identifier} - {self.typology.name})"
 
     def to_dict(self) -> Dict[str, HourlyContinuousCollection]:
         """Return this object as a dictionary

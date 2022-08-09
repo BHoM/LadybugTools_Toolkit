@@ -21,10 +21,9 @@
  */
 
 using BH.Engine.Python;
-using BH.oM.Python;
 using BH.oM.Base.Attributes;
+
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -32,35 +31,29 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        //[Description("Convert an EPW file into a CSV and return the path to that CSV.")]
-        //[Input("epwFile", "An EPW file.")]
-        //[Output("csv", "The generated CSV file.")]
-        //public static string EPWtoCSV(string epwFile)
-        //{
-        //    BH.oM.Python.Environment env = Query.LadybugToolsToolkitEnvironment();
+        [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
+        [Input("epwFile", "An EPW file.")]
+        [Output("csv", "The generated CSV file.")]
+        public static string EPWtoCSV(string epwFile)
+        {
+            BH.oM.Python.PythonEnvironment env = Compute.LadybugToolsToolkitPythonEnvironment(true);
 
-        //    if (env == null)
-        //    {
-        //        BH.Engine.Base.Compute.RecordError($"{Query.ToolkitName()} not found on this machine. Try installing using \"Query.LadybugToolsToolkitEnvironment()\".");
-        //        return null;
-        //    }
+            string pythonScript = String.Join("\n", new List<string>()
+            {
+                "from pathlib import Path",
+                "from ladybug.epw import EPW",
+                "from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe",
+                "",
+                $"epw_path = Path(r'{epwFile}')",
+                "csv_path = epw_path.with_suffix('.csv')",
+                "try:",
+                "    to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
+                "    print(csv_path)",
+                "except Exception as exc:",
+                "    print(exc)",
+            });
 
-        //    string pythonScript = String.Join("\n", new List<string>() 
-        //    {
-        //        "from pathlib import Path",
-        //        "from ladybug.epw import EPW",
-        //        "from LadybugTools_Toolkit.ladybug_extension.epw import to_dataframe",
-        //        "",
-        //        $"epw_path = Path(r'{epwFile}')",
-        //        "csv_path = epw_path.with_suffix('.csv')",
-        //        "to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
-        //        "print(csv_path)",
-        //    });
-
-        //    string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
-
-        //    return output;
-        //}
+            return env.RunCommandPythonString(pythonScript).Trim();
+        }
     }
 }
-

@@ -25,6 +25,11 @@ def to_hourly(
         "linear": "linear",
     }
 
+    if method not in interpolation_methods.keys():
+        raise ValueError(
+            f"The up-sampling method must be one of {list(interpolation_methods.keys())}"
+        )
+
     series = to_series(collection)
     annual_hourly_index = pd.date_range(
         f"{series.index[0].year}-01-01", periods=8760, freq="H"
@@ -32,12 +37,7 @@ def to_hourly(
     series_annual = series.reindex(annual_hourly_index)
     series_annual[series_annual.index[-1]] = series_annual[series_annual.index[0]]
 
-    try:
-        return HourlyContinuousCollection(
-            header=collection.header,
-            values=series_annual.interpolate(
-                method=interpolation_methods[method]
-            ).values,
-        )
-    except KeyError as e:
-        raise e
+    return HourlyContinuousCollection(
+        header=collection.header,
+        values=series_annual.interpolate(method=interpolation_methods[method]).values,
+    )

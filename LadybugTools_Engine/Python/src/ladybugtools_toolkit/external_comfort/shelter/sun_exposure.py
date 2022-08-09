@@ -13,11 +13,14 @@ def sun_exposure(shelters: List[Shelter], epw: EPW) -> List[float]:
     """Return NaN if sun below horizon, and a value between 0-1 for sun-hidden to sun-exposed.
 
     Args:
-        shelters (List[Shelter]): Shelters that could block the sun.
-        epw (EPW): An EPW object.
+        shelters (List[Shelter]):
+            Shelters that could block the sun.
+        epw (EPW):
+            An EPW object.
 
     Returns:
-        List[float]: A list of sun visibility values for each hour of the year.
+        List[float]:
+            A list of sun visibility values for each hour of the year.
     """
 
     suns = sun_position_list(epw)

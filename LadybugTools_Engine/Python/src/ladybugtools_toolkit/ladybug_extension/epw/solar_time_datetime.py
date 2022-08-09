@@ -19,11 +19,14 @@ def solar_time_datetime(
     """Calculate solar time (as datetime) for each hour of the year.
 
     Args:
-        epw (EPW): An EPW object.
-        solar_time_hour (HourlyContinuousCollection, optional): A pre-calculated solar time (hour) HourlyContinuousCollection. Defaults to None.
+        epw (EPW):
+            An EPW object.
+        solar_time_hour (HourlyContinuousCollection, optional):
+            A pre-calculated solar time (hour) HourlyContinuousCollection. Defaults to None.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of solar times as datetime objects.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of solar times as datetime objects.
     """
 
     if solar_time_hour is None:

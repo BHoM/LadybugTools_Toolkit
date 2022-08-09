@@ -6,13 +6,13 @@ import matplotlib.ticker as mticker
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from ladybugtools_toolkit.plot.colormaps import (
     UTCI_BOUNDARYNORM,
     UTCI_COLORMAP,
     UTCI_LABELS,
     UTCI_LEVELS,
 )
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -23,8 +23,15 @@ def utci_heatmap_histogram(
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
+    Args:
+        collection (HourlyContinuousCollection):
+            A ladybug HourlyContinuousCollection object.
+        title (str, optional):
+            A title to add to the resulting figure. Default is None.
+
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     if not isinstance(collection.header.data_type, UniversalThermalClimateIndex):
@@ -75,7 +82,7 @@ def utci_heatmap_histogram(
     for spine in ["top", "bottom", "left", "right"]:
         heatmap_ax.spines[spine].set_visible(False)
         heatmap_ax.spines[spine].set_color("k")
-    heatmap_ax.grid(b=True, which="major", color="k", linestyle=":", alpha=0.5)
+    heatmap_ax.grid(visible=True, which="major", color="k", linestyle=":", alpha=0.5)
 
     # Add colorbar legend and text descriptors for comfort bands
     cb = fig.colorbar(

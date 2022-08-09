@@ -17,42 +17,50 @@ def ground_temperature_at_depth(
     """Construct annual hourly ground temperature at given depth.
 
     Args:
-        epw (EPW): A ladybug EPW object.
-        depth (float): The depth at which the ground temperature will be calculated.
-        soil_diffusivity (float, optional): Soil diffusivity value. Common values available from the table below. Defaults to 0.31e-6.
+        epw (EPW):
+            A ladybug EPW object.
+        depth (float):
+            The depth at which the ground temperature will be calculated.
+        soil_diffusivity (float, optional):
+            Soil diffusivity value. Common values available from the table below.
+            Defaults to 0.31e-6.
 
     Example:
-        Below is a table from https://dx.doi.org/10.3390%2Fs16030306 detailing suitable diffusivity values for different soil types:
-        +---------------------------+-----------------------------+-------------------+----------------------------------+
-        | RockType                  | Thermal Conductivity (W/mK) | Volumetric Heat   | Thermal Diffusivity (*10^6 m2/s) |
-        |                           | Minimum | Typical | Maximum | Capacity (MJ/m3K) | Minimum   | Typical  | Maximum   |
-        +---------------------------+---------+---------+---------+-------------------+-----------+----------+-----------+
-        | Basalt                    | 1.3     | 1.7     | 2.3     | 2.6               | 0.5       | 0.65     | 0.88      |
-        | Greenstone                | 2       | 2.6     | 2.9     | 2.9               | 0.69      | 0.90     | 1         |
-        | Gabbro                    | 1.7     | 1.9     | 2.5     | 2.6               | 0.65      | 0.73     | 0.96      |
-        | Granite                   | 2.1     | 3.4     | 4.1     | 3                 | 0.7       | 1.13     | 1.37      |
-        | Peridotite                | 3.8     | 4       | 5.3     | 2.7               | 1.41      | 1.48     | 1.96      |
-        | Gneiss                    | 1.9     | 2.9     | 4       | 2.4               | 0.79      | 1.21     | 1.67      |
-        | Marble                    | 1.3     | 2.1     | 3.1     | 2                 | 0.65      | 1.05     | 1.55      |
-        | Mica schist               | 1.5     | 2       | 3.1     | 2.2               | 0.68      | 0.91     | 1.41      |
-        | Shale sedimentary         | 1.5     | 2.1     | 2.1     | 2.5               | 0.6       | 0.84     | 0.84      |
-        | Limestone                 | 2.5     | 2.8     | 4       | 2.4               | 1.04      | 1.17     | 1.67      |
-        | Loam                      | 1.5     | 2.1     | 3.5     | 2.3               | 0.65      | 0.91     | 1.52      |
-        | Quartzite                 | 3.6     | 6       | 6.6     | 2.2               | 1.64      | 2.73     | 3         |
-        | Salt                      | 5.3     | 5.4     | 6.4     | 1.2               | 4.42      | 4.5      | 5.33      |
-        | Sandstone                 | 1.3     | 2.3     | 5.1     | 2.8               | 0.46      | 0.82     | 1.82      |
-        | Siltstones and argillites | 1.1     | 2.2     | 3.5     | 2.4               | 0.46      | 0.92     | 1.46      |
-        | Dry gravel                | 0.4     | 0.4     | 0.5     | 1.6               | 0.25      | 0.25     | 0.31      |
-        | Water saturated gravel    | 1.8     | 1.8     | 1.8     | 2.4               | 0.75      | 0.75     | 0.75      |
-        | Dry sand                  | 0.3     | 0.4     | 0.55    | 1.6               | 0.19      | 0.25     | 0.34      |
-        | Water saturated sand      | 1.7     | 2.4     | 5       | 2.9               | 0.59      | 0.83     | 1.72      |
-        | Dry clay/silt             | 0.4     | 0.5     | 1       | 1.6               | 0.25      | 0.31     | 0.62      |
-        | Water saturated clay/silt | 0.9     | 1.7     | 2.3     | 3.4               | 0.26      | 0.5      | 0.68      |
-        | Peat                      | 0.2     | 0.4     | 0.7     | 3.8               | 0.05      | 0.10     | 0.18      |
-        +---------------------------+---------+---------+---------+-------------------+-----------+----------+-----------+
+        Below is a table from https://dx.doi.org/10.3390%2Fs16030306 detailing suitable diffusivity
+        values for different soil types:
+        +---------------------------+-----------------+-------------+--------------------+
+        | RockType                  |     Thermal     | Volumetric  |      Thermal       |
+        |                           |   Conductivity  |    Heat     |     Diffusivity    |
+        |                           |      (W/mK)     |  Capacity   |    (*10^6 m2/s)    |
+        |                           | Min | Typ | Max |  (MJ/m3K)   | Min  | Typ  | Max  |
+        +---------------------------+-----+-----+-----|-------------+---+----------------+
+        | Basalt                    | 1.3 | 1.7 | 2.3 |     2.6     | 0.5  | 0.65 | 0.88 |
+        | Greenstone                | 2.0 | 2.6 | 2.9 |     2.9     | 0.69 | 0.90 | 1.00 |
+        | Gabbro                    | 1.7 | 1.9 | 2.5 |     2.6     | 0.65 | 0.73 | 0.96 |
+        | Granite                   | 2.1 | 3.4 | 4.1 |     3.0     | 0.70 | 1.13 | 1.37 |
+        | Peridotite                | 3.8 | 4,0 | 5.3 |     2.7     | 1.41 | 1.48 | 1.96 |
+        | Gneiss                    | 1.9 | 2.9 | 4.0 |     2.4     | 0.79 | 1.21 | 1.67 |
+        | Marble                    | 1.3 | 2.1 | 3.1 |     2.0     | 0.65 | 1.05 | 1.55 |
+        | Mica schist               | 1.5 | 2,0 | 3.1 |     2.2     | 0.68 | 0.91 | 1.41 |
+        | Shale sedimentary         | 1.5 | 2.1 | 2.1 |     2.5     | 0.60 | 0.84 | 0.84 |
+        | Limestone                 | 2.5 | 2.8 | 4.0 |     2.4     | 1.04 | 1.17 | 1.67 |
+        | Loam                      | 1.5 | 2.1 | 3.5 |     2.3     | 0.65 | 0.91 | 1.52 |
+        | Quartzite                 | 3.6 | 6,0 | 6.6 |     2.2     | 1.64 | 2.73 | 3.00 |
+        | Salt                      | 5.3 | 5.4 | 6.4 |     1.2     | 4.42 | 4.50 | 5.33 |
+        | Sandstone                 | 1.3 | 2.3 | 5.1 |     2.8     | 0.46 | 0.82 | 1.82 |
+        | Siltstones and argillites | 1.1 | 2.2 | 3.5 |     2.4     | 0.46 | 0.92 | 1.46 |
+        | Dry gravel                | 0.4 | 0.4 | 0.5 |     1.6     | 0.25 | 0.25 | 0.31 |
+        | Water saturated gravel    | 1.8 | 1.8 | 1.8 |     2.4     | 0.75 | 0.75 | 0.75 |
+        | Dry sand                  | 0.3 | 0.4 | 0.55|     1.6     | 0.19 | 0.25 | 0.34 |
+        | Water saturated sand      | 1.7 | 2.4 | 5.0 |     2.9     | 0.59 | 0.83 | 1.72 |
+        | Dry clay/silt             | 0.4 | 0.5 | 1.0 |     1.6     | 0.25 | 0.31 | 0.62 |
+        | Water saturated clay/silt | 0.9 | 1.7 | 2.3 |     3.4     | 0.26 | 0.5  | 0.68 |
+        | Peat                      | 0.2 | 0.4 | 0.7 |     3.8     | 0.05 | 0.10 | 0.18 |
+        +---------------------------+-----+-----+-----+-------------+------+------+------+
 
     Returns:
-        HourlyContinuousCollection: A data collection containing ground temperature values.
+        HourlyContinuousCollection:
+            A data collection containing ground temperature values.
     """
 
     try:

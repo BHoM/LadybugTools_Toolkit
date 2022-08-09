@@ -14,19 +14,29 @@ def utci_day_comfort_metrics(
     day: int = 21,
     title: str = None,
 ) -> Figure:
-    """Plot a single days UTCI with composite DBT, RH, MRT and WS components shown also
+    """Plot a single days UTCI with composite DBT, RH, MRT and WS components shown also.
 
     Args:
-        utci (pd.Series): An annual time-indexed series containing UTCI values.
-        dbt (pd.Series): An annual time-indexed series containing DBT values.
-        mrt (pd.Series): An annual time-indexed series containing MRT values.
-        rh (pd.Series): An annual time-indexed series containing RH values.
-        ws (pd.Series): An annual time-indexed series containing WS values.
-        month (int, optional): The month to plot.
-        day (int, optional): The day to plot.
+        utci (pd.Series):
+            An annual time-indexed series containing UTCI values.
+        dbt (pd.Series):
+            An annual time-indexed series containing DBT values.
+        mrt (pd.Series):
+            An annual time-indexed series containing MRT values.
+        rh (pd.Series):
+            An annual time-indexed series containing RH values.
+        ws (pd.Series):
+            An annual time-indexed series containing WS values.
+        month (int, optional):
+            The month to plot. Default is 6.
+        day (int, optional):
+             The day to plot. Default is 21.
+        title (str, optional):
+            A title to be added to the resulting figure. Default is None.
 
     Returns:
-        Figure: A matplotlib Figure object.
+        Figure:
+            A matplotlib Figure object.
     """
 
     if any([all(utci.index != i.index) for i in [dbt, mrt, rh, ws]]):

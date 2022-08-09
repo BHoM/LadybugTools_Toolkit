@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -20,14 +20,17 @@ class MoistureSource:
     """An object defining where moisture is present in a spatial thermal comfort simulation
 
     Args:
-        identifier (str): The ID of this moisture source.
-        magnitude (float): The evaporative cooling effectiveness of this moisture source.
-        point_indices (List[int]): The point indices (related to a list of points) where this
-        moisture source is applied.
-        decay_function: (str): The method with which moisture effects will "drop off" at
-            distance from the emitter.
-        schedule (List[int]): A list of hours in the year where the moisture emitter will be
-            active.
+        identifier (str):
+            The ID of this moisture source.
+        magnitude (float):
+            The evaporative cooling effectiveness of this moisture source.
+        point_indices (List[int]):
+            The point indices (related to a list of points) where this moisture source is applied.
+        decay_function: (str):
+            The method with which moisture effects will "drop off" at distance from the emitter.
+        schedule (List[int]):
+            A list of hours in the year where the moisture emitter will be active. If empty, then
+            the moisture source will not be active for all hours of the year.
     """
 
     def __init__(
@@ -42,6 +45,8 @@ class MoistureSource:
         self.magnitude = magnitude
         self.point_indices = np.array(point_indices)
         self.decay_function = decay_function
+        if len(schedule) == 0:
+            schedule = np.arange(0, 8760, 1)
         self.schedule = np.array(schedule)
 
     @classmethod
@@ -142,6 +147,19 @@ class MoistureSource:
         wind_direction: float,
         plume_width: float = 25,
     ) -> List[float]:
+        """Calculate the spatial moisture plume from a single location to other locations under
+            given wind speed and direction.
+
+        Args:
+            point_distances (List[List[float]]): An array of distances to other points.
+            point_angles (List[List[float]]): An array of angles to other points.
+            wind_speed (float): A value describing current wind speed.
+            wind_direction (float): A value describing current wind direction
+            plume_width (float, optional): The spread of the plume to be generated. Defaults to 25.
+
+        Returns:
+            List[float]: _description_
+        """
 
         # get downwind angles
         if (wind_direction > 360 - (plume_width / 2)) or (
@@ -160,7 +178,7 @@ class MoistureSource:
             self.magnitude, point_distances, 2 * wind_speed, self.decay_function
         )
 
-        # get overall magnitude based on downwindedness
+        # get overall magnitude based on down-winded-ness
         return np.where(downwind, mag_dist_values, 0).max(axis=0)
 
     def spatial_moisture(
@@ -168,16 +186,16 @@ class MoistureSource:
         spatial_points: List[List[float]],
         epw: EPW,
         plume_width: float = 25,
-        simulation_directory: Union[Path, str] = None,
+        simulation_directory: Path = None,
     ) -> Dict[Tuple(float), List[List[float]]]:
 
         if simulation_directory is not None:
-            output_dir = Path(simulation_directory) / "moisture"
+            output_dir = simulation_directory / "moisture"
             if (output_dir / f"{self.pathsafe_id}_matrix.h5").exists():
-                print(f"- Loading moisture data for {self.identifier}")
+                print(
+                    f"[{simulation_directory.stem}] - Loading moisture effectiveness data for {self.identifier}"
+                )
                 return pd.read_hdf(output_dir / f"{self.pathsafe_id}_matrix.h5", "df")
-
-        print(f"- Calculating moisture data for {self.identifier}")
 
         # get point distances
         pt_distances = self.point_distances(spatial_points)
@@ -196,6 +214,9 @@ class MoistureSource:
         # for each time period in the year construct the resultant moisture matrix
         moisture_matrix = []
         for n, (ws, wd) in enumerate(list(zip(*[epw.wind_speed, epw.wind_direction]))):
+            print(
+                f"[{simulation_directory.stem}] - Calculating moisture effectiveness data for {self.identifier} ({n/8760:03.2%})"
+            )
             if n not in self.schedule:
                 moisture_matrix.append(np.zeros_like(pt_distances[0]))
             else:

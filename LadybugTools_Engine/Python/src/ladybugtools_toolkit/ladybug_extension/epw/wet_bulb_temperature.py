@@ -8,10 +8,12 @@ def wet_bulb_temperature(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly wet bulb temperature for a given EPW.
 
     Args:
-        epw (EPW): An EPW object.
+        epw (EPW):
+            An EPW object.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of wet bulb temperatures.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of wet bulb temperatures.
     """
     return HourlyContinuousCollection.compute_function_aligned(
         wet_bulb_from_db_rh,

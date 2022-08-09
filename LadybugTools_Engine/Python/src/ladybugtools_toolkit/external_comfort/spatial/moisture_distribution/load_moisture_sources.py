@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union
+from typing import List
 
 from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.moisture_directory import (
     moisture_directory,
@@ -9,13 +9,11 @@ from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.moistur
 )
 
 
-def load_moisture_sources(
-    simulation_directory: Union[Path, str]
-) -> List[MoistureSource]:
+def load_moisture_sources(simulation_directory: Path) -> List[MoistureSource]:
     """Get/create the moisture directory for a spatial simulation.
 
     Args:
-        simulation_directory (Union[Path, str]):
+        simulation_directory (Path):
             The associated simulation directory.
 
     Returns:

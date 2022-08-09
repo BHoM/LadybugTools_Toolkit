@@ -9,11 +9,16 @@ from ladybugtools_toolkit.external_comfort.ground_temperature.hourly_ground_temp
 
 
 def energyplus_strings_otherside_coefficient(epw: EPW) -> str:
-    """Generate strings to add into EnergyPlus simulation for annual-hourly ground temperature values applied to sub-ground surfaces.
+    """Generate strings to add into EnergyPlus simulation for annual-hourly ground temperature
+        values applied to sub-ground surfaces.
+
     Args:
-        epw (EPW): A ladybug EPW object.
+        epw (EPW):
+            A ladybug EPW object.
+
     Returns:
-        List[str]: Strings to append to the EnergyPlus IDF simulation input file.
+        List[str]:
+            Strings to append to the EnergyPlus IDF simulation input file.
     """
     gnd_temp_collection = hourly_ground_temperature(epw, 0.5)
 

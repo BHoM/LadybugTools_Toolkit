@@ -5,12 +5,16 @@ def equality(model0: Model, model1: Model, include_identifier: bool = False) -> 
     """Check for equality between two models, with regards to their material properties.
 
     Args:
-        model0 (Model): A honeybee model.
-        model1 (Model): A honeybee model.
-        include_identifier (bool, optional): Include the identifier (name) of the model in the quality check. Defaults to False.
+        model0 (Model):
+            A honeybee model.
+        model1 (Model):
+            A honeybee model.
+        include_identifier (bool, optional):
+            Include the identifier (name) of the model in the quality check. Defaults to False.
 
     Returns:
-        bool: True if models are equal.
+        bool:
+            True if models are equal.
     """
 
     if not isinstance(model0, Model) or not isinstance(model1, Model):

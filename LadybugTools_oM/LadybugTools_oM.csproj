@@ -77,8 +77,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Enum\ExternalComfortMaterial.cs" />
-    <Compile Include="Enum\ExternalComfortTypology.cs" />
+    <Compile Include="Enum\Roughness.cs" />
+    <Compile Include="ExternalComfortTypology.cs" />
+    <Compile Include="ExternalComfortShelter.cs" />
+    <Compile Include="ExternalComfortMaterial.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

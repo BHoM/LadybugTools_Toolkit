@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Union
 
 
-def spatial_comfort_possible(simulation_directory: Union[str, Path]) -> bool:
+def spatial_comfort_possible(simulation_directory: Path) -> bool:
     """Checks whether spatial_comfort processing is possible for a given simulation_directory.
 
     Args:
-        simulation_directory (Union[str, Path]):
+        simulation_directory (Path):
             A folder containing Honeybee-Radiance Sky-View and Annual Irradiance results.
 
     Returns:

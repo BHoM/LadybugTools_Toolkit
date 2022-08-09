@@ -12,14 +12,17 @@ def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
     """Create an EPW object from a Pandas DataFrame with named columns.
 
     Args:
-        dataframe (pd.DataFrame): A Pandas DataFrame with named columns.
-        location (Location, optional): A ladybug Location object. Defaults to None.
+        dataframe (pd.DataFrame):
+            A Pandas DataFrame with named columns.
+        location (Location, optional):
+            A ladybug Location object. Defaults to None.
 
     Returns:
-        EPW: An EPW object.
+        EPW:
+            An EPW object.
     """
 
-    # Check dataframe shape for leapedness and length
+    # Check dataframe shape for leaped-ness and length
     if dataframe.index.is_leap_year.any():
         leap_yr = True
         assert (

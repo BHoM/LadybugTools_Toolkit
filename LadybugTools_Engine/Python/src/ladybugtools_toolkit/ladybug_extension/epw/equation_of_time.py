@@ -10,10 +10,12 @@ def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
     """Calculate the equation of time for each hour of the year.
 
     Args:
-        epw (EPW): An EPW object.
+        epw (EPW):
+            An EPW object.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of equation of times.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of equation of times.
     """
     sunpath = Sunpath.from_location(epw.location)
 

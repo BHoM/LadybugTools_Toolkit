@@ -3,7 +3,6 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.angle import Angle
 from ladybug.epw import EPW
 from ladybug.header import Header
-
 from ladybugtools_toolkit.ladybug_extension.epw.sun_position_collection import (
     sun_position_collection,
 )
@@ -15,11 +14,14 @@ def solar_altitude(
     """Calculate annual hourly solar altitude angle.
 
     Args:
-        epw (EPW): An EPW object.
-        sun_position (HourlyContinuousCollection, optional): A pre-calculated HourlyContinuousCollection of Sun objects. Defaults to None.
+        epw (EPW):
+            An EPW object.
+        sun_position (HourlyContinuousCollection, optional):
+            A pre-calculated HourlyContinuousCollection of Sun objects. Defaults to None.
 
     Returns:
-        HourlyContinuousCollection: An HourlyContinuousCollection of solar altitude angles.
+        HourlyContinuousCollection:
+            An HourlyContinuousCollection of solar altitude angles.
     """
 
     if not sun_position:

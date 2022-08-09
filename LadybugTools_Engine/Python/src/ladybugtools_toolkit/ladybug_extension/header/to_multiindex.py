@@ -3,14 +3,16 @@ from ladybug.header import Header
 
 
 def to_multiindex(header: Header) -> pd.MultiIndex:
-    """Convert a Ladybug header object into a Pandas MultiIndex.
-    Used for creating CSV headers for reloading by Ladybug.
+    """Convert a Ladybug header object into a Pandas MultiIndex. Used for creating CSV headers for
+        reloading by Ladybug.
 
     Args:
-        header (Header): A Ladybug header object.
+        header (Header):
+            A Ladybug header object.
 
     Returns:
-        pd.MultiIndex: A Pandas MultiIndex object."""
+        pd.MultiIndex:
+            A Pandas MultiIndex object."""
 
     meta = header.to_csv_strings(True)
     names = [

@@ -28,5 +28,5 @@ def wind_speed_at_height(
     else:
         wind_shear_exponent = 1 / 7
         return reference_wind_speed * (
-            np.pow((target_height / reference_height), wind_shear_exponent)
+            np.power((target_height / reference_height), wind_shear_exponent)
         )
