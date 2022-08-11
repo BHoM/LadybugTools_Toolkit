@@ -56,7 +56,9 @@ def utci_calculated(
 
     if utci_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(utci_path, "df")
+        utci_df = pd.read_parquet(utci_path)
+        utci_df.columns = utci_df.columns.astype(int)
+        return utci_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
@@ -87,6 +89,7 @@ def utci_calculated(
     )
 
     utci_df = utci(dbt, rh, mrt, ws)
-    utci_df.to_hdf(utci_path, "df", complevel=9, complib="blosc")
+    utci_df.columns = utci_df.columns.astype(str)
+    utci_df.to_parquet(utci_path)
 
     return utci_df

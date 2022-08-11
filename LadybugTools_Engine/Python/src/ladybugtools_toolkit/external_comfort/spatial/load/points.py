@@ -28,12 +28,12 @@ def points(simulation_directory: Path) -> pd.DataFrame:
 
     if points_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(points_path, "df")
+        return pd.read_parquet(points_path)
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
     points_files = list(
         (simulation_directory / "sky_view" / "model" / "grid").glob("*.pts")
     )
-    points_df = load_pts(points_files)
-    points_df.to_hdf(points_path, "df", complevel=9, complib="blosc")
+    points_df = load_pts(points_files).droplevel(0, axis=1)
+    points_df.to_parquet(points_path)
     return points_df

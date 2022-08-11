@@ -38,7 +38,9 @@ def ws_epw(
 
     if ws_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(ws_path, "df")
+        ws_df = pd.read_parquet(ws_path)
+        ws_df.columns = ws_df.columns.astype(int)
+        return ws_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
     spatial_points = points(simulation_directory)
@@ -46,7 +48,7 @@ def ws_epw(
 
     ws_series = to_series(epw.wind_speed)
     ws_df = pd.DataFrame(np.tile(ws_series.values, (n_pts, 1)).T, index=ws_series.index)
-
-    ws_df.to_hdf(ws_path, "df", complevel=9, complib="blosc")
+    ws_df.columns = ws_df.columns.astype(str)
+    ws_df.to_parquet(ws_path)
 
     return ws_df

@@ -20,4 +20,4 @@ def spatial_metric_filepath(
         Path:
             The path expected for any stored metric dataset.
     """
-    return simulation_directory / f"{spatial_metric.name.lower()}.h5"
+    return simulation_directory / f"{spatial_metric.name.lower()}.parquet"

@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 from ladybug import datatype
@@ -6,6 +8,9 @@ from ladybug.location import Location
 from ladybug.psychrometrics import rel_humid_from_db_dpt
 from ladybug.sunpath import Sunpath
 from ladybug.wea import Wea
+from ladybugtools_toolkit.ladybug_extension.header.to_string import (
+    to_string as header_to_string,
+)
 
 
 def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
@@ -45,171 +50,52 @@ def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
     epw_obj.location = location
 
     # Assign data to the EPW
+    _attributes = [
+        "aerosol_optical_depth",
+        "albedo",
+        "atmospheric_station_pressure",
+        "ceiling_height",
+        "extraterrestrial_direct_normal_radiation",
+        "extraterrestrial_horizontal_radiation",
+        "liquid_precipitation_depth",
+        "liquid_precipitation_quantity",
+        "days_since_last_snowfall",
+        "dry_bulb_temperature",
+        "dew_point_temperature",
+        "wind_speed",
+        "wind_direction",
+        "direct_normal_radiation",
+        "snow_depth",
+        "diffuse_horizontal_radiation",
+        "horizontal_infrared_radiation_intensity",
+        "direct_normal_illuminance",
+        "diffuse_horizontal_illuminance",
+        "precipitable_water",
+        "present_weather_codes",
+        "present_weather_observation",
+        "total_sky_cover",
+        "opaque_sky_cover",
+        "visibility",
+        "zenith_luminance",
+    ]
     try:
-        epw_obj.aerosol_optical_depth.values = dataframe[
-            "Aerosol Optical Depth (fraction)"
-        ].values
+        for attribute in _attributes:
+            setattr(
+                getattr(epw_obj, attribute),
+                "values",
+                dataframe[header_to_string(getattr(epw_obj, attribute).header)].values,
+            )
     except KeyError:
-        pass
-
-    try:
-        epw_obj.albedo.values = dataframe["Albedo (fraction)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.atmospheric_station_pressure.values = dataframe[
-            "Atmospheric Station Pressure (Pa)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.ceiling_height.values = dataframe["Ceiling Height (m)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.extraterrestrial_direct_normal_radiation.values = dataframe[
-            "Extraterrestrial Direct Normal Radiation (Wh/m2)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.extraterrestrial_horizontal_radiation.values = dataframe[
-            "Extraterrestrial Horizontal Radiation (Wh/m2)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.liquid_precipitation_depth.values = dataframe[
-            "Liquid Precipitation Depth (mm)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.liquid_precipitation_quantity.values = dataframe[
-            "Liquid Precipitation Quantity (fraction)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.days_since_last_snowfall.values = dataframe[
-            "Days Since Last Snowfall (day)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.dry_bulb_temperature.values = dataframe[
-            "Dry Bulb Temperature (C)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.dew_point_temperature.values = dataframe[
-            "Dew Point Temperature (C)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.wind_speed.values = dataframe["Wind Speed (m/s)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.wind_direction.values = dataframe["Wind Direction (degrees)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.direct_normal_radiation.values = dataframe[
-            "Direct Normal Radiation (Wh/m2)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.snow_depth.values = dataframe["Snow Depth (cm)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.diffuse_horizontal_radiation.values = dataframe[
-            "Diffuse Horizontal Radiation (Wh/m2)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.horizontal_infrared_radiation_intensity.values = dataframe[
-            "Horizontal Infrared Radiation Intensity (W/m2)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.direct_normal_illuminance.values = dataframe[
-            "Direct Normal Illuminance (lux)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.diffuse_horizontal_illuminance.values = dataframe[
-            "Diffuse Horizontal Illuminance (lux)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.precipitable_water.values = dataframe["Precipitable Water (mm)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.present_weather_codes.values = dataframe[
-            "Present Weather Codes (codes)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.present_weather_observation.values = dataframe[
-            "Present Weather Observation (observation)"
-        ].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.total_sky_cover.values = dataframe["Total Sky Cover (tenths)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.opaque_sky_cover.values = dataframe["Opqaue Sky Cover (tenths)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.visibility.values = dataframe["Visibility (km)"].values
-    except KeyError:
-        pass
-
-    try:
-        epw_obj.zenith_luminance.values = dataframe["Zenith Luminance (cd/m2)"].values
-    except KeyError:
-        pass
+        warnings.warn(
+            f"{attribute} cannot be added to EPW as it doesn't exist in the Pandas DataFrame."
+        )
 
     try:
         epw_obj.relative_humidity.values = dataframe["Relative Humidity (%)"].values
     except KeyError:
+        warnings.warn(
+            f"relative_humidity doesn't exist in the Pandas DataFrame, but is being calculated from DBT and DPT."
+        )
         epw_obj.relative_humidity.values = (
             HourlyContinuousCollection.compute_function_aligned(
                 rel_humid_from_db_dpt,
@@ -224,6 +110,9 @@ def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
             "Global Horizontal Radiation (Wh/m2)"
         ].values
     except KeyError:
+        warnings.warn(
+            f"global_horizontal_radiation doesn't exist in the Pandas DataFrame, but is being calculated from DNR and DHR."
+        )
         wea = Wea(
             location,
             epw_obj.direct_normal_radiation,
@@ -238,6 +127,9 @@ def from_dataframe(dataframe: pd.DataFrame, location: Location = None) -> EPW:
             "Global Horizontal Illuminance (lux)"
         ].values
     except KeyError:
+        warnings.warn(
+            f"global_horizontal_illuminance doesn't exist in the Pandas DataFrame, but is being calculated from DNI and DHI."
+        )
         glob_horiz = []
         sp = Sunpath.from_location(location)
         sp.is_leap_year = leap_yr

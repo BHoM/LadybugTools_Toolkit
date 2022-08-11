@@ -39,7 +39,7 @@ def rad_diffuse(
 
     if rad_diffuse_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(rad_diffuse_path, "df")
+        return pd.read_parquet(rad_diffuse_path)
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
@@ -49,7 +49,5 @@ def rad_diffuse(
 
     rad_diffuse_df = total_irradiance - direct_irradiance
 
-    rad_diffuse_df.clip(lower=0).to_hdf(
-        rad_diffuse_path, "df", complevel=9, complib="blosc"
-    )
+    rad_diffuse_df.clip(lower=0).to_parquet(rad_diffuse_path)
     return rad_diffuse_df

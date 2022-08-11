@@ -31,11 +31,13 @@ def evap_clg_magnitude(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
 
     metric = SpatialMetric.EVAP_CLG
 
-    evap_clg_path = spatial_metric_filepath(simulation_directory, metric)
+    moisture_path = spatial_metric_filepath(simulation_directory, metric)
 
-    if evap_clg_path.exists():
+    if moisture_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(evap_clg_path, "df")
+        moisture_df = pd.read_parquet(moisture_path)
+        moisture_df.columns = moisture_df.columns.astype(int)
+        return moisture_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
@@ -46,9 +48,7 @@ def evap_clg_magnitude(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     moisture_sources = load_moisture_sources(simulation_directory)
 
     # load spatial points in list of [[X, Y], [X, Y], [X, Y]]
-    spatial_points = (
-        points(simulation_directory).droplevel(0, axis=1)[["x", "y"]].values
-    )
+    spatial_points = points(simulation_directory)[["x", "y"]].values
 
     # get moisture matrices per moisture source, and resultant matrix
     moisture_df = pd.DataFrame(
@@ -65,6 +65,7 @@ def evap_clg_magnitude(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     )
 
     # save matrix to file
-    moisture_df.to_hdf(evap_clg_path, "df", complib="blosc", complevel=9)
+    moisture_df.columns = moisture_df.columns.astype(str)
+    moisture_df.to_parquet(moisture_path)
 
     return moisture_df

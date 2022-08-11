@@ -41,7 +41,12 @@ def dbt_rh_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
     )
 
     if dbt_matrix_path.exists() and rh_matrix_path.exists():
-        return pd.read_hdf(dbt_matrix_path, "df"), pd.read_hdf(rh_matrix_path, "df")
+        dbt_df, rh_df = pd.read_parquet(dbt_matrix_path), pd.read_parquet(
+            rh_matrix_path
+        )
+        dbt_df.columns = dbt_df.columns.astype(int)
+        rh_df.columns = rh_df.columns.astype(int)
+        return dbt_df, rh_df
 
     # load evaporative cooling moisture magnitude matrix
     moisture_matrix = evap_clg_magnitude(simulation_directory, epw)
@@ -68,9 +73,11 @@ def dbt_rh_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
 
     idx = to_series(epw.dry_bulb_temperature).index
     dbt_df = pd.DataFrame(np.array(dbt_matrix), index=idx)
-    dbt_df.to_hdf(dbt_matrix_path, "df", complevel=9, complib="blosc")
+    dbt_df.columns = dbt_df.columns.astype(str)
+    dbt_df.to_parquet(dbt_matrix_path)
 
     rh_df = pd.DataFrame(np.array(rh_matrix), index=idx)
-    rh_df.to_hdf(rh_matrix_path, "df", complevel=9, complib="blosc")
+    rh_df.columns = rh_df.columns.astype(str)
+    rh_df.to_parquet(rh_matrix_path)
 
     return dbt_df, rh_df

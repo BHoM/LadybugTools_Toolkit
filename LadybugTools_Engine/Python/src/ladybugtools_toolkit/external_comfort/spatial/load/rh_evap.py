@@ -33,7 +33,7 @@ def rh_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
     rh_matrix_path = spatial_metric_filepath(simulation_directory, metric)
     if rh_matrix_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(rh_matrix_path, "df")
+        return pd.read_parquet(rh_matrix_path)
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 

@@ -37,12 +37,14 @@ def ws_cfd(
 
     if ws_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(ws_path, "df")
+        ws_df = pd.read_parquet(ws_path)
+        ws_df.columns = ws_df.columns.astype(int)
+        return ws_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     ws_df = spatial_wind_speed(simulation_directory, epw)
-
-    ws_df.to_hdf(ws_path, "df", complevel=9, complib="blosc")
+    ws_df.columns = ws_df.columns.astype(str)
+    ws_df.to_parquet(ws_path)
 
     return ws_df

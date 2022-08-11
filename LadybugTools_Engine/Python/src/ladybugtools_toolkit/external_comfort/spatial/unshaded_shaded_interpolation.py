@@ -39,38 +39,27 @@ def unshaded_shaded_interpolation(
     new_max = y_original[sun_up_bool].max(axis=1)
 
     # DAYTIME
-    irradiance_grp = total_irradiance[sun_up_bool].groupby(
-        total_irradiance.columns.get_level_values(0), axis=1
-    )
-    daytimes = []
-    for grid in sky_view.columns:
-        irradiance_range = np.vstack(
-            [irradiance_grp.min()[grid], irradiance_grp.max()[grid]]
-        ).T
-        old_min = irradiance_range.min(axis=1)
-        old_max = irradiance_range.max(axis=1)
-        old_value = total_irradiance[grid][sun_up_bool].values
-        with np.errstate(divide="ignore", invalid="ignore"):
-            new_value = ((old_value.T - old_min) / (old_max - old_min)) * (
-                new_max - new_min
-            ) + new_min
-        daytimes.append(pd.DataFrame(new_value.T))
-
-    daytime = pd.concat(daytimes, axis=1)
-    daytime.index = total_irradiance.index[sun_up_bool]
-    daytime.columns = total_irradiance.columns
+    irradiance = total_irradiance[sun_up_bool]
+    irradiance_range = np.vstack([irradiance.min(), irradiance.max()]).T
+    old_min = irradiance_range.min(axis=1)
+    old_max = irradiance_range.max(axis=1)
+    old_value = irradiance.values
+    with np.errstate(divide="ignore", invalid="ignore"):
+        daytime = pd.DataFrame(
+            (
+                (((old_value - old_min) / (old_max - old_min)).T * (new_max - new_min))
+                + new_min
+            ).T
+        )
+    daytime.index = total_irradiance[sun_up_bool].index
+    daytime.columns = total_irradiance[sun_up_bool].columns
 
     # NIGHTTIME
     x_original = [0, 100]
-    nighttime = []
-    for grid in sky_view.columns:
-        nighttime.append(
-            pd.DataFrame(
-                interp1d(x_original, y_original[~sun_up_bool])(sky_view[grid])
-            ).dropna(axis=1)
-        )
-    nighttime = pd.concat(nighttime, axis=1)
-    nighttime.index = total_irradiance.index[~sun_up_bool]
+    nighttime = pd.DataFrame(
+        interp1d(x_original, y_original[~sun_up_bool])(sky_view.values)[:, :, 0]
+    )
+    nighttime.index = total_irradiance[~sun_up_bool].index
     nighttime.columns = total_irradiance.columns
 
     interpolated_result = (

@@ -1,8 +1,7 @@
-from pathlib import Path
-
 import warnings
+
 import pandas as pd
-from ladybug.epw import EPW
+from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import (
     to_hourly,
 )
@@ -63,19 +62,20 @@ def to_dataframe(
 
     all_series = []
     for prop in dir(epw):
-        try:
-            all_series.append(to_series(getattr(epw, prop)))
-        except (AttributeError, TypeError, ZeroDivisionError, ValueError) as exc:
-            pass #warnings.warn(str(exc))
+        if prop.startswith("_") or prop.startswith("annual"):
+            continue
+        _obj = getattr(epw, prop)
+        if isinstance(_obj, HourlyContinuousCollection):
+            all_series.append(to_series(_obj))
 
-    try:  
+    if len(epw.monthly_ground_temperature) > 0:
         for k, v in epw.monthly_ground_temperature.items():
             hourly_collection = to_hourly(v)
             hourly_series = to_series(hourly_collection)
             hourly_series.name = f"{hourly_series.name} at {k}m"
             all_series.append(hourly_series)
-    except AttributeError as exc:
-        warnings.warn(str(exc))
+    else:
+        warnings.warn("No ground temperatures are available from this EPW file.")
 
     # Calculate additional solar properties
     sun_position = sun_position_collection(epw)

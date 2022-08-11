@@ -1,8 +1,10 @@
-﻿ipykernel
-shapely
-tables
-scipy
-cached-property
+﻿cached-property
+fastparquet
+ipykernel
+pyarrow
 pylint
 pytest
 pytest-cov
+scipy
+shapely
+tables

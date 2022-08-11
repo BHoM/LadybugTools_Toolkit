@@ -4,15 +4,12 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
-    SpatialMetric,
-)
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
-    spatial_metric_filepath,
-)
-from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import (
-    unshaded_shaded_interpolation,
-)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import \
+    SpatialMetric
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import \
+    spatial_metric_filepath
+from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import \
+    unshaded_shaded_interpolation
 
 
 def utci_interpolated(
@@ -51,17 +48,20 @@ def utci_interpolated(
 
     if utci_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(utci_path, "df")
+        utci_df = pd.read_parquet(utci_path)
+        utci_df.columns = utci_df.columns.astype(int)
+        return utci_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
-    utci = unshaded_shaded_interpolation(
+    utci_df = unshaded_shaded_interpolation(
         unshaded_universal_thermal_climate_index,
         shaded_universal_thermal_climate_index,
         total_irradiance,
         sky_view,
         np.array(epw.global_horizontal_radiation.values) > 0,
     )
+    utci_df.columns = utci_df.columns.astype(str)
 
-    utci.to_hdf(utci_path, "df", complevel=9, complib="blosc")
-    return utci
+    utci_df.to_parquet(utci_path)
+    return utci_df

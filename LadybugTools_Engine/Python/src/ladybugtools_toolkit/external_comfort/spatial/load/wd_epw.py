@@ -38,7 +38,9 @@ def wd_epw(
 
     if wd_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(wd_path, "df")
+        wd_df = pd.read_parquet(wd_path)
+        wd_df.columns = wd_df.columns.astype(int)
+        return wd_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
@@ -47,7 +49,7 @@ def wd_epw(
 
     wd_series = to_series(epw.wind_direction)
     wd_df = pd.DataFrame(np.tile(wd_series.values, (n_pts, 1)).T, index=wd_series.index)
-
-    wd_df.to_hdf(wd_path, "df", complevel=9, complib="blosc")
+    wd_df.columns = wd_df.columns.astype(str)
+    wd_df.to_parquet(wd_path)
 
     return wd_df

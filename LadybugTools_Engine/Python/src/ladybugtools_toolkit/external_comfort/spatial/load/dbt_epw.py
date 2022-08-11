@@ -37,7 +37,9 @@ def dbt_epw(
 
     if dbt_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(dbt_path, "df")
+        dbt_df = pd.read_parquet(dbt_path)
+        dbt_df.columns = dbt_df.columns.astype(int)
+        return dbt_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
     spatial_points = points(simulation_directory)
@@ -47,7 +49,7 @@ def dbt_epw(
     dbt_df = pd.DataFrame(
         np.tile(dbt_series.values, (n_pts, 1)).T, index=dbt_series.index
     )
-
-    dbt_df.to_hdf(dbt_path, "df", complevel=9, complib="blosc")
+    dbt_df.columns = dbt_df.columns.astype(str)
+    dbt_df.to_parquet(dbt_path)
 
     return dbt_df

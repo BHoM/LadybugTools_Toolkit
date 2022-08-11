@@ -191,11 +191,15 @@ class MoistureSource:
 
         if simulation_directory is not None:
             output_dir = simulation_directory / "moisture"
-            if (output_dir / f"{self.pathsafe_id}_matrix.h5").exists():
+            if (output_dir / f"{self.pathsafe_id}_matrix.parquet").exists():
                 print(
                     f"[{simulation_directory.stem}] - Loading moisture effectiveness data for {self.identifier}"
                 )
-                return pd.read_hdf(output_dir / f"{self.pathsafe_id}_matrix.h5", "df")
+                moisture_df = pd.read_parquet(
+                    output_dir / f"{self.pathsafe_id}_matrix.parquet"
+                )
+                moisture_df.columns = moisture_df.columns.astype(int)
+                return moisture_df
 
         # get point distances
         pt_distances = self.point_distances(spatial_points)
@@ -215,7 +219,8 @@ class MoistureSource:
         moisture_matrix = []
         for n, (ws, wd) in enumerate(list(zip(*[epw.wind_speed, epw.wind_direction]))):
             print(
-                f"[{simulation_directory.stem}] - Calculating moisture effectiveness data for {self.identifier} ({n/8760:03.2%})"
+                f"[{simulation_directory.stem}] - Calculating moisture effectiveness data for {self.identifier} ({n/8760:03.2%})",
+                end="\r",
             )
             if n not in self.schedule:
                 moisture_matrix.append(np.zeros_like(pt_distances[0]))
@@ -228,12 +233,8 @@ class MoistureSource:
 
         if simulation_directory is not None:
             output_dir = Path(simulation_directory) / "moisture"
-            moisture_df.to_hdf(
-                output_dir / f"{self.pathsafe_id}_matrix.h5",
-                "df",
-                complevel=9,
-                complib="blosc",
-            )
+            moisture_df.columns = moisture_df.columns.astype(str)
+            moisture_df.to_parquet(output_dir / f"{self.pathsafe_id}_matrix.parquet")
 
         return moisture_df
 

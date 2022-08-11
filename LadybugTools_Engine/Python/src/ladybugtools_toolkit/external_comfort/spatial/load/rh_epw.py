@@ -38,7 +38,10 @@ def rh_epw(
 
     if rh_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(rh_path, "df")
+        rh_df = pd.read_parquet(rh_path)
+        rh_df.columns = rh_df.columns.astype(int)
+        return rh_df
+
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     spatial_points = points(simulation_directory)
@@ -46,7 +49,7 @@ def rh_epw(
 
     rh_series = to_series(epw.relative_humidity)
     rh_df = pd.DataFrame(np.tile(rh_series.values, (n_pts, 1)).T, index=rh_series.index)
-
-    rh_df.to_hdf(rh_path, "df", complevel=9, complib="blosc")
+    rh_df.columns = rh_df.columns.astype(str)
+    rh_df.to_parquet(rh_path)
 
     return rh_df

@@ -117,8 +117,8 @@ class SpatialComfort:
         self._plot_directory.mkdir(exist_ok=True, parents=True)
 
         # create default triangulation
-        self._points_x = self.points.droplevel(0, axis=1).x.values
-        self._points_y = self.points.droplevel(0, axis=1).y.values
+        self._points_x = self.points.x.values
+        self._points_y = self.points.y.values
         self._triangulation = create_triangulation(
             self._points_x,
             self._points_y,

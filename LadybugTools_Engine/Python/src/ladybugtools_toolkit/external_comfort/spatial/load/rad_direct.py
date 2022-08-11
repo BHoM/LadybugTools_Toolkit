@@ -30,7 +30,9 @@ def rad_direct(simulation_directory: Path) -> pd.DataFrame:
 
     if rad_direct_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(rad_direct_path, "df")
+        rad_direct_df = pd.read_parquet(rad_direct_path)
+        rad_direct_df.columns = rad_direct_df.columns.astype(int)
+        return rad_direct_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
@@ -41,7 +43,8 @@ def rad_direct(simulation_directory: Path) -> pd.DataFrame:
     )
     rad_direct_df = make_annual(load_ill(ill_files)).fillna(0)
 
-    rad_direct_df.clip(lower=0).to_hdf(
-        rad_direct_path, "df", complevel=9, complib="blosc"
-    )
+    rad_direct_df = rad_direct_df.clip(lower=0).droplevel(0, axis=1)
+    rad_direct_df.columns = rad_direct_df.columns.astype(str)
+    rad_direct_df.to_parquet(rad_direct_path)
+
     return rad_direct_df

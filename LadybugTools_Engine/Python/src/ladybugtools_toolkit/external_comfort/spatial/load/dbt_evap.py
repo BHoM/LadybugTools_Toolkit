@@ -33,7 +33,7 @@ def dbt_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
 
     if dbt_matrix_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(dbt_matrix_path, "df")
+        return pd.read_parquet(dbt_matrix_path)
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
     return dbt_rh_evap(simulation_directory, epw)[0]

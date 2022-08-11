@@ -28,11 +28,13 @@ def sky_view(simulation_directory: Path) -> pd.DataFrame:
 
     if sky_view_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(sky_view_path, "df")
+        sky_view_df = pd.read_parquet(sky_view_path)
+        return sky_view_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
     res_files = list((simulation_directory / "sky_view" / "results").glob("*.res"))
     sky_view_df = load_res(res_files).clip(lower=0, upper=100)
-    sky_view_df.to_hdf(sky_view_path, "df", complevel=9, complib="blosc")
+    sky_view_df.to_parquet(sky_view_path)
+
     return sky_view_df

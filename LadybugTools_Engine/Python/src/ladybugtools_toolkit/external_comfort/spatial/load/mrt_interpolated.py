@@ -49,17 +49,19 @@ def mrt_interpolated(
 
     if mrt_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(mrt_path, "df")
+        mrt_df = pd.read_parquet(mrt_path)
+        mrt_df.columns = mrt_df.columns.astype(int)
+        return mrt_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
-    mrt = unshaded_shaded_interpolation(
+    mrt_df = unshaded_shaded_interpolation(
         unshaded_mean_radiant_temperature,
         shaded_mean_radiant_temperature,
         total_irradiance,
         sky_view,
         np.array(epw.global_horizontal_radiation.values) > 0,
     )
+    mrt_df.columns = mrt_df.columns.astype(str)
+    mrt_df.to_parquet(mrt_path)
 
-    mrt.to_hdf(mrt_path, "df", complevel=9, complib="blosc")
-
-    return mrt
+    return mrt_df

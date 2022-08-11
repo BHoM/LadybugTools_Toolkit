@@ -30,7 +30,9 @@ def rad_total(simulation_directory: Path) -> pd.DataFrame:
 
     if rad_total_path.exists():
         print(f"[{simulation_directory.name}] - Loading {metric.value}")
-        return pd.read_hdf(rad_total_path, "df")
+        rad_total_df = pd.read_parquet(rad_total_path)
+        rad_total_df.columns = rad_total_df.columns.astype(int)
+        return rad_total_df
 
     print(f"[{simulation_directory.name}] - Generating {metric.value}")
 
@@ -39,7 +41,8 @@ def rad_total(simulation_directory: Path) -> pd.DataFrame:
     )
     rad_total_df = make_annual(load_ill(ill_files)).fillna(0)
 
-    rad_total_df.clip(lower=0).to_hdf(
-        rad_total_path, "df", complevel=9, complib="blosc"
-    )
+    rad_total_df = rad_total_df.clip(lower=0).droplevel(0, axis=1)
+    rad_total_df.columns = rad_total_df.columns.astype(str)
+    rad_total_df.to_parquet(rad_total_path)
+
     return rad_total_df
