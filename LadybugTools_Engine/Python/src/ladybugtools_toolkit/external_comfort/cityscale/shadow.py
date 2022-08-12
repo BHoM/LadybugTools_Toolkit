@@ -1,45 +1,70 @@
-import os
 import subprocess
+import tempfile
+import uuid
+from datetime import datetime
 from pathlib import Path
 
-import numpy as np
-from PIL import Image
+DIR = Path(__file__).parent
 
 
-def shadow(asc_file: Path, sun_altitude: float, sun_azimuth: float) -> np.ndarray:
-    """Create a matrix of pixel values for the given topographic TIF-style image corresponding to
-        the shadows cast by the sun at the given location.
+def shadow(
+    tif_file: Path,
+    date_time: datetime,
+    output_file: Path = None,
+) -> Path:
+    """Create a point-in-time radiation plot for a given tif/tiff terrain elevation file.
 
     Args:
-        asc_file (Path):
-            The path to a TIF-style file containing topographic height data.
-        sun_altitude (float):
-            The altitude of the sun to cast shadows.
-        sun_azimuth (float):
-            The azimuth of the sun to cast shadows.
+        tif_file (Path):
+            A raster elevation file.
+        date_time (datetime):
+            A datetime at which to run the calculation.
+        output_file (Path, optional):
+            The name of the file to be created. Defaults to the input file, with the day-hour appended.
 
     Returns:
-        np.ndarray:
-            A pixel matrix from 0-1 representing proportion of sunlight received.
+        Path:
+            The path to the resultant shadow file.
     """
 
-    # set globals
-    OSGEO4W_PATH = Path(r"C:\Program Files\QGIS 3.20.2\OSGeo4W.bat")
+    tif_file = Path(tif_file)
 
-    input_file = Path(asc_file)
-    output_file = (
-        input_file.parent / f"{input_file.stem}_{sun_altitude}_{sun_azimuth}.tif"
-    )
+    run_command = f'"{(DIR / "_shadow.py").as_posix()}" "{tif_file.as_posix()}" {date_time.timetuple().tm_yday} {int(date_time.hour + date_time.minute / 60)}'
+    if output_file is not None:
+        output_file = Path(output_file)
+        if output_file.suffix != ".tif":
+            raise ValueError("output_file must have extension *.tif")
+        run_command += f' --output_file "{output_file.as_posix()}"'
 
-    # create command to generate shadow plot
-    # https://gdal.org/programs/gdaldem.html
-    cmd = f'gdaldem hillshade "{asc_file}" "{output_file}" -of GTiff -b 1 -z 40.0 -s 1.0 -az {sun_azimuth} -alt {sun_altitude} -alg Horn -compute_edges -combined'
-    subprocess.Popen(
-        f'"{OSGEO4W_PATH}" {cmd}', shell=True, stdout=subprocess.PIPE
+    commands = [
+        "@echo off",
+        r'SET OSGEO4W_ROOT="C:\OSGeo4W"',
+        r"call %OSGEO4W_ROOT%\bin\o4w_env.bat",
+        "",
+        r"path %PATH%;%OSGEO4W_ROOT%\apps\qgis\bin",
+        r"path %PATH%;%OSGEO4W_ROOT%\apps\Qt5\bin",
+        r"path %PATH%;%OSGEO4W_ROOT%\apps\Python39\Scripts",
+        "",
+        r"set QGIS_PREFIX=%OSGEO4W_ROOT%\apps\qgis",
+        r"set PYTHONHOME=%OSGEO4W_ROOT%\apps\Python39",
+        r"set PYTHONPATH=%OSGEO4W_ROOT%\apps\qgis\python;%OSGEO4W_ROOT%\apps\qgis\python\plugins;%PYTHONPATH%",
+        r"set QT_QPA_PLATFORM_PLUGIN_PATH=%OSGEO4W_ROOT%\apps\Qt5\plugins\platforms",
+        r"set QT_PLUGIN_PATH=%OSGEO4W_ROOT%\apps\qgis\qtplugins;%OSGEO4W_ROOT\apps\qt5\plugins",
+        "",
+        "set GDAL_FILENAME_IS_UTF8=YES",
+        "set VSI_CACHE=TRUE",
+        "set VSI_CACHE_SIZE=1000000",
+        "",
+        f"%PYTHONHOME%\\python.exe {run_command}",
+    ]
+
+    # write commands to bat file and run
+    bat_temp = Path(tempfile.gettempdir()) / f"{str(uuid.uuid4())}.bat"
+    with open(bat_temp, "w") as fp:
+        fp.writelines("\n".join(commands))
+
+    out = subprocess.Popen(
+        bat_temp.as_posix(), shell=True, stdout=subprocess.PIPE
     ).stdout.read()
-    shadow_matrix = np.array(Image.open(output_file.as_posix())) / 255
 
-    # delete shadow plot
-    os.remove(output_file.as_posix())
-
-    return np.where(shadow_matrix == 0, 1, shadow_matrix)
+    return Path(out.decode("ascii").strip())
