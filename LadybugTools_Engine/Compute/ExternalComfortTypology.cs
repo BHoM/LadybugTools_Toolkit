@@ -32,7 +32,7 @@ using System.Linq;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Query
+    public static partial class Compute
     {
         [Description("Get a predefined ExternalComfortTypology by it's name.")]
         [Input("typologyName", "The name of a pre-defined typology.")]
@@ -101,7 +101,7 @@ namespace BH.Engine.LadybugTools
                 Shelters = shelters
             };
 
-            // return the typiology
+            // return the typology
             return ecTypology;
         }
     }

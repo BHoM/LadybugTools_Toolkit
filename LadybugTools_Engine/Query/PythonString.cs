@@ -33,6 +33,7 @@ namespace BH.Engine.LadybugTools
     public static partial class Query
     {
         [Description("Get the python code string representation of an ExternalComfortTypology object.")]
+        [Input("typology", "An External Comfort Typology object.")]
         [Output("pythonString", "The python code string representation of an ExternalComfortTypology object.")]
         public static string PythonString(this ExternalComfortTypology typology)
         {
@@ -45,6 +46,7 @@ namespace BH.Engine.LadybugTools
         }
 
         [Description("Get the python code string representation of an ExternalComfortShelter object.")]
+        [Input("typology", "An External Comfort Shelter object.")]
         [Output("pythonString", "The python code string representation of an ExternalComfortShelter object.")]
         public static string PythonString(this ExternalComfortShelter shelter)
         {
@@ -52,9 +54,22 @@ namespace BH.Engine.LadybugTools
         }
 
         [Description("Get the python code string representation of an ExternalComfortMaterial object.")]
+        [Input("typology", "An External Comfort Material object.")]
         [Output("pythonString", "The python code string representation of an ExternalComfortMaterial object.")]
         public static string PythonString(this ExternalComfortMaterial material)
         {
+            if (new List<double>() { 
+                material.Conductivity, 
+                material.Density, 
+                material.ThermalAbsorptance, 
+                material.SolarAbsorptance, 
+                material.VisibleAbsorptance, 
+                material.SpecificHeat, 
+                material.Thickness 
+            }.Contains(double.NaN) || material.Roughness == Roughness.Undefined )
+            {
+                BH.Engine.Base.Compute.RecordError("The ExternalComfortMaterial created contains null values that are not possible to simulate.");
+            }
             return $"EnergyMaterial(identifier='{material.Identifier}', roughness='{material.Roughness}', thickness={material.Thickness}, conductivity={material.Conductivity}, density={material.Density}, specific_heat={material.SpecificHeat}, thermal_absorptance={material.ThermalAbsorptance}, solar_absorptance={material.SolarAbsorptance}, visible_absorptance={material.VisibleAbsorptance})";
         }
     }

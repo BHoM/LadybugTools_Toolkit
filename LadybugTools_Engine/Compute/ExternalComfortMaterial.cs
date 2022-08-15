@@ -32,7 +32,7 @@ using System.Linq;
 
 namespace BH.Engine.LadybugTools
 {
-    public static partial class Query
+    public static partial class Compute
     {
         [Description("Get a predefined ExternalComfortMaterial by it's name.")]
         [Input("materialName", "The name of a pre-defined material.")]
