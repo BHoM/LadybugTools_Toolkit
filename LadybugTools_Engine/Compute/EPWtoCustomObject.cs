@@ -53,7 +53,7 @@ namespace BH.Engine.LadybugTools
                 "    print(exc)",
             });
 
-            string output = env.RunCommandPythonString(pythonScript).Trim();
+            string output = env.RunPythonString(pythonScript).Trim();
 
             return Serialiser.Convert.FromJson(output) as CustomObject;
         }

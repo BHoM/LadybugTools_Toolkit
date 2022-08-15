@@ -145,6 +145,13 @@
     <Folder Include="Python\src\ladybugtools_toolkit\ladybug_extension\datacollection\basecollection\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\mrt.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\shadow.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\skyviewfactor.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\utci.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\_shadow.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\_skyviewfactor.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\encoder\encoder.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\encoder\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\external_comfort.py" />
@@ -216,6 +223,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\moisture_source.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\unique_wind_speed_direction.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\sky_view_pov.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\spatial_comfort.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\spatial_comfort_possible.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\unshaded_shaded_interpolation.py" />
@@ -237,6 +245,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\helpers\cardinality.py" />
     <Content Include="Python\src\ladybugtools_toolkit\helpers\decay_rate_smoother.py" />
     <Content Include="Python\src\ladybugtools_toolkit\helpers\proximity_decay.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\helpers\rolling_window.py" />
     <Content Include="Python\src\ladybugtools_toolkit\helpers\scrape_weather.py" />
     <Content Include="Python\src\ladybugtools_toolkit\helpers\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\honeybee_extension\results\load_files.py" />
@@ -299,10 +308,15 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\radiation_tilt_orientation_factor.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\plot\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\animation.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\annotate_imshow.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormap_sequential.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\create_triangulation.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\figure_to_image.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\fisheye_sky.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\lighten_color.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\skymatrix.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\spatial_heatmap.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\sunpath.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\timeseries_diurnal.py" />
@@ -316,6 +330,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_journey.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\week_profile.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\windrose.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\wind_speed_direction_frequency.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\__init__.py" />
     <Content Include="Python\setup.py" />

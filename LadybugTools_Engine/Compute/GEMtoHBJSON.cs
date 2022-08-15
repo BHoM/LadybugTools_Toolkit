@@ -55,7 +55,7 @@ namespace BH.Engine.LadybugTools
                 "    print(exc)",
             });
 
-            return env.RunCommandPythonString(pythonScript).Trim();
+            return env.RunPythonString(pythonScript).Trim();
         }
     }
 }

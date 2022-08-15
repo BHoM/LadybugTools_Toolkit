@@ -54,7 +54,7 @@ namespace BH.Engine.LadybugTools
                 "print(json.dumps(d, cls = Encoder))",
             });
 
-            string output = env.RunCommandPythonString(pythonScript).Trim();
+            string output = env.RunPythonString(pythonScript).Trim();
             CustomObject typologies = Serialiser.Convert.FromJson(output) as CustomObject;
             List<string> typologyIds = new List<string>();
             foreach (string typologyName in typologies.CustomData.Keys)

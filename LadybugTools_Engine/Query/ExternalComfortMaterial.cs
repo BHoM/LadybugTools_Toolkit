@@ -55,7 +55,7 @@ namespace BH.Engine.LadybugTools
                 "print(json.dumps(d, cls = Encoder))",
             });
 
-            string output = env.RunCommandPythonString(pythonScript).Trim();
+            string output = env.RunPythonString(pythonScript).Trim();
             CustomObject materials = Serialiser.Convert.FromJson(output) as CustomObject;
             List<string> materialIds = new List<string>();
             foreach (string materialIdentifiers in materials.CustomData.Keys)

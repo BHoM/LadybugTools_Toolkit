@@ -70,7 +70,7 @@ namespace BH.Engine.LadybugTools
                 "    print(json.dumps({'error': str(exc)}))",
             });
 
-            string output = env.RunCommandPythonString(pythonScript).Trim().Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
+            string output = env.RunPythonString(pythonScript).Trim().Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
 
             return Serialiser.Convert.FromJson(output) as CustomObject;
         }
