@@ -46,14 +46,14 @@ from ladybugtools_toolkit.ladybug_extension.epw.wet_bulb_temperature import (
 )
 
 
-def to_dataframe(
-    epw: EPW,
-) -> pd.DataFrame:
+def to_dataframe(epw: EPW, include_additional: bool = True) -> pd.DataFrame:
     """Create a Pandas DataFrame from an EPW object, including additional calculated properties.
 
     Args:
         epw (EPW):
             An EPW object.
+        include_additional (bool, optional):
+            Set to False to not include additional calculated properties. Default is True.
 
     Returns:
         pd.DataFrame:
@@ -77,40 +77,41 @@ def to_dataframe(
     else:
         warnings.warn("No ground temperatures are available from this EPW file.")
 
-    # Calculate additional solar properties
-    sun_position = sun_position_collection(epw)
-    equation_of_time = eot(epw)
-    solar_time_hour = sth(epw, equation_of_time)
-    solar_altitude = sa(epw, sun_position)
-    solar_altitude_in_radians = sar(epw, sun_position)
-    solar_declination = sd(epw)
-    solar_time_datetime = stda(epw, solar_time_hour)
-    solar_azimuth = saz(epw, sun_position)
-    solar_azimuth_in_radians = sazr(epw, sun_position)
-    clearness_index = ci(epw, sun_position)
+    if include_additional:
+        # Calculate additional solar properties
+        sun_position = sun_position_collection(epw)
+        equation_of_time = eot(epw)
+        solar_time_hour = sth(epw, equation_of_time)
+        solar_altitude = sa(epw, sun_position)
+        solar_altitude_in_radians = sar(epw, sun_position)
+        solar_declination = sd(epw)
+        solar_time_datetime = stda(epw, solar_time_hour)
+        solar_azimuth = saz(epw, sun_position)
+        solar_azimuth_in_radians = sazr(epw, sun_position)
+        clearness_index = ci(epw, sun_position)
 
-    # Calculate additional psychrometric properties
-    humidity_ratio = hr(epw)
-    enthalpy = ent(epw, humidity_ratio)
-    wet_bulb_temperature = wbt(epw)
+        # Calculate additional psychrometric properties
+        humidity_ratio = hr(epw)
+        enthalpy = ent(epw, humidity_ratio)
+        wet_bulb_temperature = wbt(epw)
 
-    # Add properties to DataFrame
-    for collection in [
-        equation_of_time,
-        solar_time_hour,
-        solar_altitude,
-        solar_declination,
-        solar_time_datetime,
-        solar_azimuth,
-        solar_azimuth_in_radians,
-        solar_altitude,
-        solar_altitude_in_radians,
-        humidity_ratio,
-        enthalpy,
-        wet_bulb_temperature,
-        clearness_index,
-    ]:
-        all_series.append(to_series(collection))
+        # Add properties to DataFrame
+        for collection in [
+            equation_of_time,
+            solar_time_hour,
+            solar_altitude,
+            solar_declination,
+            solar_time_datetime,
+            solar_azimuth,
+            solar_azimuth_in_radians,
+            solar_altitude,
+            solar_altitude_in_radians,
+            humidity_ratio,
+            enthalpy,
+            wet_bulb_temperature,
+            clearness_index,
+        ]:
+            all_series.append(to_series(collection))
 
     # Compile all the data into a dataframe
     df = pd.concat(
