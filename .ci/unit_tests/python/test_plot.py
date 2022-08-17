@@ -26,6 +26,7 @@ from ladybugtools_toolkit.plot.utci_heatmap import utci_heatmap
 from ladybugtools_toolkit.plot.utci_heatmap_difference import utci_heatmap_difference
 from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histogram
 from ladybugtools_toolkit.plot.utci_journey import utci_journey
+from ladybugtools_toolkit.plot.utci_pie import utci_pie
 from ladybugtools_toolkit.plot.week_profile import week_profile
 from ladybugtools_toolkit.plot.windrose import windrose
 from PIL.Image import Image
@@ -177,4 +178,9 @@ def test_fisheye_sky():
 
 def test_skymatrix():
     assert isinstance(skymatrix(EPW_OBJ), plt.Figure)
+    plt.close("all")
+
+
+def test_utci_pie():
+    assert isinstance(utci_pie(LB_UTCI_COLLECTION), plt.Figure)
     plt.close("all")
