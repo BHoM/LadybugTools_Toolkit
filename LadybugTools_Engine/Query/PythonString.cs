@@ -46,7 +46,7 @@ namespace BH.Engine.LadybugTools
         }
 
         [Description("Get the python code string representation of an ExternalComfortShelter object.")]
-        [Input("typology", "An External Comfort Shelter object.")]
+        [Input("shelter", "An External Comfort Shelter object.")]
         [Output("pythonString", "The python code string representation of an ExternalComfortShelter object.")]
         public static string PythonString(this ExternalComfortShelter shelter)
         {
@@ -54,7 +54,7 @@ namespace BH.Engine.LadybugTools
         }
 
         [Description("Get the python code string representation of an ExternalComfortMaterial object.")]
-        [Input("typology", "An External Comfort Material object.")]
+        [Input("material", "An External Comfort Material object.")]
         [Output("pythonString", "The python code string representation of an ExternalComfortMaterial object.")]
         public static string PythonString(this ExternalComfortMaterial material)
         {

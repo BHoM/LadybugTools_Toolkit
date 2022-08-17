@@ -37,7 +37,7 @@ namespace BH.Engine.LadybugTools
         [Description("Get a predefined ExternalComfortTypology by it's name.")]
         [Input("typologyName", "The name of a pre-defined typology.")]
         [Output("ExternalComfortTypology", "An ExternalComfortTypology object.")]
-        public static ExternalComfortTypology ExternalComfortTypology(string typology)
+        public static ExternalComfortTypology ExternalComfortTypology(string typologyName)
         {
             BH.oM.Python.PythonEnvironment env = Compute.LadybugToolsToolkitPythonEnvironment(true);
 
@@ -57,18 +57,18 @@ namespace BH.Engine.LadybugTools
             string output = env.RunPythonString(pythonScript).Trim();
             CustomObject typologies = Serialiser.Convert.FromJson(output) as CustomObject;
             List<string> typologyIds = new List<string>();
-            foreach (string typologyName in typologies.CustomData.Keys)
+            foreach (string typology in typologies.CustomData.Keys)
             {
-                typologyIds.Add(typologyName);
+                typologyIds.Add(typology);
             }
 
-            if (!typologyIds.Contains(typology))
+            if (!typologyIds.Contains(typologyName))
             {
                 BH.Engine.Base.Compute.RecordError($"The typology given is not predefined in the Python source code. Please use one of [\n{String.Join(",\n    ", typologyIds)}\n].");
             }
 
             // create the ECTypology from the given string name of the Typology
-            CustomObject predefinedTypology = (typologies.CustomData[typology] as CustomObject);
+            CustomObject predefinedTypology = (typologies.CustomData[typologyName] as CustomObject);
 
             List<ExternalComfortShelter> shelters = new List<ExternalComfortShelter>();
             foreach (CustomObject shelterObj in ((List<System.Object>)predefinedTypology.CustomData["shelters"]).Cast<CustomObject>())

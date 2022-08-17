@@ -37,7 +37,7 @@ namespace BH.Engine.LadybugTools
         [Description("Get a predefined ExternalComfortMaterial by it's name.")]
         [Input("materialName", "The name of a pre-defined material.")]
         [Output("ExternalComfortMaterial", "An ExternalComfortMaterial object.")]
-        public static ExternalComfortMaterial ExternalComfortMaterial(string material)
+        public static ExternalComfortMaterial ExternalComfortMaterial(string materialName)
         {
             BH.oM.Python.PythonEnvironment env = Compute.LadybugToolsToolkitPythonEnvironment(true);
 
@@ -63,13 +63,13 @@ namespace BH.Engine.LadybugTools
                 materialIds.Add(materialIdentifiers);
             }
 
-            if (!materialIds.Contains(material))
+            if (!materialIds.Contains(materialName))
             {
                 BH.Engine.Base.Compute.RecordError($"The typology given is not predefined in the Python source code. Please use one of [\n{String.Join(",\n    ", materialIds)}\n].");
             }
 
             // create the ECMaterial from the given string name of the Material
-            CustomObject predefinedMaterial = (materials.CustomData[material] as CustomObject);
+            CustomObject predefinedMaterial = (materials.CustomData[materialName] as CustomObject);
 
 
             BH.oM.LadybugTools.ExternalComfortMaterial ecMaterial = new ExternalComfortMaterial() {
