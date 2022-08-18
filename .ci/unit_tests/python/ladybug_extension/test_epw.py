@@ -38,7 +38,7 @@ from .. import EPW_DF, EPW_OBJ
 
 
 def test_to_dataframe():
-    assert len(to_dataframe(EPW_OBJ).columns) == 47
+    assert len(to_dataframe(EPW_OBJ, include_additional=False).columns) == 30
 
 
 def test_from_dataframe():
