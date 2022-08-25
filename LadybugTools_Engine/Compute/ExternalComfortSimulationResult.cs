@@ -43,7 +43,7 @@ namespace BH.Engine.LadybugTools
         [Output("externalComfortResult", "An external comfort result object containing simulation results.")]
         public static CustomObject ExternalComfortSimulationResult(string identifier, string epwFile, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial)
         {
-            BH.oM.Python.PythonEnvironment env = Compute.LadybugToolsToolkitPythonEnvironment(true);
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPython_LBT(true);
 
             string pythonScript = string.Join("\n", new List<string>()
             {
