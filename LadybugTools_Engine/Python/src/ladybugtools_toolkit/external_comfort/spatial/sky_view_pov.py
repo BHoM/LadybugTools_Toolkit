@@ -30,31 +30,33 @@ def sky_view_pov(
 
     Args:
         model (Model):
-
+            A honeybee model object.
         sensor (Point3D):
-
+            A location from where the sky view will be rendered.
         epw (EPW):
-
+            A ladybug EPW object.
         analysis_period (AnalysisPeriod, optional):
-            . Defaults to AnalysisPeriod().
+            THe analysis period over which the sky-view should be rendered.
+            Defaults to AnalysisPeriod().
         cmap (Union[Colormap, str], optional):
-            . Defaults to "viridis".
+            A colormap to apply to the sun-path when a data-collection is supplied.
+            Defaults to "viridis".
         norm (BoundaryNorm, optional):
-            . Defaults to None.
+            If cmap applied is UTCI, provide the associated boundary-norm. Defaults to None.
         data_collection (HourlyContinuousCollection, optional):
-            . Defaults to None.
+            A collection of values to color the sun-path by. Defaults to None.
         density (int, optional):
-            . Defaults to 1.
+            The sky-dome density. Defaults to 1 which is a Tregenza dome.
         show_sunpath (bool, optional):
-            . Defaults to True.
+            Hide the sunpath if set to False. Defaults to True.
         show_skymatrix (bool, optional):
-            . Defaults to True.
+            Hide the sky-dome if set to False. Defaults to True.
         title (str, optional):
-            . Defaults to None.
+            Add a title to the plot.. Defaults to None.
 
     Returns:
         Image:
-            .
+            A PIL image object ready to save.
     """
 
     # render the sky view Image

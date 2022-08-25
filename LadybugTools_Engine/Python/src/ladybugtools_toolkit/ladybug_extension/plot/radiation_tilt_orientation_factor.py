@@ -6,8 +6,7 @@ from matplotlib.figure import Figure
 
 
 def radiation_tilt_orientation_factor(
-    radiation_matrix: pd.DataFrame,
-    title: str = None,
+    radiation_matrix: pd.DataFrame, title: str = None, cmap: str = "YlOrRd"
 ) -> Figure:
     """Convert a radiation matrix to a figure showing the radiation tilt and orientation.
 
@@ -16,6 +15,8 @@ def radiation_tilt_orientation_factor(
             A matrix with altitude index, azimuth columns, and radiation values in Wh/m2.
         title (str, optional):
             A title for the figure. Defaults to None.
+        cmap: (str, optional):
+            A custom colormap to apply. Default is "YlOrRd".
 
     Returns:
         Figure:
@@ -35,7 +36,7 @@ def radiation_tilt_orientation_factor(
 
     # Create figure
     fig, ax = plt.subplots(1, 1, figsize=(12, 5))
-    cf = ax.contourf(y, x, z / 1000, cmap="YlOrRd", levels=51)
+    cf = ax.contourf(y, x, z / 1000, cmap=cmap, levels=10)
     cl = ax.contour(
         y,
         x,
