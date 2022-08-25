@@ -38,7 +38,7 @@ namespace BH.Engine.LadybugTools
         [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPython_LBT(true);
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonLBT(true);
 
             string pythonScript = string.Join("\n", new List<string>()
             {

@@ -36,7 +36,7 @@ namespace BH.Engine.LadybugTools
         [Output("gem", "The GEM file.")]
         public static string HBJSONtoGEM(string hbjson)
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPython_LBT(true);
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonLBT(true);
 
             string hbjsonFile = System.IO.Path.GetFullPath(hbjson);
             string outputDirectory = System.IO.Path.GetDirectoryName(hbjsonFile);

@@ -118,7 +118,7 @@
     <Compile Include="Compute\HBJSONtoGEM.cs" />
     <Compile Include="Compute\ExternalComfort.cs" />
     <Compile Include="Compute\ExternalComfortSimulationResult.cs" />
-    <Compile Include="Compute\LadybugToolsToolkitPythonEnvironment.cs" />
+    <Compile Include="Compute\InstallPythonLBT.cs" />
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />

@@ -39,7 +39,7 @@ namespace BH.Engine.LadybugTools
         [Output("ExternalComfortMaterial", "An ExternalComfortMaterial object.")]
         public static ExternalComfortMaterial ExternalComfortMaterial(string materialName)
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPython_LBT(true);
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonLBT(true);
 
             // get a list of materials that have been predefined in the Python code, as a custom object for each
             string pythonScript = string.Join("\n", new List<string>()

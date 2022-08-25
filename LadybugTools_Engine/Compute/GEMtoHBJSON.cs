@@ -36,7 +36,7 @@ namespace BH.Engine.LadybugTools
         [Output("hbjson", "A Honeybee JSON file.")]
         public static string GEMtoHBJSON(string gem)
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPython_LBT(true);
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonLBT(true);
 
             string gemFile = System.IO.Path.GetFullPath(gem);
             string outputDirectory = System.IO.Path.GetDirectoryName(gem);

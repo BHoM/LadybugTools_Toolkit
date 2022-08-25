@@ -36,7 +36,7 @@ namespace BH.Engine.LadybugTools
         [Output("csv", "The generated CSV file.")]
         public static string EPWtoCSV(string epwFile)
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPython_LBT(true);
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonLBT(true);
 
             string pythonScript = String.Join("\n", new List<string>()
             {
