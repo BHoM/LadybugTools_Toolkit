@@ -22,10 +22,8 @@
 
 using BH.oM.Base.Attributes;
 using BH.oM.Python;
-using BH.Engine.Python;
 using System.ComponentModel;
 using System.IO;
-using System.Collections.Generic;
 
 namespace BH.Engine.LadybugTools
 {
@@ -34,7 +32,7 @@ namespace BH.Engine.LadybugTools
         [Description("Create the BHoM Python envrionment for LadybugTools_Toolkit. This creates a replica of what is found in the Pollination installed python environment, for extension using BHoM.")]
         [Input("run", "Run the installation process.")]
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
-        public static PythonEnvironment InstallPythonLBT(bool run = false)
+        public static PythonEnvironment InstallPythonEnv_LBT(bool run = false)
         {
             return BH.Engine.Python.Compute.InstallReferencedVirtualenv(
                 name: Query.ToolkitName(),
