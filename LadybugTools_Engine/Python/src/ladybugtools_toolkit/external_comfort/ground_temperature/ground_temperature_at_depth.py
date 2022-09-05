@@ -2,19 +2,19 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
-    from_series,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import (
-    to_hourly,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import \
+    from_series
+from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_hourly import \
+    to_hourly
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import \
+    to_series
 
 
 def ground_temperature_at_depth(
     epw: EPW, depth: float, soil_diffusivity: float = 0.31e-6
 ) -> HourlyContinuousCollection:
     """Construct annual hourly ground temperature at given depth.
+    This method uses the IEC 60287-3-1 method for approximating soil temperature.
 
     Args:
         epw (EPW):
