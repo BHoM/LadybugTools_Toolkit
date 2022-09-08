@@ -37,6 +37,7 @@ namespace BH.Engine.LadybugTools
         [Description("Get a predefined ExternalComfortTypology by it's name.")]
         [Input("typologyName", "The name of a pre-defined typology.")]
         [Output("ExternalComfortTypology", "An ExternalComfortTypology object.")]
+        [PreviousVersion("5.3", "BH.Engine.LadybugTools.Compute.ExternalComfortTypology(System.String, BH.oM.LadybugTools.ExternalComfortMaterial, BH.oM.LadybugTools.ExternalComfortMaterial, BH.oM.LadybugTools.ExternalComfortTypology)")]
         public static ExternalComfortTypology ExternalComfortTypology(string typologyName)
         {
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);

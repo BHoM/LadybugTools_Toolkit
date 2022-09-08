@@ -42,6 +42,7 @@ namespace BH.Engine.LadybugTools
         [Input("shadeMaterial", "A pre-defined shade material.")]
         [Input("typology", "An ExternalComfortTypology.")]
         [Output("externalComfortResult", "An external comfort result object containing simulation results.")]
+        [PreviousVersion("5.3", "BH.Engine.LadybugTools.Compute.ExternalComfort(System.String, BH.oM.LadybugTools.ExternalComfortMaterial, BH.oM.LadybugTools.ExternalComfortMaterial)")]
         public static CustomObject ExternalComfort(string identifier, string epwFile, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial, ExternalComfortTypology typology)
         {
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);

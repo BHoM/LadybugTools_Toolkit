@@ -1,8 +1,12 @@
 ﻿{
     "Namespace": {
         "ToNew": {
+            "BH.oM.Ladybug.ExternalComfortMaterial": "BH.oM.LadybugTools.ExternalComfortMaterial",
+            "BH.oM.Ladybug.ExternalComfortTypology": "BH.oM.LadybugTools.ExternalComfortTypology"
         },
         "ToOld": {
+            "BH.oM.LadybugTools.ExternalComfortMaterial": "BH.oM.Ladybug.ExternalComfortMaterial",
+            "BH.oM.LadybugTools.ExternalComfortTypology": "BH.oM.Ladybug.ExternalComfortTypology"
         }
     },
     "Type": {
@@ -19,7 +23,7 @@
         }
     },
     "MessageForDeleted": {
-
+        
     },
     "MessageForNoUpgrade": {
     }

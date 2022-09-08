@@ -7,7 +7,6 @@
     },
     "Type": {
         "ToNew": {
-
         },
         "ToOld": {
         }
@@ -19,9 +18,7 @@
         }
     },
     "MessageForDeleted": {
-        "BH.Engine.LadybugTools.Compute.SpatialComfort": "This method was originally included as part of an initial attempt to migrate code into BHoM. Functionality if still possible via calling methods directly within Python but have not yet been exposed via BHoM interfaces. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
-        "BH.Engine.LadybugTools.Compute.SpatialComfortPossible": "This method was originally included as part of an initial attempt to migrate code into BHoM. Functionality if still possible via calling methods directly within Python but have not yet been exposed via BHoM interfaces. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
-        "BH.Engine.LadybugTools.Compute.ExternalComfortPossible": "This method was originally included as part of an initial attempt to migrate code into BHoM. Functionality if still possible via calling methods directly within Python but have not yet been exposed via BHoM interfaces. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues."
+        "BH.Engine.LadybugTools.Compute.ExternalComfortPossible()": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues."
     },
     "MessageForNoUpgrade": {
     }
