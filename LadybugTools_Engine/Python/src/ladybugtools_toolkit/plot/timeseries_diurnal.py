@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -13,6 +13,7 @@ def timeseries_diurnal(
     color: Union[str, Tuple] = "k",
     ylabel: str = None,
     title: str = None,
+    ylims: List[float] = None,
 ) -> Figure:
     """Plot a heatmap for a Pandas Series object.
 
@@ -25,6 +26,8 @@ def timeseries_diurnal(
             A label to be placed on the y-axis.
         title (str, optional):
             A title to place at the top of the plot. Defaults to None.
+        ylims (List[float], optional):
+            Set the y-limits for the plot.
 
     Returns:
         Figure:
@@ -153,6 +156,9 @@ def timeseries_diurnal(
 
     if ylabel is not None:
         ax.set_ylabel(ylabel)
+
+    if ylims is not None:
+        ax.set_ylim(ylims)
 
     if title is None:
         ax.set_title(
