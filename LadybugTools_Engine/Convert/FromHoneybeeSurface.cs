@@ -44,7 +44,7 @@ namespace BH.Engine.LadybugTools
             "If the Honeybee Surface is a Window type, then it will convert to an Environments Opening, otherwise it will convert to an Environments Panel. If the Honeybee Surface is an AirWall type then it will convert to an Environments Panel which contains an Opening with the same edges, and the Opening will be set as the Hole type.\n" +
             "Providing a collection of Honeybee Surfaces will return a collection of Environment objects, which may be mixed as Panels and Openings depending on the types.\n" +
             "You can filter out Panels from Openings using the Panels(List<IBHoMObject>) and Openings(List<IBHoMObject>) query methods in the Environment Engine.")]
-        [Input("honeybeeSrf", "A Honeybee Surface object from the Honeybee Plus libraries.")]
+        [Input("honeybeeSrf", "A Honeybee Surface object from the Honeybee Plus libraries")]
         [Output("environmentObject", "Either an Environment Panel or an Environment Opening depending on the Honeybee Surface type.")]
         public static IEnvironmentObject FromHoneybeeSurface(dynamic honeybeeSrf)
         {
