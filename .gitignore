@@ -27,6 +27,8 @@
 *.log
 *.sql
 *.sqlite
+!.ci\unit_tests\python\files\example.sql
+
 
 # OS generated files #
 ######################

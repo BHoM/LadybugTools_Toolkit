@@ -38,36 +38,22 @@ namespace BH.Engine.LadybugTools
         [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
         {
-            if (string.IsNullOrEmpty(epwFile))
-            {
-                Base.Compute.RecordError($"epwFile input is either null or has 0 length.");
-                return null;
-            }
-
-            if (!File.Exists(epwFile))
-            {
-                Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {epwFile}");
-                return null;
-            }
-
-            PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
-            if (!pythonEnvironment.IsInstalled())
-            {
-                BH.Engine.Base.Compute.RecordError("Install the LadybugTools_Toolkit Python environment before running this method (using LadybugTools_Toolkit.Compute.InstallPythonEnvironment).");
-                return null;
-            }
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
 
             string pythonScript = string.Join("\n", new List<string>()
             {
-                "import sys",
-                $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-                "from ladybug.epw import EPW",
                 "import json",
+                "from pathlib import Path",
+                "from ladybug.epw import EPW",
                 "",
-                $"print(json.dumps(EPW(r'{epwFile}').to_dict()))",
+                $"epw_path = Path(r'{epwFile}')",
+                "try:",
+                "    print(json.dumps(EPW(epw_path.as_posix()).to_dict()))",
+                "except Exception as exc:",
+                "    print(exc)",
             });
 
-            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
+            string output = env.RunPythonString(pythonScript).Trim();
 
             return Serialiser.Convert.FromJson(output) as CustomObject;
         }

@@ -21,89 +21,89 @@
  */
 
 using BH.Engine.Python;
-using BH.oM.Ladybug;
-using BH.oM.Python;
+using BH.oM.Base;
 using BH.oM.Base.Attributes;
+using BH.oM.LadybugTools;
+using BH.oM.Python;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using BH.oM.Base;
-using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Run an External Comfort simulation and return results.")]
-        [Input("epw", "An EPW file.")]
-        [Input("groundMaterial", "A pre-defined ground material.")]
-        [Input("shadeMaterial", "A pre-defined shade material.")]
-        [Input("typology", "A pre-defined external comfort typology.")]
-        [Output("typologyResult", "A typology result object containing simulation results and typology specific comfort metrics.")]
-        public static CustomObject ExternalComfortTypology(string epw, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial, BH.oM.Ladybug.ExternalComfortTypology typology)
+        [Description("Get a predefined ExternalComfortTypology by it's name.")]
+        [Input("typologyName", "The name of a pre-defined typology.")]
+        [Output("ExternalComfortTypology", "An ExternalComfortTypology object.")]
+        [PreviousVersion("5.3", "BH.Engine.LadybugTools.Compute.ExternalComfortTypology(System.String, BH.oM.LadybugTools.ExternalComfortMaterial, BH.oM.LadybugTools.ExternalComfortMaterial, BH.oM.LadybugTools.ExternalComfortTypology)")]
+        public static ExternalComfortTypology ExternalComfortTypology(string typologyName)
         {
-            PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
-            if (!pythonEnvironment.IsInstalled())
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+
+            // get a list of typologies that have been predefined in the Python code, as a custom object for each
+            string pythonScript = string.Join("\n", new List<string>()
             {
-                BH.Engine.Base.Compute.RecordError($"Install the {Query.ToolkitName()} Python environment before running this method (using {Query.ToolkitName()}.Compute.InstallPythonEnvironment).");
-                return null;
-            }
-
-            if (!ExternalComfortPossible())
-                return null;
-
-            if (groundMaterial == ExternalComfortMaterial.Undefined || shadeMaterial == ExternalComfortMaterial.Undefined)
-            {
-                BH.Engine.Base.Compute.RecordError($"Please input a valid ExternalComfortMaterial.");
-                return null;
-            }
-
-            if (typology == BH.oM.Ladybug.ExternalComfortTypology.Undefined)
-            {
-                BH.Engine.Base.Compute.RecordError($"Please input a valid ExternalComfortTypology.");
-                return null;
-            }
-
-            if (!File.Exists(epw))
-            {
-                BH.Engine.Base.Compute.RecordError($"The EPW file given cannot be found.");
-                return null;
-            }
-
-            string epwPath = Path.GetFullPath(epw);
-
-            string outputPath = Path.Combine(Path.GetTempPath(), $"{System.Guid.NewGuid()}.json");
-
-            string pythonScript = String.Join("\n", new List<string>() 
-            {
-                "import sys",
-                $"sys.path.insert(0, '{pythonEnvironment.CodeDirectory()}')",
+                "from ladybugtools_toolkit.external_comfort import Typologies",
+                "from ladybugtools_toolkit.external_comfort.encoder.encoder import Encoder",
+                "import json",
                 "",
-                "from ladybug.epw import EPW",
-                "from external_comfort.external_comfort import ExternalComfort, ExternalComfortResult",
-                "from external_comfort.material import Material",
-                "from external_comfort.typology import Typologies, TypologyResult",
-                "",
-                $"epw = EPW(r'{epwPath}')",
-                $"ec = ExternalComfort(epw, ground_material=Material.{groundMaterial}.value, shade_material=Material.{shadeMaterial}.value)",
-                "ecr = ExternalComfortResult(ec)",
-                $"typ = Typologies.{typology}.value",
-                "typr = TypologyResult(typ, ecr)",
-                $"typr.to_json(r'{outputPath}')",
-                "print('Nothing to see here!')",
+                "d = {}",
+                "for typology in Typologies:",
+                "    d[typology.name] = typology.value.to_dict()",
+                "print(json.dumps(d, cls = Encoder))",
             });
 
-            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
-
-            string jsonString = "";
-            using (StreamReader r = new StreamReader(outputPath))
+            string output = env.RunPythonString(pythonScript).Trim();
+            CustomObject typologies = Serialiser.Convert.FromJson(output) as CustomObject;
+            List<string> typologyIds = new List<string>();
+            foreach (string typology in typologies.CustomData.Keys)
             {
-                jsonString = r.ReadToEnd();
+                typologyIds.Add(typology);
             }
 
+            if (!typologyIds.Contains(typologyName))
+            {
+                BH.Engine.Base.Compute.RecordError($"The typology given is not predefined in the Python source code. Please use one of [\n{String.Join(",\n    ", typologyIds)}\n].");
+            }
 
-            return Serialiser.Convert.FromJson(jsonString) as CustomObject;
+            // create the ECTypology from the given string name of the Typology
+            CustomObject predefinedTypology = (typologies.CustomData[typologyName] as CustomObject);
+
+            List<ExternalComfortShelter> shelters = new List<ExternalComfortShelter>();
+            foreach (CustomObject shelterObj in ((List<System.Object>)predefinedTypology.CustomData["shelters"]).Cast<CustomObject>())
+            {
+                ExternalComfortShelter shelter = new ExternalComfortShelter();
+                shelter.Porosity = (double)shelterObj.CustomData["porosity"];
+
+                List<double> shelterAzimuthRange = new List<double>();
+                foreach (double shelterObjAz in ((List<System.Object>)shelterObj.CustomData["azimuth_range"]).Cast<double>())
+                {
+                    shelterAzimuthRange.Add(shelterObjAz);
+                }
+                shelter.StartAzimuth = shelterAzimuthRange[0];
+                shelter.EndAzimuth = shelterAzimuthRange[1];
+
+                List<double> shelterAltitudeRange = new List<double>();
+                foreach (double shelterObjAlt in ((List<System.Object>)shelterObj.CustomData["altitude_range"]).Cast<double>())
+                {
+                    shelterAltitudeRange.Add(shelterObjAlt);
+                }
+                shelter.StartAltitude = shelterAltitudeRange[0];
+                shelter.EndAltitude = shelterAltitudeRange[1];
+
+                shelters.Add(shelter);
+            }
+
+            BH.oM.LadybugTools.ExternalComfortTypology ecTypology = new ExternalComfortTypology() {
+                Name = (string)predefinedTypology.CustomData["name"],
+                EvaporativeCoolingEffectiveness = (double)predefinedTypology.CustomData["evaporative_cooling_effectiveness"],
+                Shelters = shelters
+            };
+
+            // return the typology
+            return ecTypology;
         }
     }
 }

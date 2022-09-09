@@ -1,0 +1,10 @@
+﻿cached-property
+fastparquet
+ipykernel
+pyarrow
+pylint
+pytest
+pytest-cov
+scipy
+shapely
+tables

@@ -1,0 +1,25 @@
+﻿{
+    "Namespace": {
+        "ToNew": {
+        },
+        "ToOld": {
+        }
+    },
+    "Type": {
+        "ToNew": {
+        },
+        "ToOld": {
+        }
+    },
+    "Property": {
+        "ToNew": {
+        },
+        "ToOld": {
+        }
+    },
+    "MessageForDeleted": {
+        "BH.Engine.LadybugTools.Compute.ExternalComfortPossible()": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues."
+    },
+    "MessageForNoUpgrade": {
+    }
+}

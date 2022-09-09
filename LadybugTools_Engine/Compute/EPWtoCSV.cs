@@ -21,10 +21,9 @@
  */
 
 using BH.Engine.Python;
-using BH.oM.Python;
 using BH.oM.Base.Attributes;
+
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -37,43 +36,24 @@ namespace BH.Engine.LadybugTools
         [Output("csv", "The generated CSV file.")]
         public static string EPWtoCSV(string epwFile)
         {
-            if (string.IsNullOrEmpty(epwFile))
-            {
-                Base.Compute.RecordError($"epwFile input is either null or has 0 length.");
-                return null;
-            }
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
 
-            if (!File.Exists(epwFile))
-            {
-                Base.Compute.RecordError($"The following was supplied as an epwFile, but does not exist: {epwFile}");
-                return null;
-            }
-
-            PythonEnvironment pythonEnvironment = Python.Query.LoadPythonEnvironment(Query.ToolkitName());
-            if (!pythonEnvironment.IsInstalled())
-            {
-                BH.Engine.Base.Compute.RecordError($"Install the {Query.ToolkitName()} Python environment before running this method (using {Query.ToolkitName()}.Compute.InstallPythonEnvironment).");
-                return null;
-            }
-
-            string pythonScript = String.Join("\n", new List<string>() 
+            string pythonScript = String.Join("\n", new List<string>()
             {
                 "from pathlib import Path",
-                "import sys",
-                $"sys.path.append('{pythonEnvironment.CodeDirectory()}')",
-                "from ladybug_extension.epw import to_dataframe",
                 "from ladybug.epw import EPW",
+                "from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",
-                "to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
-                "print(csv_path)",
+                "try:",
+                "    to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
+                "    print(csv_path)",
+                "except Exception as exc:",
+                "    print(exc)",
             });
 
-            string output = Python.Compute.RunPythonString(pythonEnvironment, pythonScript).Trim();
-
-            return output;
+            return env.RunPythonString(pythonScript).Trim();
         }
     }
 }
-
