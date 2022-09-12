@@ -4,7 +4,7 @@ import warnings
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import fortranformat as ff
 import numpy as np
@@ -166,13 +166,16 @@ class TranslationFactors:
 
 class ForecastScenario:
     def __init__(
-        self, emissions_scenario: EmissionsScenario, forecast_year: ForecastYear
+        self, 
+        emissions_scenario: EmissionsScenario, 
+        forecast_year: ForecastYear, 
+        dataset_dir: Union[Path, str] = r"C:\ccwwg\datasets"
     ):
 
         self.emissions_scenario = emissions_scenario
         self.forecast_year = forecast_year
 
-        self._root_directory = Path(r"C:\ccwwg\datasets")
+        self._root_directory = Path(dataset_dir)
         self._month_idx = pd.date_range("2021-01-01", freq="MS", periods=12)
         self._year_idx = pd.date_range("2021-01-01 00:30:00", freq="60T", periods=8760)
 
@@ -628,15 +631,18 @@ def fix_dodgy_month(epw: EPW) -> EPW:
 
 if __name__ == "__main__":
 
+    INPUT_EPW = "<PATH_TO_EPW>"
+    OUTPUT_DIR = "<PATH_TO_OUTPUT_DIR>"
+
     epws = [
         Path(
-            r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 AlUla\SAU_MD_Prince.Abdulmajeed.Bin.Abdulaziz.AP.404010_TMYx.2007-2021_FIXED_BW_DBT300M.epw"
+            INPUT_EPW
         ),
     ]
     ess = ["A2a", "A2b", "A2c"]
     fys = [2020, 2050, 2080]
 
-    out_dir = Path(r"C:\Users\tgerrish\OneDrive - BuroHappold\0000000 AlUla\forecast")
+    out_dir = Path(OUTPUT_DIR)
     out_dir.mkdir(exist_ok=True, parents=True)
 
     n = 0
