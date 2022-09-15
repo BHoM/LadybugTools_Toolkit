@@ -3,6 +3,10 @@ from pathlib import Path
 import pandas as pd
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_cfd_extract(file: Path, value_renamer: str = "VELOCITY") -> pd.DataFrame:
     """Load a file containing an extract from CFX-Post, with point XYZ values,
         and variable for that point.

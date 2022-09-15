@@ -8,6 +8,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.sun_position_list import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def sun_position_collection(epw: EPW) -> HourlyContinuousCollection:
     """Calculate a set of Sun positions for each hour of the year.
 

@@ -5,6 +5,10 @@ from ladybugtools_toolkit.external_comfort.wind.wind_speed_at_height import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def target_wind_speed_collection(
     epw: EPW, target_average_wind_speed: float, target_height: float
 ) -> HourlyContinuousCollection:

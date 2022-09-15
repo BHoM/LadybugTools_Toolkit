@@ -10,6 +10,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.equality import equality as epw_
 from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def surface_temperature_results_exist(model: Model, epw: EPW = None) -> bool:
     """Check whether results already exist for this configuration of model and EPW.
 

@@ -41,6 +41,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.wet_bulb_temperature import (
     wet_bulb_temperature as wbt,
 )
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_dataframe(epw: EPW, include_additional: bool = True) -> pd.DataFrame:
     """Create a Pandas DataFrame from an EPW object, with option for including additional metrics.
 

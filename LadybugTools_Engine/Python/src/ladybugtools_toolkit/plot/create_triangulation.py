@@ -6,6 +6,10 @@ import numpy as np
 from matplotlib.tri.triangulation import Triangulation
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def create_triangulation(
     x: List[float],
     y: List[float],

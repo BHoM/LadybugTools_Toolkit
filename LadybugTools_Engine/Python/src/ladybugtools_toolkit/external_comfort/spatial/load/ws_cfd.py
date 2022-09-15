@@ -13,6 +13,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def ws_cfd(
     simulation_directory: Path,
     epw: EPW = None,

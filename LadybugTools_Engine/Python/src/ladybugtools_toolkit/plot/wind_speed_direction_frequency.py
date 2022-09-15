@@ -11,6 +11,10 @@ from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def wind_speed_direction_frequency(
     wind_speed: List[float],
     wind_direction: List[float],

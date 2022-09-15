@@ -8,6 +8,10 @@ from ladybug.sql import SQLiteResult
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_sql_file(sql_file: Union[str, Path]) -> pd.DataFrame:
     """Return a DataFrame with hourly values along rows and variables along columns.
 

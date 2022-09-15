@@ -13,6 +13,10 @@ from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_distance_to_comfortable(
     collection: HourlyContinuousCollection,
     title: str = None,

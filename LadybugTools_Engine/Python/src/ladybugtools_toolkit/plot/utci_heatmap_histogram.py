@@ -18,6 +18,10 @@ from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_heatmap_histogram(
     collection: HourlyContinuousCollection, title: str = None
 ) -> Figure:

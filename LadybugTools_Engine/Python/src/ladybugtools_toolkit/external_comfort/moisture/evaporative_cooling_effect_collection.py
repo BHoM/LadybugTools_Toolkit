@@ -5,6 +5,10 @@ from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def evaporative_cooling_effect_collection(
     epw: EPW, evaporative_cooling_effectiveness: float = 0.3
 ) -> List[HourlyContinuousCollection]:

@@ -6,6 +6,10 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period.to_datetimes import 
 from ladybugtools_toolkit.ladybug_extension.header.to_string import to_string
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_series(collection: BaseCollection) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
 

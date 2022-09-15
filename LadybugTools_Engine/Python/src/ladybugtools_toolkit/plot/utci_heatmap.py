@@ -5,6 +5,10 @@ from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_heatmap(
     utci_collection: HourlyContinuousCollection, title: str = None
 ) -> Figure:

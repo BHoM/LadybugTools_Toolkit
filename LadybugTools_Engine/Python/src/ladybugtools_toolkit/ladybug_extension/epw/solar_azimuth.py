@@ -8,6 +8,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.sun_position_collection import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def solar_azimuth(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:

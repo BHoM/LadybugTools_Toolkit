@@ -15,6 +15,10 @@ from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def mrt_interpolated(
     simulation_directory: Path,
     unshaded_mean_radiant_temperature: HourlyContinuousCollection,

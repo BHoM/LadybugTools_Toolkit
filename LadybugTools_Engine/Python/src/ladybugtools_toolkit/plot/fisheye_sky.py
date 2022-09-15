@@ -10,6 +10,10 @@ from lbt_recipes.settings import RecipeSettings
 from PIL import Image, ImageEnhance
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def fisheye_sky(
     model: Model,
     sensor: Point3D,

@@ -14,6 +14,10 @@ from ladybug.skymodel import (
 from ladybug.sunpath import Sunpath
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def scrape_weather(
     station: str,
     start_date: str = "1970-01-01",

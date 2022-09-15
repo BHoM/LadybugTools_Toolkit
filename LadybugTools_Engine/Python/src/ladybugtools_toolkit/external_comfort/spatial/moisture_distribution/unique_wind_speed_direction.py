@@ -5,6 +5,10 @@ from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def unique_wind_speed_direction(
     epw: EPW, schedule: List[int] = None
 ) -> List[Tuple[float, float]]:

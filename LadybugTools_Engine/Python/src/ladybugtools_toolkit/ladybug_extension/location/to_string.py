@@ -1,6 +1,10 @@
 from ladybug.location import Location
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_string(location: Location) -> str:
     """Return a simple string representation of the Location object.
 

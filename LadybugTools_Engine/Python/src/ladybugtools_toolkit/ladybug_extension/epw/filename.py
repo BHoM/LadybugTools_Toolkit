@@ -3,6 +3,10 @@ from pathlib import Path
 from ladybug.epw import EPW
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def filename(epw: EPW, include_extension: bool = False) -> str:
     """Get the filename of the given EPW.
 

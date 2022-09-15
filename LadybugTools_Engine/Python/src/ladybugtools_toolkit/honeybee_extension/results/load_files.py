@@ -5,6 +5,10 @@ from typing import Callable, List, Union
 import pandas as pd
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
     """Load a set of input files and combine into a DataFrame with filename as header.
 

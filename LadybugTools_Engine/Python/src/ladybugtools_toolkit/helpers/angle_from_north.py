@@ -3,6 +3,10 @@ from typing import List
 import numpy as np
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def angle_from_north(vector: List[float]) -> float:
     """For an X, Y vector, determine the clockwise angle to north at [0, 1].
 

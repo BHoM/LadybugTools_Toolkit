@@ -13,6 +13,10 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def sky_view_pov(
     model: Model,
     sensor: Point3D,

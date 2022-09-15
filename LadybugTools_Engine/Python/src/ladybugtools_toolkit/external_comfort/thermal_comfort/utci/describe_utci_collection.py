@@ -6,6 +6,10 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def describe_utci_collection(
     universal_thermal_climate_index: HourlyContinuousCollection,
     analysis_period: AnalysisPeriod = None,

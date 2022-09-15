@@ -4,6 +4,10 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_day_comfort_metrics(
     utci: pd.Series,
     dbt: pd.Series,

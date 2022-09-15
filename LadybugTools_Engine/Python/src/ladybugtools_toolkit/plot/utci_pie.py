@@ -12,6 +12,10 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Patch
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_pie(
     utci_collection: HourlyContinuousCollection,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),

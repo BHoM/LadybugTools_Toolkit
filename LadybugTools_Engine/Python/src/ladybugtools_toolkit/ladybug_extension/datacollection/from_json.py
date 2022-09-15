@@ -5,6 +5,10 @@ from ladybug._datacollectionbase import BaseCollection
 from ladybug.datautil import collections_from_json
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def from_json(json_path: Union[Path, str]) -> List[BaseCollection]:
     """Load a JSON containing serialised Ladybug BaseCollection-like objects.
 

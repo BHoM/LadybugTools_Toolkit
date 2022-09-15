@@ -2,6 +2,10 @@ import pandas as pd
 from ladybug.header import Header
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_multiindex(header: Header) -> pd.MultiIndex:
     """Convert a Ladybug header object into a Pandas MultiIndex. Used for creating CSV headers for
         reloading by Ladybug.

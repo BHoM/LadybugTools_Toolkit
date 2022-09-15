@@ -3,6 +3,10 @@ from datetime import datetime
 from ladybug.dt import DateTime
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_datetime(lb_datetime: DateTime) -> datetime:
     """Convert a Ladybug DateTime object into a Python datetime object.
 

@@ -6,6 +6,10 @@ from ladybugtools_toolkit.plot.colormaps import UTCI_COLORMAP
 from matplotlib.colors import Colormap
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def spatial_metric_colormap(spatial_metric: SpatialMetric) -> Colormap:
     """Return the associated matplotlib colormap for a given SpatialMetric."""
     if spatial_metric == SpatialMetric.RAD_DIFFUSE:

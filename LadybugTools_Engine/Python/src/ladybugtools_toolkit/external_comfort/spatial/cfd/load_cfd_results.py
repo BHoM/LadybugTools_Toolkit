@@ -10,6 +10,10 @@ from ladybugtools_toolkit.external_comfort.spatial.cfd.load_cfd_extract import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_cfd_results(simulation_directory: Path) -> pd.DataFrame:
     """Load CFD files from the given directory
 

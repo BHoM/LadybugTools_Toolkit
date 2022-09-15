@@ -9,6 +9,10 @@ from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.moistur
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_moisture_sources(simulation_directory: Path) -> List[MoistureSource]:
     """Get/create the moisture directory for a spatial simulation.
 

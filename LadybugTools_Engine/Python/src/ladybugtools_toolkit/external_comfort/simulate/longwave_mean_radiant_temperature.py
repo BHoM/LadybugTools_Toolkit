@@ -9,6 +9,10 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def longwave_mean_radiant_temperature(
     collections: List[HourlyContinuousCollection], view_factors: List[float]
 ) -> HourlyContinuousCollection:

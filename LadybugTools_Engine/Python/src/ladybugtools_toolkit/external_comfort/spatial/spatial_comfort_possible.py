@@ -1,6 +1,10 @@
 from pathlib import Path
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def spatial_comfort_possible(simulation_directory: Path) -> bool:
     """Checks whether spatial_comfort processing is possible for a given simulation_directory.
 

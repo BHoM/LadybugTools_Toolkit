@@ -12,6 +12,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def rh_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
     """Return the relative humidity from the simulation directory calculating the effective
         RH values following addition of moisture into the air, then create the H5 file to store

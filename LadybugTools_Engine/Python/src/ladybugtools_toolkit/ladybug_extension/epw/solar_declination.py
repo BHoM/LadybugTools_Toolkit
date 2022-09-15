@@ -6,6 +6,10 @@ from ladybug.header import Header
 from ladybug.sunpath import Sunpath
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def solar_declination(epw: EPW) -> HourlyContinuousCollection:
     """Calculate solar declination for each hour of the year.
 

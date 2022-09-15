@@ -9,6 +9,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.sun_position_list import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def sun_exposure(shelters: List[Shelter], epw: EPW) -> List[float]:
     """Return NaN if sun below horizon, and a value between 0-1 for sun-hidden to sun-exposed.
 

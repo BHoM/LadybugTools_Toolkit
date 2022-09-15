@@ -3,6 +3,10 @@ from typing import List
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def evaporative_cooling_effect(
     dry_bulb_temperature: float,
     relative_humidity: float,

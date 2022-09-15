@@ -5,6 +5,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import 
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def spatial_metric_filepath(
     simulation_directory: Path, spatial_metric: SpatialMetric
 ) -> Path:

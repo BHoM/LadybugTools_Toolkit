@@ -8,6 +8,10 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.monthlycollection.to_
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def hourly_ground_temperature(
     epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
 ) -> HourlyContinuousCollection:

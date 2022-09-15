@@ -4,6 +4,10 @@ from typing import Union
 import pandas as pd
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_res_file(res_file: Union[str, Path]) -> pd.Series:
     """Load a Radiance .res file and return a DataFrame with the data.
 

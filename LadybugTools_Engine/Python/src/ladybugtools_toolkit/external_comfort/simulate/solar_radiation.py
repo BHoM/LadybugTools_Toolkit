@@ -17,6 +17,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from lbt_recipes.recipe import Recipe, RecipeSettings
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
     """Run Radiance on a model and return the results.
 

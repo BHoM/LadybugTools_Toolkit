@@ -15,6 +15,10 @@ from matplotlib.colors import BoundaryNorm, Colormap, Normalize
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def windrose(
     epw: EPW,
     collection: HourlyContinuousCollection,

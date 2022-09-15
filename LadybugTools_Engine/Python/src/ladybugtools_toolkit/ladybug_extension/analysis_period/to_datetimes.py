@@ -2,6 +2,10 @@ import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_datetimes(
     analysis_period: AnalysisPeriod,
 ) -> pd.DatetimeIndex:

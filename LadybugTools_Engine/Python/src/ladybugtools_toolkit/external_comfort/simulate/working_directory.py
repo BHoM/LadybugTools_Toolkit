@@ -5,6 +5,10 @@ from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def working_directory(model: Model, create: bool = False) -> Path:
     """Get the working directory (where simulation results will be stored) for the given model, and
         create it if it doesnt already exist.

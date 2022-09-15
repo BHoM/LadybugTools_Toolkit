@@ -4,6 +4,10 @@ from ladybug.epw import EPW
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def wet_bulb_temperature(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly wet bulb temperature for a given EPW.
 

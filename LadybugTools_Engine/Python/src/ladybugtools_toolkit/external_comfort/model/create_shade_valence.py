@@ -4,6 +4,10 @@ from honeybee.model import Shade
 from ladybug_geometry.geometry3d import Point3D
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def create_shade_valence(
     width: float = 10, depth: float = 10, shade_height: float = 3
 ) -> List[Shade]:

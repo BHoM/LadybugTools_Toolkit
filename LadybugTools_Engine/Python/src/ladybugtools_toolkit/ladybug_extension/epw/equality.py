@@ -1,6 +1,10 @@
 from ladybug.epw import EPW
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
     """Check for equality between two EPW objects, with regards to the data contained within.
 

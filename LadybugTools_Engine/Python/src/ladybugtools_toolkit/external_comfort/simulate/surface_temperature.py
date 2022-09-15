@@ -27,6 +27,10 @@ from ladybugtools_toolkit.external_comfort.simulate.working_directory import (
 from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def surface_temperature(
     model: Model, epw: EPW
 ) -> Dict[str, HourlyContinuousCollection]:

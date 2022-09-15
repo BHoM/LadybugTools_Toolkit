@@ -7,6 +7,10 @@ from ladybugtools_toolkit.honeybee_extension.results.load_files import load_file
 from ladybugtools_toolkit.honeybee_extension.results.load_ill_file import load_ill_file
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_ill(ill_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
     """Load a single Radiance .ill file, or list of Radiance .ill files and return a combined DataFrame with the data.
 

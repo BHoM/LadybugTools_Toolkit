@@ -7,6 +7,10 @@ from ladybug.epw import EPW
 from ladybug.wea import Wea
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def radiation_tilt_orientation_matrix(
     epw: EPW, n_altitudes: int = 10, n_azimuths: int = 19
 ) -> pd.DataFrame:

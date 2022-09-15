@@ -7,6 +7,10 @@ from ladybugtools_toolkit.honeybee_extension.results.load_files import load_file
 from ladybugtools_toolkit.honeybee_extension.results.load_sql_file import load_sql_file
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_sql(sql_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
     """Load a single EnergyPlus .sql file, or list of EnergyPlus .sql files and return a combined DataFrame with the data.
 

@@ -13,6 +13,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def dbt_epw(
     simulation_directory: Path,
     epw: EPW = None,

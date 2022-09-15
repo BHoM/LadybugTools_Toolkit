@@ -4,6 +4,10 @@ from typing import Tuple, Union
 from matplotlib.colors import cnames, to_rgb
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]:
     """
     Lightens the given color by multiplying (1-luminosity) by the given amount.

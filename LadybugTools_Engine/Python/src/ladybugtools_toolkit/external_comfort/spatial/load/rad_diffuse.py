@@ -11,6 +11,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def rad_diffuse(
     simulation_directory: Path,
     total_irradiance: pd.DataFrame = None,

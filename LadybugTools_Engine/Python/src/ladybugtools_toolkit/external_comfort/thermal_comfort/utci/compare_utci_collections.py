@@ -8,6 +8,10 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def compare_utci_collections(
     baseline: HourlyContinuousCollection,
     comparable: HourlyContinuousCollection,

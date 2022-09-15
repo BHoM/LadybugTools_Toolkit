@@ -5,6 +5,10 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybugtools_toolkit.ladybug_extension.dt.from_datetime import from_datetime
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
     """Convert a list of datetimes (in order from earliest to latest) into an AnalysisPeriod object.
 

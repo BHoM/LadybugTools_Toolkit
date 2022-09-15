@@ -6,6 +6,10 @@ from ladybugtools_toolkit.external_comfort.ground_temperature.monthly_ground_tem
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def energyplus_strings(epw: EPW) -> str:
     """Generate strings to add into EnergyPlus simulation for more accurate ground surface
         temperature results.

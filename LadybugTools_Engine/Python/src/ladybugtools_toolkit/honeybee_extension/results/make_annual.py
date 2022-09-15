@@ -1,6 +1,10 @@
 import pandas as pd
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def make_annual(df: pd.DataFrame) -> pd.DataFrame:
     """Convert a DataFrame with partial annual data to a DataFrame with annual data.
 

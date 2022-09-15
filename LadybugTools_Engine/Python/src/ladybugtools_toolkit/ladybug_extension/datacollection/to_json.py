@@ -5,6 +5,10 @@ from ladybug._datacollectionbase import BaseCollection
 from ladybug.datautil import collections_to_json
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_json(
     collections: List[BaseCollection], json_path: Union[Path, str], indent: int = None
 ) -> Path:

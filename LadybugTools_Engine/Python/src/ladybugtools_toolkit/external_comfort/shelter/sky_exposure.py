@@ -6,6 +6,10 @@ from ladybugtools_toolkit.external_comfort.shelter.any_shelters_overlap import (
 from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def sky_exposure(shelters: List[Shelter]) -> float:
     """Determine the proportion of the sky visible beneath a set of shelters. Includes porosity of
         shelters in the resultant value (e.g. fully enclosed by a single 50% porous shelter would

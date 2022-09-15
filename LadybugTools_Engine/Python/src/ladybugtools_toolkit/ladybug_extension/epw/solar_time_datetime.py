@@ -13,6 +13,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.solar_time_hour import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def solar_time_datetime(
     epw: EPW, solar_time_hour: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:

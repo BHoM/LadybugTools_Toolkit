@@ -3,6 +3,10 @@ from matplotlib.figure import Figure
 from PIL import Image
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def figure_to_image(fig: Figure) -> Image:
     """Convert a matplotlib Figure object into a PIL Image.
 

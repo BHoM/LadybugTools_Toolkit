@@ -1,6 +1,10 @@
 from ladybug.header import Header
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_string(header: Header) -> str:
     """Convert a Ladybug header object into a string.
 
