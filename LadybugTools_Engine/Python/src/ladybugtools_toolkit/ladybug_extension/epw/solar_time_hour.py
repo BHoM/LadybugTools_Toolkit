@@ -9,6 +9,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.equation_of_time import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def solar_time_hour(
     epw: EPW, equation_of_time: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:

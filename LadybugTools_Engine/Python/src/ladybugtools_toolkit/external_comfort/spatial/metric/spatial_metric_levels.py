@@ -7,6 +7,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import 
 from ladybugtools_toolkit.plot.colormaps import UTCI_LEVELS
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def spatial_metric_levels(spatial_metric: SpatialMetric) -> List[float]:
     """Return the associated matplotlib levels for a given SpatialMetric."""
     if spatial_metric == SpatialMetric.RAD_DIFFUSE:

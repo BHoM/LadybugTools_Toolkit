@@ -7,6 +7,10 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def timeseries_heatmap(
     series: pd.Series,
     cmap: Union[Colormap, str] = "viridis",

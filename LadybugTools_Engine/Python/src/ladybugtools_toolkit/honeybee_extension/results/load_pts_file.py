@@ -4,6 +4,10 @@ from typing import Union
 import pandas as pd
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_pts_file(pts_file: Union[str, Path]) -> pd.DataFrame:
     """Load a Radiance .pts file and return a DataFrame with the data.
 

@@ -13,6 +13,10 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_s
 from scipy.interpolate import interp1d
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def spatial_wind_speed(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     """Calculate the temporo-spatial wind speed for a given SpatialComfort case.
 

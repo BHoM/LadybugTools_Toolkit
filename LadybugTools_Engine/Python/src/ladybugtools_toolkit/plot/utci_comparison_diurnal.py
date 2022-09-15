@@ -10,6 +10,10 @@ from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_comparison_diurnal(
     collections: List[HourlyContinuousCollection],
     collection_ids: List[str] = None,

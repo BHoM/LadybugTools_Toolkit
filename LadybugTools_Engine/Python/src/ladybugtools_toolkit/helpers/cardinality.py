@@ -1,3 +1,7 @@
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def cardinality(angle_from_north: float, directions: int = 16):
     """Returns the cardinal orientation of a given angle, where that angle is related to north at
         0 degrees.

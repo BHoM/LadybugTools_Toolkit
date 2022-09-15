@@ -8,6 +8,10 @@ from ladybugtools_toolkit.external_comfort.ground_temperature.hourly_ground_temp
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def energyplus_strings_otherside_coefficient(epw: EPW) -> str:
     """Generate strings to add into EnergyPlus simulation for annual-hourly ground temperature
         values applied to sub-ground surfaces.

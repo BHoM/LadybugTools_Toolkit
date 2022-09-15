@@ -6,6 +6,10 @@ from ladybugtools_toolkit.external_comfort.shelter.shelters_overlap import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def any_shelters_overlap(shelters: List[Shelter]) -> bool:
     """Check whether any shelter in a list overlaps with any other shelter in the list.
 

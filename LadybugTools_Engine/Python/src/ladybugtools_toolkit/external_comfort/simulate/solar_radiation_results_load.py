@@ -10,6 +10,10 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def solar_radiation_results_load(
     total_irradiance: Path, direct_irradiance: Path
 ) -> Dict[str, HourlyContinuousCollection]:

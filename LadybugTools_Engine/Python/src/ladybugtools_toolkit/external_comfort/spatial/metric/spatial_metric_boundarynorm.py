@@ -5,6 +5,10 @@ from ladybugtools_toolkit.plot.colormaps import UTCI_BOUNDARYNORM
 from matplotlib.colors import BoundaryNorm
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def spatial_metric_boundarynorm(spatial_metric: SpatialMetric) -> BoundaryNorm:
     """Return the associated matplotlib boundarynorm for a given SpatialMetric."""
     if spatial_metric == SpatialMetric.RAD_DIFFUSE:

@@ -11,6 +11,10 @@ from matplotlib.figure import Figure
 from scipy.interpolate import make_interp_spline
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_journey(
     utci_values: List[float],
     names: List[str] = None,

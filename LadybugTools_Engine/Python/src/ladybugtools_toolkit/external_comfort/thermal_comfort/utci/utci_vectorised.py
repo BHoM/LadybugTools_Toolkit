@@ -1,6 +1,10 @@
 import numpy as np
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_vectorised(
     ta: np.ndarray, tr: np.ndarray, vel: np.ndarray, rh: np.ndarray
 ) -> np.ndarray:

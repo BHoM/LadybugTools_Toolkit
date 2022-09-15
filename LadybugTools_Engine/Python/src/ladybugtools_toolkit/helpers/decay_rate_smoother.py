@@ -1,6 +1,10 @@
 import pandas as pd
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def decay_rate_smoother(
     series: pd.Series,
     difference_threshold: float = -10,

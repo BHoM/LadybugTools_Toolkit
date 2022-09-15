@@ -1,6 +1,10 @@
 from pathlib import Path
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def cfd_directory(simulation_directory: Path) -> Path:
     """Get the CFD directory for a spatial simulation.
 

@@ -1,6 +1,10 @@
 from honeybee.model import Model
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def equality(model0: Model, model1: Model, include_identifier: bool = False) -> bool:
     """Check for equality between two models, with regards to their material properties.
 

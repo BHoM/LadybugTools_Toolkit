@@ -5,6 +5,10 @@ from ladybug._datacollectionbase import BaseCollection
 from ladybug.datautil import collections_to_csv
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_csv(collections: List[BaseCollection], csv_path: Union[Path, str]) -> Path:
     """Save Ladybug BaseCollection-like objects into a CSV file.
 

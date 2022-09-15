@@ -9,6 +9,10 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def surface_temperature_results_load(
     sql_path: Path,
     epw: EPW,

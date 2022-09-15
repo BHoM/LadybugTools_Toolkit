@@ -4,6 +4,10 @@ from typing import List, Union
 from PIL import Image
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def animation(
     image_files: List[Union[str, Path]],
     output_gif: Union[str, Path],

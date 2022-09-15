@@ -3,6 +3,10 @@ from typing import Any, List
 import numpy as np
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def rolling_window(array: List[Any], window: int):
     """Throwaway function here to roll a window along a list.
 

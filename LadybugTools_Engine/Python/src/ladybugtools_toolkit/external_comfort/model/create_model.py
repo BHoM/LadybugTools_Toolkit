@@ -15,6 +15,10 @@ from ladybugtools_toolkit.external_comfort.model.create_shade_zone import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def create_model(
     ground_material: _EnergyMaterialOpaqueBase,
     shade_material: _EnergyMaterialOpaqueBase,

@@ -4,6 +4,10 @@ from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybugtools_toolkit.ladybug_extension.header.from_string import from_string
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def from_series(series: pd.Series) -> BaseCollection:
     """Convert a Pandas Series object into a Ladybug BaseCollection-like object.
 

@@ -4,6 +4,10 @@ from ladybug.epw import EPW
 from ladybug.psychrometrics import humid_ratio_from_db_rh
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly humidity ratio for a given EPW.
 

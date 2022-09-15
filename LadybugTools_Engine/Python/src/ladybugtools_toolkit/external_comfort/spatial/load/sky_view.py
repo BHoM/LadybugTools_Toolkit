@@ -10,6 +10,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 from ladybugtools_toolkit.honeybee_extension.results.load_res import load_res
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def sky_view(simulation_directory: Path) -> pd.DataFrame:
     """Get the sky view from the simulation directory.
 

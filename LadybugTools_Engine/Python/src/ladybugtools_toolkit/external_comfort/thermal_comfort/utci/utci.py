@@ -10,6 +10,10 @@ from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci_vectorised 
 from numpy.typing import NDArray
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci(
     air_temperature: Union[
         HourlyContinuousCollection, pd.DataFrame, pd.Series, NDArray[np.float64]

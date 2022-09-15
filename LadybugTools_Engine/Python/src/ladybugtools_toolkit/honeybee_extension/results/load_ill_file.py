@@ -7,6 +7,10 @@ from ladybugtools_toolkit.honeybee_extension.results.load_sun_up_hours import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_ill_file(ill_file: Union[str, Path]) -> pd.Series:
     """Load a Radiance .ill file and return a DataFrame with the data.
 

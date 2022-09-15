@@ -12,6 +12,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def dbt_evap(simulation_directory: Path, epw: EPW) -> List[pd.DataFrame]:
     """Return the dry-bulb-temperatures from the simulation directory calculating the effective
         DBT values following addition of moisture into the air, then create the H5 file to store

@@ -11,6 +11,10 @@ from ladybugtools_toolkit.honeybee_extension.results.load_ill import load_ill
 from ladybugtools_toolkit.honeybee_extension.results.make_annual import make_annual
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def rad_direct(simulation_directory: Path) -> pd.DataFrame:
     """Return the direct irradiance from the simulation directory, and create the H5 file to store
         them as compressed objects if not already done.

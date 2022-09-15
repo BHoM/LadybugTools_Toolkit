@@ -5,6 +5,10 @@ from ladybug._datacollectionbase import BaseCollection
 from ladybug.datautil import collections_from_csv
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def from_csv(csv_path: Union[Path, str]) -> List[BaseCollection]:
     """Load a CSV containing serialised Ladybug BaseCollection-like objects.
 

@@ -4,6 +4,10 @@ from ladybug.datatype import TYPESDICT
 from ladybug.header import Header
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def from_multiindex(multiindex: pd.MultiIndex) -> Header:
     """Convert a Pandas MultiIndex into a Ladybug header object.
 

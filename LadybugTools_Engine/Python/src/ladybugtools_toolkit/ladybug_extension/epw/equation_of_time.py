@@ -6,6 +6,10 @@ from ladybug.header import Header
 from ladybug.sunpath import Sunpath
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
     """Calculate the equation of time for each hour of the year.
 

@@ -1,6 +1,10 @@
 from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def shelters_overlap(shelter1: Shelter, shelter2: Shelter) -> bool:
     """Return True if two shelters overlap with each other.
 

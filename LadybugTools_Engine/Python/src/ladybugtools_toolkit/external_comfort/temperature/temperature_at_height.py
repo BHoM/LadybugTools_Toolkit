@@ -1,6 +1,10 @@
 import warnings
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def temperature_at_height(
     reference_temperature: float,
     reference_height: float,

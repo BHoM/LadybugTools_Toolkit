@@ -16,6 +16,10 @@ from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.load_mo
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def evap_clg_magnitude(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     """Calculate the magnitude of evaporative cooling across a spatial case.
 

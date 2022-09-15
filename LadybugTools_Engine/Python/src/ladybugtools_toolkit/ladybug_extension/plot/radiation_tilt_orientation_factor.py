@@ -5,6 +5,10 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def radiation_tilt_orientation_factor(
     radiation_matrix: pd.DataFrame, title: str = None, cmap: str = "YlOrRd"
 ) -> Figure:

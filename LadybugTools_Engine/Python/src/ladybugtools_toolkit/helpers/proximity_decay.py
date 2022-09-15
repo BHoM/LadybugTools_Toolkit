@@ -1,6 +1,10 @@
 import numpy as np
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def proximity_decay(
     value: float,
     distance_to_value: float,

@@ -22,6 +22,10 @@ from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def skymatrix(
     epw: EPW,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),

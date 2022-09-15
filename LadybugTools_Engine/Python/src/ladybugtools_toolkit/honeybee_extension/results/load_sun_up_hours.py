@@ -5,6 +5,10 @@ from typing import Union
 import pandas as pd
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def load_sun_up_hours(
     sun_up_hours_file: Union[str, Path], year: int = 2017
 ) -> pd.DatetimeIndex:

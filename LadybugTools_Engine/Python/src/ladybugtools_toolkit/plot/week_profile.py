@@ -7,6 +7,10 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def week_profile(
     series: pd.Series,
     color: Union[str, Tuple] = "k",

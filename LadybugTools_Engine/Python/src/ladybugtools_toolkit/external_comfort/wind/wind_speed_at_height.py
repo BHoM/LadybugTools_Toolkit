@@ -1,6 +1,10 @@
 import numpy as np
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def wind_speed_at_height(
     reference_wind_speed: float,
     reference_height: float,

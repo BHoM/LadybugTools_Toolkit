@@ -7,6 +7,10 @@ from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
 from matplotlib.figure import Figure
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_heatmap_difference(
     utci_collection1: HourlyContinuousCollection,
     utci_collection2: HourlyContinuousCollection,

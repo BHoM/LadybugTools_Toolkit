@@ -3,6 +3,10 @@ import calendar
 from ladybug.analysisperiod import AnalysisPeriod
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def describe(
     analysis_period: AnalysisPeriod,
     save_path: bool = False,

@@ -4,6 +4,10 @@ from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ..to_series import to_series
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def to_hourly(
     collection: MonthlyCollection, method: str = None
 ) -> HourlyContinuousCollection:

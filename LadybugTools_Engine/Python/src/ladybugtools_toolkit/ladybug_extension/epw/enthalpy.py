@@ -8,6 +8,10 @@ from ladybugtools_toolkit.ladybug_extension.epw.humidity_ratio import (
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def enthalpy(
     epw: EPW, humidity_ratio: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:

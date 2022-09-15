@@ -4,6 +4,10 @@ from ladybug.epw import EPW
 from ladybug.sunpath import Sun, Sunpath
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def sun_position_list(epw: EPW) -> List[Sun]:
     """
     Calculate sun positions for a given epw file.

@@ -5,6 +5,10 @@ from ladybugtools_toolkit.external_comfort.temperature.temperature_at_height imp
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def dry_bulb_temperature_at_height(
     epw: EPW, target_height: float
 ) -> HourlyContinuousCollection:

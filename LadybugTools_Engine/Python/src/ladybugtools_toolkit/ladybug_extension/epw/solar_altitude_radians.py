@@ -3,6 +3,10 @@ from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.epw.solar_altitude import solar_altitude
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def solar_altitude_radians(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:

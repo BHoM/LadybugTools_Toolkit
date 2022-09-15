@@ -5,6 +5,10 @@ from matplotlib import ticker as mticker
 from matplotlib.image import AxesImage
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def annotate_imshow(
     im: AxesImage,
     data: List[float] = None,

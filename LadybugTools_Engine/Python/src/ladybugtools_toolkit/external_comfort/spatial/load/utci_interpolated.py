@@ -4,14 +4,21 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import \
-    SpatialMetric
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import \
-    spatial_metric_filepath
-from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import \
-    unshaded_shaded_interpolation
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
+    SpatialMetric,
+)
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
+    spatial_metric_filepath,
+)
+from ladybugtools_toolkit.external_comfort.spatial.unshaded_shaded_interpolation import (
+    unshaded_shaded_interpolation,
+)
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def utci_interpolated(
     simulation_directory: Path,
     unshaded_universal_thermal_climate_index: HourlyContinuousCollection,

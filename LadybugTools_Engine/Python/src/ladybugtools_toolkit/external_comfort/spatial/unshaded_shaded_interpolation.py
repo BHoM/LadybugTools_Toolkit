@@ -6,6 +6,10 @@ from ladybug.datacollection import HourlyContinuousCollection
 from scipy.interpolate import interp1d
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def unshaded_shaded_interpolation(
     unshaded: HourlyContinuousCollection,
     shaded: HourlyContinuousCollection,

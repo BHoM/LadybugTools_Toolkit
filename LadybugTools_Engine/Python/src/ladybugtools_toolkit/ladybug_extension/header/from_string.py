@@ -4,6 +4,10 @@ from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def from_string(string: str) -> Header:
     """Convert a string into a Ladybug header object.
 

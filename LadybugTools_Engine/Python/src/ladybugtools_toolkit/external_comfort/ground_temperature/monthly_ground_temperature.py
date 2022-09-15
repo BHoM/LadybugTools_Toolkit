@@ -7,6 +7,10 @@ from ladybugtools_toolkit.external_comfort.ground_temperature.ground_temperature
 )
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def monthly_ground_temperature(
     epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
 ) -> MonthlyCollection:

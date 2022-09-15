@@ -10,6 +10,10 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 from ladybugtools_toolkit.honeybee_extension.results.load_pts import load_pts
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def points(simulation_directory: Path) -> pd.DataFrame:
     """Return the points results from the simulation directory, and create the H5 file to store
         them as compressed objects if not already done.

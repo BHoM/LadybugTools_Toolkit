@@ -1,6 +1,10 @@
 from pathlib import Path
 
 
+from python_toolkit.bhom.analytics import analytics
+
+
+@analytics
 def moisture_directory(simulation_directory: Path) -> Path:
     """Get the moisture directory for a spatial simulation.
 
