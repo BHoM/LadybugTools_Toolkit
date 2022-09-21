@@ -6,7 +6,7 @@ from ladybugtools_toolkit.plot.colormaps import UTCI_COLORMAP
 from matplotlib.colors import Colormap
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

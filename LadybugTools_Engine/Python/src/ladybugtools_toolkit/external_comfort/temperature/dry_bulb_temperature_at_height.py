@@ -5,7 +5,7 @@ from ladybugtools_toolkit.external_comfort.temperature.temperature_at_height imp
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

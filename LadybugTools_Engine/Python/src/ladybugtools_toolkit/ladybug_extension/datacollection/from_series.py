@@ -4,7 +4,7 @@ from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybugtools_toolkit.ladybug_extension.header.from_string import from_string
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -4,7 +4,7 @@ from typing import List, Union
 from PIL import Image
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

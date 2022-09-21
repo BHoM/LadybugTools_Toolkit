@@ -5,7 +5,7 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import 
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

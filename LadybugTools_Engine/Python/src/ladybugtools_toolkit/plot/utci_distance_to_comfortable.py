@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

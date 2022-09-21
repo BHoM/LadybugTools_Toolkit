@@ -5,7 +5,7 @@ from matplotlib import ticker as mticker
 from matplotlib.image import AxesImage
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

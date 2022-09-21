@@ -4,7 +4,7 @@ from ladybug.epw import EPW
 from ladybug.sunpath import Sun, Sunpath
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

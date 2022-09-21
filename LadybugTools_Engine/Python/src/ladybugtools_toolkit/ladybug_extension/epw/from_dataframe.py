@@ -9,7 +9,7 @@ from ladybugtools_toolkit.ladybug_extension.header.to_string import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

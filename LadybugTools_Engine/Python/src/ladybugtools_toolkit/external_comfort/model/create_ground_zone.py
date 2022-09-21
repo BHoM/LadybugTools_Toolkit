@@ -6,7 +6,7 @@ from honeybee_energy.material.opaque import EnergyMaterial, _EnergyMaterialOpaqu
 from ladybug_geometry.geometry3d import Point3D
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

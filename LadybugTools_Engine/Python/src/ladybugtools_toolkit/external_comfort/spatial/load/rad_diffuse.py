@@ -1,17 +1,15 @@
 from pathlib import Path
 
 import pandas as pd
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_direct import rad_direct
-from ladybugtools_toolkit.external_comfort.spatial.load.rad_total import rad_total
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
-    SpatialMetric,
-)
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
-    spatial_metric_filepath,
-)
-
-
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_direct import \
+    rad_direct
+from ladybugtools_toolkit.external_comfort.spatial.load.rad_total import \
+    rad_total
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import \
+    SpatialMetric
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import \
+    spatial_metric_filepath
 
 
 @analytics
@@ -52,6 +50,8 @@ def rad_diffuse(
         direct_irradiance = rad_direct(simulation_directory)
 
     rad_diffuse_df = total_irradiance - direct_irradiance
+
+    rad_diffuse_df.columns = rad_diffuse_df.columns.astype(str)
 
     rad_diffuse_df.clip(lower=0).to_parquet(rad_diffuse_path)
     return rad_diffuse_df

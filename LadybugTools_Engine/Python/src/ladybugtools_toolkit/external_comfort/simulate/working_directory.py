@@ -5,7 +5,7 @@ from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

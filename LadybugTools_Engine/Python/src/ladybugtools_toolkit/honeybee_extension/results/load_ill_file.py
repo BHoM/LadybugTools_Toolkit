@@ -7,7 +7,7 @@ from ladybugtools_toolkit.honeybee_extension.results.load_sun_up_hours import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

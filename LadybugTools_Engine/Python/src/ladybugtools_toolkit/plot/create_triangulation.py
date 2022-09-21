@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.tri.triangulation import Triangulation
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

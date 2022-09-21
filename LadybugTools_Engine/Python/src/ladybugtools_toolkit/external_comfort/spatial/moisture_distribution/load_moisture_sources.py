@@ -9,7 +9,7 @@ from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.moistur
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

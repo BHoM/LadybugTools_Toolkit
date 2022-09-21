@@ -13,7 +13,7 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_s
 from scipy.interpolate import interp1d
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

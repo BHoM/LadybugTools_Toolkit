@@ -4,7 +4,7 @@ from typing import Tuple, Union
 from matplotlib.colors import cnames, to_rgb
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

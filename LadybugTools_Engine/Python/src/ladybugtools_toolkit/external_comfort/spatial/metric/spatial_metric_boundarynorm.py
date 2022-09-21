@@ -5,7 +5,7 @@ from ladybugtools_toolkit.plot.colormaps import UTCI_BOUNDARYNORM
 from matplotlib.colors import BoundaryNorm
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

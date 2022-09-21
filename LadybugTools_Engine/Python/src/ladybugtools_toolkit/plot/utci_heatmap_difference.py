@@ -7,7 +7,7 @@ from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
 from matplotlib.figure import Figure
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -3,7 +3,7 @@ from matplotlib.figure import Figure
 from PIL import Image
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

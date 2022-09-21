@@ -10,7 +10,7 @@ from ladybugtools_toolkit.external_comfort.spatial.cfd.load_cfd_extract import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

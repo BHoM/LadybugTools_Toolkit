@@ -6,7 +6,7 @@ from ladybugtools_toolkit.external_comfort.shelter.any_shelters_overlap import (
 from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

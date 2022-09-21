@@ -8,7 +8,7 @@ from ladybugtools_toolkit.external_comfort.ground_temperature.hourly_ground_temp
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -21,7 +21,7 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

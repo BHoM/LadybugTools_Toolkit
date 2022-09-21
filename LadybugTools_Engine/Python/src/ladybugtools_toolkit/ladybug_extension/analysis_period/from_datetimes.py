@@ -5,7 +5,7 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybugtools_toolkit.ladybug_extension.dt.from_datetime import from_datetime
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

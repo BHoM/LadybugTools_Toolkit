@@ -10,7 +10,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.equality import equality as epw_
 from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

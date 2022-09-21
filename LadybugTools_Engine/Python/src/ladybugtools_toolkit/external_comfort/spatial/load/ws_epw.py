@@ -3,17 +3,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW
+from ladybugtools_toolkit import analytics
 from ladybugtools_toolkit.external_comfort.spatial.load.points import points
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
-    SpatialMetric,
-)
-from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import (
-    spatial_metric_filepath,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-
-
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import \
+    SpatialMetric
+from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepath import \
+    spatial_metric_filepath
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import \
+    to_series
 
 
 @analytics

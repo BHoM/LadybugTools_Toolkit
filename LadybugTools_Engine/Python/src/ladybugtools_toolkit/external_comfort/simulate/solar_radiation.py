@@ -17,7 +17,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from lbt_recipes.recipe import Recipe, RecipeSettings
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

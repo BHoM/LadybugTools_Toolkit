@@ -1,7 +1,5 @@
 import pandas as pd
-
-
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics
@@ -31,7 +29,7 @@ def decay_rate_smoother(
             A modified series
     """
 
-    # Find periods of major transition (where values vary signifigantly)
+    # Find periods of major transition (where values vary significantly)
     transition_index = series.diff() < difference_threshold
 
     # Get boolean index for all periods within window from the transition indices

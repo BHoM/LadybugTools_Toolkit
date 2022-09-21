@@ -7,7 +7,7 @@ from ladybug.epw import EPW
 from ladybug.wea import Wea
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics
