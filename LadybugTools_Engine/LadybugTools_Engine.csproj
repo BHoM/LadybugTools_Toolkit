@@ -310,6 +310,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\animation.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\annotate_imshow.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps_local.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormap_sequential.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\create_triangulation.py" />
@@ -320,10 +321,13 @@
     <Content Include="Python\src\ladybugtools_toolkit\plot\spatial_heatmap.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\sunpath.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\timeseries_diurnal.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\timeseries_heatmap_noyear.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\timeseries_heatmap.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_comparison_diurnal.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_day_comfort_metrics.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_distance_to_comfortable.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local_nolegend.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_difference.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_histogram.py" />
