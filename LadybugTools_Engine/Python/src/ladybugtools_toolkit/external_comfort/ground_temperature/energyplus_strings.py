@@ -6,7 +6,7 @@ from ladybugtools_toolkit.external_comfort.ground_temperature.monthly_ground_tem
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

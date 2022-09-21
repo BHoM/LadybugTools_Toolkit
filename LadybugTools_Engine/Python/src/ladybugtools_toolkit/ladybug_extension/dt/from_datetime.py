@@ -3,7 +3,7 @@ from datetime import datetime
 from ladybug.dt import DateTime
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -22,7 +22,7 @@ from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

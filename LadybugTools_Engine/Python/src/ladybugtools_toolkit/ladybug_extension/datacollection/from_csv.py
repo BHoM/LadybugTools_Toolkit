@@ -5,7 +5,7 @@ from ladybug._datacollectionbase import BaseCollection
 from ladybug.datautil import collections_from_csv
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

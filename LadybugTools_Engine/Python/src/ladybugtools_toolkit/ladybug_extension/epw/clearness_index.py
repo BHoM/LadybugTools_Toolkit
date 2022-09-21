@@ -10,7 +10,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.sun_position_collection import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

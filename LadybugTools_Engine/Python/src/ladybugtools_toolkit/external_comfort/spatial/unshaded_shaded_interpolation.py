@@ -6,7 +6,7 @@ from ladybug.datacollection import HourlyContinuousCollection
 from scipy.interpolate import interp1d
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -7,7 +7,7 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import 
 from ladybugtools_toolkit.plot.colormaps import UTCI_LEVELS
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -7,7 +7,7 @@ from ladybugtools_toolkit.honeybee_extension.results.load_files import load_file
 from ladybugtools_toolkit.honeybee_extension.results.load_ill_file import load_ill_file
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

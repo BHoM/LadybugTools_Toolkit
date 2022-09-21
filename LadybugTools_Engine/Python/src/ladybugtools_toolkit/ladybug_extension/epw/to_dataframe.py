@@ -41,7 +41,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.wet_bulb_temperature import (
     wet_bulb_temperature as wbt,
 )
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

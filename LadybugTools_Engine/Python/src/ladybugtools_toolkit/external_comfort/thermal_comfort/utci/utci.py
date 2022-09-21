@@ -10,7 +10,7 @@ from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci_vectorised 
 from numpy.typing import NDArray
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

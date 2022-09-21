@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Patch
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

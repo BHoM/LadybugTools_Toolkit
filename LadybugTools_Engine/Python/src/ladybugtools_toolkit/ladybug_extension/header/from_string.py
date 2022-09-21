@@ -4,7 +4,7 @@ from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

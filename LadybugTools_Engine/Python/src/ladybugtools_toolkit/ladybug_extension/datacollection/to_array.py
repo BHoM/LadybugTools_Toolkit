@@ -3,7 +3,7 @@ import numpy as np
 from ladybug._datacollectionbase import BaseCollection
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

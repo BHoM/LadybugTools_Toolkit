@@ -5,7 +5,7 @@ from ladybugtools_toolkit.external_comfort.wind.wind_speed_at_height import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

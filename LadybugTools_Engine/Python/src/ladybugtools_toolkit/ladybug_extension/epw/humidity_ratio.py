@@ -4,7 +4,7 @@ from ladybug.epw import EPW
 from ladybug.psychrometrics import humid_ratio_from_db_rh
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

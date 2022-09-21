@@ -3,7 +3,7 @@ from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.epw.solar_azimuth import solar_azimuth
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

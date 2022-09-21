@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from scipy.interpolate import make_interp_spline
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

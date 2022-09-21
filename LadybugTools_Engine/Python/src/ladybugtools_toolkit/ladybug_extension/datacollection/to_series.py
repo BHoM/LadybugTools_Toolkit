@@ -6,7 +6,7 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period.to_datetimes import 
 from ladybugtools_toolkit.ladybug_extension.header.to_string import to_string
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

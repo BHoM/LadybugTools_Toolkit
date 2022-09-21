@@ -10,7 +10,7 @@ from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric_filepat
 from ladybugtools_toolkit.honeybee_extension.results.load_pts import load_pts
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

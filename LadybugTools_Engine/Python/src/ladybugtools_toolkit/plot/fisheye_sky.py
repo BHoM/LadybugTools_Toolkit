@@ -10,7 +10,7 @@ from lbt_recipes.settings import RecipeSettings
 from PIL import Image, ImageEnhance
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

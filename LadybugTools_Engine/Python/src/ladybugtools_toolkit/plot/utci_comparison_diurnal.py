@@ -10,7 +10,7 @@ from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

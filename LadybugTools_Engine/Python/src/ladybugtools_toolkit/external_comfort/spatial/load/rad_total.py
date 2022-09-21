@@ -11,7 +11,7 @@ from ladybugtools_toolkit.honeybee_extension.results.load_ill import load_ill
 from ladybugtools_toolkit.honeybee_extension.results.make_annual import make_annual
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

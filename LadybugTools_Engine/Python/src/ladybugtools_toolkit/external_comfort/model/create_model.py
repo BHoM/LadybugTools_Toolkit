@@ -15,7 +15,7 @@ from ladybugtools_toolkit.external_comfort.model.create_shade_zone import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

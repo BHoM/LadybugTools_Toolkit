@@ -13,7 +13,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.solar_time_hour import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

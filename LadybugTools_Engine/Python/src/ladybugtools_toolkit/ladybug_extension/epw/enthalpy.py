@@ -8,7 +8,7 @@ from ladybugtools_toolkit.ladybug_extension.epw.humidity_ratio import (
 )
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

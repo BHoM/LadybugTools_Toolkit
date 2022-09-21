@@ -3,7 +3,7 @@ import calendar
 from ladybug.analysisperiod import AnalysisPeriod
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics

@@ -5,7 +5,7 @@ from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 
 
-from python_toolkit.bhom.analytics import analytics
+from ladybugtools_toolkit import analytics
 
 
 @analytics
