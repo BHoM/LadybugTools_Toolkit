@@ -96,7 +96,8 @@ class SimulationResult:
 
         # calculate MRT for shaded/unshaded
         solar_body_par = SolarCalParameter()
-        fract_body_exp = 0
+        shaded_fract_body_exp = 0
+        unshaded_fract_body_exp = 1
         ground_reflectivity = 0
 
         self.shaded_mean_radiant_temperature = HorizontalSolarCal(
@@ -104,7 +105,7 @@ class SimulationResult:
             self.shaded_direct_radiation,
             self.shaded_diffuse_radiation,
             self.shaded_longwave_mean_radiant_temperature,
-            fract_body_exp,
+            shaded_fract_body_exp,
             ground_reflectivity,
             solar_body_par,
         ).mean_radiant_temperature
@@ -114,7 +115,7 @@ class SimulationResult:
             self.unshaded_direct_radiation,
             self.unshaded_diffuse_radiation,
             self.unshaded_longwave_mean_radiant_temperature,
-            fract_body_exp,
+            unshaded_fract_body_exp,
             ground_reflectivity,
             solar_body_par,
         ).mean_radiant_temperature
