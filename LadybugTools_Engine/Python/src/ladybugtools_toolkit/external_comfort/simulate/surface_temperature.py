@@ -1,33 +1,23 @@
 import json
-from pathlib import Path
 from typing import Dict
 
 from honeybee.model import Model
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
-from honeybee_energy.simulation.parameter import (
-    RunPeriod,
-    ShadowCalculation,
-    SimulationControl,
-    SimulationOutput,
-    SimulationParameter,
-)
+from honeybee_energy.simulation.parameter import (RunPeriod, ShadowCalculation,
+                                                  SimulationControl,
+                                                  SimulationOutput,
+                                                  SimulationParameter)
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
-from ladybugtools_toolkit.external_comfort.ground_temperature.energyplus_strings_otherside_coefficient import (
-    energyplus_strings_otherside_coefficient,
-)
-from ladybugtools_toolkit.external_comfort.simulate.surface_temperature_results_exist import (
-    surface_temperature_results_exist,
-)
-from ladybugtools_toolkit.external_comfort.simulate.surface_temperature_results_load import (
-    surface_temperature_results_load,
-)
-from ladybugtools_toolkit.external_comfort.simulate.working_directory import (
-    working_directory as wd,
-)
-from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
-
-
 from ladybugtools_toolkit import analytics
+from ladybugtools_toolkit.external_comfort.ground_temperature.eplus_otherside_coefficient import \
+    eplus_otherside_coefficient
+from ladybugtools_toolkit.external_comfort.simulate.surface_temperature_results_exist import \
+    surface_temperature_results_exist
+from ladybugtools_toolkit.external_comfort.simulate.surface_temperature_results_load import \
+    surface_temperature_results_load
+from ladybugtools_toolkit.external_comfort.simulate.working_directory import \
+    working_directory as wd
+from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 
 
 @analytics
@@ -122,7 +112,7 @@ def surface_temperature(
         ",                                       !- Outside Boundary Condition Object",
         "GroundTemperature,                      !- Outside Boundary Condition Object",
     )
-    idf_string += f"\n\n{energyplus_strings_otherside_coefficient(epw)}"
+    idf_string += f"\n\n{eplus_otherside_coefficient(epw)}"
     with open(idf, "w", encoding="utf-8") as fp:
         idf_string = fp.write(idf_string)
 

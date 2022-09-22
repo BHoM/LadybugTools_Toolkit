@@ -1,18 +1,16 @@
 import inspect
 
-from honeybee_energy.lib.scheduletypelimits import schedule_type_limit_by_identifier
+from honeybee_energy.lib.scheduletypelimits import \
+    schedule_type_limit_by_identifier
 from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.ground_temperature.hourly_ground_temperature import (
-    hourly_ground_temperature,
-)
-
-
 from ladybugtools_toolkit import analytics
+from ladybugtools_toolkit.external_comfort.ground_temperature.hourly_ground_temperature import \
+    hourly_ground_temperature
 
 
 @analytics
-def energyplus_strings_otherside_coefficient(epw: EPW) -> str:
+def eplus_otherside_coefficient(epw: EPW) -> str:
     """Generate strings to add into EnergyPlus simulation for annual-hourly ground temperature
         values applied to sub-ground surfaces.
 
