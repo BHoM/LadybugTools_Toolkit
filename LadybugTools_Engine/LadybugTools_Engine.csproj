@@ -326,12 +326,15 @@
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_comparison_diurnal.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_day_comfort_metrics.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_distance_to_comfortable.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local_pie.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local_nolegend.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_difference.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_histogram.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_journey.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\utci_pie_local.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\utci_pie.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\week_profile.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\windrose.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\wind_speed_direction_frequency.py" />
