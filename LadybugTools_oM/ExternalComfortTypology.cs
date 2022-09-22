@@ -36,8 +36,11 @@ namespace BH.oM.LadybugTools
         [Description("The shelters for this ExternalComfortTypology.")]
         public virtual List<ExternalComfortShelter> Shelters { get; set; } = new List<ExternalComfortShelter>();
 
-        [Description("The proportion of evaporative cooling to add to this ExternalComfortTYpology.")]
+        [Description("The proportion of evaporative cooling to add to this ExternalComfortTypology.")]
         public virtual double EvaporativeCoolingEffectiveness { get; set; } = 0;
+
+        [Description("A factor to apply to the wind speed component of this ExternalComfortTypology.")]
+        public virtual double WindSpeedAdjustment { get; set; } = 0;
     }
 }
 

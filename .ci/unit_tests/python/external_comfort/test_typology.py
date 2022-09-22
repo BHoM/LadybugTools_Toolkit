@@ -1,16 +1,15 @@
 import numpy as np
 import pytest
 from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
-from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
-    SimulationResult,
-)
+from ladybugtools_toolkit.external_comfort.simulate.simulation_result import \
+    SimulationResult
 from ladybugtools_toolkit.external_comfort.typology.typology import Typology
 
 from .. import EPW_OBJ, GROUND_MATERIAL, IDENTIFIER, SHADE_MATERIAL
 
 TYPOLOGY = Typology(
     name=IDENTIFIER,
-    shelters=[Shelter(porosity=0.5, altitude_range=(45, 90), azimuth_range=(90, 270))],
+    shelters=[Shelter(wind_porosity=0.5, radiation_porosity=0.5, altitude_range=(45, 90), azimuth_range=(90, 270))],
     evaporative_cooling_effectiveness=0.1,
 )
 

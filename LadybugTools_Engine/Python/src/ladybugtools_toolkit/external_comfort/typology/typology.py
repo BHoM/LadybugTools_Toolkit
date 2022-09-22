@@ -6,23 +6,23 @@ import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.moisture.evaporative_cooling_effect_collection import (
-    evaporative_cooling_effect_collection,
-)
-from ladybugtools_toolkit.external_comfort.shelter.any_shelters_overlap import (
-    any_shelters_overlap,
-)
+from ladybugtools_toolkit.external_comfort.moisture.evaporative_cooling_effect_collection import \
+    evaporative_cooling_effect_collection
+from ladybugtools_toolkit.external_comfort.shelter.any_shelters_overlap import \
+    any_shelters_overlap
 from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
-from ladybugtools_toolkit.external_comfort.shelter.sky_exposure import sky_exposure
-from ladybugtools_toolkit.external_comfort.shelter.sun_exposure import sun_exposure
-from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
-    SimulationResult,
-)
-from ladybugtools_toolkit.helpers.decay_rate_smoother import decay_rate_smoother
-from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
-    from_series,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.external_comfort.shelter.sky_exposure import \
+    sky_exposure
+from ladybugtools_toolkit.external_comfort.shelter.sun_exposure import \
+    sun_exposure
+from ladybugtools_toolkit.external_comfort.simulate.simulation_result import \
+    SimulationResult
+from ladybugtools_toolkit.helpers.decay_rate_smoother import \
+    decay_rate_smoother
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import \
+    from_series
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import \
+    to_series
 
 
 class Typology:
@@ -35,6 +35,8 @@ class Typology:
             elements. Defaults to None.
         evaporative_cooling_effectiveness (float, optional): An amount of evaporative cooling to add to
             results calculated by this typology. Defaults to 0.
+        wind_speed_adjustment (float, optional):
+            A factor to multiply wind speed by. Defaults to 1.
 
     Returns:
         Typology: An external comfort typology.
@@ -45,11 +47,16 @@ class Typology:
         name: str,
         shelters: List[Shelter] = None,
         evaporative_cooling_effectiveness: float = 0,
+        wind_speed_adjustment: float = 1,
     ) -> Typology:
+
+        if wind_speed_adjustment < 0:
+            raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
 
         self.name = name
         self.shelters = shelters
         self.evaporative_cooling_effectiveness = evaporative_cooling_effectiveness
+        self.wind_speed_adjustment = wind_speed_adjustment
 
         if any_shelters_overlap(shelters):
             raise ValueError("Shelters overlap")
@@ -76,6 +83,7 @@ class Typology:
             "evaporative_cooling_effectiveness": float(
                 self.evaporative_cooling_effectiveness,
             ),
+            "wind_speed_adjustment": float(self.wind_speed_adjustment),
         }
         return d
 
@@ -135,7 +143,7 @@ class Typology:
         for shelter in self.shelters:
             collections.append(to_series(shelter.effective_wind_speed(epw)))
         return from_series(
-            pd.concat(collections, axis=1).min(axis=1).rename("Wind Speed (m/s)")
+            pd.concat(collections, axis=1).min(axis=1).rename("Wind Speed (m/s)") * self.wind_speed_adjustment
         )
 
     def mean_radiant_temperature(
@@ -181,7 +189,7 @@ class Typology:
                 )
 
         # Fill any gaps where sun-visible/sun-occluded values are missing, and apply an
-        # exponentially weighted moving average to account for transition betwen shaded/unshaded
+        # exponentially weighted moving average to account for transition between shaded/unshaded
         # periods.
         mrt_series = pd.Series(
             mrts, index=shaded_mrt.index, name=shaded_mrt.name

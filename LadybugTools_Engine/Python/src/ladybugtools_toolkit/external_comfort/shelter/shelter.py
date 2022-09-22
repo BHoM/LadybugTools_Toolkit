@@ -7,10 +7,10 @@ import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.sunpath import Sun
 from ladybugtools_toolkit.helpers.cardinality import cardinality
-from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import (
-    from_series,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.ladybug_extension.datacollection.from_series import \
+    from_series
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import \
+    to_series
 from shapely.geometry import Polygon
 
 
@@ -18,7 +18,8 @@ class Shelter:
     """An object representing a piece of geometry blocking exposure to wind, sky and sun.
 
     Args:
-        porosity (float, optional): The transmissivity of the shelter. Defaults to 0.
+        wind_porosity (float, optional): The transmissivity of the shelter to wind. Defaults to 0.
+        radiation_porosity (float, optional): The transmissivity of the shelter to radiation (from surfaces, sky and sun). Defaults to 0.
         altitude_range (Tuple[float], optional): The altitude range covered by this shelter.
             Defaults to (0, 0).
         azimuth_range (Tuple[float], optional): The azimuth range (from 0 at North, clockwise)
@@ -31,16 +32,18 @@ class Shelter:
 
     def __init__(
         self,
-        porosity: float = 0,
+        wind_porosity: float = 0,
+        radiation_porosity: float = 0,
         altitude_range: Tuple[float] = (0, 0),
         azimuth_range: Tuple[float] = (0, 0),
     ) -> Shelter:
 
-        self.porosity = porosity
+        self.wind_porosity = wind_porosity
+        self.radiation_porosity = radiation_porosity
         self.altitude_range = altitude_range
         self.azimuth_range = azimuth_range
 
-        if not 0 <= self.porosity <= 1:
+        if (not 0 <= self.wind_porosity <= 1) or (not 0 <= self.radiation_porosity <= 1):
             raise ValueError("porosity must be between 0 and 1")
 
         if any(
@@ -81,10 +84,10 @@ class Shelter:
         self._crosses_north = self._start_azimuth > self._end_azimuth
 
     def __repr__(self) -> str:
-        if any([self.porosity == 1, self._height == 0, self._width == 0]):
+        if any([self.wind_porosity == 1, self.radiation_porosity == 1, self._height == 0, self._width == 0]):
             return "Unsheltered"
 
-        return f"{1 - self.porosity:0.0%} sheltered between {cardinality(self._start_azimuth, 32)} and {cardinality(self._end_azimuth, 32)}, from {self._start_altitude}° to {self._end_altitude}°"
+        return f"{1 - self.wind_porosity:0.0%} wind sheltered and {1 - self.radiation_porosity:0.0%} radiation sheltered between {cardinality(self._start_azimuth, 32)} and {cardinality(self._end_azimuth, 32)}, from {self._start_altitude}° to {self._end_altitude}°"
 
     def to_dict(self) -> Dict:
         """Return this object as a dictionary
@@ -93,7 +96,8 @@ class Shelter:
             Dict: The dict representation of this object.
         """
         return {
-            "porosity": float(self.porosity),
+            "radiation_porosity": float(self.radiation_porosity),
+            "wind_porosity": float(self.wind_porosity),
             "altitude_range": [float(i) for i in self.altitude_range],
             "azimuth_range": [float(i) for i in self.azimuth_range],
         }
@@ -204,7 +208,7 @@ class Shelter:
             / (2 * np.pi)
         )
 
-        return area_occluded * (1 - self.porosity)
+        return area_occluded * (1 - self.radiation_porosity)
 
     def effective_wind_speed(self, epw: EPW) -> HourlyContinuousCollection:
         """Return the wind speed (at original height of 10m from EPW) when subjected to this
@@ -222,7 +226,7 @@ class Shelter:
             speed impacted by this shelter.
         """
 
-        if self.porosity == 1:
+        if self.wind_porosity == 1:
             return epw.wind_speed
 
         edge_acceleration_width = (
@@ -243,7 +247,7 @@ class Shelter:
                 # wind blocked by shelter
                 if (row[1] > self._start_azimuth) or (row[1] < self._end_azimuth):
                     modified_values.append(
-                        row[0] * self.porosity * shelter_height_factor
+                        row[0] * self.wind_porosity * shelter_height_factor
                     )
                 # wind not blocked by shelter, but it's within 10deg of shelter
                 elif (row[1] > self._start_azimuth - edge_acceleration_width) or (
@@ -252,7 +256,7 @@ class Shelter:
                     modified_values.append(
                         row[0]
                         * edge_acceleration_factor
-                        * self.porosity
+                        * self.wind_porosity
                         * shelter_height_factor
                     )
                 # wind not blocked by shelter
@@ -262,7 +266,7 @@ class Shelter:
                 # wind blocked by shelter
                 if (row[1] > self._start_azimuth) and (row[1] < self._end_azimuth):
                     modified_values.append(
-                        row[0] * self.porosity * shelter_height_factor
+                        row[0] * self.wind_porosity * shelter_height_factor
                     )
                 # wind not blocked by shelter, but it's within 10deg of shelter
                 elif (row[1] > self._start_azimuth - edge_acceleration_width) and (
@@ -271,7 +275,7 @@ class Shelter:
                     modified_values.append(
                         row[0]
                         * edge_acceleration_factor
-                        * self.porosity
+                        * self.wind_porosity
                         * shelter_height_factor
                     )
                 else:

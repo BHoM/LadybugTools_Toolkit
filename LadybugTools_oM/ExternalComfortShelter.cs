@@ -31,7 +31,10 @@ namespace BH.oM.LadybugTools
     public class ExternalComfortShelter : IObject
     {
         [Description("Shelter porosity (0-1).")]
-        public virtual double Porosity { get; set; } = 0.0;
+        public virtual double WindPorosity { get; set; } = 0.0;
+
+        [Description("Radiation porosity (0-1).")]
+        public virtual double RadiationPorosity { get; set; } = 0.0;
 
         [Description("Shelter start azimuth.")]
         public virtual double StartAzimuth { get; set; } = 0;

@@ -50,7 +50,7 @@ namespace BH.Engine.LadybugTools
         [Output("pythonString", "The python code string representation of an ExternalComfortShelter object.")]
         public static string PythonString(this ExternalComfortShelter shelter)
         {
-            return $"Shelter(porosity={shelter.Porosity}, azimuth_range=({shelter.StartAzimuth}, {shelter.EndAzimuth}), altitude_range=({shelter.StartAltitude}, {shelter.EndAltitude}))";
+            return $"Shelter(wind_porosity={shelter.WindPorosity}, radiation_porosity={shelter.RadiationPorosity}, azimuth_range=({shelter.StartAzimuth}, {shelter.EndAzimuth}), altitude_range=({shelter.StartAltitude}, {shelter.EndAltitude}))";
         }
 
         [Description("Get the python code string representation of an ExternalComfortMaterial object.")]

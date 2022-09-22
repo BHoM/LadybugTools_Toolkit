@@ -75,7 +75,8 @@ namespace BH.Engine.LadybugTools
             foreach (CustomObject shelterObj in ((List<System.Object>)predefinedTypology.CustomData["shelters"]).Cast<CustomObject>())
             {
                 ExternalComfortShelter shelter = new ExternalComfortShelter();
-                shelter.Porosity = (double)shelterObj.CustomData["porosity"];
+                shelter.WindPorosity = (double)shelterObj.CustomData["wind_porosity"];
+                shelter.RadiationPorosity = (double)shelterObj.CustomData["radiation_porosity"];
 
                 List<double> shelterAzimuthRange = new List<double>();
                 foreach (double shelterObjAz in ((List<System.Object>)shelterObj.CustomData["azimuth_range"]).Cast<double>())
@@ -99,7 +100,8 @@ namespace BH.Engine.LadybugTools
             BH.oM.LadybugTools.ExternalComfortTypology ecTypology = new ExternalComfortTypology() {
                 Name = (string)predefinedTypology.CustomData["name"],
                 EvaporativeCoolingEffectiveness = (double)predefinedTypology.CustomData["evaporative_cooling_effectiveness"],
-                Shelters = shelters
+                Shelters = shelters,
+                WindSpeedAdjustment = (double)predefinedTypology.CustomData["wind_speed_adjustment"]
             };
 
             // return the typology
@@ -107,4 +109,3 @@ namespace BH.Engine.LadybugTools
         }
     }
 }
-
