@@ -137,7 +137,7 @@ class Typology:
         """
 
         if len(self.shelters) == 0:
-            return epw.wind_speed
+            return epw.wind_speed * self.wind_speed_adjustment
 
         collections = []
         for shelter in self.shelters:
