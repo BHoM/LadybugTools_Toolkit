@@ -152,6 +152,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\_shadow.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\_skyviewfactor.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\cityscale\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\climate\climate_at_height.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\encoder\encoder.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\encoder\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\external_comfort.py" />

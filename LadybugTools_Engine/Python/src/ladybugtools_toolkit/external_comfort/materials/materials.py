@@ -71,3 +71,14 @@ class Materials(Enum):
         solar_absorptance=0.55,
         visible_absorptance=0.55,
     )
+    HeavyweightConcrete: EnergyMaterial = EnergyMaterial(
+        identifier="HeavyweightConcrete",
+        roughness="MediumRough",
+        thickness=0.5,
+        conductivity=1.95,
+        density=2240.0,
+        specific_heat=900.0,
+        thermal_absorptance=0.9,
+        solar_absorptance=0.8,
+        visible_absorptance=0.8,
+    )
