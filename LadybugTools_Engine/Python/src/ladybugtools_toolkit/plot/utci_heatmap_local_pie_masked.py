@@ -25,7 +25,7 @@ from ladybug.dt import DateTime
 from ladybugtools_toolkit.ladybug_extension.analysis_period.to_datetimes import to_datetimes
 from matplotlib.colors import BoundaryNorm, ListedColormap
 
-def plot_with_pie(
+def utci_heatmap_local_pie_masked(
     collection: HourlyContinuousCollection, title: str = None, analysis_period: AnalysisPeriod = AnalysisPeriod(), show_legend: bool = True
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
@@ -77,10 +77,10 @@ def plot_with_pie(
     start_count = 24 - st_hour
 
     for i in range (0,len(data)):
-        if (i > end_count and i < start_count):
-            mask[i] = np.ones(len(data[i])) * (-1)
+        if (i < end_count or i > start_count):
+            mask[i] = np.ones(len(data[i])) 
         else:
-            mask[i] = np.ones(len(data[i]))
+            mask[i] = np.ones(len(data[i])) * (-1)
 
     # Set masked colormap
     maskedCM = plt.cm.gray
@@ -198,6 +198,7 @@ def plot_with_pie(
             # transform=colorbar_ax.transAxes,
         )
 
+    # Add title to the pie
     if st_hour < 12:
         st_hour_title = str(st_hour) + " am"
     else:
@@ -211,7 +212,7 @@ def plot_with_pie(
 
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)
-        pie_ax.set_title(pie_title, color="k", y=1, ha="center", va="bottom", x=0)
+        pie_ax.set_title("Occupied hours: full day", color="k", y=1, ha="center", va="bottom", x=0)
 
     else:
         heatmap_ax.set_title(
@@ -222,15 +223,6 @@ def plot_with_pie(
             va="bottom",
             x=0,
         )
-
-        if analysis_period.st_hour < 12:
-            st_hour = str(analysis_period.st_hour) + "am"
-        else:
-            st_hour = str(analysis_period.st_hour) + "pm"
-
-        if analysis_period.st_hour < 12:
-            st_hour = str(analysis_period.st_hour) + "am"
-        else:
-            st_hour = str(analysis_period.st_hour) + "pm"
         pie_ax.set_title(pie_title, color="k", y=1.1)
+
     return fig

@@ -318,6 +318,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\plot\figure_to_image.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\fisheye_sky.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\lighten_color.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local_pie_masked.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\skymatrix.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\spatial_heatmap.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\sunpath.py" />
