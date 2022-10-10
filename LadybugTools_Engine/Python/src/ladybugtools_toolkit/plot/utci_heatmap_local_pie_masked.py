@@ -145,7 +145,7 @@ def utci_heatmap_local_pie_masked(
         startangle=90,
         counterclock=False,
         wedgeprops={"edgecolor": "w", "linewidth": 1},
-        radius=1.5,
+        radius=1.3,
     )
 
     centre_circle = plt.Circle((0, 0), 0.80, fc="white")
@@ -212,7 +212,7 @@ def utci_heatmap_local_pie_masked(
 
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)
-        pie_ax.set_title("Occupied hours: full day", color="k", y=1, ha="center", va="bottom", x=0)
+        pie_ax.set_title("Occupied hours: full day", color="k", size="small")
 
     else:
         heatmap_ax.set_title(
@@ -223,6 +223,6 @@ def utci_heatmap_local_pie_masked(
             va="bottom",
             x=0,
         )
-        pie_ax.set_title(pie_title, color="k", y=1.1)
+        pie_ax.set_title(pie_title, color="k", size="small")
 
     return fig
