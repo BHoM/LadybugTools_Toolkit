@@ -189,7 +189,6 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\simulate\working_directory.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\simulate\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\cfd_directory.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\cfd_result.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\load_cfd_extract.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\load_cfd_results.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\cfd\spatial_wind_speed.py" />
@@ -221,7 +220,6 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\load_moisture_sources.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\moisture_directory.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\moisture_source.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\unique_wind_speed_direction.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\moisture_distribution\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\sky_view_pov.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\spatial\spatial_comfort.py" />
@@ -297,6 +295,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\sun_position_list.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\to_dataframe.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\wet_bulb_temperature.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\unique_wind_speed_direction.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\epw\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\from_string.py" />
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\header\from_multiindex.py" />

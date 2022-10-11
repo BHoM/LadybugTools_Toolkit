@@ -2,10 +2,9 @@ from typing import List, Tuple
 
 import pandas as pd
 from ladybug.epw import EPW
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-
-
 from ladybugtools_toolkit import analytics
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import \
+    to_series
 
 
 @analytics
