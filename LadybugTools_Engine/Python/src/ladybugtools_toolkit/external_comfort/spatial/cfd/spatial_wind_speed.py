@@ -3,17 +3,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.spatial.cfd.load_cfd_results import (
-    load_cfd_results,
-)
-from ladybugtools_toolkit.external_comfort.spatial.moisture_distribution.unique_wind_speed_direction import (
-    unique_wind_speed_direction,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from scipy.interpolate import interp1d
-
-
 from ladybugtools_toolkit import analytics
+from ladybugtools_toolkit.external_comfort.spatial.cfd.load_cfd_results import \
+    load_cfd_results
+from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import \
+    to_series
+from ladybugtools_toolkit.ladybug_extension.epw.unique_wind_speed_direction import \
+    unique_wind_speed_direction
+from scipy.interpolate import interp1d
 
 
 @analytics
