@@ -5,10 +5,6 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def radiation_tilt_orientation_factor(
     radiation_matrix: pd.DataFrame, title: str = None, cmap: str = "YlOrRd"
 ) -> Figure:

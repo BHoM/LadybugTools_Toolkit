@@ -1,5 +1,14 @@
-﻿import sys
+﻿import getpass
+import os
+import sys
+from pathlib import Path
+import matplotlib.pyplot as plt
 
-sys.path.insert(0, r"C:\ProgramData\BHoM\Extensions\PythonCode\Python_Toolkit\src")
+# override "HOME" in case IT has set this to something other than default
+os.environ["HOME"] = (Path("C:/Users/") / getpass.getuser()).as_posix()
 
-from python_toolkit.bhom.analytics import analytics as analytics
+# set toolkit name for any logging
+TOOLKIT_NAME = "LadybugTools_Toolkit"
+
+# set plotting style for modules within this toolkit
+plt.style.use(Path(__file__).parent / "bhomutil" / "bhom.mplstyle")

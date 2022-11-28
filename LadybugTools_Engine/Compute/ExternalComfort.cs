@@ -30,49 +30,43 @@ using System.Linq;
 using BH.oM.Base;
 using System.IO;
 using BH.oM.LadybugTools;
+using BH.Engine.Serialiser;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
         [Description("Run an External Comfort simulation and return results.")]
-        [Input("identifier", "An identifier used to make these results unique. If the materials and epwFile given match a results set with the same identifier, then those reuslts will be returned instead of running the simulation again.")]
-        [Input("epwFile", "An EPW file.")]
-        [Input("groundMaterial", "A pre-defined ground material.")]
-        [Input("shadeMaterial", "A pre-defined shade material.")]
+        [Input("simulationResult", "A simulation result object.")]
         [Input("typology", "An ExternalComfortTypology.")]
         [Output("externalComfortResult", "An external comfort result object containing simulation results.")]
-        public static CustomObject ExternalComfort(string identifier, string epwFile, ExternalComfortMaterial groundMaterial, ExternalComfortMaterial shadeMaterial, ExternalComfortTypology typology)
+        public static ExternalComfort ExternalComfort(SimulationResult simulationResult, Typology typology)
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            // construct the base object
+            ExternalComfort externalComfort = new ExternalComfort()
+            {
+                SimulationResult = simulationResult,
+                Typology = typology,
+            };
 
+            // send to Python to simulate/load
+            string externalComfortJsonStr = System.Text.RegularExpressions.Regex.Unescape(externalComfort.ToJson());
+            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
             string pythonScript = string.Join("\n", new List<string>()
             {
                 "try:",
-                "    from pathlib import Path",
-                "    from ladybug.epw import EPW",
-                "    from ladybugtools_toolkit.external_comfort import SimulationResult, Typology, ExternalComfort, Shelter",
-                "    from ladybugtools_toolkit.external_comfort.encoder.encoder import Encoder",
-                "    from honeybee_energy.material.opaque import EnergyMaterial",
                 "    import json",
-                "",
-                $"    epw_path = Path(r'{epwFile}')",
-                "    epw = EPW(epw_path.as_posix())",
-                $"    gnd_mat = {groundMaterial.PythonString()}",
-                $"    shd_mat = {shadeMaterial.PythonString()}",
-                "",
-                $"    simulation_result = SimulationResult(epw, gnd_mat, shd_mat, identifier='{identifier}')",
-                "",
-                $"    typology = {typology.PythonString()}",
-                "    external_comfort = ExternalComfort(simulation_result, typology)",
-                "    print(json.dumps(external_comfort.to_dict(), cls=Encoder))",
+                "    from ladybugtools_toolkit.external_comfort.external_comfort import ExternalComfort",
+                $"    external_comfort = ExternalComfort.from_json('{externalComfortJsonStr}')",
+                "    print(external_comfort.to_json())",
                 "except Exception as exc:",
                 "    print(json.dumps({'error': str(exc)}))",
             });
 
             string output = env.RunPythonString(pythonScript).Trim().Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
 
-            return Serialiser.Convert.FromJson(output) as CustomObject;
+            // reload from Python results
+            return (ExternalComfort)Serialiser.Convert.FromJson(output);
         }
     }
 }

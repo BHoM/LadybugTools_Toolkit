@@ -6,26 +6,18 @@ from typing import List, Union
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.epw import EPW
 from ladybug.viewsphere import ViewSphere
 from ladybug.wea import AnalysisPeriod, Wea
-from ladybugtools_toolkit.external_comfort.simulate import hbr_folders
-from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
-    describe as describe_ap,
-)
-from ladybugtools_toolkit.ladybug_extension.location.to_string import (
-    to_string as describe_loc,
-)
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
+from ..external_comfort import HBR_FOLDERS
+from ..ladybug_extension.analysis_period import describe as describe_analysis_period
+from ..ladybug_extension.location import to_string as describe_loc
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def skymatrix(
     epw: EPW,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
@@ -66,14 +58,14 @@ def skymatrix(
     wea_file = wea.write(wea_path.as_posix())
 
     # run gendaymtx
-    gendaymtx_exe = (Path(hbr_folders.radbin_path) / "gendaymtx.exe").as_posix()
+    gendaymtx_exe = (Path(HBR_FOLDERS.radbin_path) / "gendaymtx.exe").as_posix()
     cmds = [gendaymtx_exe, "-m", str(density), "-d", "-O1", "-A", wea_file]
-    process = subprocess.Popen(cmds, stdout=subprocess.PIPE, shell=True)
-    stdout = process.communicate()
+    with subprocess.Popen(cmds, stdout=subprocess.PIPE, shell=True) as process:
+        stdout = process.communicate()
     dir_data_str = stdout[0].decode("ascii")
     cmds = [gendaymtx_exe, "-m", str(density), "-s", "-O1", "-A", wea_file]
-    process = subprocess.Popen(cmds, stdout=subprocess.PIPE, shell=True)
-    stdout = process.communicate()
+    with subprocess.Popen(cmds, stdout=subprocess.PIPE, shell=True) as process:
+        stdout = process.communicate()
     diff_data_str = stdout[0].decode("ascii")
 
     def _broadband_rad(data_str: str) -> List[float]:
@@ -113,7 +105,7 @@ def skymatrix(
 
     if show_title:
         ax.set_title(
-            f"{describe_loc(epw.location)}\n{describe_ap(analysis_period)}",
+            f"{describe_loc(epw.location)}\n{describe_analysis_period(analysis_period)}",
             ha="left",
             x=0,
         )

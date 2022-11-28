@@ -4,10 +4,6 @@ from typing import List, Union
 from PIL import Image
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def animation(
     image_files: List[Union[str, Path]],
     output_gif: Union[str, Path],

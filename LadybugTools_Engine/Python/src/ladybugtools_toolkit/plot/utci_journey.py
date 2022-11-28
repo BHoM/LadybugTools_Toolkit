@@ -3,18 +3,15 @@ from typing import List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ladybugtools_toolkit.helpers.rolling_window import rolling_window
-from ladybugtools_toolkit.plot.colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
-from ladybugtools_toolkit.plot.lighten_color import lighten_color
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from scipy.interpolate import make_interp_spline
 
+from ..helpers import rolling_window
+from .colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
+from .lighten_color import lighten_color
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def utci_journey(
     utci_values: List[float],
     names: List[str] = None,

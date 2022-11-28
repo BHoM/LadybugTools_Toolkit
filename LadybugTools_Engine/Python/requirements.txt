@@ -1,10 +1,17 @@
 ﻿cached-property
+case-converter
 fastparquet
+fortranformat
 ipykernel
+pandas-downcast
 pyarrow
 pylint
+pyperclip
 pytest
 pytest-cov
+pytest-order
+scikit-learn
 scipy
 shapely
 tables
+tqdm

@@ -1,4 +1,6 @@
-﻿import numpy as np
+﻿import copy
+
+import numpy as np
 from cv2 import IMREAD_ANYDEPTH, imread
 from honeybee.model import Model
 from honeybee_radiance.lightsource.sky import CertainIrradiance
@@ -10,13 +12,10 @@ from lbt_recipes.settings import RecipeSettings
 from PIL import Image, ImageEnhance
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def fisheye_sky(
     model: Model,
     sensor: Point3D,
+    translate_sensor: Vector3D = None,
 ) -> Image:
     """Create a sky-facing fisheye image.
 
@@ -25,6 +24,8 @@ def fisheye_sky(
             The model in which to simulate the view.
         sensor (Point3D):
             The location from where to render the view.
+        translate_sensor (Vector3D):
+            A translation to apply to the sensor.
 
     Returns:
         Image:
@@ -34,8 +35,11 @@ def fisheye_sky(
     up_vector = Vector3D(0, 1, 0)
     view_direction = Vector3D(0, 0, 1)
 
+    if translate_sensor is not None:
+        sensor = sensor.move(translate_sensor)
+
     # copy model and rename
-    model = model.__copy__()
+    model = copy.copy(model)
     model.identifier = "fisheye_sky"
 
     # modify materials to make plastic
@@ -77,23 +81,23 @@ def fisheye_sky(
     # set bright values (sky) to transparent in pov img
     img = img.convert("RGBA")
     datas = img.getdata()
-    newData = []
+    new_data = []
     for item in datas:
         if item[0] == 255 and item[1] == 255 and item[2] == 255:
-            newData.append((255, 255, 255, 0))
+            new_data.append((255, 255, 255, 0))
         else:
-            newData.append(item)
-    img.putdata(newData)
+            new_data.append(item)
+    img.putdata(new_data)
     # smooth image
     im1 = img.resize(
         (int(img.size[0] * 0.9), int(img.size[0] * 0.9)), Image.Resampling.BILINEAR
     )
-    im1AsArray = np.array(im1)
-    alpha = im1AsArray[:, :, 3]
-    semiTransparentIndices = alpha < 255
-    alpha[semiTransparentIndices] = 0
-    im1AsArray[:, :, 3] = alpha
-    img = Image.fromarray(im1AsArray, "RGBA")
+    im1_as_array = np.array(im1)
+    alpha = im1_as_array[:, :, 3]
+    semi_transparent_indices = alpha < 255
+    alpha[semi_transparent_indices] = 0
+    im1_as_array[:, :, 3] = alpha
+    img = Image.fromarray(im1_as_array, "RGBA")
 
     # img = img.filter(ImageFilter.SMOOTH_MORE)
 

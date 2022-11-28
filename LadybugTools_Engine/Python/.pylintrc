@@ -1,0 +1,22 @@
+[BASIC]
+
+# Good variable names which should always be accepted, separated by a comma.
+good-names=a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, df, ws, wd, rh, fp, id, dt, fph, ch, ax, gs, xx, yy, pt, im, ms, ls, ta, tr, tk, zs, sd, es, ap, ha, ci, hr, cf, cl, cb, kw, wr, sm, ti, nn, cc
+ignored-modules=win32api,cv2
+
+[FORMAT]
+max-line-length=120
+
+[MASTER]
+disable=
+    C0114, # missing-module-docstring
+    C0115, # missing-class-docstring
+    E1101, # no-member
+    W1203, # logging-fstring-interpolation
+    R0913, # too-many-arguments
+    R0914, # too-many-locals
+    R0912, # too-many-branches
+    R0915, # too-many-statements
+    W0212, # protected-access
+    C0301, # line-too-long
+    R0801, # duplicate-code

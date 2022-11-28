@@ -67,6 +67,9 @@
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -77,14 +80,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataType.cs" />
+    <Compile Include="Enum\Typologies.cs" />
+    <Compile Include="Enum\Materials.cs" />
+    <Compile Include="Header.cs" />
+    <Compile Include="DataCollection.cs" />
+    <Compile Include="ILBTMaterial.cs" />
+    <Compile Include="AnalysisPeriod.cs" />
+    <Compile Include="OpaqueVegetationMaterial.cs" />
     <Compile Include="Enum\Roughness.cs" />
-    <Compile Include="ExternalComfortTypology.cs" />
-    <Compile Include="ExternalComfortShelter.cs" />
-    <Compile Include="ExternalComfortMaterial.cs" />
+    <Compile Include="OpaqueMaterial.cs" />
+    <Compile Include="EPW.cs" />
+    <Compile Include="Location.cs" />
+    <Compile Include="ExternalComfort.cs" />
+    <Compile Include="SimulationResult.cs" />
+    <Compile Include="Typology.cs" />
+    <Compile Include="Shelter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Versioning_53.json" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
@@ -101,6 +116,6 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
-xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /C /Y</PostBuildEvent>
+      xcopy "$(TargetDir)$(TargetFileName)"  "C:\ProgramData\BHoM\Assemblies" /C /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>

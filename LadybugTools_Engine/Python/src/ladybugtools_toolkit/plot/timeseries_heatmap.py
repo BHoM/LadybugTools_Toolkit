@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Tuple, Union
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -7,15 +7,11 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def timeseries_heatmap(
     series: pd.Series,
     cmap: Union[Colormap, str] = "viridis",
     norm: BoundaryNorm = None,
-    vlims: List[float] = None,
+    vlims: Tuple[float] = None,
     title: str = None,
 ) -> Figure:
     """Plot a heatmap for a Pandas Series object.
@@ -27,7 +23,7 @@ def timeseries_heatmap(
             The colormap to use in this heatmap. Defaults to "viridis".
         norm (BoundaryNorm, optional):
             A matplotlib BoundaryNorm object describing value thresholds. Defaults to None.
-        vlims (List[float], optional):
+        vlims (Tuple[float], optional):
             The limits to which values should be plotted (useful for comparing between different cases). Defaults to None.
         title (str, optional):
             A title to place at the top of the plot. Defaults to None.

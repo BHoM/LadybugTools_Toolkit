@@ -1,0 +1,42 @@
+[
+    {
+        "pt_velocity_file": "000.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 0
+    },
+    {
+        "pt_velocity_file": "045.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 45
+    },
+    {
+        "pt_velocity_file": "090.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 90
+    },
+    {
+        "pt_velocity_file": "135.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 135
+    },
+    {
+        "pt_velocity_file": "180.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 180
+    },
+    {
+        "pt_velocity_file": "225.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 225
+    },
+    {
+        "pt_velocity_file": "270.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 270
+    },
+    {
+        "pt_velocity_file": "315.csv",
+        "source_velocity": 2.0,
+        "wind_direction": 315
+    }
+]

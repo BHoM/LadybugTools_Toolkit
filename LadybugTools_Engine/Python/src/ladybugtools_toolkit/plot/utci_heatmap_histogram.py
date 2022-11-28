@@ -1,3 +1,4 @@
+import calendar
 import textwrap
 
 import matplotlib.dates as mdates
@@ -6,22 +7,14 @@ import matplotlib.ticker as mticker
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.plot.colormaps import (
-    UTCI_BOUNDARYNORM,
-    UTCI_COLORMAP,
-    UTCI_LABELS,
-    UTCI_LEVELS,
-)
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from ..ladybug_extension.datacollection import to_series
+from .colormaps import UTCI_BOUNDARYNORM, UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def utci_heatmap_histogram(
     collection: HourlyContinuousCollection, title: str = None
 ) -> Figure:
@@ -102,7 +95,7 @@ def utci_heatmap_histogram(
     # Add labels to the colorbar
     levels = [-100] + UTCI_LEVELS + [100]
     for n, ((low, high), label) in enumerate(
-        zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LABELS])
+        zip(*[list(zip(levels[:-1], levels[1:])), UTCI_LABELS])
     ):
         if n == 0:
             ha = "right"
@@ -128,20 +121,7 @@ def utci_heatmap_histogram(
     t = pd.cut(series, [-100] + UTCI_LEVELS + [100], labels=UTCI_LABELS)
     t = t.groupby([t.index.month, t]).count().unstack().T
     t = t / t.sum()
-    months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-    ]
+    months = [calendar.month_abbr[i] for i in range(1, 13, 1)]
     t.T.plot.bar(
         ax=histogram_ax,
         stacked=True,

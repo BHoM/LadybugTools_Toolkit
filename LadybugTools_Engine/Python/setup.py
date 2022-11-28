@@ -1,20 +1,25 @@
-﻿from setuptools import setup, find_packages
-import pathlib
+﻿import pathlib
+
+import setuptools
+
+TOOLKIT_NAME = "LadybugTools_Toolkit"
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
-requirements = [i.strip() for i in (here / "requirements.txt").read_text(encoding="utf-8-sig").splitlines()]
+requirements = [
+    i.strip()
+    for i in (here / "requirements.txt").read_text(encoding="utf-8-sig").splitlines()
+]
 
-# TODO - populate values here with values from global config instead
-setup(
-    name="ladybugtools_toolkit",
+setuptools.setup(
+    name=TOOLKIT_NAME.lower(),
     author="BHoM",
     author_email="bhombot@burohappold.com",
-    description="A Python library that enables Ladybug Tools to be used within BHoM workflows",
+    description=f"A Python library that enables usage of the Python code within {TOOLKIT_NAME} as part of BHoM workflows.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/BHoM/LadybugTools_Toolkit",
+    url=f"https://github.com/BHoM/{TOOLKIT_NAME}",
     package_dir={"": "src"},
-    packages=find_packages(where="src", exclude=['tests']),
+    packages=setuptools.find_packages(where="src", exclude=["tests"]),
     install_requires=requirements,
 )

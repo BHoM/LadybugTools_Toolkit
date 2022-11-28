@@ -8,15 +8,13 @@ from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def spatial_heatmap(
     triangulations: List[Triangulation],
     values: List[List[float]],
     levels: Union[List[float], int] = None,
     contours: List[float] = None,
+    contour_colors: List[str] = None,
+    contour_widths: List[float] = None,
     cmap: Colormap = "viridis",
     extend: str = "neither",
     norm: BoundaryNorm = None,
@@ -39,12 +37,16 @@ def spatial_heatmap(
             10-steps between the min/max for all given values.
         contours (List[float], optional):
             Add contours at the given values to the spatial plot. Defaults to None.
+        contour_colors (List[str], optional):
+            Color each of the listed contours. Defaults to None.
+        contour_widths (List[float], optional):
+            The width each of the listed contours. Defaults to None.
         cmap (Colormap, optional):
             The colormap to use for this plot. Defaults to "viridis".
         extend (str, optional):
             Define how to handle the end-points of the colorbar. Defaults to "neither".
         norm (BoundaryNorm, optional):
-            A matploltib BoundaryNorm object containing colormap boundary mapping information.
+            A matplotlib BoundaryNorm object containing colormap boundary mapping information.
             Defaults to None.
         xlims (List[float], optional):
             The x-limit for the plot. Defaults to None.
@@ -71,19 +73,19 @@ def spatial_heatmap(
 
     if levels is None:
         levels = np.linspace(
-            min([np.amin(i) for i in values]), max([np.amax(i) for i in values]), 10
+            min(np.amin(i) for i in values), max(np.amax(i) for i in values), 10
         )
 
     if xlims is None:
         xlims = [
-            min([i.x.min() for i in triangulations]),
-            max([i.x.max() for i in triangulations]),
+            min(i.x.min() for i in triangulations),
+            max(i.x.max() for i in triangulations),
         ]
 
     if ylims is None:
         ylims = [
-            min([i.y.min() for i in triangulations]),
-            max([i.y.max() for i in triangulations]),
+            min(i.y.min() for i in triangulations),
+            max(i.y.max() for i in triangulations),
         ]
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -94,13 +96,32 @@ def spatial_heatmap(
     ax.set_xlim(xlims)
     ax.set_ylim(ylims)
 
+    tcls = []
     for tri, zs in list(zip(*[triangulations, values])):
         tcf = ax.tricontourf(
             tri, zs, extend=extend, cmap=cmap, levels=levels, norm=norm
         )
+        # add contour lines
         if contours is not None:
-            tcl = ax.tricontour(tri, zs, levels=contours, colors=["w"])
-            ax.clabel(tcl, inline=1, fontsize=10, colors=["k"])
+            if not (
+                all(i < np.amin(zs) for i in contours)
+                or all(i > np.amax(zs) for i in contours)
+            ):
+                if contour_widths is None:
+                    contour_widths = [1.5] * len(contours)
+                if contour_colors is None:
+                    contour_colors = ["k"] * len(contours)
+                if len(contour_colors) != len(contours) != len(contour_widths):
+                    raise ValueError("contour vars must be same length")
+                tcl = ax.tricontour(
+                    tri,
+                    zs,
+                    levels=contours,
+                    colors=contour_colors,
+                    linewidths=contour_widths,
+                )
+                ax.clabel(tcl, inline=1, fontsize=10, colors=["k"])
+                tcls.append(tcl)
 
     if highlight_pts is not None:
         if len(triangulations) > 1:
@@ -130,6 +151,9 @@ def spatial_heatmap(
         )
         cbar.outline.set_visible(False)
         cbar.set_label(colorbar_label)
+
+        for tcl in tcls:
+            cbar.add_lines(tcl)
 
         ax.set_title(title, ha="left", va="bottom", x=0)
 

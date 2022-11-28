@@ -3,7 +3,7 @@ from typing import Union
 from honeybee.model import Model
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW, AnalysisPeriod
-from ladybug_geometry.geometry3d import Point3D
+from ladybug_geometry.geometry3d import Point3D, Vector3D
 from ladybugtools_toolkit.plot.figure_to_image import figure_to_image
 from ladybugtools_toolkit.plot.fisheye_sky import fisheye_sky
 from ladybugtools_toolkit.plot.skymatrix import skymatrix
@@ -13,10 +13,6 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def sky_view_pov(
     model: Model,
     sensor: Point3D,
@@ -29,7 +25,8 @@ def sky_view_pov(
     show_sunpath: bool = True,
     show_skymatrix: bool = True,
     title: str = None,
-) -> Image:
+    translate_sensor: Vector3D = None,
+) -> Image:  # pylint: disable=too-many-locals
     """Create a sky view with overlaid sun location information
 
     Args:
@@ -57,14 +54,15 @@ def sky_view_pov(
             Hide the sky-dome if set to False. Defaults to True.
         title (str, optional):
             Add a title to the plot.. Defaults to None.
-
+        translate_sensor (Vector3D):
+            A translation to apply to the sensor.
     Returns:
         Image:
             A PIL image object ready to save.
     """
 
     # render the sky view Image
-    sky_view_img = fisheye_sky(model, sensor)
+    sky_view_img = fisheye_sky(model, sensor, translate_sensor)
 
     # render the sunpath
     if show_sunpath:
@@ -121,7 +119,7 @@ def sky_view_pov(
                 (255, 255, 255),
                 font=font,
             )
-        except Exception as exc:
+        except Exception:  # pylint: disable=broad-except
             draw.text(
                 (5, 5),
                 title,

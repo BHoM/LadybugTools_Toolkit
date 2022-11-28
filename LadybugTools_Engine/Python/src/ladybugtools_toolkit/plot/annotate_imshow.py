@@ -5,10 +5,6 @@ from matplotlib import ticker as mticker
 from matplotlib.image import AxesImage
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def annotate_imshow(
     im: AxesImage,
     data: List[float] = None,
