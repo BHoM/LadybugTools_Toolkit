@@ -210,4 +210,4 @@ cython_debug/
 
 # Testing files
 *.ipynb
-/.dev
+.dev/

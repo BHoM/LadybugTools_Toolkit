@@ -3,6 +3,7 @@ import json
 import sys
 import traceback
 import uuid
+from datetime import datetime, timezone
 from functools import wraps
 from typing import Callable
 
@@ -42,7 +43,7 @@ def bhom_analytics(func: Callable) -> Callable:
             },
             "Tags": [],
             "Time": {
-                "$date": _ticks(),
+                "$date": datetime.now(tz=timezone.utc),
             },
             "UI": "Python",
             "UiVersion": sys.version,

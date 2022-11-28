@@ -42,6 +42,7 @@ def _ticks(dt: datetime = datetime.utcnow(), short: bool = False) -> int:
 
     if short:
         return int(_ticks)
+
     return int(_ticks * (10**7))
 
 
