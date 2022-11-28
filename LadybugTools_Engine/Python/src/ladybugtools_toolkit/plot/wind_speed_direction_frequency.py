@@ -2,19 +2,15 @@ from typing import List, Union
 
 import numpy as np
 import pandas as pd
-from ladybugtools_toolkit.helpers.cardinality import cardinality
-from ladybugtools_toolkit.helpers.rolling_window import rolling_window
-from ladybugtools_toolkit.plot.annotate_imshow import annotate_imshow
 from matplotlib import pyplot as plt
 from matplotlib import ticker as mticker
 from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
+from ..helpers import cardinality, rolling_window
+from .annotate_imshow import annotate_imshow
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def wind_speed_direction_frequency(
     wind_speed: List[float],
     wind_direction: List[float],

@@ -4,16 +4,13 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
-from ladybugtools_toolkit.plot.colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
-from ladybugtools_toolkit.plot.lighten_color import lighten_color
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 
+from .colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
+from .lighten_color import lighten_color
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def utci_comparison_diurnal(
     collections: List[HourlyContinuousCollection],
     collection_ids: List[str] = None,

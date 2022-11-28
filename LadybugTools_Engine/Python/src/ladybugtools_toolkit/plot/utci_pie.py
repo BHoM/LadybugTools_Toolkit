@@ -3,19 +3,14 @@ import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
-from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
-    describe as describe_analysis_period,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.plot.colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
 
+from ..ladybug_extension.analysis_period import describe as describe_analysis_period
+from ..ladybug_extension.datacollection import to_series
+from .colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def utci_pie(
     utci_collection: HourlyContinuousCollection,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),

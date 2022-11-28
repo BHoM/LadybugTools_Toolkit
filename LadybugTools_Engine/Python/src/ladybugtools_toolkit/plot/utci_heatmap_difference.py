@@ -1,16 +1,13 @@
 from typing import Tuple
 
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.plot.colormap_sequential import colormap_sequential
-from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
 from matplotlib.figure import Figure
 
+from ..ladybug_extension.datacollection import to_series
+from .colormap_sequential import colormap_sequential
+from .timeseries_heatmap import timeseries_heatmap
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def utci_heatmap_difference(
     utci_collection1: HourlyContinuousCollection,
     utci_collection2: HourlyContinuousCollection,

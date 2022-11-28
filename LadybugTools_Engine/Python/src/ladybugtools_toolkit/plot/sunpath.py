@@ -8,24 +8,15 @@ from ladybug.compass import Compass
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 from ladybug.sunpath import Sunpath
-from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
-    describe as describe_analysis_period,
-)
-from ladybugtools_toolkit.ladybug_extension.analysis_period.to_datetimes import (
-    to_datetimes,
-)
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.ladybug_extension.location.to_string import (
-    to_string as location_to_string,
-)
 from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
 
+from ..ladybug_extension.analysis_period import describe as describe_analysis_period
+from ..ladybug_extension.analysis_period import to_datetimes
+from ..ladybug_extension.datacollection import to_series
+from ..ladybug_extension.location import to_string as location_to_string
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def sunpath(
     epw: EPW,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
@@ -54,15 +45,17 @@ def sunpath(
         sun_size (float, optional):
             The size of each sun in the plot. Defaults to 0.2.
         norm (BoundaryNorm, optional):
-            A matploltib BoundaryNorm object containing colormap boundary mapping information.
+            A matplotlib BoundaryNorm object containing colormap boundary mapping information.
             Defaults to None.
     Returns:
         Figure:
             A matplotlib Figure object.
     """
 
-    sp = Sunpath.from_location(epw.location)
-    all_suns = [sp.calculate_sun_from_date_time(i) for i in analysis_period.datetimes]
+    sunpath_obj = Sunpath.from_location(epw.location)
+    all_suns = [
+        sunpath_obj.calculate_sun_from_date_time(i) for i in analysis_period.datetimes
+    ]
     suns = [i for i in all_suns if i.altitude > 0]
     suns_x, suns_y = np.array([sun.position_2d().to_array() for sun in suns]).T
 
@@ -74,7 +67,7 @@ def sunpath(
         )
         _ = []
         for idx in day_idx:
-            s = sp.calculate_sun_from_date_time(idx)
+            s = sunpath_obj.calculate_sun_from_date_time(idx)
             if s.altitude > 0:
                 _.append(np.array(s.position_2d().to_array()))
         day_suns.append(np.array(_))
@@ -89,15 +82,25 @@ def sunpath(
         compass = Compass()
         ax.add_patch(
             plt.Circle(
-                (0, 0), 100, zorder=1, lw=0.5, ec="#555555", fc=(0, 0, 0, 0), ls="--"
+                (0, 0),
+                100,
+                zorder=1,
+                lw=0.5,
+                ec="#555555",
+                fc=(0, 0, 0, 0),
+                ls="-",
             )
         )
-        pts = compass.minor_azimuth_points + compass.major_azimuth_points
-        pt_labels = compass.MINOR_TEXT + compass.MAJOR_TEXT
-        for pt, lab in zip(*[pts, pt_labels]):
+        for pt, lab in list(zip(*[compass.major_azimuth_points, compass.MAJOR_TEXT])):
             _x, _y = np.array([[0, 0]] + [pt.to_array()]).T
-            ax.plot(_x, _y, zorder=1, lw=0.5, ls="--", c="#555555")
-            ax.text(_x[1], _y[1], lab, ha="center", va="center")
+            ax.plot(_x, _y, zorder=1, lw=0.5, ls="-", c="#555555", alpha=0.5)
+            t = ax.text(_x[1], _y[1], lab, ha="center", va="center", fontsize="medium")
+            t.set_bbox(dict(facecolor="white", alpha=1, edgecolor=None, linewidth=0))
+        for pt, lab in list(zip(*[compass.minor_azimuth_points, compass.MINOR_TEXT])):
+            _x, _y = np.array([[0, 0]] + [pt.to_array()]).T
+            ax.plot(_x, _y, zorder=1, lw=0.5, ls="-", c="#555555", alpha=0.5)
+            t = ax.text(_x[1], _y[1], lab, ha="center", va="center", fontsize="small")
+            t.set_bbox(dict(facecolor="white", alpha=1, edgecolor=None, linewidth=0))
 
     if data_collection is not None:
         new_idx = to_datetimes(analysis_period)

@@ -4,10 +4,6 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, is_color_like, rgb2hex
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def colormap_sequential(
     *colors: Union[str, float, int, Tuple]
 ) -> LinearSegmentedColormap:

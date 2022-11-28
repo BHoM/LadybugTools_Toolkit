@@ -204,9 +204,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# pylint config
-.pylintrc
-
 # VSCode User File #
 ####################
 .vscode/

@@ -4,10 +4,6 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def utci_day_comfort_metrics(
     utci: pd.Series,
     dbt: pd.Series,
@@ -43,7 +39,7 @@ def utci_day_comfort_metrics(
             A matplotlib Figure object.
     """
 
-    if any([all(utci.index != i.index) for i in [dbt, mrt, rh, ws]]):
+    if any(all(utci.index != i.index) for i in [dbt, mrt, rh, ws]):
         raise ValueError("All series must have the same index")
 
     try:

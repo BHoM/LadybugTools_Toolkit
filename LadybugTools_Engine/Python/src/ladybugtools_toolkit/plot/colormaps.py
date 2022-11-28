@@ -1,5 +1,6 @@
-from ladybugtools_toolkit.plot.colormap_sequential import colormap_sequential
 from matplotlib.colors import BoundaryNorm, ListedColormap
+
+from .colormap_sequential import colormap_sequential
 
 UTCI_COLORMAP = ListedColormap(
     [

@@ -6,17 +6,14 @@ import matplotlib.ticker as mticker
 import numpy as np
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import BoundaryNorm
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
+from ..ladybug_extension.datacollection import to_series
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def utci_distance_to_comfortable(
     collection: HourlyContinuousCollection,
     title: str = None,

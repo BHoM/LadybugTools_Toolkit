@@ -1,14 +1,11 @@
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.plot.colormaps import UTCI_BOUNDARYNORM, UTCI_COLORMAP
-from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
 from matplotlib.figure import Figure
 
+from ..ladybug_extension.datacollection import to_series
+from .colormaps import UTCI_BOUNDARYNORM, UTCI_COLORMAP
+from .timeseries_heatmap import timeseries_heatmap
 
-from ladybugtools_toolkit import analytics
 
-
-@analytics
 def utci_heatmap(
     utci_collection: HourlyContinuousCollection, title: str = None
 ) -> Figure:

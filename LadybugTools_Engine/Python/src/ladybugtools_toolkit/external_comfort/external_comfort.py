@@ -1,81 +1,117 @@
 from __future__ import annotations
 
-from typing import Dict, Tuple
+import json
+from dataclasses import dataclass, field
+from typing import Any, Dict, Tuple
 
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
-    SimulationResult,
-)
-from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
-from ladybugtools_toolkit.external_comfort.typology.typology import Typology
-from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
-from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe
-from ladybugtools_toolkit.ladybug_extension.location.to_string import (
-    to_string as location_to_string,
-)
-from ladybugtools_toolkit.plot.colormaps import (
-    DBT_COLORMAP,
-    MRT_COLORMAP,
-    RH_COLORMAP,
-    WS_COLORMAP,
-)
-from ladybugtools_toolkit.plot.timeseries_heatmap import timeseries_heatmap
-from ladybugtools_toolkit.plot.utci_day_comfort_metrics import utci_day_comfort_metrics
-from ladybugtools_toolkit.plot.utci_distance_to_comfortable import (
-    utci_distance_to_comfortable,
-)
-from ladybugtools_toolkit.plot.utci_heatmap import utci_heatmap
-from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histogram
 from matplotlib.figure import Figure
 
+from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
+from ..ladybug_extension.datacollection import to_series
+from ..ladybug_extension.epw import to_dataframe
+from ..ladybug_extension.location import to_string as location_to_string
+from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMAP
+from ..plot.timeseries_heatmap import timeseries_heatmap
+from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
+from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
+from ..plot.utci_heatmap import utci_heatmap
+from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
+from .simulate import SimulationResult
+from .typology import Typology
 
-class ExternalComfort:
-    """An object containing all inputs and results of an external MRT simulation and resultant
-        thermal comfort metrics.
+
+@dataclass(init=True, repr=True, eq=True)
+class ExternalComfort(BHoMObject):
+    """An object containing all inputs and results of an external MRT
+        simulation and resultant thermal comfort metrics.
 
     Args:
-        simulation_result (SimulationResult): A set of simulation results.
-        typology (Typology): A typology object.
+        simulation_result (SimulationResult):
+            A set of pre-run simulation results.
+        typology (Typology):
+            A typology object.
 
     Returns:
         ExternalComfort: An object containing all inputs and results of an external MRT simulation
         and resultant thermal comfort metrics.
     """
 
-    def __init__(
-        self, simulation_result: SimulationResult, typology: Typology
-    ) -> ExternalComfort:
+    simulation_result: SimulationResult = field(init=True, compare=True, repr=True)
+    typology: Typology = field(init=True, compare=True, repr=True)
 
-        self.simulation_result = simulation_result
-        self.typology = typology
+    dry_bulb_temperature: HourlyContinuousCollection = field(
+        init=True, compare=True, repr=False, default=None
+    )
+    relative_humidity: HourlyContinuousCollection = field(
+        init=True, compare=True, repr=False, default=None
+    )
+    wind_speed: HourlyContinuousCollection = field(
+        init=True, compare=True, repr=False, default=None
+    )
+    mean_radiant_temperature: HourlyContinuousCollection = field(
+        init=True, compare=True, repr=False, default=None
+    )
+    universal_thermal_climate_index: HourlyContinuousCollection = field(
+        init=True, compare=True, repr=False, default=None
+    )
 
-        # calculate inputs to thermal comfort calculations
-        self.dry_bulb_temperature = self.typology.dry_bulb_temperature(
-            self.simulation_result.epw
+    _t: str = field(
+        init=False,
+        compare=True,
+        repr=False,
+        default="BH.oM.LadybugTools.ExternalComfort",
+    )
+
+    def __post_init__(self):
+
+        if not self.simulation_result.is_run():
+            self.simulation_result = self.simulation_result.run()
+
+        # calculate metrics
+        epw = self.simulation_result.epw
+
+        self.dry_bulb_temperature = (
+            self.dry_bulb_temperature
+            if isinstance(
+                getattr(self, "dry_bulb_temperature"), HourlyContinuousCollection
+            )
+            else self.typology.dry_bulb_temperature(epw)
         )
-        self.relative_humidity = self.typology.relative_humidity(
-            self.simulation_result.epw
+        self.relative_humidity = (
+            self.relative_humidity
+            if isinstance(
+                getattr(self, "relative_humidity"), HourlyContinuousCollection
+            )
+            else self.typology.relative_humidity(epw)
         )
-        self.wind_speed = self.typology.wind_speed(self.simulation_result.epw)
-        self.mean_radiant_temperature = self.typology.mean_radiant_temperature(
-            self.simulation_result
+        self.wind_speed = (
+            self.wind_speed
+            if isinstance(getattr(self, "wind_speed"), HourlyContinuousCollection)
+            else self.typology.wind_speed(epw)
+        )
+        self.mean_radiant_temperature = (
+            self.mean_radiant_temperature
+            if isinstance(
+                getattr(self, "mean_radiant_temperature"), HourlyContinuousCollection
+            )
+            else self.typology.mean_radiant_temperature(self.simulation_result)
+        )
+        self.universal_thermal_climate_index = (
+            self.universal_thermal_climate_index
+            if isinstance(
+                getattr(self, "universal_thermal_climate_index"),
+                HourlyContinuousCollection,
+            )
+            else self.typology.universal_thermal_climate_index(self.simulation_result)
         )
 
-        # calculate UTCI
-        self.universal_thermal_climate_index = utci(
-            self.dry_bulb_temperature,
-            self.relative_humidity,
-            self.mean_radiant_temperature,
-            self.wind_speed,
-        )
-
-        # add typology descriptions to collection metadata
-        if typology.sky_exposure() != 1:
-            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.identifier} ground and {self.simulation_result.shade_material.identifier} shade)"
+        # populate metadata in metrics with current ExternalComfort config
+        if self.typology.sky_exposure() != 1:
+            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.to_lbt().identifier} ground and {self.simulation_result.shade_material.to_lbt().identifier} shade)"
         else:
-            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.identifier} ground)"
+            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.to_lbt().identifier} ground)"
         for attr in [
             "dry_bulb_temperature",
             "relative_humidity",
@@ -83,36 +119,69 @@ class ExternalComfort:
             "mean_radiant_temperature",
             "universal_thermal_climate_index",
         ]:
-            old_metadata = getattr(self, attr).header.metadata
-            new_metadata = {
-                **old_metadata,
-                **{"typology": typology_description},
-            }
-            setattr(getattr(self, attr).header, "metadata", new_metadata)
+            obj = getattr(self, attr)
+            if isinstance(obj, HourlyContinuousCollection):
+                old_metadata = obj.header.metadata
+                new_metadata = {
+                    **old_metadata,
+                    **{"typology": typology_description},
+                }
+                setattr(obj.header, "metadata", new_metadata)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.simulation_result.identifier} - {self.typology.name})"
+        # wrap methods within this class
+        super().__post_init__()
 
-    def to_dict(self) -> Dict[str, HourlyContinuousCollection]:
-        """Return this object as a dictionary
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]) -> SimulationResult:
+        """Create this object from a dictionary."""
 
-        Returns:
-            Dict: The dict representation of this object.
-        """
+        sanitised_dict = bhom_dict_to_dict(dictionary)
+        sanitised_dict.pop("_t", None)
 
-        variables = [
-            "universal_thermal_climate_index",
+        # handle object conversions
+        if isinstance(sanitised_dict["simulation_result"], dict):
+            sanitised_dict["simulation_result"] = SimulationResult.from_dict(
+                sanitised_dict["simulation_result"]
+            )
+        if isinstance(sanitised_dict["typology"], dict):
+            sanitised_dict["typology"] = Typology.from_dict(sanitised_dict["typology"])
+
+        for calculated_result in [
             "dry_bulb_temperature",
             "relative_humidity",
-            "mean_radiant_temperature",
             "wind_speed",
-        ]
+            "mean_radiant_temperature",
+            "universal_thermal_climate_index",
+        ]:
+            if isinstance(sanitised_dict[calculated_result], dict):
+                if "type" in sanitised_dict[calculated_result].keys():
+                    sanitised_dict[
+                        calculated_result
+                    ] = HourlyContinuousCollection.from_dict(
+                        sanitised_dict[calculated_result]
+                    )
+            else:
+                sanitised_dict[calculated_result] = None
 
-        return {
-            **{var: getattr(self, var) for var in variables},
-            **self.typology.to_dict(),
-            **self.simulation_result.to_dict(),
-        }
+        return cls(
+            simulation_result=sanitised_dict["simulation_result"],
+            typology=sanitised_dict["typology"],
+            dry_bulb_temperature=sanitised_dict["dry_bulb_temperature"],
+            relative_humidity=sanitised_dict["relative_humidity"],
+            wind_speed=sanitised_dict["wind_speed"],
+            mean_radiant_temperature=sanitised_dict["mean_radiant_temperature"],
+            universal_thermal_climate_index=sanitised_dict[
+                "universal_thermal_climate_index"
+            ],
+        )
+
+    @classmethod
+    def from_json(cls, json_string: str) -> SimulationResult:
+        """Create this object from a JSON string."""
+
+        dictionary = json.loads(json_string)
+
+        return cls.from_dict(dictionary)
 
     def to_dataframe(
         self, include_epw: bool = False, include_simulation_results: bool = False
@@ -128,15 +197,13 @@ class ExternalComfort:
         Returns:
             pd.DataFrame: A Pandas DataFrame with this objects properties.
         """
+        dfs = []
 
-        df = pd.DataFrame()
+        if include_epw:
+            dfs.append(to_dataframe(self.simulation_result.epw))
 
         if include_simulation_results:
-            df = pd.concat(
-                [df, self.simulation_result.to_dataframe(include_epw)], axis=1
-            )
-        elif include_epw:
-            df = pd.concat([df, to_dataframe(self.simulation_result.epw)], axis=1)
+            dfs.append(self.simulation_result.to_dataframe())
 
         variables = [
             "universal_thermal_climate_index",
@@ -145,25 +212,24 @@ class ExternalComfort:
             "mean_radiant_temperature",
             "wind_speed",
         ]
-        obj_series = []
         for var in variables:
-            _ = to_series(getattr(self, var))
-            obj_series.append(
-                _.rename(
-                    (
-                        f"{filename(self.simulation_result.epw)}",
-                        f"{var} - {self.simulation_result.ground_material.display_name} ground, {self.simulation_result.shade_material.display_name} shade - {self.typology.name}",
-                    )
-                )
+            s = to_series(getattr(self, var))
+            s.rename(
+                (
+                    f"{self.simulation_result.identifier} - {self.typology.name}",
+                    pascalcase(var),
+                    s.name,
+                ),
+                inplace=True,
             )
-        df = pd.concat([df, pd.concat(obj_series, axis=1)], axis=1)
+            dfs.append(s)
 
-        return df
+        return pd.concat(dfs, axis=1)
 
     @property
     def plot_title_string(self) -> str:
         """Return the description of this result suitable for use in plotting titles."""
-        return f"{location_to_string(self.simulation_result.epw.location)}\n{self.simulation_result.ground_material.display_name} ground, {self.simulation_result.shade_material.display_name} shade\n{self.typology.name}"
+        return f"{location_to_string(self.simulation_result.epw.location)}\n{self.simulation_result.ground_material.to_lbt().display_name} ground, {self.simulation_result.shade_material.to_lbt().display_name} shade\n{self.typology.name}"
 
     def plot_utci_day_comfort_metrics(self, month: int = 3, day: int = 21) -> Figure:
         """Plot a single day UTCI and composite components

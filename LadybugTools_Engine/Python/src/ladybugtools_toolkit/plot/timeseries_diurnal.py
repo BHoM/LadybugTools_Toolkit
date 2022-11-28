@@ -1,3 +1,4 @@
+import calendar
 from typing import List, Tuple, Union
 
 import matplotlib.lines as mlines
@@ -8,10 +9,6 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def timeseries_diurnal(
     series: pd.Series,
     color: Union[str, Tuple] = "k",
@@ -118,21 +115,9 @@ def timeseries_diurnal(
         ax.spines[spine].set_color("k")
 
     ax.set_xlim([0, 287])
+    months = [calendar.month_abbr[i] for i in range(1, 13, 1)]
     ax.set_xticklabels(
-        [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ],
+        months,
         minor=False,
         ha="left",
         color="k",

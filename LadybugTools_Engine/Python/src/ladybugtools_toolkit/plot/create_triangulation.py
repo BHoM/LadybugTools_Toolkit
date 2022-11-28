@@ -6,10 +6,6 @@ import numpy as np
 from matplotlib.tri.triangulation import Triangulation
 
 
-from ladybugtools_toolkit import analytics
-
-
-@analytics
 def create_triangulation(
     x: List[float],
     y: List[float],
