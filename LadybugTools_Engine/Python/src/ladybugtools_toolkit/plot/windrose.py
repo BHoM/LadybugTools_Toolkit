@@ -10,9 +10,11 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period.describe import (
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_array import to_array
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
+from ladybugtools_toolkit.ladybug_extension.location.to_string import to_string
 from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from matplotlib.colors import BoundaryNorm, Colormap, Normalize
 from matplotlib.figure import Figure
+from matplotlib.ticker import FormatStrFormatter
 
 
 from ladybugtools_toolkit import analytics
@@ -24,10 +26,13 @@ def windrose(
     collection: HourlyContinuousCollection,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
     colormap: Union[Colormap, str] = "jet",
-    norm: BoundaryNorm = None,
     directions: int = 12,
     bins: List[float] = None,
-    hide_label_legend: bool = False,
+    vlims: List[float] = None,
+    ylim: int = None,
+    hide_title: bool = False,
+    hide_legend: bool = False,
+    percentage: bool = False,
     title: str = None,
 ) -> Figure:
     """Generate a wind-rose plot for the given wind directions and variable.
@@ -44,10 +49,21 @@ def windrose(
             A colormap to apply to the binned data. Defaults to None.
         directions (int, optional):
             The number of directions to bin wind-direction into. Defaults to 12.
-        value_bins (List[float], optional):
+        bins (List[float], optional):
             A set of bins into which data will be binned. Defaults to None.
-        hide_label_legend (bool, optional):
-            Hide the label and legend. Defaults to False.
+        vlims (List[float], optional):
+            The limits to which values should be plotted (useful for comparing between different cases). Defaults to None.
+        ylim (int, optional): 
+            The limit of frequency count. Defaults to None.
+        hide_title (bool, optional):
+            Hide the label. Defaults to False.
+        hide_legend (bool, optional):
+            Hide the legend. Defaults to False.
+        percentage (bool, optional):
+            Use percentage instead of hours count. Defaults to False.
+        title (str, optional):
+            A title to place at the top of the plot. Defaults to None.
+
 
     Returns:
         Figure:
@@ -56,8 +72,13 @@ def windrose(
 
     if isinstance(colormap, str):
         colormap = plt.get_cmap(colormap)
+    
+    if bins and vlims:
+        raise ValueError("You cannot pass both vlims and a bins value to this method.")
 
-    if bins is None:
+    if vlims is not None:
+        bins = np.linspace(vlims[0], vlims[1], 11)
+    elif bins is None:
         bins = np.linspace(collection.min, collection.max, 11)
 
     colors = [colormap(i) for i in np.linspace(0, 1, len(bins))]
@@ -78,14 +99,17 @@ def windrose(
     theta = np.radians(np.array(wr.angles) + (width / 2))[:-1]
     width = np.radians(width)
 
-    binned_data = np.array([np.histogram(i, bins)[0] for i in wr.histogram_data])
+    if not percentage:
+        binned_data = np.array([np.histogram(i, bins)[0] for i in wr.histogram_data])
+    else:
+        binned_data = np.array([np.histogram(i, bins)[0]/len(analysis_period.hoys)*100 for i in wr.histogram_data])
 
     if title is None:
         title = "\n".join(
             [
-                f"{to_series(collection).name} for {filename(epw)}",
+                f"{to_series(collection).name} - {to_string(epw.location)}",
                 describe_analysis_period(analysis_period),
-                f"Calm for {n_calm_hours / len(ws_values):0.2%} of the time ({n_calm_hours} hours)",
+                f"Calm for {n_calm_hours / len(ws_values):0.0%} of the time ({n_calm_hours} hours)",
             ]
         )
 
@@ -96,6 +120,11 @@ def windrose(
     ax.spines["polar"].set_visible(False)
     ax.grid(True, which="both", ls="--")
     ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+    if percentage:
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f%%'))
+    # Set limit of y axis
+    if ylim is not None:
+        ax.set_ylim([0,ylim])
     ax.set_xticks(np.radians(Compass.MAJOR_AZIMUTHS), minor=False)
     ax.set_xticklabels(Compass.MAJOR_TEXT, minor=False, **{"fontsize": "medium"})
     ax.set_xticks(np.radians(Compass.MINOR_AZIMUTHS), minor=True)
@@ -114,8 +143,8 @@ def windrose(
         )
         bottom += d
 
-    if not hide_label_legend:
-        norm = Normalize(vmin=bins[0], vmax=bins[-2]) if norm is None else norm
+    if not hide_legend:
+        norm = Normalize(vmin=bins[0], vmax=bins[-2])
         colorbar_axes = fig.add_axes([1, 0.11, 0.03, 0.78])
         sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
         sm.set_array([])
@@ -124,11 +153,14 @@ def windrose(
             ticks=bins,
             boundaries=bins,
             cax=colorbar_axes,
-            label=to_series(collection).name,
+            # lable=to_series(collection).name,
+            format='%.1f',
         )
         colorbar.outline.set_visible(False)
+        colorbar.ax.set_title(to_series(collection).name, x=2.5, y=1.02, **{"fontsize": "small"})
 
-        ax.set_title(title, ha="left", x=0)
+    if not hide_title:
+        ax.set_title(title, ha="left", x=0, y=1.1)
 
     plt.tight_layout()
 
