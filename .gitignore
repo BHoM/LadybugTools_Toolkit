@@ -27,7 +27,7 @@
 *.log
 *.sql
 *.sqlite
-!LadybugTools_Engine\Python\src\tests\files
+!/LadybugTools_Engine/Python/src/tests/files/*.*
 
 
 # OS generated files #
