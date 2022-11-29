@@ -1,0 +1,31 @@
+﻿{
+    "Namespace": {
+        "ToNew": {
+        },
+        "ToOld": {
+        }
+    },
+    "Type": {
+        "ToNew": {
+        },
+        "ToOld": {
+        }
+    },
+    "Property": {
+        "ToNew": {
+        },
+        "ToOld": {
+        }
+    },
+    "MessageForDeleted": {
+        "BH.Engine.LadybugTools.Query.PythonString(BH.oM.LadybugTools.ExternalComfortTypology)": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
+        "BH.Engine.LadybugTools.Query.PythonString(BH.oM.LadybugTools.ExternalComfortShelter)": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
+        "BH.Engine.LadybugTools.Query.PythonString(BH.oM.LadybugTools.ExternalComfortMaterial)": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
+        "BH.Engine.LadybugTools.Compute.ExternalComfortSimulationResult(string, string, BH.oM.LadybugTools.ExternalComfortMaterial, BH.oM.LadybugTools.ExternalComfortMaterial)": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
+        "BH.Engine.LadybugTools.Compute.ExternalComfortPossible()": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
+        "BH.Engine.LadybugTools.Compute.ExternalComfortMaterial(System.String)": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues.",
+        "BH.Engine.LadybugTools.Compute.ExternalComfortTypology(System.String)": "Method removed. If further assistance is needed, please raise an issue on https://github.com/BHoM/LadybugTools_Toolkit/issues."
+    },
+    "MessageForNoUpgrade": {
+    }
+}

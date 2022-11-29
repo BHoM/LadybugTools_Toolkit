@@ -33,6 +33,7 @@ namespace BH.Engine.LadybugTools
     public static partial class Query
     {
         [Description("Get a material object from it's Enum.")]
+        [Input("material", "An enum value representing a pre-defined ILBTMaterial object.")]
         [Output("material", "A material object to pass into the External Comfort workflow.")]
         public static ILBTMaterial GetMaterial(this Materials material)
         {
