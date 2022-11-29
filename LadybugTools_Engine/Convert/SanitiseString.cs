@@ -32,7 +32,7 @@ namespace BH.Engine.LadybugTools
         [Description("Sanitise a string.")]
         [Input("text", "The text to sanitise.")]
         [Output("text", "Sanitised text.")]
-        public static string SanitiseString(string text)
+        public static string SanitiseString(this string text)
         {
             List<char> keepCharacters = new List<char>() { '.', '_', '-', '(', ')' };
 

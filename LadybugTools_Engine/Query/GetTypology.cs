@@ -34,7 +34,8 @@ namespace BH.Engine.LadybugTools
     public static partial class Query
     {
         [Description("Get a material object from it's Enum.")]
-        [Output("typology", "A typology object to pass into the External Comfort workflow.")]
+        [Input("typology", "An enum value representing a pre-defined Typology object.")]
+        [Output("typology", "A Typology object to pass into the External Comfort workflow.")]
         public static Typology GetTypology(this Typologies typology)
         {
             if (typology == Typologies.Undefined)

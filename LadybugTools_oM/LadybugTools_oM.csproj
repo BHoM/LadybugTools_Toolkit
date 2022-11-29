@@ -80,18 +80,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataType.cs" />
     <Compile Include="Enum\Typologies.cs" />
     <Compile Include="Enum\Materials.cs" />
-    <Compile Include="Header.cs" />
-    <Compile Include="DataCollection.cs" />
     <Compile Include="ILBTMaterial.cs" />
-    <Compile Include="AnalysisPeriod.cs" />
     <Compile Include="OpaqueVegetationMaterial.cs" />
     <Compile Include="Enum\Roughness.cs" />
     <Compile Include="OpaqueMaterial.cs" />
-    <Compile Include="EPW.cs" />
-    <Compile Include="Location.cs" />
     <Compile Include="ExternalComfort.cs" />
     <Compile Include="SimulationResult.cs" />
     <Compile Include="Typology.cs" />
@@ -100,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Versioning_60.json" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">

@@ -49,7 +49,7 @@ namespace BH.Engine.LadybugTools
                 EpwFile = Path.GetFullPath(epwFile).Replace(@"\", "/"),
                 GroundMaterial = groundMaterial,
                 ShadeMaterial = shadeMaterial,
-                Identifier = Create.SimulationId(epwFile, groundMaterial, shadeMaterial)
+                Identifier = Compute.SimulationId(epwFile, groundMaterial, shadeMaterial)
             };
 
             // send to Python to simulate/load
