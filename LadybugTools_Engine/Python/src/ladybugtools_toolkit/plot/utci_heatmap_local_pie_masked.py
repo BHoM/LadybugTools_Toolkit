@@ -73,7 +73,9 @@ def utci_heatmap_local_pie_masked(
     mask = np.copy(data)
     st_hour = analysis_period.st_hour
     end_hour = analysis_period.end_hour
-    end_count = 23 - end_hour
+    st_day = analysis_period.doys_int[0]
+    end_day = analysis_period.doys_int[-1]
+    end_count = 23 - end_hour - 1
     start_count = 23 - st_hour
 
     for i in range (0,len(data)):
@@ -81,6 +83,9 @@ def utci_heatmap_local_pie_masked(
             mask[i] = np.ones(len(data[i])) 
         else:
             mask[i] = np.ones(len(data[i])) * (-1)
+            for j in range (0,len(mask[i])):
+                if (j <= st_day or j > end_day):
+                    mask[i][j] = 1
 
     # Set masked colormap
     maskedCM = plt.cm.gray
@@ -207,7 +212,7 @@ def utci_heatmap_local_pie_masked(
     if end_hour < 12:
         end_hour_title = str(end_hour) + "am"
     else:
-        end_hour_title = str(end_hour - 12) + " pm"
+        end_hour_title = str(end_hour - 12 + 1) + " pm"
     pie_title = "Occupied hours:" + st_hour_title + " to " + end_hour_title
 
     if title is None:

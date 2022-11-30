@@ -24,7 +24,7 @@ def describe(
     """
 
     if save_path:
-        return f"{analysis_period.st_month:02}{analysis_period.st_day:02}_{analysis_period.end_month:02}{analysis_period.end_day:02}_{analysis_period.st_hour:02}_{analysis_period.end_hour:02}"
+        return f"{analysis_period.st_month:02}{analysis_period.st_day:02}_{analysis_period.end_month:02}{analysis_period.end_day:02}_{analysis_period.st_hour:02}_{(analysis_period.end_hour + 1):02}"
     else:
         timestep = {
             1: "hour",
@@ -41,7 +41,7 @@ def describe(
             60: "minute",
         }
 
-        output = f"{calendar.month_abbr[analysis_period.st_month]} {analysis_period.st_day:02} to {calendar.month_abbr[analysis_period.end_month]} {analysis_period.end_day:02} between {analysis_period.st_hour:02}:00 and {analysis_period.end_hour:02}:00."
+        output = f"{calendar.month_abbr[analysis_period.st_month]} {analysis_period.st_day:02} to {calendar.month_abbr[analysis_period.end_month]} {analysis_period.end_day:02} between {analysis_period.st_hour:02}:00 and {(analysis_period.end_hour + 1):02}:00."
 
         if include_timestep:
             return output[:-1] + f", every {timestep[analysis_period.timestep]}"
