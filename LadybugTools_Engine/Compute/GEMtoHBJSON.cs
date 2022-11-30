@@ -39,11 +39,13 @@ namespace BH.Engine.LadybugTools
             if (gem == null)
             {
                 BH.Engine.Base.Compute.RecordError("gem input cannot be null.");
+                return null;
             }
 
             if (!System.IO.File.Exists(gem))
             {
                 BH.Engine.Base.Compute.RecordError($"{gem} doesn't appear to exist!");
+                return null;
             }
 
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);

@@ -41,21 +41,25 @@ namespace BH.Engine.LadybugTools
             if (epwFile == null)
             {
                 BH.Engine.Base.Compute.RecordError("epwFile input cannot be null.");
+                return null;
             }
 
             if (groundMaterial == null)
             {
                 BH.Engine.Base.Compute.RecordError("groundMaterial input cannot be null.");
+                return null;
             }
 
             if (shadeMaterial == null)
             {
                 BH.Engine.Base.Compute.RecordError("shadeMaterial input cannot be null.");
+                return null;
             }
 
             if (!System.IO.File.Exists(epwFile))
             {
                 BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
+                return null;
             }
 
             string epwId = Convert.SanitiseString(Path.GetFileNameWithoutExtension(epwFile));
