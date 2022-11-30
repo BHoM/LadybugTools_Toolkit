@@ -31,6 +31,7 @@ using BH.oM.Base;
 using System.IO;
 using BH.oM.LadybugTools;
 using BH.Engine.Serialiser;
+using Rhino.DocObjects;
 
 namespace BH.Engine.LadybugTools
 {
@@ -42,6 +43,16 @@ namespace BH.Engine.LadybugTools
         [Output("externalComfortResult", "An external comfort result object containing simulation results.")]
         public static ExternalComfort ExternalComfort(SimulationResult simulationResult, Typology typology)
         {
+            if (simulationResult == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(simulationResult)} input cannot be null.");
+            }
+
+            if (typology == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(typology)} input cannot be null.");
+            }
+
             // construct the base object
             ExternalComfort externalComfort = new ExternalComfort()
             {

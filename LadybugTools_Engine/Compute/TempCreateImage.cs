@@ -31,7 +31,7 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Create an image as either a path to that image, or the image encoded as base64.")]
+        [Description("Create an image as either a path to that image, or the image encoded as base64. This method serves as a temporary method for downstream testing.")]
         [Input("epwFile", "A path to an EPW file to load some data from.")]
         [Input("asFile", "Set to True to generate a filepath, or False to generate a base64 encoded string.")]
         [Output("imageString", "The resultant resulting result.")]

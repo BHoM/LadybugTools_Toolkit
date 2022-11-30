@@ -32,7 +32,6 @@ namespace BH.Engine.LadybugTools
         [Description("Create the BHoM Python envrionment for LadybugTools_Toolkit. This creates a replica of what is found in the Pollination installed python environment, for extension using BHoM.")]
         [Input("run", "Run the installation process.")]
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
-        [PreviousVersion("5.3", "BH.Engine.LadybugTools.Compute.InstallLadybugToolsPythonEnvironment(System.Boolean, System.Boolean)")]
         public static PythonEnvironment InstallPythonEnv_LBT(bool run = false)
         {
             return BH.Engine.Python.Compute.InstallReferencedVirtualenv(
