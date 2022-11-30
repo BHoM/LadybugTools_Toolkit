@@ -40,22 +40,22 @@ namespace BH.Engine.LadybugTools
         {
             if (epwFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError("epwFile input cannot be null.");
+            }
+
+            if (groundMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError("groundMaterial input cannot be null.");
+            }
+
+            if (shadeMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError("shadeMaterial input cannot be null.");
             }
 
             if (!System.IO.File.Exists(epwFile))
             {
                 BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
-            }
-
-            if (groundMaterial == null)
-            {
-                BH.Engine.Base.Compute.RecordError($"{nameof(groundMaterial)} input cannot be null.");
-            }
-
-            if (shadeMaterial == null)
-            {
-                BH.Engine.Base.Compute.RecordError($"{nameof(shadeMaterial)} input cannot be null.");
             }
 
             string epwId = Convert.SanitiseString(Path.GetFileNameWithoutExtension(epwFile));
