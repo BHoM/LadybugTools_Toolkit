@@ -121,7 +121,6 @@
     <Compile Include="Compute\EPWtoCSV.cs" />
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Compute\SimulationResult.cs" />
-    <Compile Include="Compute\TempCreateImage.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
     <Compile Include="Convert\PascalCaseToSnakeCase.cs" />
     <Compile Include="Convert\SanitiseString.cs" />

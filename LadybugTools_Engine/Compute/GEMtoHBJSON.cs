@@ -36,6 +36,16 @@ namespace BH.Engine.LadybugTools
         [Output("hbjson", "A Honeybee JSON file.")]
         public static string GEMtoHBJSON(string gem)
         {
+            if (gem == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(gem)} input cannot be null.");
+            }
+
+            if (!System.IO.File.Exists(gem))
+            {
+                BH.Engine.Base.Compute.RecordError($"{gem} doesn't appear to exist!");
+            }
+
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
 
             string gemFile = System.IO.Path.GetFullPath(gem);

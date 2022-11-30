@@ -43,6 +43,16 @@ namespace BH.Engine.LadybugTools
         [Output("simulationResult", "An simulation result object containing simulation results.")]
         public static SimulationResult SimulationResult(string epwFile, ILBTMaterial groundMaterial, ILBTMaterial shadeMaterial)
         {
+            if (epwFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
+            }
+
+            if (!System.IO.File.Exists(epwFile))
+            {
+                BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
+            }
+
             if (groundMaterial == null)
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(groundMaterial)} input cannot be null.");
@@ -53,10 +63,6 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"{nameof(shadeMaterial)} input cannot be null.");
             }
 
-            if (!System.IO.File.Exists(epwFile))
-            {
-                BH.Engine.Base.Compute.RecordError("The epw file given doesn't appear to exist!");
-            }
 
             // construct the base object
             SimulationResult simulationResult = new SimulationResult()

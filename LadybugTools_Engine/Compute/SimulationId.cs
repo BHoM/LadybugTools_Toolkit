@@ -38,6 +38,16 @@ namespace BH.Engine.LadybugTools
         [Output("id", "A simulation ID.")]
         public static string SimulationId(string epwFile, ILBTMaterial groundMaterial, ILBTMaterial shadeMaterial)
         {
+            if (epwFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
+            }
+
+            if (!System.IO.File.Exists(epwFile))
+            {
+                BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
+            }
+
             if (groundMaterial == null)
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(groundMaterial)} input cannot be null.");
@@ -46,11 +56,6 @@ namespace BH.Engine.LadybugTools
             if (shadeMaterial == null)
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(shadeMaterial)} input cannot be null.");
-            }
-
-            if (!System.IO.File.Exists(epwFile))
-            {
-                BH.Engine.Base.Compute.RecordError("The epw file given doesn't appear to exist!");
             }
 
             string epwId = Convert.SanitiseString(Path.GetFileNameWithoutExtension(epwFile));
