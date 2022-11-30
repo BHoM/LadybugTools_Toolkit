@@ -24,6 +24,8 @@ using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
 using System.ComponentModel;
 using System.IO;
+using System.Collections.Generic;
+using BH.oM.Environment.Results;
 
 namespace BH.Engine.LadybugTools
 {
@@ -36,6 +38,21 @@ namespace BH.Engine.LadybugTools
         [Output("id", "A simulation ID.")]
         public static string SimulationId(string epwFile, ILBTMaterial groundMaterial, ILBTMaterial shadeMaterial)
         {
+            if (groundMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(groundMaterial)} input cannot be null.");
+            }
+
+            if (shadeMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(shadeMaterial)} input cannot be null.");
+            }
+
+            if (!System.IO.File.Exists(epwFile))
+            {
+                BH.Engine.Base.Compute.RecordError("The epw file given doesn't appear to exist!");
+            }
+
             string epwId = Convert.SanitiseString(Path.GetFileNameWithoutExtension(epwFile));
             string groundMaterialId = Convert.SanitiseString(groundMaterial.Identifier);
             string shadeMaterialId = Convert.SanitiseString(shadeMaterial.Identifier);
