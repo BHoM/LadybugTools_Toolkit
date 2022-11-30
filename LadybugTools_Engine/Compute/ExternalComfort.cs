@@ -45,12 +45,12 @@ namespace BH.Engine.LadybugTools
         {
             if (simulationResult == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(simulationResult)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError("simulationResult input cannot be null.");
             }
 
             if (typology == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(typology)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError("typology input cannot be null.");
             }
 
             // construct the base object
