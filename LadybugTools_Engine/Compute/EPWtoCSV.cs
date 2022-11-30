@@ -39,11 +39,13 @@ namespace BH.Engine.LadybugTools
             if (epwFile == null)
             {
                 BH.Engine.Base.Compute.RecordError("epwFile input cannot be null.");
+                return null;
             }
 
             if (!System.IO.File.Exists(epwFile))
             {
                 BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
+                return null;
             }
 
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);

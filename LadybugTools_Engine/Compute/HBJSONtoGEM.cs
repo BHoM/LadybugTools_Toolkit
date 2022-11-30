@@ -39,11 +39,13 @@ namespace BH.Engine.LadybugTools
             if (hbjson == null)
             {
                 BH.Engine.Base.Compute.RecordError("hbjson input cannot be null.");
+                return null;
             }
 
             if (!System.IO.File.Exists(hbjson))
             {
                 BH.Engine.Base.Compute.RecordError($"{hbjson} doesn't appear to exist!");
+                return null;
             }
 
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
