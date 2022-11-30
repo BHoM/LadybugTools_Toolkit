@@ -36,6 +36,16 @@ namespace BH.Engine.LadybugTools
         [Output("gem", "The GEM file.")]
         public static string HBJSONtoGEM(string hbjson)
         {
+            if (hbjson == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(hbjson)} input cannot be null.");
+            }
+
+            if (!System.IO.File.Exists(hbjson))
+            {
+                BH.Engine.Base.Compute.RecordError($"{hbjson} doesn't appear to exist!");
+            }
+
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
 
             string hbjsonFile = System.IO.Path.GetFullPath(hbjson);

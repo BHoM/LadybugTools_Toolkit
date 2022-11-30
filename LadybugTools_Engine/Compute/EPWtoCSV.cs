@@ -36,9 +36,14 @@ namespace BH.Engine.LadybugTools
         [Output("csv", "The generated CSV file.")]
         public static string EPWtoCSV(string epwFile)
         {
+            if (epwFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
+            }
+
             if (!System.IO.File.Exists(epwFile))
             {
-                BH.Engine.Base.Compute.RecordError("The epw file given doesn't appear to exist!");
+                BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
             }
 
             BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
