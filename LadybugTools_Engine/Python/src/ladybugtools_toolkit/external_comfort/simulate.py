@@ -648,6 +648,7 @@ class SimulationResult(BHoMObject):
 
         if isinstance(self.epw_file, str):
             self.epw_file = Path(self.epw_file)
+        self.epw_file = self.epw_file.absolute()
         if self.identifier is None:
             self.identifier = simulation_id(
                 self.epw_file,
