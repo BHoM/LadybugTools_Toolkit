@@ -73,8 +73,8 @@ def utci_heatmap_local_pie_masked(
     mask = np.copy(data)
     st_hour = analysis_period.st_hour
     end_hour = analysis_period.end_hour
-    st_day = analysis_period.doys_int[0]
-    end_day = analysis_period.doys_int[-1]
+    st_day = analysis_period.doys_int[0] - 1
+    end_day = analysis_period.doys_int[-1] - 1
     end_count = 23 - end_hour - 1
     start_count = 23 - st_hour
 
@@ -84,7 +84,7 @@ def utci_heatmap_local_pie_masked(
         else:
             mask[i] = np.ones(len(data[i])) * (-1)
             for j in range (0,len(mask[i])):
-                if (j <= st_day or j > end_day):
+                if (j < st_day or j > end_day):
                     mask[i][j] = 1
 
     # Set masked colormap
