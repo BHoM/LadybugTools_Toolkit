@@ -26,7 +26,7 @@ from ladybugtools_toolkit.ladybug_extension.analysis_period.to_datetimes import 
 from matplotlib.colors import BoundaryNorm, ListedColormap
 
 def utci_heatmap_local_pie_masked(
-    collection: HourlyContinuousCollection, title: str = None, analysis_period: AnalysisPeriod = AnalysisPeriod(), show_legend: bool = True
+    collection: HourlyContinuousCollection, title: str = None, analysis_period: AnalysisPeriod = AnalysisPeriod(), pie_legend: bool = True, show_legend: bool = True
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
@@ -37,8 +37,10 @@ def utci_heatmap_local_pie_masked(
             A title to add to the resulting figure. Default is None.
         analysis_period (AnalysisPeriod, optional):
             A ladybug analysis period.
+        pie_legend (bool, optional):
+            Set to True to plot the legend of pie chart. Default is True.
         show_legend (bool, optional):
-            Set to True to plot the legend also. Default is True.
+            Set to True to plot the legend. Default is True.
 
     Returns:
         Figure:
@@ -57,7 +59,8 @@ def utci_heatmap_local_pie_masked(
     )
     heatmap_ax = fig.add_subplot(spec[0, 0])
     pie_ax = fig.add_subplot(spec[0, 1])
-    colorbar_ax = fig.add_subplot(spec[1, :])
+    if show_legend:
+        colorbar_ax = fig.add_subplot(spec[1, :])
 
     # Construct series
     series = to_series(collection)
@@ -156,7 +159,7 @@ def utci_heatmap_local_pie_masked(
     centre_circle = plt.Circle((0, 0), 0.80, fc="white")
     pie_ax.add_artist(centre_circle)
 
-    if show_legend:
+    if pie_legend:
         # construct custom legend including values
         legend_elements = [
             Patch(
@@ -167,41 +170,42 @@ def utci_heatmap_local_pie_masked(
         lgd = pie_ax.legend(handles=legend_elements, loc="center", frameon=False)
         lgd.get_frame().set_facecolor((1, 1, 1, 0))
     
-    # Add colorbar legend and text descriptors for comfort bands
-    cb = fig.colorbar(
-        heatmap,
-        cax=colorbar_ax,
-        orientation="horizontal",
-        ticks=UTCI_LOCAL_LEVELS,
-        drawedges=False,
-    )
-    cb.outline.set_visible(False)
-    plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
-
-    # Add labels to the colorbar
-    levels = [-100] + UTCI_LOCAL_LEVELS + [100]
-    for n, ((low, high), label) in enumerate(
-        zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LOCAL_LABELS])
-    ):
-        if n == 0:
-            ha = "right"
-            position = high
-        elif n == len(levels) - 2:
-            ha = "left"
-            position = low
-        else:
-            ha = "center"
-            position = (low + high) / 2
-
-        colorbar_ax.text(
-            position,
-            1,
-            textwrap.fill(label, 9),
-            ha=ha,
-            va="bottom",
-            size="small",
-            # transform=colorbar_ax.transAxes,
+    if show_legend:
+        # Add colorbar legend and text descriptors for comfort bands
+        cb = fig.colorbar(
+            heatmap,
+            cax=colorbar_ax,
+            orientation="horizontal",
+            ticks=UTCI_LOCAL_LEVELS,
+            drawedges=False,
         )
+        cb.outline.set_visible(False)
+        plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
+
+        # Add labels to the colorbar
+        levels = [-100] + UTCI_LOCAL_LEVELS + [100]
+        for n, ((low, high), label) in enumerate(
+            zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LOCAL_LABELS])
+        ):
+            if n == 0:
+                ha = "right"
+                position = high
+            elif n == len(levels) - 2:
+                ha = "left"
+                position = low
+            else:
+                ha = "center"
+                position = (low + high) / 2
+
+            colorbar_ax.text(
+                position,
+                1,
+                textwrap.fill(label, 9),
+                ha=ha,
+                va="bottom",
+                size="small",
+                # transform=colorbar_ax.transAxes,
+            )
 
     # Add title to the pie
     if st_hour < 12:

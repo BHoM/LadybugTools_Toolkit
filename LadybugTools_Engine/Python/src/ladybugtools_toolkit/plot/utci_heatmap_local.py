@@ -19,7 +19,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def utci_heatmap_local(
-    collection: HourlyContinuousCollection, title: str = None
+    collection: HourlyContinuousCollection, title: str = None, show_legend: bool = True
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
@@ -28,6 +28,8 @@ def utci_heatmap_local(
             A ladybug HourlyContinuousCollection object.
         title (str, optional):
             A title to add to the resulting figure. Default is None.
+        show_legend (bool, optional):
+            Set to True to plot the legend. Default is True.
 
     Returns:
         Figure:
@@ -46,7 +48,8 @@ def utci_heatmap_local(
     )
     heatmap_ax = fig.add_subplot(spec[0, 0])
     divider = make_axes_locatable(heatmap_ax)
-    colorbar_ax = divider.append_axes("bottom", size="3%", pad=0.85)
+    if show_legend:
+        colorbar_ax = divider.append_axes("bottom", size="3%", pad=0.85)
 
     # Construct series
     series = to_series(collection)
@@ -83,41 +86,42 @@ def utci_heatmap_local(
         heatmap_ax.spines[spine].set_color("k")
     heatmap_ax.grid(visible=True, which="major", color="k", linestyle=":", alpha=0.5)
 
-    # Add colorbar legend and text descriptors for comfort bands
-    cb = fig.colorbar(
-        heatmap,
-        cax=colorbar_ax,
-        orientation="horizontal",
-        ticks=UTCI_LOCAL_LEVELS,
-        drawedges=False,
-    )
-    cb.outline.set_visible(False)
-    plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
-
-    # Add labels to the colorbar
-    levels = [-100] + UTCI_LOCAL_LEVELS + [100]
-    for n, ((low, high), label) in enumerate(
-        zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LOCAL_LABELS])
-    ):
-        if n == 0:
-            ha = "right"
-            position = high
-        elif n == len(levels) - 2:
-            ha = "left"
-            position = low
-        else:
-            ha = "center"
-            position = (low + high) / 2
-
-        colorbar_ax.text(
-            position,
-            1,
-            textwrap.fill(label, 9),
-            ha=ha,
-            va="bottom",
-            size="small",
-            # transform=colorbar_ax.transAxes,
+    if show_legend:
+        # Add colorbar legend and text descriptors for comfort bands
+        cb = fig.colorbar(
+            heatmap,
+            cax=colorbar_ax,
+            orientation="horizontal",
+            ticks=UTCI_LOCAL_LEVELS,
+            drawedges=False,
         )
+        cb.outline.set_visible(False)
+        plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
+
+        # Add labels to the colorbar
+        levels = [-100] + UTCI_LOCAL_LEVELS + [100]
+        for n, ((low, high), label) in enumerate(
+            zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LOCAL_LABELS])
+        ):
+            if n == 0:
+                ha = "right"
+                position = high
+            elif n == len(levels) - 2:
+                ha = "left"
+                position = low
+            else:
+                ha = "center"
+                position = (low + high) / 2
+
+            colorbar_ax.text(
+                position,
+                1,
+                textwrap.fill(label, 9),
+                ha=ha,
+                va="bottom",
+                size="small",
+                # transform=colorbar_ax.transAxes,
+            )
 
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)

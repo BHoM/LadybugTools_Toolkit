@@ -329,7 +329,6 @@
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_day_comfort_metrics.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_distance_to_comfortable.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local_pie.py" />
-    <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local_nolegend.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_local.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\utci_heatmap_difference.py" />
