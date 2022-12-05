@@ -114,6 +114,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compute\HadCM3ForecastEPW.cs" />
     <Compile Include="Compute\GEMtoHBJSON.cs" />
     <Compile Include="Compute\HBJSONtoGEM.cs" />
     <Compile Include="Compute\ExternalComfort.cs" />

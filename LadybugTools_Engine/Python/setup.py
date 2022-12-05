@@ -21,5 +21,8 @@ setuptools.setup(
     url=f"https://github.com/BHoM/{TOOLKIT_NAME}",
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src", exclude=["tests"]),
+    package_data={
+        "data": ["data/*"],
+    },
     install_requires=requirements,
 )

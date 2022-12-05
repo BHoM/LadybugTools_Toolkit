@@ -80,6 +80,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enum\HadCM3ForecastYear.cs" />
+    <Compile Include="Enum\HadCM3EmissionsScenario.cs" />
     <Compile Include="Enum\Typologies.cs" />
     <Compile Include="Enum\Materials.cs" />
     <Compile Include="ILBTMaterial.cs" />

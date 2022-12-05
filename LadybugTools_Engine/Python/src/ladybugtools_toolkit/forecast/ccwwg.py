@@ -15,6 +15,7 @@ from ladybug.datatype.illuminance import (
     DirectNormalIlluminance,
     GlobalHorizontalIlluminance,
 )
+import ladybugtools_toolkit
 from ladybug.datatype.luminance import ZenithLuminance
 from ladybug.datatype.pressure import AtmosphericStationPressure
 from ladybug.datatype.speed import WindSpeed
@@ -25,10 +26,13 @@ from ladybug.skymodel import calc_horizontal_infrared
 from ladybugtools_toolkit.ladybug_extension.datacollection import from_series, to_series
 from scipy import spatial
 
+
 from ..bhomutil.analytics import CONSOLE_LOGGER, bhom_analytics
 
 # load the requisite dataset into memory for querying
-_DATASET_PATH = Path(r"C:\ccwwg\datasets\HadCM3_A2.npz")
+_DATASET_PATH = (
+    Path(ladybugtools_toolkit.__file__).parent.parent / "data" / "HadCM3_A2.npz"
+)
 if not _DATASET_PATH.exists():
     raise FileNotFoundError(
         f"{_DATASET_PATH} does not exist. Forecasting using the HadCM3 datasets will not be possible without this file!"
@@ -507,9 +511,9 @@ def forecast_epw(epw: EPW, emissions_scenario: str, forecast_year: int) -> EPW:
 
     """
 
-    CONSOLE_LOGGER(
-        f"Forecasting {Path(epw.file_path)} using IPCC HadCM3 model, {emissions_scenario} emissions scenario for {forecast_year}"
-    )
+    # CONSOLE_LOGGER(
+    #     f"Forecasting {Path(epw.file_path)} using IPCC HadCM3 model, {emissions_scenario} emissions scenario for {forecast_year}"
+    # )
 
     # create an "empty" epw object eready to populate
     new_epw = EPW.from_missing_values(epw.is_leap_year)
