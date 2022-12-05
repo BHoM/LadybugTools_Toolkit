@@ -21,6 +21,12 @@ from ladybug.sunpath import Sunpath
 from matplotlib.figure import Figure
 
 
+def chunks(lst: List[Any], chunksize: int):
+    """Partition an iterable into lists of lenght "chunksize"."""
+    for i in range(0, len(lst), chunksize):
+        yield lst[i : i + chunksize]
+
+
 def scrape_weather(
     station: str,
     start_date: str = "1970-01-01",
