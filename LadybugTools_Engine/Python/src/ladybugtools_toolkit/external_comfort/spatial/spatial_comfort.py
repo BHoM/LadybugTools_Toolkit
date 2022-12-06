@@ -15,6 +15,7 @@ from honeybee.model import Model
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug_geometry.geometry3d import Point3D
 from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
 from matplotlib.ticker import PercentFormatter, StrMethodFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from PIL import Image
@@ -22,8 +23,10 @@ from PIL import Image
 from ...bhomutil.analytics import CONSOLE_LOGGER
 from ...bhomutil.bhom_object import BHoMObject
 from ...helpers import load_dataset, sanitise_string, store_dataset
-from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
-from ...ladybug_extension.analysis_period import describe as describe_analysis_period
+from ...honeybee_extension.results import (load_ill, load_pts, load_res,
+                                           make_annual)
+from ...ladybug_extension.analysis_period import \
+    describe as describe_analysis_period
 from ...ladybug_extension.analysis_period import to_datetimes
 from ...ladybug_extension.datacollection import from_series, to_series
 from ...ladybug_extension.epw import sun_position_list
@@ -36,7 +39,8 @@ from ...plot.utci_heatmap_histogram import utci_heatmap_histogram
 from ..simulate import SimulationResult
 from ..simulate import direct_sun_hours as dsh
 from ..utci import utci, utci_parallel
-from .calculate import shaded_unshaded_interpolation
+from .calculate import (rwdi_london_thermal_comfort_category,
+                        shaded_unshaded_interpolation)
 from .cfd import spatial_wind_speed
 from .metric import SpatialMetric
 from .sky_view_pov import sky_view_pov
@@ -605,6 +609,25 @@ class SpatialComfort(BHoMObject):
             .to_pydatetime()
         )
 
+    def london_comfort_category(
+        self,
+        metric: SpatialMetric,
+        comfort_limits: Tuple[float] = (0, 32),
+        hours: List[float] = range(8, 21, 1),
+    ) -> pd.Series:
+        """Calculate the London Thermal Comfort category for this Spatial case."""
+        if metric.value == SpatialMetric.UTCI_INTERPOLATED.value:
+            metric_values = self.universal_thermal_climate_index_interpolated
+        elif metric.value == SpatialMetric.UTCI_CALCULATED.value:
+            metric_values = self.universal_thermal_climate_index_calculated
+        else:
+            raise ValueError(
+                "This type of plot is not possible for the requested metric."
+            )
+        return rwdi_london_thermal_comfort_category(
+            metric_values, comfort_limits, hours
+        )
+
     def direct_sun_hours(
         self,
         analysis_period: AnalysisPeriod,
@@ -767,6 +790,75 @@ class SpatialComfort(BHoMObject):
 
         # add title
         ax.set_title("Proportion of sky visible", ha="left", va="bottom", x=0)
+
+        plt.tight_layout()
+
+        return fig
+
+    def plot_london_comfort_category(
+        self,
+        metric: SpatialMetric,
+        comfort_limits: Tuple[float] = (0, 32),
+        hours: List[float] = range(8, 21, 1),
+    ) -> plt.Figure:
+        """Return a plot showing the RWDI London thermal comfort category."""
+
+        comfort_category = self.london_comfort_category(metric, comfort_limits, hours)
+
+        # convert categori
+
+        CONSOLE_LOGGER.info(f"[{self}] - Plotting London Thermal Comfort Category")
+
+        # convert category to numeric
+        mapper = {
+            "Transient": 0,
+            "Short-term Seasonal": 1,
+            "Short-term": 2,
+            "Seasonal": 3,
+            "All Season": 4,
+        }
+        values = comfort_category.replace(mapper)
+
+        # plot
+        tcf_properties = {
+            "cmap": ListedColormap(
+                [
+                    "#DE2E26",
+                    "#FAB92D",
+                    "#1eFFFF",
+                    "#C86eBE",
+                    "#378c4b",
+                ]
+            ),
+            "levels": np.arange(-0.5, 4.6, 1),
+            "extend": "neither",
+        }
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        ax.set_aspect("equal")
+        ax.axis("off")
+        ax.set_xlim([min(self._points_x), max(self._points_x)])
+        ax.set_ylim([min(self._points_y), max(self._points_y)])
+
+        # add contour-fill
+        tcf = ax.tricontourf(self._triangulation, values, **tcf_properties)
+
+        # plot colorbar
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
+        cbar = plt.colorbar(tcf, cax=cax)
+        cbar.outline.set_visible(False)
+        cbar.set_label("London Thermal Comfort Category")
+        cbar.set_ticks(list(mapper.values()))
+        cbar.set_ticklabels([i.replace(" ", "\n") for i in mapper.keys()])
+
+        # add title
+        ax.set_title(
+            'Thermal Comfort Category\nFrom "Thermal Comfort Guidelines for developments in the City of London"',
+            ha="left",
+            va="bottom",
+            x=0,
+        )
 
         plt.tight_layout()
 
@@ -1387,12 +1479,12 @@ class SpatialComfort(BHoMObject):
 
     def run_all(
         self,
-        pt_locations: bool = True,
-        sky_view: bool = True,
-        sunpaths: bool = True,
-        typical_wind: bool = True,
-        comfort_percentages: bool = True,
-        sunlight_hours: bool = True,
+        pt_locations: bool = False,
+        sky_view: bool = False,
+        sunpaths: bool = False,
+        typical_wind: bool = False,
+        comfort_percentages: bool = False,
+        sunlight_hours: bool = False,
     ) -> None:
         """Run all plotting methods"""
 

@@ -1,4 +1,5 @@
 import warnings
+from calendar import month_name
 from concurrent.futures import ProcessPoolExecutor
 from typing import List, Tuple, Union
 
@@ -281,6 +282,48 @@ def describe(
         f'"Heat stress" is expected for {hot_hours} hours ({hot_hours/total_number_of_hours:0.1%}).',
     ]
     return sep.join(statements)
+
+
+def describe_monthly(
+    utci_collection: HourlyContinuousCollection,
+    comfort_limits: Tuple[float] = (9, 26),
+    density: bool = True,
+    hours: List[float] = range(8, 21, 1),
+) -> pd.DataFrame:
+    """Create a monthly table containing cold/comfortable/hot comfort categories for each month."""
+
+    # convert
+    s = to_series(utci_collection)
+
+    # filter for hours
+    s = s[s.index.hour.isin(hours)]
+
+    # get counts
+    month_counts = s.groupby(s.index.month).count()
+
+    # calculate metrics
+    cold = (s < min(comfort_limits)).groupby(s.index.month).sum()
+    hot = (s > max(comfort_limits)).groupby(s.index.month).sum()
+    comfortable = month_counts - cold - hot
+
+    # convert to percentage if density == True
+    if density:
+        cold = cold / month_counts
+        hot = hot / month_counts
+        comfortable = comfortable / month_counts
+
+    df = pd.concat(
+        [cold, comfortable, hot],
+        axis=1,
+        keys=[
+            f"Too cold (<{min(comfort_limits)})",
+            "Comfortable",
+            f"Too Hot (>{max(comfort_limits)})",
+        ],
+    )
+    df.index = [month_name[i] for i in cold.index]
+
+    return df
 
 
 def met_rate_adjustment(
@@ -787,3 +830,81 @@ def utci_vectorised(
     )
 
     return utci_approx
+
+
+def categorise_shade_benefit(
+    *,
+    unshaded_utci: pd.Series,
+    shaded_utci: pd.Series,
+    comfort_limits: Tuple[float] = (9, 26),
+) -> pd.Series:
+    """Determine shade-gap analysis category, indicating where shade is not beneificial.
+
+    Args:
+        unshaded_utci (pd.Series):
+            A series containing unshaded UTCI values.
+        shaded_utci (pd.Series):
+            A series containing shaded UTCI values.
+        comfort_limits (Tuple[float], optional):
+            The range within which "comfort" is achieved. Defaults to (9, 26).
+
+    Returns:
+        pd.Series:
+            A catgorical series indicating shade-benefit.
+
+    """
+
+    if len(unshaded_utci) != len(shaded_utci):
+        raise ValueError(
+            f"Input sizes do not match ({len(unshaded_utci)} != {len(shaded_utci)})"
+        )
+
+    # get limits
+    low, high = min(comfort_limits), max(comfort_limits)
+
+    # get distance to comfort (degrees from edge of "comfortable")
+    distance_from_comfort_unshaded = abs(
+        np.where(
+            unshaded_utci < low,
+            unshaded_utci - low,
+            np.where(unshaded_utci > high, unshaded_utci - high, 0),
+        )
+    )
+    distance_from_comfort_shaded = abs(
+        np.where(
+            shaded_utci < low,
+            shaded_utci - low,
+            np.where(shaded_utci > high, shaded_utci - high, 0),
+        )
+    )
+
+    # get boolean mask where comfortable
+    comfortable_unshaded = unshaded_utci.between(low, high)
+    comfortable_shaded = shaded_utci.between(low, high)
+
+    # get masks for each category
+    comfortable_without_shade = comfortable_unshaded
+    comfortable_with_shade = ~comfortable_unshaded & comfortable_shaded
+    shade_has_negative_impact = (
+        distance_from_comfort_unshaded < distance_from_comfort_shaded
+    )
+    shade_has_positive_impact = (
+        distance_from_comfort_unshaded > distance_from_comfort_shaded
+    )
+
+    # construct categorical series
+    shade_categories = np.where(
+        comfortable_without_shade,
+        "Comfortable without shade",
+        np.where(
+            comfortable_with_shade,
+            "Comfortable with shade",
+            np.where(
+                shade_has_negative_impact,
+                "Shade is detrimental",
+                np.where(shade_has_positive_impact, "Shade is beneficial", "Undefined"),
+            ),
+        ),
+    )
+
+    return pd.Series(shade_categories, index=unshaded_utci.index)
