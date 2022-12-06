@@ -23,10 +23,8 @@ from PIL import Image
 from ...bhomutil.analytics import CONSOLE_LOGGER
 from ...bhomutil.bhom_object import BHoMObject
 from ...helpers import load_dataset, sanitise_string, store_dataset
-from ...honeybee_extension.results import (load_ill, load_pts, load_res,
-                                           make_annual)
-from ...ladybug_extension.analysis_period import \
-    describe as describe_analysis_period
+from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
+from ...ladybug_extension.analysis_period import describe as describe_analysis_period
 from ...ladybug_extension.analysis_period import to_datetimes
 from ...ladybug_extension.datacollection import from_series, to_series
 from ...ladybug_extension.epw import sun_position_list
@@ -39,8 +37,10 @@ from ...plot.utci_heatmap_histogram import utci_heatmap_histogram
 from ..simulate import SimulationResult
 from ..simulate import direct_sun_hours as dsh
 from ..utci import utci, utci_parallel
-from .calculate import (rwdi_london_thermal_comfort_category,
-                        shaded_unshaded_interpolation)
+from .calculate import (
+    rwdi_london_thermal_comfort_category,
+    shaded_unshaded_interpolation,
+)
 from .cfd import spatial_wind_speed
 from .metric import SpatialMetric
 from .sky_view_pov import sky_view_pov
@@ -867,7 +867,7 @@ class SpatialComfort(BHoMObject):
     def plot_wind_average(self, analysis_period: AnalysisPeriod) -> plt.Figure:
         """Return a figure showing typical wind-speed for the given analysis period."""
 
-        metric = SpatialMetric.WS_CFD
+        metric: SpatialMetric = SpatialMetric.WS_CFD
         CONSOLE_LOGGER.info(
             f"[{self}] - Plotting {metric.description()} for {describe_analysis_period(analysis_period)}"
         )
@@ -978,7 +978,7 @@ class SpatialComfort(BHoMObject):
         self,
         analysis_period: AnalysisPeriod,
         metric: SpatialMetric,
-        comfort_thresholds: Tuple[float] = (0, 28),
+        comfort_thresholds: Tuple[float] = (9, 26),
     ) -> plt.Figure:
         """Return a figure showing an "hours comfortable" plot."""
 
@@ -1077,7 +1077,7 @@ class SpatialComfort(BHoMObject):
         self,
         analysis_period: AnalysisPeriod,
         metric: SpatialMetric,
-        cold_threshold: float = 0,
+        cold_threshold: float = 9,
     ) -> plt.Figure:
         """Return a figure showing an "hours cold" plot."""
 
@@ -1169,7 +1169,7 @@ class SpatialComfort(BHoMObject):
         self,
         analysis_period: AnalysisPeriod,
         metric: SpatialMetric,
-        hot_threshold: float = 28,
+        hot_threshold: float = 26,
     ) -> plt.Figure:
         """Return a figure showing an "hours hot" plot."""
 
@@ -1312,7 +1312,7 @@ class SpatialComfort(BHoMObject):
 
         return new_im
 
-    def plot_spatial_point_locations(self, n: int = 500) -> plt.Figure:
+    def plot_spatial_point_locations(self, n: int = 100) -> plt.Figure:
         """Return the spatial point locations figure."""
 
         x = self._points_x
@@ -1403,7 +1403,7 @@ class SpatialComfort(BHoMObject):
             self._triangulation,
             self.irradiance_total.mean(axis=0),
             levels=100,
-            cmap="bone_r",
+            cmap="bone",
         )
         # ax.scatter(x, y, c="#555555", s=0.1)
         pt_size = (xlims[1] - xlims[0]) / 3
@@ -1438,7 +1438,7 @@ class SpatialComfort(BHoMObject):
 
         # create point location UTCI plot
         CONSOLE_LOGGER.info(f"[{self}] - Plotting {point_identifier} UTCI")
-        f = utci_heatmap_histogram(point_utci, point_identifier)
+        f = utci_heatmap_histogram(point_utci, f"{self} - {point_identifier}")
         save_path = (
             self._plot_directory / f"point_{sanitise_string(point_identifier)}_utci.png"
         )
@@ -1448,7 +1448,7 @@ class SpatialComfort(BHoMObject):
         CONSOLE_LOGGER.info(
             f"[{self}] - Plotting {point_identifier} UTCI distance to comfortable"
         )
-        f = utci_distance_to_comfortable(point_utci, point_identifier)
+        f = utci_distance_to_comfortable(point_utci, f"{self} - {point_identifier}")
         save_path = (
             self._plot_directory
             / f"point_{sanitise_string(point_identifier)}_distance_to_comfortable.png"
@@ -1462,7 +1462,7 @@ class SpatialComfort(BHoMObject):
         f = utci_heatmap_difference(
             self._unshaded_utci,
             point_utci,
-            f"Difference between Openfield UTCI and {point_identifier} UTCI",
+            f"{self} - Difference between Openfield UTCI and {point_identifier} UTCI",
         )
         save_path = (
             self._plot_directory
