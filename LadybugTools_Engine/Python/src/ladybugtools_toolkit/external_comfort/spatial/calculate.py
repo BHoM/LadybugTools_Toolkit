@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -108,3 +108,114 @@ def shaded_unshaded_interpolation(
         .ewm(span=1.5)
         .mean()
     )
+
+
+def rwdi_london_thermal_comfort_category(
+    utci: pd.DataFrame,
+    comfort_limits: Tuple[float] = (0, 32),
+    hours: Tuple[float] = (8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+) -> pd.Series:
+    """From a dataframe containing annual hourly spatial UTCI values,
+    categorise each column as one of the RWDI London Thermal Comfort
+    Guidelines categories.
+
+    Method used here from City of London (2020), Thermal Comfort Guidelines
+    for developments in the City of London, RWDI. URL:
+    https://www.cityoflondon.gov.uk/services/planning/microclimate-guidelines
+    [accessed on 2022-12-03].
+
+    Args:
+        utci (pd.DataFrame):
+            A temporo-spatial UTCI data collection.
+        comfort_limits (Tuple[float], optional):
+            The UTCI values within which "comfortable" is defined.
+            Defaults to (0, 32).
+        hours (Tuple[float], optional):
+            The hours to include in this assessment.
+            Defaults to (8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20).
+
+    Returns:
+        pd.Series:
+            A series of comfort categories (one per column in the original
+            dataframe).
+    """
+
+    if not isinstance(utci, pd.DataFrame):
+        raise ValueError(
+            "This method will not work with anything other than a pandas DataFrame."
+        )
+
+    if len(utci.index) != 8760:
+        raise ValueError("Timesteps in the input dataframe != 8760.")
+
+    # filter by time
+    temp = utci[utci.index.hour.isin(hours)]
+
+    # get comfort bool matrix
+    comfort = (temp >= min(comfort_limits)) & (temp <= max(comfort_limits))
+
+    # determine whether "Summer" is months [6, 7, 8] or [12, 1, 2],
+    # and create season masks
+    monthly_mean = utci.max(axis=1).groupby(utci.index.month).max()
+    if monthly_mean[[12, 1, 2]].mean() < monthly_mean[[6, 7, 8]].mean():
+        spring_mask = comfort.index.month.isin([3, 4, 5])
+        summer_mask = comfort.index.month.isin([6, 7, 8])
+        fall_mask = comfort.index.month.isin([9, 10, 11])
+        winter_mask = comfort.index.month.isin([12, 1, 2])
+    else:
+        spring_mask = comfort.index.month.isin([9, 10, 11])
+        summer_mask = comfort.index.month.isin([12, 1, 2])
+        fall_mask = comfort.index.month.isin([3, 4, 5])
+        winter_mask = comfort.index.month.isin([6, 7, 8])
+
+    # calculate seasonal comfort percentatges
+    spring_comfort = comfort[spring_mask].sum() / spring_mask.sum()
+    summer_comfort = comfort[summer_mask].sum() / summer_mask.sum()
+    fall_comfort = comfort[fall_mask].sum() / fall_mask.sum()
+    winter_comfort = comfort[winter_mask].sum() / winter_mask.sum()
+
+    # construct mask for difference categories
+    transient = (winter_comfort < 0.25) | (
+        (spring_comfort < 0.5) | (summer_comfort < 0.5) | (fall_comfort < 0.5)
+    )
+    st_seasonal = (winter_comfort >= 0.25) & (
+        (spring_comfort >= 0.5) & (summer_comfort >= 0.5) & (fall_comfort >= 0.5)
+    )
+    st = (
+        (winter_comfort >= 0.5)
+        & (spring_comfort >= 0.5)
+        & (summer_comfort >= 0.5)
+        & (fall_comfort >= 0.5)
+    )
+    seasonal = (winter_comfort >= 0.7) & (
+        (spring_comfort >= 0.9) & (summer_comfort >= 0.9) & (fall_comfort >= 0.9)
+    )
+    all_season = (
+        (winter_comfort >= 0.9)
+        & (spring_comfort >= 0.9)
+        & (summer_comfort >= 0.9)
+        & (fall_comfort >= 0.9)
+    )
+
+    # build series of categories
+    comfort_category = pd.Series(
+        np.where(
+            all_season,
+            "All Season",
+            np.where(
+                seasonal,
+                "Seasonal",
+                np.where(
+                    st,
+                    "Short-term",
+                    np.where(
+                        st_seasonal,
+                        "Short-term Seasonal",
+                        np.where(transient, "Transient", "Undefined"),
+                    ),
+                ),
+            ),
+        )
+    )
+
+    return comfort_category
