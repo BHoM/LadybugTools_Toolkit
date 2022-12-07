@@ -54,7 +54,7 @@ namespace BH.Engine.LadybugTools
             {
                 "from pathlib import Path",
                 "from ladybug.epw import EPW",
-                "from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe",
+                "from ladybugtools_toolkit.ladybug_extension.epw import to_dataframe",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",
