@@ -3,11 +3,13 @@ from __future__ import annotations
 import contextlib
 import getpass
 import io
+import itertools
 import json
 import shutil
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -26,6 +28,7 @@ from ladybug.wea import Wea
 from ladybug_comfort.collection.solarcal import HorizontalSolarCal
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
 from lbt_recipes.recipe import Recipe, RecipeSettings
+from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
@@ -39,6 +42,8 @@ from .ground_temperature import eplus_otherside_coefficient
 from .material import OpaqueMaterial, OpaqueVegetationMaterial, material_from_dict
 from .model import create_model
 from .model import equality as model_eq
+from .moisture import evaporative_cooling_effect
+from .utci import utci
 
 
 def working_directory(model: Model, create: bool = False) -> Path:
@@ -212,19 +217,19 @@ def surface_temperature_results_load(
             df.filter(regex="GROUND_ZONE_UP_SHADED")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
-            .rename("Temperature (C)")
+            .rename("Ground Temperature (C)")
         ),
         "unshaded_below_temperature": from_series(
             df.filter(regex="GROUND_ZONE_UP_UNSHADED")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
-            .rename("Temperature (C)")
+            .rename("Ground Temperature (C)")
         ),
         "shaded_above_temperature": from_series(
             df.filter(regex="SHADE_ZONE_DOWN")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
-            .rename("Temperature (C)")
+            .rename("Sky Temperature (C)")
         ),
         "unshaded_above_temperature": epw.sky_temperature,
     }
@@ -401,7 +406,7 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
     return True
 
 
-def longwave_mean_radiant_temperature(
+def longwave_radiant_temperature(
     collections: List[HourlyContinuousCollection], view_factors: List[float]
 ) -> HourlyContinuousCollection:
     """Calculate the LW MRT from a list of surface temperature collections, and view
@@ -434,7 +439,7 @@ def longwave_mean_radiant_temperature(
         )
         - 273.15
     )
-    mrt_series.name = "Mean Radiant Temperature (C)"
+    mrt_series.name = "Radiant Temperature (C)"
     return from_series(mrt_series)
 
 
@@ -827,17 +832,15 @@ class SimulationResult(BHoMObject):
         ]
 
         # calculate other variables
-        sim_res.shaded_longwave_mean_radiant_temperature = (
-            longwave_mean_radiant_temperature(
-                [
-                    sim_res.shaded_below_temperature,
-                    sim_res.shaded_above_temperature,
-                ],
-                [0.5, 0.5],
-            )
+        sim_res.shaded_longwave_mean_radiant_temperature = longwave_radiant_temperature(
+            [
+                sim_res.shaded_below_temperature,
+                sim_res.shaded_above_temperature,
+            ],
+            [0.5, 0.5],
         )
         sim_res.unshaded_longwave_mean_radiant_temperature = (
-            longwave_mean_radiant_temperature(
+            longwave_radiant_temperature(
                 [
                     sim_res.unshaded_below_temperature,
                     sim_res.unshaded_above_temperature,
@@ -879,12 +882,17 @@ class SimulationResult(BHoMObject):
 
         return sim_res
 
-    def to_dataframe(self, include_epw: bool = False) -> pd.DataFrame:
+    def to_dataframe(
+        self, include_epw: bool = False, include_epw_additional: bool = False
+    ) -> pd.DataFrame:
         """Create a Pandas DataFrame from this object.
 
         Args:
-            include_epw (bool, optional): Set to True to include the dataframe
-            for the EPW file also.
+            include_epw (bool, optional):
+                Set to True to include the dataframe for the EPW file also.
+            include_epw_additional (bool, optional): Set to True to also include calculated
+                values such as sun position along with EPW. Only includes if include_epw is
+                True also.
 
         Returns:
             pd.DataFrame: A Pandas DataFrame with this objects properties.
@@ -897,16 +905,140 @@ class SimulationResult(BHoMObject):
         for k, v in self.to_dict().items():
             if isinstance(v, HourlyContinuousCollection):
                 series = to_series(v)
-                obj_series.append(series.rename((self.identifier, k, series.name)))
+                category = "Shaded" if k.lower().startswith("shaded") else "Unshaded"
+                obj_series.append(
+                    series.rename((self.identifier, category, series.name))
+                )
         obj_df = pd.concat(obj_series, axis=1)
 
         if include_epw:
             return pd.concat(
                 [
-                    to_dataframe(self.epw),
+                    to_dataframe(self.epw, include_epw_additional),
                     obj_df,
                 ],
                 axis=1,
             )
 
         return obj_df
+
+    def ranked_mitigations(
+        self,
+        n_steps: int = 8,
+        analysis_period: AnalysisPeriod = None,
+        comfort_limits: Tuple[float] = (9, 26),
+    ) -> pd.DataFrame:
+
+        # TODO - break method out into parts - namely basic inputs and single Series output, referenced from elsewhere
+
+        if analysis_period is None:
+            analysis_period = AnalysisPeriod()
+
+        # calculate point-in-time baseline UTCI
+        df = self.to_dataframe(True, True).droplevel(0, axis=1)
+        df[("Unshaded", "Universal Thermal Climate Index (C)")] = utci(
+            df["EPW"]["Dry Bulb Temperature (C)"],
+            df["EPW"]["Relative Humidity (%)"],
+            df["Unshaded"]["Mean Radiant Temperature (C)"],
+            df["EPW"]["Wind Speed (m/s)"],
+        )
+
+        # create range of proportions from which to apply comfort mitigation measures
+        shading_proportions = np.linspace(1, 0, n_steps)
+        wind_shelter_proportions = np.linspace(0, 1, n_steps)
+        evap_clg_proportions = np.linspace(0, 1, n_steps)
+
+        def _temp(row: pd.Series, idx: Any, comfort_limits: Tuple) -> pd.Series:
+            dbt = row["EPW"]["Dry Bulb Temperature (C)"]
+            atm = row["EPW"]["Atmospheric Station Pressure (Pa)"]
+            rh = row["EPW"]["Relative Humidity (%)"]
+            ws = row["EPW"]["Wind Speed (m/s)"]
+            mrt_shaded = row["Shaded"]["Mean Radiant Temperature (C)"]
+            mrt_unshaded = row["Unshaded"]["Mean Radiant Temperature (C)"]
+            openfield_utci = row["Unshaded"]["Universal Thermal Climate Index (C)"]
+
+            # if (openfield_utci > min(comfort_limits)) & (
+            #     openfield_utci < max(comfort_limits)
+            # ):
+            #     return pd.Series(
+            #         index=["shade", "wind shelter", "evaporative cooling"],
+            #         data=np.nan,
+            #         name=idx,
+            #     )
+
+            # create feasible ranges of values
+            dbts, rhs = np.array(
+                [
+                    evaporative_cooling_effect(dbt, rh, evap_x * 0.7, atm)
+                    for evap_x in evap_clg_proportions
+                ]
+            ).T
+            wss = ws * wind_shelter_proportions
+            mrts = np.interp(shading_proportions, [0, 1], [mrt_unshaded, mrt_shaded])
+
+            # create all possible combinations of inputs
+            dbts, rhs, mrts, wss = np.array(
+                list(itertools.product(dbts, rhs, mrts, wss))
+            ).T
+            utcis = utci([dbts], [rhs], [mrts], [wss])[0]
+            shad_props, _, windshlt_props, evapclg_props = np.array(
+                list(
+                    itertools.product(
+                        shading_proportions,
+                        shading_proportions,
+                        wind_shelter_proportions,
+                        evap_clg_proportions,
+                    )
+                )
+            ).T
+
+            # reshape matrix
+            mtx = pd.DataFrame(
+                [
+                    dbts,
+                    rhs,
+                    mrts,
+                    wss,
+                    utcis,
+                    shad_props,
+                    windshlt_props,
+                    evapclg_props,
+                ],
+                index=[
+                    "dbt",
+                    "rh",
+                    "mrt",
+                    "ws",
+                    "utci",
+                    "shade",
+                    "wind shelter",
+                    "evaporative cooling",
+                ],
+            ).T
+
+            # get the distance to comfortable, based on the comfort limits
+            mtx["comfortable_distance"] = abs(
+                np.where(
+                    utcis < min(comfort_limits),
+                    -(min(comfort_limits) - utcis),
+                    np.where(
+                        utcis > max(comfort_limits), utcis - max(comfort_limits), 0
+                    ),
+                )
+            )
+
+            # sort values in df based on distance to comfortable - and get the top 25% of results
+            sorted_mtx = mtx.sort_values("comfortable_distance").head(int(len(mtx) / 4))
+
+            # normalise rank
+            ranks = sorted_mtx.mean()[["shade", "wind shelter", "evaporative cooling"]]
+            ranks = ranks / ranks.sum()
+            ranks.name = idx
+
+            return ranks
+
+        ranked_mitigation = []
+        for idx, row in tqdm(list(df.iloc[list(analysis_period.hoys_int)].iterrows())):
+            ranked_mitigation.append(_temp(row, idx, comfort_limits))
+
+        return pd.concat(ranked_mitigation, axis=1).T

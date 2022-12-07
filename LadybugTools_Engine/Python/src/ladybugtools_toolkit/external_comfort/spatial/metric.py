@@ -83,12 +83,12 @@ class SpatialMetric(Enum):
                 "cmap": plt.get_cmap("twilight"),
             },
             SpatialMetric.WS_CFD.value: {
-                "cmap": plt.get_cmap("PuBu"),
+                "cmap": plt.get_cmap("YlGnBu"),
                 "levels": np.linspace(0, 12, 13),
                 "extend": "max",
             },
             SpatialMetric.WS_EPW.value: {
-                "cmap": plt.get_cmap("PuBu"),
+                "cmap": plt.get_cmap("YlGnBu"),
                 "levels": np.linspace(0, 12, 13),
                 "extend": "max",
             },

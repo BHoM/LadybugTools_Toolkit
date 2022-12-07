@@ -915,6 +915,64 @@ class SpatialComfort(BHoMObject):
 
         return fig
 
+    def plot_mrt_average(self, analysis_period: AnalysisPeriod) -> plt.Figure:
+        """Return a figure showing typical mrt for the given analysis period."""
+
+        metric: SpatialMetric = SpatialMetric.MRT_INTERPOLATED
+        CONSOLE_LOGGER.info(
+            f"[{self}] - Plotting {metric.description()} for {describe_analysis_period(analysis_period)}"
+        )
+
+        # obtain levels
+        low = self._get_spatial_metric(metric).min().min()
+        high = self._get_spatial_metric(metric).max().max()
+        levels = np.linspace(low, high, 51)
+        values = (
+            self._get_spatial_metric(metric)
+            .iloc[list(analysis_period.hoys_int)]
+            .mean()
+            .values
+        )
+
+        tcf_properties = metric.tricontourf_kwargs()
+        tc_properties = metric.tricontour_kwargs()
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        ax.set_aspect("equal")
+        ax.axis("off")
+        ax.set_xlim([min(self._points_x), max(self._points_x)])
+        ax.set_ylim([min(self._points_y), max(self._points_y)])
+
+        # add contour-fill
+        tcf = ax.tricontourf(
+            self._triangulation, values, levels=levels, **tcf_properties
+        )
+
+        # plot colorbar
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
+        cbar = plt.colorbar(tcf, cax=cax)
+        cbar.outline.set_visible(False)
+        cbar.set_label(metric.description())
+
+        # add contour lines if present
+        if len(tc_properties["levels"]) != 0:
+            tcs = ax.tricontour(self._triangulation, values, **tc_properties)
+            ax.clabel(tcs, inline=1, fontsize="small", colors=["k"])
+            cbar.add_lines(tcs)
+
+        # add title
+        ax.set_title(
+            f"Typical mean radiant temperature\n{describe_analysis_period(analysis_period)}",
+            ha="left",
+            va="bottom",
+            x=0,
+        )
+
+        plt.tight_layout()
+
+        return fig
+
     def plot_direct_sun_hours(self, analysis_period: AnalysisPeriod) -> plt.Figure:
         """Plot the  direct-sun-hours for the given analysis period."""
 
@@ -1483,6 +1541,7 @@ class SpatialComfort(BHoMObject):
         sky_view: bool = False,
         sunpaths: bool = False,
         typical_wind: bool = False,
+        typical_mrt: bool = False,
         comfort_percentages: bool = False,
         sunlight_hours: bool = False,
     ) -> None:
@@ -1530,6 +1589,17 @@ class SpatialComfort(BHoMObject):
                     save_path = (
                         self._plot_directory
                         / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_wind.png"
+                    )
+                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                    plt.close(fig)
+
+            if typical_mrt:
+                if analysis_period.timestep == 1:
+                    # mrt means in time periods
+                    fig = self.plot_mrt_average(analysis_period)
+                    save_path = (
+                        self._plot_directory
+                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_mrt.png"
                     )
                     fig.savefig(save_path, transparent=True, bbox_inches="tight")
                     plt.close(fig)

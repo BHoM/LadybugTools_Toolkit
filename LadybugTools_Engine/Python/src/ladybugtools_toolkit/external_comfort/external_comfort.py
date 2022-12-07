@@ -184,15 +184,21 @@ class ExternalComfort(BHoMObject):
         return cls.from_dict(dictionary)
 
     def to_dataframe(
-        self, include_epw: bool = False, include_simulation_results: bool = False
+        self,
+        include_epw: bool = False,
+        include_simulation_results: bool = False,
+        include_epw_additional: bool = False,
     ) -> pd.DataFrame:
         """Create a Pandas DataFrame from this object.
 
         Args:
             include_epw (bool, optional): Set to True to include the dataframe for the EPW file
                 also.
-            include_simulation_results(bool, optional): Set to True to include the dataframe for
+            include_simulation_results (bool, optional): Set to True to include the dataframe for
                 the simulation results also.
+            include_epw_additional (bool, optional): Set to True to also include calculated
+                values such as sun position along with EPW. Only includes if include_epw is
+                True also.
 
         Returns:
             pd.DataFrame: A Pandas DataFrame with this objects properties.
@@ -200,7 +206,7 @@ class ExternalComfort(BHoMObject):
         dfs = []
 
         if include_epw:
-            dfs.append(to_dataframe(self.simulation_result.epw))
+            dfs.append(to_dataframe(self.simulation_result.epw, include_epw_additional))
 
         if include_simulation_results:
             dfs.append(self.simulation_result.to_dataframe())
@@ -224,7 +230,9 @@ class ExternalComfort(BHoMObject):
             )
             dfs.append(s)
 
-        return pd.concat(dfs, axis=1)
+        df = pd.concat(dfs, axis=1)
+
+        return df
 
     @property
     def plot_title_string(self) -> str:
