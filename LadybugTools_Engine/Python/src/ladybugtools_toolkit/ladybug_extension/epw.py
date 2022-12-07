@@ -128,7 +128,7 @@ def to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
         wbt,
     ]:
         s = to_series(collection)
-        s.rename((Path(epw.file_path).stem, "EPW", pascalcase(s.name)), inplace=True)
+        s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
         all_series.append(s)
 
     return pd.concat(all_series, axis=1).sort_index(axis=1)

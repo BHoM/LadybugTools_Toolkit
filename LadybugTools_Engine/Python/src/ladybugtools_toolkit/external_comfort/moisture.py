@@ -38,15 +38,19 @@ def evaporative_cooling_effect(
         dry_bulb_temperature, relative_humidity, atmospheric_pressure
     )
 
-    return [
-        dry_bulb_temperature
-        - (
-            (dry_bulb_temperature - wet_bulb_temperature)
-            * evaporative_cooling_effectiveness
-        ),
-        (relative_humidity * (1 - evaporative_cooling_effectiveness))
-        + evaporative_cooling_effectiveness * 100,
-    ]
+    new_dbt = dry_bulb_temperature - (
+        (dry_bulb_temperature - wet_bulb_temperature)
+        * evaporative_cooling_effectiveness
+    )
+    new_rh = (
+        relative_humidity * (1 - evaporative_cooling_effectiveness)
+    ) + evaporative_cooling_effectiveness * 100
+
+    if new_rh > 100:
+        new_rh = 100
+        new_dbt = wet_bulb_temperature
+
+    return [new_dbt, new_rh]
 
 
 def evaporative_cooling_effect_collection(
