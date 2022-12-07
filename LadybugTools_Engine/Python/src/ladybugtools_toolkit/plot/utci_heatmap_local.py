@@ -9,9 +9,11 @@ from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from ladybugtools_toolkit.plot.colormaps_local import (
     UTCI_LOCAL_BOUNDARYNORM,
+    UTCI_LOCAL_BOUNDARYNORM_IP,
     UTCI_LOCAL_COLORMAP,
     UTCI_LOCAL_LABELS,
     UTCI_LOCAL_LEVELS,
+    UTCI_LOCAL_LEVELS_IP,
 )
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
@@ -19,7 +21,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def utci_heatmap_local(
-    collection: HourlyContinuousCollection, title: str = None, show_legend: bool = True
+    collection: HourlyContinuousCollection, title: str = None, show_legend: bool = True, IP: bool = True
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
@@ -30,6 +32,8 @@ def utci_heatmap_local(
             A title to add to the resulting figure. Default is None.
         show_legend (bool, optional):
             Set to True to plot the legend. Default is True.
+        IP (bool, optional):
+            Convert data to IP unit. Default is True.
 
     Returns:
         Figure:
@@ -40,6 +44,9 @@ def utci_heatmap_local(
         raise ValueError(
             "Collection data type is not UTCI and cannot be used in this plot."
         )
+    # Convert data to IP unit
+    if IP:
+        collection = collection.to_ip()
 
     # Instantiate figure
     fig = plt.figure(figsize=(15, 4), constrained_layout=True)
@@ -62,7 +69,7 @@ def utci_heatmap_local(
             columns=series.index.date,
             values=series.name,
         ).values[::-1],
-        norm=UTCI_LOCAL_BOUNDARYNORM,
+        norm=UTCI_LOCAL_BOUNDARYNORM_IP if IP else UTCI_LOCAL_BOUNDARYNORM,
         extent=[
             mdates.date2num(series.index.min()),
             mdates.date2num(series.index.max()),
@@ -92,14 +99,14 @@ def utci_heatmap_local(
             heatmap,
             cax=colorbar_ax,
             orientation="horizontal",
-            ticks=UTCI_LOCAL_LEVELS,
+            ticks=UTCI_LOCAL_LEVELS_IP if IP else UTCI_LOCAL_LEVELS,
             drawedges=False,
         )
         cb.outline.set_visible(False)
         plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
 
         # Add labels to the colorbar
-        levels = [-100] + UTCI_LOCAL_LEVELS + [100]
+        levels = [-100] + UTCI_LOCAL_LEVELS_IP + [200] if IP else [-100] + UTCI_LOCAL_LEVELS + [200]
         for n, ((low, high), label) in enumerate(
             zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LOCAL_LABELS])
         ):
