@@ -71,3 +71,6 @@ hbr_folders._standards_data_folder = (
 )
 hbr_folders.defaults_file = "C:/Program Files/ladybug_tools/resources/standards/honeybee_standards/radiance_default.json"
 HBR_FOLDERS = hbr_folders
+
+# SET QUEENBEE PATH
+QUEENBEE_PATH = "C:/Program Files/ladybug_tools/python/Scripts/queenbee.exe"

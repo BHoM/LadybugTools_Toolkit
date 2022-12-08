@@ -1,13 +1,16 @@
 import base64
 import io
+import json
 import math
+import urllib.request
+import warnings
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-import pdcast as pdc
 from ladybug.epw import Location
 from ladybug.skymodel import (
     calc_horizontal_infrared,
@@ -19,6 +22,8 @@ from ladybug.skymodel import (
 )
 from ladybug.sunpath import Sunpath
 from matplotlib.figure import Figure
+from scipy.stats import exponweib
+from tqdm import tqdm
 
 
 def chunks(lst: List[Any], chunksize: int):
@@ -218,10 +223,18 @@ def rolling_window(array: List[Any], window: int):
         window (int):
             The size of the window to apply to the list.
 
+    Example:
+        For an input list like [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        returns [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]]
+
     Returns:
         List[List[Any]]:
             The resulting, "windowed" list.
     """
+
+    if window > len(array):
+        raise ValueError("Array length must be larger than window size.")
+
     a: np.ndarray = np.array(array)
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)  # pylint: disable=[unsubscriptable-object]
@@ -466,6 +479,60 @@ def cardinality(direction_angle: float, directions: int = 16):
     return arr[(val % directions)]
 
 
+def angle_from_cardinal(cardinal_direction: str) -> float:
+    """
+    For a given cardinal direction, return the corresponding angle in degrees.
+
+    Args:
+        cardinal_direction (str):
+            The cardinal direction.
+    Returns:
+        float:
+            The angle associated with the cardinal direction.
+    """
+    cardinal_directions = [
+        "N",
+        "NbE",
+        "NNE",
+        "NEbN",
+        "NE",
+        "NEbE",
+        "ENE",
+        "EbN",
+        "E",
+        "EbS",
+        "ESE",
+        "SEbE",
+        "SE",
+        "SEbS",
+        "SSE",
+        "SbE",
+        "S",
+        "SbW",
+        "SSW",
+        "SWbS",
+        "SW",
+        "SWbW",
+        "WSW",
+        "WbS",
+        "W",
+        "WbN",
+        "WNW",
+        "NWbW",
+        "NW",
+        "NWbN",
+        "NNW",
+        "NbW",
+    ]
+    if cardinal_direction not in cardinal_directions:
+        raise ValueError(f"{cardinal_direction} is not a known cardinal_direction.")
+    angles = np.arange(0, 360, 11.25)
+
+    lookup = dict(zip(cardinal_directions, angles))
+
+    return lookup[cardinal_direction]
+
+
 def base64_to_image(base64_string: str, image_path: Path) -> None:
     """Convert a base64 encoded image into a file on disk.
 
@@ -599,3 +666,157 @@ def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
     df.columns = unstringify_df_header(df.columns)
 
     return df
+
+
+class OpenMeteoVariable(Enum):
+    TEMPERATURE_2M = "temperature_2m"
+    RELATIVEHUMIDITY_2M = "relativehumidity_2m"
+    DEWPOINT_2M = "dewpoint_2m"
+    APPARENT_TEMPERATURE = "apparent_temperature"
+    PRESSURE_MSL = "pressure_msl"
+    SURFACE_PRESSURE = "surface_pressure"
+    PRECIPITATION = "precipitation"
+    RAIN = "rain"
+    SNOWFALL = "snowfall"
+    CLOUDCOVER = "cloudcover"
+    CLOUDCOVER_LOW = "cloudcover_low"
+    CLOUDCOVER_MID = "cloudcover_mid"
+    CLOUDCOVER_HIGH = "cloudcover_high"
+    SHORTWAVE_RADIATION = "shortwave_radiation"
+    DIRECT_RADIATION = "direct_radiation"
+    DIFFUSE_RADIATION = "diffuse_radiation"
+    DIRECT_NORMAL_IRRADIANCE = "direct_normal_irradiance"
+    WINDSPEED_10M = "windspeed_10m"
+    WINDSPEED_100M = "windspeed_100m"
+    WINDDIRECTION_10M = "winddirection_10m"
+    WINDDIRECTION_100M = "winddirection_100m"
+    WINDGUSTS_10M = "windgusts_10m"
+    ET0_FAO_EVAPOTRANSPIRATION = "et0_fao_evapotranspiration"
+    VAPOR_PRESSURE_DEFICIT = "vapor_pressure_deficit"
+    SOIL_TEMPERATURE_0_TO_7CM = "soil_temperature_0_to_7cm"
+    SOIL_TEMPERATURE_7_TO_28CM = "soil_temperature_7_to_28cm"
+    SOIL_TEMPERATURE_28_TO_100CM = "soil_temperature_28_to_100cm"
+    SOIL_TEMPERATURE_100_TO_255CM = "soil_temperature_100_to_255cm"
+    SOIL_MOISTURE_0_TO_7CM = "soil_moisture_0_to_7cm"
+    SOIL_MOISTURE_7_TO_28CM = "soil_moisture_7_to_28cm"
+    SOIL_MOISTURE_28_TO_100CM = "soil_moisture_28_to_100cm"
+    SOIL_MOISTURE_100_TO_255CM = "soil_moisture_100_to_255cm"
+
+
+def scrape_openmeteo(
+    latitude: float,
+    longitude: float,
+    start_date: datetime,
+    end_date: datetime,
+    variables: List[OpenMeteoVariable],
+) -> pd.DataFrame:
+    """Obtain historic hourly data from Open-Meteo.
+    https://open-meteo.com/en/docs/historical-weather-api
+
+    Args:
+        latitude (float):
+            The latitude of the target site, in degrees.
+        longitude (float):
+            The longitude of the target site, in degrees.
+        start_date (datetime):
+            The start-date from which records will be obtained.
+        end_date (datetime):
+            The end-date beyond which records will be ignored.
+        variables (List[OpenMeteoVariable]):
+            A list of variables to query.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame containing scraped data.
+    """
+    query_string = f"https://archive-api.open-meteo.com/v1/era5?latitude={latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&end_date={end_date:%Y-%m-%d}&hourly={','.join([i.value for i in variables])}"
+
+    with urllib.request.urlopen(query_string) as url:
+        data = json.load(url)
+
+    headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
+    df = pd.DataFrame.from_dict(data["hourly"])
+    df.columns = headers
+    df.set_index("time (iso8601)", inplace=True)
+    df.index = pd.to_datetime(df.index)
+
+    return df
+
+
+def weibull_directional(
+    binned_data: Dict[Tuple[float, float], List[float]]
+) -> pd.DataFrame:
+    """Calculate the weibull coefficients for a given set of binned data in the form {(low, high): [speeds], (low, high): [speeds]}, binned by the number of directions specified.
+    Args:
+        binned_data (Dict[Tuple[float, float], List[float]]):
+            A dictionary of binned wind speed data.
+    Returns:
+        pd.DataFrame:
+            A DataFrame with (direction_bin_low, direction_bin_high) as index, and weibull coefficients as columns.
+    """
+
+    d = {}
+    for (low, high), speeds in tqdm(
+        binned_data.items(), desc="Calculating Weibull shape parameters"
+    ):
+        d[(low, high)] = weibull_pdf(speeds)
+
+    return pd.DataFrame.from_dict(d, orient="index", columns=["x", "k", "λ", "α"])
+
+
+def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
+    """Calculate the parameters of an exponentiated Weibull continuous random variable.
+    Returns:
+        x (float):
+            Fixed shape parameter (1).
+        k (float):
+            Shape parameter 1.
+        λ (float):
+            Scale parameter.
+        α (float):
+            Shape parameter 2.
+    """
+    ws = np.array(wind_speeds)
+    ws = ws[ws != 0]
+    ws = ws[~np.isnan(ws)]
+    try:
+        return exponweib.fit(ws, floc=0, f0=1)
+    except ValueError as exc:
+        warnings.warn(f"Not enough data to calculate Weibull parameters.\n{exc}")
+        return (1, np.nan, 0, np.nan)  # type: ignore
+
+
+def wind_direction_average(angles: List[float]) -> float:
+    """Get the average wind direction from a set of wind directions.
+
+    Args:
+        angles (List[float]):
+            A collection of equally weighted wind directions, in degrees from North (0).
+
+    Returns:
+        float:
+            An average wind direction.
+    """
+
+    angles = np.array(angles)  # type: ignore
+
+    if np.any(angles < 0) or np.any(angles > 360):  # type: ignore
+        raise ValueError("Input wind speeds exist outside of expected range (0-360).")
+
+    if len(angles) == 0:
+        return np.NaN
+
+    angles = np.radians(angles)  # type: ignore
+
+    average_angle = np.round(
+        np.arctan2(
+            (1 / len(angles) * np.sin(angles)).sum(),
+            (1 / len(angles) * np.cos(angles)).sum(),
+        ),
+        2,
+    )
+
+    if average_angle < 0:
+        average_angle = (np.pi * 2) - -average_angle
+
+    return np.degrees(average_angle)

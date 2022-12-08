@@ -3,6 +3,8 @@ case-converter
 fastparquet
 fortranformat
 ipykernel
+meteostat
+openpyxl
 pandas-downcast
 pyarrow
 pylint
@@ -15,3 +17,4 @@ scipy
 shapely
 tables
 tqdm
+xlrd

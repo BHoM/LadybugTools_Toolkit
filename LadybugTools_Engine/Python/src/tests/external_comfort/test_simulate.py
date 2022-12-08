@@ -4,7 +4,7 @@ from ladybugtools_toolkit.external_comfort.material import Materials
 from ladybugtools_toolkit.external_comfort.model import create_model
 from ladybugtools_toolkit.external_comfort.simulate import (
     SimulationResult,
-    longwave_mean_radiant_temperature,
+    longwave_radiant_temperature,
     solar_radiation,
     surface_temperature,
 )
@@ -40,10 +40,10 @@ def test_surface_temperature():
     )
 
 
-def test_longwave_mean_radiant_temperature():
+def test_longwave_radiant_temperature():
     """_"""
     assert (
-        longwave_mean_radiant_temperature(
+        longwave_radiant_temperature(
             [EPW_OBJ.dry_bulb_temperature * 0.5, EPW_OBJ.dry_bulb_temperature * 2],
             view_factors=[0.25, 0.75],
         ).average
