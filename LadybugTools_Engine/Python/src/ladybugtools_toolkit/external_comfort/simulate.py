@@ -38,6 +38,7 @@ from ..ladybug_extension.analysis_period import describe as describe_analysis_pe
 from ..ladybug_extension.datacollection import from_series, to_series
 from ..ladybug_extension.epw import equality as epw_eq
 from ..ladybug_extension.epw import filename, to_dataframe
+from . import QUEENBEE_PATH
 from .ground_temperature import eplus_otherside_coefficient
 from .material import OpaqueMaterial, OpaqueVegetationMaterial, material_from_dict
 from .model import create_model
@@ -309,7 +310,7 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
     _ = recipe.run(
         settings=recipe_settings,
         radiance_check=True,
-        queenbee_path=r"C:\Program Files\ladybug_tools\python\Scripts\queenbee.exe",
+        queenbee_path=QUEENBEE_PATH,
     )
 
     return solar_radiation_results_load(total_irradiance, direct_irradiance)
@@ -473,7 +474,7 @@ def direct_sun_hours(
 
     if results_file.exists():
         CONSOLE_LOGGER.info(
-            f"[{model.identifier}] - Loading direct sun hours for {describe_analysis_period(analysis_period, save_path=False, include_timestep=True)}"
+            f"[{model.identifier}] - Loading Direct Sun Hours (hours) for {describe_analysis_period(analysis_period, save_path=False, include_timestep=True)}"
         )
         return load_res(results_file).squeeze()
 
@@ -499,7 +500,7 @@ def direct_sun_hours(
     _ = recipe.run(
         settings=recipe_settings,
         radiance_check=True,
-        queenbee_path=r"C:\Program Files\ladybug_tools\python\Scripts\queenbee.exe",
+        queenbee_path=QUEENBEE_PATH,
     )
 
     # move results to proper location

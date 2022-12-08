@@ -110,7 +110,7 @@ def compare_utci(
 
     # add title
     ax.set_title(
-        f"Typical UTCI change\n{spatial_result_1} > {spatial_result_2}\n{describe_analysis_period(analysis_period)}",
+        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
         ha="left",
         va="bottom",
         x=0,
@@ -143,18 +143,18 @@ def compare_mrt(
     col_mask_1 = [i in indices[0] for i in spatial_result_1.points.index]
     col_mask_2 = [i in indices[1] for i in spatial_result_2.points.index]
 
+    metric = SpatialMetric.MRT_INTERPOLATED
+
     # calculate typical MRT
     mrt_1 = (
-        spatial_result_1.mean_radiant_temperature_interpolated.iloc[
-            index_mask, col_mask_1
-        ]
+        spatial_result_1._get_spatial_metric(metric)
+        .iloc[index_mask, col_mask_1]
         .mean(axis=0)
         .reset_index(drop=True)
     )
     mrt_2 = (
-        spatial_result_2.mean_radiant_temperature_interpolated.iloc[
-            index_mask, col_mask_2
-        ]
+        spatial_result_2._get_spatial_metric(metric)
+        .iloc[index_mask, col_mask_2]
         .mean(axis=0)
         .reset_index(drop=True)
     )
@@ -190,7 +190,7 @@ def compare_mrt(
 
     # add title
     ax.set_title(
-        f"Typical MRT change\n{spatial_result_1} > {spatial_result_2}\n{describe_analysis_period(analysis_period)}",
+        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
         ha="left",
         va="bottom",
         x=0,
@@ -274,7 +274,7 @@ def compare_ws(
 
     # add title
     ax.set_title(
-        f"Typical Wind Speed change\n{spatial_result_1} > {spatial_result_2}\n{describe_analysis_period(analysis_period)}",
+        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
         ha="left",
         va="bottom",
         x=0,
