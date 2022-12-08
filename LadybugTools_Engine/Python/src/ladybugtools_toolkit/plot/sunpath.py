@@ -1,4 +1,4 @@
-﻿from typing import Union
+﻿from typing import List, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,6 +32,7 @@ def sunpath(
     data_collection: HourlyContinuousCollection = None,
     cmap: Union[Colormap, str] = "viridis",
     norm: BoundaryNorm = None,
+    vlims: List[float] = None,
     show_title: bool = True,
     sun_size: float = 10,
     show_grid: bool = True,
@@ -56,10 +57,15 @@ def sunpath(
         norm (BoundaryNorm, optional):
             A matploltib BoundaryNorm object containing colormap boundary mapping information.
             Defaults to None.
+        vlims (List[float], optional):
+            The limits to which values should be plotted (useful for comparing between different cases). Defaults to None.
     Returns:
         Figure:
             A matplotlib Figure object.
     """
+
+    if norm and vlims:
+        raise ValueError("You cannot pass both vlims and a norm value to this method.")
 
     sp = Sunpath.from_location(epw.location)
     all_suns = [sp.calculate_sun_from_date_time(i) for i in analysis_period.datetimes]
@@ -108,7 +114,7 @@ def sunpath(
             .values[[i.altitude > 0 for i in all_suns]]
         )
         dat = ax.scatter(
-            suns_x, suns_y, c=vals, s=sun_size, cmap=cmap, norm=norm, zorder=3
+            suns_x, suns_y, c=vals, s=sun_size, cmap=cmap, norm=norm, zorder=3, vmin=None if vlims is None else vlims[0], vmax=None if vlims is None else vlims[1],
         )
 
         if show_legend:
@@ -117,9 +123,10 @@ def sunpath(
                 pad=0.09,
                 shrink=0.8,
                 aspect=30,
-                label=f"{series.name}",
+                # label=f"{series.name}",
             )
             cb.outline.set_visible(False)
+            cb.ax.set_title(to_series(data_collection).name, x=2.5, y=1.02, **{"fontsize": "small"})
     else:
         ax.scatter(suns_x, suns_y, c="#FFCF04", s=sun_size, zorder=3)
 
@@ -139,12 +146,12 @@ def sunpath(
     if show_title:
         title_string = "\n".join(
             [
-                location_to_string(epw.location),
+                f"{to_series(data_collection).name} - {location_to_string(epw.location)}",
                 describe_analysis_period(analysis_period),
             ]
         )
         if show_grid:
-            ax.set_title(title_string, ha="left", x=0, y=1.05)
+            ax.set_title(title_string, ha="left", x=0, y=1.1)
         else:
             ax.set_title(title_string, ha="left", x=0)
 
