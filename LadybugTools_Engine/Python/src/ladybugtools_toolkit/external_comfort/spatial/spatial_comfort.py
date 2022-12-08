@@ -789,7 +789,12 @@ class SpatialComfort(BHoMObject):
             cbar.add_lines(tcs)
 
         # add title
-        ax.set_title("Proportion of sky visible", ha="left", va="bottom", x=0)
+        ax.set_title(
+            f"Proportion of sky visible\nAverage: {np.mean(values/100):0.1%}",
+            ha="left",
+            va="bottom",
+            x=0,
+        )
 
         plt.tight_layout()
 
@@ -905,7 +910,7 @@ class SpatialComfort(BHoMObject):
 
         # add title
         ax.set_title(
-            f"Typical wind speed\n{describe_analysis_period(analysis_period)}",
+            f"{describe_analysis_period(analysis_period)}\nAverage {metric.description()}\nAverage: {values.mean():0.1f}m/s",
             ha="left",
             va="bottom",
             x=0,
@@ -963,7 +968,7 @@ class SpatialComfort(BHoMObject):
 
         # add title
         ax.set_title(
-            f"Typical mean radiant temperature\n{describe_analysis_period(analysis_period)}",
+            f"{describe_analysis_period(analysis_period)}\nAverage {metric.description()}\nAverage: {values.mean():0.1f}C",
             ha="left",
             va="bottom",
             x=0,
@@ -1008,7 +1013,7 @@ class SpatialComfort(BHoMObject):
 
         # add title
         ax.set_title(
-            f"{metric.description()}\n{describe_analysis_period(analysis_period, include_timestep=False)}",
+            f"{describe_analysis_period(analysis_period, include_timestep=False)}\n{metric.description()}\nAverage: {np.mean(series.values):0.1f}hours",
             ha="left",
             va="bottom",
             x=0,
