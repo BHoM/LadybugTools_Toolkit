@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from ..ladybug_extension.analysis_period import describe as describe_analysis_period
 from ..ladybug_extension.datacollection import from_series, to_series
+from ..plot.colormaps import UTCI_LABELS, UTCI_LEVELS
 
 
 def utci(
@@ -908,3 +909,8 @@ def categorise_shade_benefit(
     )
 
     return pd.Series(shade_categories, index=unshaded_utci.index)
+
+
+def categorise_utci(utci_series: pd.Series) -> pd.Series:
+    """Get the categorical binned version of a series of UTCI."""
+    return pd.cut(utci_series, [-100] + UTCI_LEVELS + [100], labels=UTCI_LABELS)
