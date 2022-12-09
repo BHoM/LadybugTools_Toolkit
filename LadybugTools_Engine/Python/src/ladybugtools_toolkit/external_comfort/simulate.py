@@ -935,37 +935,61 @@ class SimulationResult(BHoMObject):
         if analysis_period is None:
             analysis_period = AnalysisPeriod()
 
-        # calculate point-in-time baseline UTCI
-        df = self.to_dataframe(True, True).droplevel(0, axis=1)
-        df[("Unshaded", "Universal Thermal Climate Index (C)")] = utci(
-            df["EPW"]["Dry Bulb Temperature (C)"],
-            df["EPW"]["Relative Humidity (%)"],
-            df["Unshaded"]["Mean Radiant Temperature (C)"],
-            df["EPW"]["Wind Speed (m/s)"],
+        # get comfort limits as single values
+        comfort_low = min(comfort_limits)
+        comfort_mid = np.mean(comfort_limits)
+        comfort_high = max(comfort_limits)
+
+        # construct dataframe containing inputs to this process
+        epw = self.epw
+        atm = to_series(epw.atmospheric_station_pressure).rename("atm")
+        dbt = to_series(epw.dry_bulb_temperature).rename("dbt")
+        rh = to_series(epw.relative_humidity).rename("rh")
+        ws = to_series(epw.wind_speed).rename("ws")
+        mrt_unshaded = to_series(self.unshaded_mean_radiant_temperature).rename(
+            "mrt_unshaded"
+        )
+        mrt_shaded = to_series(self.shaded_mean_radiant_temperature).rename(
+            "mrt_shaded"
+        )
+        utci_unshaded = utci(dbt, rh, mrt_unshaded, ws).rename("utci_unshaded")
+        df = pd.concat(
+            [atm, dbt, rh, ws, mrt_unshaded, mrt_shaded, utci_unshaded], axis=1
         )
 
-        # create range of proportions from which to apply comfort mitigation measures
+        # filter by analysis period
+        df = df.iloc[list(analysis_period.hoys_int)]
+
+        # get comfort mask for baseline
+        df["utci_unshaded_comfortable"] = df.utci_unshaded.between(
+            comfort_low, comfort_high
+        )
+
+        # get distance from comfortable (midpoint) for each timestep in baseline
+        df["utci_unshaded_distance_from_comfortable_midpoint"] = (
+            df.utci_unshaded - comfort_mid
+        )
+        df[
+            "utci_unshaded_distance_from_comfortable"
+        ] = df.utci_unshaded_distance_from_comfortable_midpoint.where(
+            ~df.utci_unshaded_comfortable, 0
+        )
+
+        # get possible values for shade/shelter/evapclg
         shading_proportions = np.linspace(1, 0, n_steps)
         wind_shelter_proportions = np.linspace(0, 1, n_steps)
         evap_clg_proportions = np.linspace(0, 1, n_steps)
 
-        def _temp(row: pd.Series, idx: Any, comfort_limits: Tuple) -> pd.Series:
-            dbt = row["EPW"]["Dry Bulb Temperature (C)"]
-            atm = row["EPW"]["Atmospheric Station Pressure (Pa)"]
-            rh = row["EPW"]["Relative Humidity (%)"]
-            ws = row["EPW"]["Wind Speed (m/s)"]
-            mrt_shaded = row["Shaded"]["Mean Radiant Temperature (C)"]
-            mrt_unshaded = row["Unshaded"]["Mean Radiant Temperature (C)"]
-            openfield_utci = row["Unshaded"]["Universal Thermal Climate Index (C)"]
-
-            # if (openfield_utci > min(comfort_limits)) & (
-            #     openfield_utci < max(comfort_limits)
-            # ):
-            #     return pd.Series(
-            #         index=["shade", "wind shelter", "evaporative cooling"],
-            #         data=np.nan,
-            #         name=idx,
-            #     )
+        def _temp(
+            dbt,
+            rh,
+            atm,
+            ws,
+            mrt_unshaded,
+            mrt_shaded,
+            utci_unshaded_distance_from_comfortable_midpoint,
+            name,
+        ):
 
             # create feasible ranges of values
             dbts, rhs = np.array(
@@ -1017,29 +1041,56 @@ class SimulationResult(BHoMObject):
                 ],
             ).T
 
-            # get the distance to comfortable, based on the comfort limits
-            mtx["comfortable_distance"] = abs(
-                np.where(
-                    utcis < min(comfort_limits),
-                    -(min(comfort_limits) - utcis),
-                    np.where(
-                        utcis > max(comfort_limits), utcis - max(comfort_limits), 0
-                    ),
-                )
+            # get comfort mask for current timestep
+            mtx["utci_comfortable"] = mtx.utci.between(comfort_low, comfort_high)
+
+            # get distance from comfortable (midpoint) for current timestep
+            mtx["utci_distance_from_comfortable_midpoint"] = mtx.utci - comfort_mid
+            mtx[
+                "utci_distance_from_comfortable"
+            ] = mtx.utci_distance_from_comfortable_midpoint.where(
+                ~mtx.utci_comfortable, 0
             )
 
-            # sort values in df based on distance to comfortable - and get the top 25% of results
-            sorted_mtx = mtx.sort_values("comfortable_distance").head(int(len(mtx) / 4))
+            # determine whether comfort has improved, and drop rows where it hasnt
+            mtx["comfort_improved"] = abs(
+                mtx.utci_distance_from_comfortable_midpoint
+            ) < abs(utci_unshaded_distance_from_comfortable_midpoint)
+            mtx = mtx[mtx.comfort_improved]
 
-            # normalise rank
-            ranks = sorted_mtx.mean()[["shade", "wind shelter", "evaporative cooling"]]
+            # sort by distance to comfort midpoint, to get optimal conditions
+            mtx["utci_distance_from_comfortable_midpoint_absolute"] = abs(
+                mtx.utci_distance_from_comfortable_midpoint
+            )
+            mtx = mtx.sort_values("utci_distance_from_comfortable_midpoint_absolute")
+
+            # normalise variables
+            temp = (
+                mtx[["shade", "wind shelter", "evaporative cooling"]]
+                / mtx[["shade", "wind shelter", "evaporative cooling"]].sum(axis=0)
+            ).reset_index(drop=True)
+
+            # get topmost 25%
+            ranks = temp.head(int(len(temp) / 4)).mean(axis=0)
             ranks = ranks / ranks.sum()
-            ranks.name = idx
+            ranks.name = name
 
+            # TODO - include "do nothing" as an option for ranking!
             return ranks
 
-        ranked_mitigation = []
-        for idx, row in tqdm(list(df.iloc[list(analysis_period.hoys_int)].iterrows())):
-            ranked_mitigation.append(_temp(row, idx, comfort_limits))
-
-        return pd.concat(ranked_mitigation, axis=1).T
+        tqdm.pandas(
+            desc="Calculating ranked beneficial impact of comfort mitigation measures"
+        )
+        return df.progress_apply(
+            lambda row: _temp(
+                row.dbt,
+                row.rh,
+                row.atm,
+                row.ws,
+                row.mrt_unshaded,
+                row.mrt_shaded,
+                row.utci_unshaded_distance_from_comfortable_midpoint,
+                row.name,
+            ),
+            axis=1,
+        )
