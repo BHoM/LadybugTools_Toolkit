@@ -36,28 +36,34 @@ class DirectionBins:
 
     @property
     def lows(self) -> List[float]:
+        """The "left-most" edge of the direction bins."""
         return self.bins.T[0]
 
     @property
     def highs(self) -> List[float]:
+        """The "right-most" edge of the direction bins."""
         return self.bins.T[1]
 
     @property
     def midpoints(self) -> List[float]:
+        """The mipoints within the direction bins."""
         if self.is_split:
             return np.concatenate([[0], np.mean(self.bins, axis=1)[1:-1]])
         return np.mean(self.bins, axis=1)
 
     @property
     def bin_width(self) -> float:
+        """The width of each direction bin."""
         return 360 / self.directions
 
     @property
     def is_split(self) -> bool:
+        """True if the "north" bin is split into two parts - before and after north."""
         return len(self.bins) != self.directions
 
     @property
     def cardinal_directions(self) -> List[str]:
+        """The direction bins as cardinal directions."""
         return [cardinality(i, directions=32) for i in self.midpoints]
 
     @staticmethod
@@ -111,6 +117,7 @@ class DirectionBins:
 
     @property
     def interval_index(self) -> pd.IntervalIndex:
+        """The direction bins as a pandasa IntervalIdex."""
         return pd.IntervalIndex.from_arrays(self.lows, self.highs, closed="left")
 
     def bin_data(
@@ -161,6 +168,19 @@ class DirectionBins:
     def prevailing(
         self, direction_data: List[float], n: int, as_angle: bool = False
     ) -> List[str]:
+        """Given a list of wind directions, return the n-prevailing directions.
+
+        Args:
+            direction_data (List[float]):
+                A set of wind directions.
+            n (int):
+                The number of prevailing directions to return.
+            as_angle (bool, optional):
+                Return the previaling directions as angles. Defaults to False.
+
+        Returns:
+            List[str]: _description_
+        """
         d = self.bin_data(direction_data)
         dd = {}
         for k, v in d.items():

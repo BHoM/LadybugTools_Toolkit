@@ -1,10 +1,25 @@
-﻿import pathlib
+﻿from pathlib import Path
 
 import setuptools
+from win32api import HIWORD, LOWORD, GetFileVersionInfo
 
 TOOLKIT_NAME = "LadybugTools_Toolkit"
 
-here = pathlib.Path(__file__).parent.resolve()
+
+def _bhom_version() -> str:
+    """Return the version of BHoM installed (using the BHoM.dll in the root BHoM directory."""
+    info = GetFileVersionInfo(
+        "C:/ProgramData/BHoM/Assemblies/BHoM.dll", "\\"
+    )  # pylint: disable=[no-name-in-module]
+    print(info)
+    ms = info["FileVersionMS"]
+    ls = info["FileVersionLS"]
+    return f"{HIWORD(ms)}.{LOWORD(ms)}.{HIWORD(ls)}.{LOWORD(ls)}"  # pylint: disable=[no-name-in-module]
+
+
+BHOM_VERSION = _bhom_version()
+
+here = Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
 requirements = [
     i.strip()
@@ -22,4 +37,5 @@ setuptools.setup(
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src", exclude=["tests"]),
     install_requires=requirements,
+    version=BHOM_VERSION,
 )
