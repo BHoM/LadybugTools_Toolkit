@@ -1406,6 +1406,8 @@ class SpatialComfort(BHoMObject):
         show_skymatrix: bool = True,
     ) -> Path:
         """_"""
+        from honeybee_vtk.model import Model
+
         raise NotImplementedError("Not yet working!")
         img = sky_view_pov(
             model=Model.from_hbjson(
@@ -1549,6 +1551,7 @@ class SpatialComfort(BHoMObject):
         typical_mrt: bool = False,
         comfort_percentages: bool = False,
         sunlight_hours: bool = False,
+        london_comfort: bool = False,
     ) -> None:
         """Run all plotting methods"""
 
@@ -1640,6 +1643,15 @@ class SpatialComfort(BHoMObject):
                     )
                     fig.savefig(save_path, transparent=True, bbox_inches="tight")
                     plt.close(fig)
+
+        if london_comfort:
+            # london thermal comfort
+            fig = self.plot_london_comfort_category(
+                metric=SpatialMetric.UTCI_CALCULATED
+            )
+            save_path = self._plot_directory / "LondonThermalComfort.png"
+            fig.savefig(save_path, transparent=True, bbox_inches="tight")
+            plt.close(fig)
 
 
 def spatial_comfort_possible(simulation_directory: Path) -> bool:

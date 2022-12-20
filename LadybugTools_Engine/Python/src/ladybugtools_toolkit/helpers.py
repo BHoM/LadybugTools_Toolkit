@@ -670,25 +670,24 @@ def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
 
 class OpenMeteoVariable(Enum):
     TEMPERATURE_2M = "temperature_2m"
-    RELATIVEHUMIDITY_2M = "relativehumidity_2m"
     DEWPOINT_2M = "dewpoint_2m"
-    APPARENT_TEMPERATURE = "apparent_temperature"
-    PRESSURE_MSL = "pressure_msl"
+    RELATIVEHUMIDITY_2M = "relativehumidity_2m"
     SURFACE_PRESSURE = "surface_pressure"
-    PRECIPITATION = "precipitation"
-    RAIN = "rain"
-    SNOWFALL = "snowfall"
-    CLOUDCOVER = "cloudcover"
-    CLOUDCOVER_LOW = "cloudcover_low"
-    CLOUDCOVER_MID = "cloudcover_mid"
-    CLOUDCOVER_HIGH = "cloudcover_high"
     SHORTWAVE_RADIATION = "shortwave_radiation"
     DIRECT_RADIATION = "direct_radiation"
     DIFFUSE_RADIATION = "diffuse_radiation"
-    DIRECT_NORMAL_IRRADIANCE = "direct_normal_irradiance"
-    WINDSPEED_10M = "windspeed_10m"
-    WINDSPEED_100M = "windspeed_100m"
     WINDDIRECTION_10M = "winddirection_10m"
+    WINDSPEED_10M = "windspeed_10m"
+    CLOUDCOVER = "cloudcover"
+    WEATHERCODE = "weathercode"
+    PRECIPITATION = "precipitation"
+    RAIN = "rain"
+    SNOWFALL = "snowfall"
+    CLOUDCOVER_LOW = "cloudcover_low"
+    CLOUDCOVER_MID = "cloudcover_mid"
+    CLOUDCOVER_HIGH = "cloudcover_high"
+    DIRECT_NORMAL_IRRADIANCE = "direct_normal_irradiance"
+    WINDSPEED_100M = "windspeed_100m"
     WINDDIRECTION_100M = "winddirection_100m"
     WINDGUSTS_10M = "windgusts_10m"
     ET0_FAO_EVAPOTRANSPIRATION = "et0_fao_evapotranspiration"
@@ -702,6 +701,83 @@ class OpenMeteoVariable(Enum):
     SOIL_MOISTURE_28_TO_100CM = "soil_moisture_28_to_100cm"
     SOIL_MOISTURE_100_TO_255CM = "soil_moisture_100_to_255cm"
 
+    @property
+    def conversion_name(self) -> str:
+        d = {
+            self.TEMPERATURE_2M.value: "Dry Bulb Temperature (C)",
+            self.DEWPOINT_2M.value: "Dew Point Temperature (C)",
+            self.RELATIVEHUMIDITY_2M.value: "Relative Humidity (%)",
+            self.SURFACE_PRESSURE.value: "Atmospheric Station Pressure (Pa)",
+            self.SHORTWAVE_RADIATION.value: "Global Horizontal Radiation (Wh/m2)",
+            self.DIRECT_RADIATION.value: "Direct Normal Radiation (Wh/m2)",
+            self.DIFFUSE_RADIATION.value: "Diffuse Horizontal Radiation (Wh/m2)",
+            self.WINDDIRECTION_10M.value: "Wind Direction (degrees)",
+            self.WINDSPEED_10M.value: "Wind Speed (m/s)",
+            self.CLOUDCOVER.value: "Opaque Sky Cover (tenths)",
+            self.WEATHERCODE.value: "Present Weather Codes (codes)",
+            self.PRECIPITATION.value: "Precipitable Water (mm)",
+            self.RAIN.value: "Liquid Precipitation Depth (mm)",
+            self.SNOWFALL.value: "Snow Depth (cm)",
+            self.CLOUDCOVER_LOW.value: None,
+            self.CLOUDCOVER_MID.value: None,
+            self.CLOUDCOVER_HIGH.value: None,
+            self.DIRECT_NORMAL_IRRADIANCE.value: None,
+            self.WINDSPEED_100M.value: None,
+            self.WINDDIRECTION_100M.value: None,
+            self.WINDGUSTS_10M.value: None,
+            self.ET0_FAO_EVAPOTRANSPIRATION.value: None,
+            self.VAPOR_PRESSURE_DEFICIT.value: None,
+            self.SOIL_TEMPERATURE_0_TO_7CM.value: None,
+            self.SOIL_TEMPERATURE_7_TO_28CM.value: None,
+            self.SOIL_TEMPERATURE_28_TO_100CM.value: None,
+            self.SOIL_TEMPERATURE_100_TO_255CM.value: None,
+            self.SOIL_MOISTURE_0_TO_7CM.value: None,
+            self.SOIL_MOISTURE_7_TO_28CM.value: None,
+            self.SOIL_MOISTURE_28_TO_100CM.value: None,
+            self.SOIL_MOISTURE_100_TO_255CM.value: None,
+        }
+
+        return d[self.value]
+
+    @property
+    def conversion_factor(self) -> float:
+        """Factors to multiple returned data from OpenMeteo by to give EPW standard units."""
+        d = {
+            self.TEMPERATURE_2M.value: 1,
+            self.DEWPOINT_2M.value: 1,
+            self.RELATIVEHUMIDITY_2M.value: 1,
+            self.SURFACE_PRESSURE.value: 100,
+            self.SHORTWAVE_RADIATION.value: 1,
+            self.DIRECT_RADIATION.value: 1,
+            self.DIFFUSE_RADIATION.value: 1,
+            self.WINDDIRECTION_10M.value: 1,
+            self.WINDSPEED_10M.value: 0.277778,
+            self.CLOUDCOVER.value: 0.1,
+            self.WEATHERCODE.value: None,
+            self.PRECIPITATION.value: 1,
+            self.RAIN.value: 1,
+            self.SNOWFALL.value: 1,
+            self.CLOUDCOVER_LOW.value: None,
+            self.CLOUDCOVER_MID.value: None,
+            self.CLOUDCOVER_HIGH.value: None,
+            self.DIRECT_NORMAL_IRRADIANCE.value: None,
+            self.WINDSPEED_100M.value: None,
+            self.WINDDIRECTION_100M.value: None,
+            self.WINDGUSTS_10M.value: None,
+            self.ET0_FAO_EVAPOTRANSPIRATION.value: None,
+            self.VAPOR_PRESSURE_DEFICIT.value: None,
+            self.SOIL_TEMPERATURE_0_TO_7CM.value: None,
+            self.SOIL_TEMPERATURE_7_TO_28CM.value: None,
+            self.SOIL_TEMPERATURE_28_TO_100CM.value: None,
+            self.SOIL_TEMPERATURE_100_TO_255CM.value: None,
+            self.SOIL_MOISTURE_0_TO_7CM.value: None,
+            self.SOIL_MOISTURE_7_TO_28CM.value: None,
+            self.SOIL_MOISTURE_28_TO_100CM.value: None,
+            self.SOIL_MOISTURE_100_TO_255CM.value: None,
+        }
+
+        return d[self.value]
+
 
 def scrape_openmeteo(
     latitude: float,
@@ -709,6 +785,7 @@ def scrape_openmeteo(
     start_date: datetime,
     end_date: datetime,
     variables: List[OpenMeteoVariable],
+    convert_units: bool = False,
 ) -> pd.DataFrame:
     """Obtain historic hourly data from Open-Meteo.
     https://open-meteo.com/en/docs/historical-weather-api
@@ -724,6 +801,8 @@ def scrape_openmeteo(
             The end-date beyond which records will be ignored.
         variables (List[OpenMeteoVariable]):
             A list of variables to query.
+        convert_units (bool, optional):
+            Convert units output into more common units, and rename headers accordingly.
 
     Returns:
         pd.DataFrame:
@@ -734,12 +813,15 @@ def scrape_openmeteo(
     with urllib.request.urlopen(query_string) as url:
         data = json.load(url)
 
-    headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
+    # convert values into more common units here
+    if convert_units:
+        headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
+    else:
+        headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
     df = pd.DataFrame.from_dict(data["hourly"])
     df.columns = headers
     df.set_index("time (iso8601)", inplace=True)
     df.index = pd.to_datetime(df.index)
-
     return df
 
 

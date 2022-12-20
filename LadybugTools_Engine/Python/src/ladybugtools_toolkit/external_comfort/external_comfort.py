@@ -12,7 +12,8 @@ from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
 from ..ladybug_extension.datacollection import to_series
 from ..ladybug_extension.epw import to_dataframe
 from ..ladybug_extension.location import to_string as location_to_string
-from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMAP
+from ..plot.colormaps import (DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP,
+                              WS_COLORMAP)
 from ..plot.timeseries_heatmap import timeseries_heatmap
 from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
 from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
@@ -237,6 +238,8 @@ class ExternalComfort(BHoMObject):
     @property
     def plot_title_string(self) -> str:
         """Return the description of this result suitable for use in plotting titles."""
+        if self.typology.sky_exposure() == 1:
+            return f"{location_to_string(self.simulation_result.epw.location)}\n{self.simulation_result.ground_material.to_lbt().display_name} ground, No shade\n{self.typology.name}"
         return f"{location_to_string(self.simulation_result.epw.location)}\n{self.simulation_result.ground_material.to_lbt().display_name} ground, {self.simulation_result.shade_material.to_lbt().display_name} shade\n{self.typology.name}"
 
     def plot_utci_day_comfort_metrics(self, month: int = 3, day: int = 21) -> Figure:
