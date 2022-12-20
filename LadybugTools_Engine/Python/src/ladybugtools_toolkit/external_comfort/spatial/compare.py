@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -271,6 +271,96 @@ def compare_ws(
     cbar = plt.colorbar(tcf, cax=cax)
     cbar.outline.set_visible(False)
     cbar.set_label("Typical change in Wind Speed (m/s)")
+
+    # add title
+    ax.set_title(
+        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
+        ha="left",
+        va="bottom",
+        x=0,
+    )
+
+    plt.tight_layout()
+
+    return fig
+
+
+def compare_distance_to_comfortable(
+    spatial_result_1: SpatialComfort,
+    spatial_result_2: SpatialComfort,
+    metric: SpatialMetric,
+    analysis_period: AnalysisPeriod = None,
+    comfort_limits: Tuple[float] = (9, 26),
+    alpha: float = 1.9,
+) -> plt.Figure:
+    """_"""
+
+    if analysis_period is None:
+        analysis_period = AnalysisPeriod()
+
+    if metric.value not in [
+        SpatialMetric.UTCI_INTERPOLATED.value,
+        SpatialMetric.UTCI_CALCULATED.value,
+    ]:
+        raise ValueError("This type of plot is not possible for the requested metric.")
+
+    # get comfort midpoint
+    comfort_mid = np.mean(comfort_limits)
+
+    # get point indices
+    indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
+
+    # create masks
+    index_mask = [i in analysis_period.hoys_int for i in range(8760)]
+    col_mask_1 = [i in indices[0] for i in spatial_result_1.points.index]
+    col_mask_2 = [i in indices[1] for i in spatial_result_2.points.index]
+
+    # filter for target time period and calculate distance to comfort midband
+    comfort_distance_1 = (
+        abs(
+            spatial_result_1._get_spatial_metric(metric).iloc[index_mask, col_mask_1]
+            - comfort_mid
+        )
+        .T.reset_index(drop=True)
+        .T
+    )
+    comfort_distance_2 = (
+        abs(
+            spatial_result_2._get_spatial_metric(metric).iloc[index_mask, col_mask_2]
+            - comfort_mid
+        )
+        .T.reset_index(drop=True)
+        .T
+    )
+
+    # get difference between comfort distances
+    comfort_diff = comfort_distance_2 - comfort_distance_1
+
+    # triangulate
+    tri = get_triangulation(spatial_result_1, spatial_result_2, alpha=alpha)
+
+    # plot heatmap
+    tcf_properties = {
+        "cmap": "BrBG",
+        "levels": np.linspace(-5, 5, 11),
+        "extend": "both",
+    }
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_xlim([min(spatial_result_1._points_x), max(spatial_result_1._points_x)])
+    ax.set_ylim([min(spatial_result_1._points_y), max(spatial_result_1._points_y)])
+
+    # add contour-fill
+    tcf = ax.tricontourf(tri, -comfort_diff.mean(axis=0).values, **tcf_properties)
+
+    # plot colorbar
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
+    cbar = plt.colorbar(tcf, cax=cax)
+    cbar.outline.set_visible(False)
+    cbar.set_label("Change in degrees from comfort midband (C)")
 
     # add title
     ax.set_title(
