@@ -2,7 +2,7 @@
 axes.prop_cycle: cycler('color', ['9d328a', 'd83f37', '797d82', '00305b', 'e9943d', '05a9e2', 'abb444'])
 
 # Face settings
-axes.facecolor: f0f0f0
+axes.facecolor: F0F0F0
 axes.edgecolor: 000000
 
 # Style spines
@@ -51,6 +51,7 @@ figure.subplot.right: 0.95      # the right side of the subplots of the figure
 figure.subplot.bottom: 0.07     # the bottom of the subplots of the figure
 figure.figsize: 15, 6          # figure size in inches
 figure.dpi: 150                 # figure dots per inch
+figure.facecolor: F0F0F0
 
 # Properties for saving the figure. Ensure a high DPI when saving so we have a good resolution.
 savefig.dpi: 300          # figure dots per inch or 'figure'
@@ -61,3 +62,4 @@ savefig.pad_inches: 0.2       # padding when bbox is set to tight
 # Legend Styling
 legend.framealpha: 0
 legend.frameon: False
+legend.facecolor: inherit

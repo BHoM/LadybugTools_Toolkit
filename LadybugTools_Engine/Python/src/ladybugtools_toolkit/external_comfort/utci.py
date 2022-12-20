@@ -1,13 +1,23 @@
 import warnings
 from calendar import month_name
 from concurrent.futures import ProcessPoolExecutor
-from typing import List, Tuple, Union
+from enum import Enum, auto
+from typing import Any, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug_comfort.collection.utci import UTCI
+from matplotlib.colors import (
+    BoundaryNorm,
+    Colormap,
+    LinearSegmentedColormap,
+    ListedColormap,
+    is_color_like,
+    rgb2hex,
+    to_rgba,
+)
 from numpy.typing import NDArray
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
@@ -15,6 +25,106 @@ from tqdm import tqdm
 from ..ladybug_extension.analysis_period import describe as describe_analysis_period
 from ..ladybug_extension.datacollection import from_series, to_series
 from ..plot.colormaps import UTCI_LABELS, UTCI_LEVELS
+
+
+class UniversalThermalClimateIndex(Enum):
+    EXTREME_COLD_STRESS = "Extreme cold stress"
+    VERY_STRONG_COLD_STRESS = "Very strong cold stress"
+    STRONG_COLD_STRESS = "Strong cold stress"
+    MODERATE_COLD_STRESS = "Moderate cold stress"
+    SLIGHT_COLD_STRESS = "Slight cold stress"
+    NO_THERMAL_STRESS = "No thermal stress"
+    MODERATE_HEAT_STRESS = "Moderate heat stress"
+    STRONG_HEAT_STRESS = "Strong heat stress"
+    VERY_STRONG_HEAT_STRESS = "Very strong heat stress"
+    EXTREME_HEAT_STRESS = "Extreme heat stress"
+
+    @property
+    def low_limit(self) -> float:
+        """The low-threshold for the UTCI category."""
+        d = {
+            self.EXTREME_COLD_STRESS.value: -np.inf,
+            self.VERY_STRONG_COLD_STRESS.value: -40,
+            self.STRONG_COLD_STRESS.value: -27,
+            self.MODERATE_COLD_STRESS.value: -13,
+            self.SLIGHT_COLD_STRESS.value: 0,
+            self.NO_THERMAL_STRESS.value: 9,
+            self.MODERATE_HEAT_STRESS.value: 26,
+            self.STRONG_HEAT_STRESS.value: 32,
+            self.VERY_STRONG_HEAT_STRESS.value: 38,
+            self.EXTREME_HEAT_STRESS.value: 46,
+        }
+        return d[self.value]
+
+    @property
+    def high_limit(self) -> float:
+        """The high-threshold for the UTCI category."""
+        d = {
+            self.EXTREME_COLD_STRESS.value: -40,
+            self.VERY_STRONG_COLD_STRESS.value: -27,
+            self.STRONG_COLD_STRESS.value: -13,
+            self.MODERATE_COLD_STRESS.value: 0,
+            self.SLIGHT_COLD_STRESS.value: 9,
+            self.NO_THERMAL_STRESS.value: 26,
+            self.MODERATE_HEAT_STRESS.value: 32,
+            self.STRONG_HEAT_STRESS.value: 38,
+            self.VERY_STRONG_HEAT_STRESS.value: 46,
+            self.EXTREME_HEAT_STRESS.value: np.inf,
+        }
+        return d[self.value]
+
+    @property
+    def range(self) -> Tuple[float]:
+        """The thresholds for the UTCI category."""
+
+        return (self.low_limit, self.high_limit)
+
+    @property
+    def color(self) -> str:
+        """The color associated with the UTCI category."""
+        d = {
+            self.EXTREME_COLD_STRESS.value: "#0D104B",
+            self.VERY_STRONG_COLD_STRESS.value: "#262972",
+            self.STRONG_COLD_STRESS.value: "#3452A4",
+            self.MODERATE_COLD_STRESS.value: "#3C65AF",
+            self.SLIGHT_COLD_STRESS.value: "#37BCED",
+            self.NO_THERMAL_STRESS.value: "#2EB349",
+            self.MODERATE_HEAT_STRESS.value: "#F38322",
+            self.STRONG_HEAT_STRESS.value: "#C31F25",
+            self.VERY_STRONG_HEAT_STRESS.value: "#7F1416",
+            self.EXTREME_HEAT_STRESS.value: "#580002",
+        }
+        return d[self.value]
+
+    @property
+    def description(self) -> str:
+        """Human readable description of this comfort category."""
+        if np.isinf(self.low_limit):
+            return f"{self.value} (<{self.high_limit}°C UTCI)"
+
+        if np.isinf(self.high_limit):
+            return f"{self.value} (>{self.low_limit}°C UTCI)"
+
+        return f"{self.value} ({self.low_limit}°C < x < {self.high_limit}°C UTCI)"
+
+
+def cmap() -> Colormap:
+    """Return the colormap associated with this comfort metric."""
+    utci_cmap = ListedColormap(
+        colors=[i.color for i in UniversalThermalClimateIndex],
+        name=f"{UniversalThermalClimateIndex.__name__}",
+    )
+    utci_cmap.set_under(UniversalThermalClimateIndex.EXTREME_COLD_STRESS.color)
+    utci_cmap.set_over(UniversalThermalClimateIndex.EXTREME_HEAT_STRESS.color)
+
+    return utci_cmap
+
+
+def boundarynorm() -> BoundaryNorm:
+    """Return the boundary-norm associate with this comfort metric."""
+    return BoundaryNorm(
+        np.unique([i.range for i in UniversalThermalClimateIndex])[1:-1], cmap().N
+    )
 
 
 def utci(
@@ -911,6 +1021,103 @@ def categorise_shade_benefit(
     return pd.Series(shade_categories, index=unshaded_utci.index)
 
 
-def categorise_utci(utci_series: pd.Series) -> pd.Series:
-    """Get the categorical binned version of a series of UTCI."""
-    return pd.cut(utci_series, [-100] + UTCI_LEVELS + [100], labels=UTCI_LABELS)
+def distance_to_comfortable(
+    values: Union[List[float], float],
+    to_comfort_midpoint: bool = True,
+    comfort_limits: Tuple[float] = None,
+    absolute: bool = False,
+) -> Union[List[float], float]:
+    """
+    Get the distance between the given value/s and the "comfortable" category.
+
+    Args:
+        values (Union[List[float], float]):
+            A value or set of values representing UTCI temperature.
+        to_comfort_midpoint (bool, optional):
+            The point to which "distance" will be measured. Either the midpoint of the "No Thermal Stress" range, or the edge of the "No Thermal Stress" category. Defaults to True.
+        comfort_limits (Tuple[float], optional):
+            Bespoke comfort limits. Defaults to (9, 26).
+        absolute: (bool, optional):
+            Return values in absolute terms. Default is False.
+
+    Returns:
+        str:
+            A text summary of the given UTCI data collection.
+
+    """
+
+    dtype = None
+    if isinstance(values, pd.Series):
+        idx = values.index
+        name = values.name
+        dtype = type(values)
+    elif isinstance(values, pd.DataFrame):
+        idx = values.index
+        columns = values.columns
+        dtype = type(values)
+
+    if comfort_limits is None:
+        comfort_limits = tuple(UniversalThermalClimateIndex.NO_THERMAL_STRESS.range)
+    low = min(comfort_limits)
+    high = max(comfort_limits)
+
+    # convert to array
+    values = np.array(values)
+
+    comfort_midpoint = np.mean(comfort_limits)
+
+    if to_comfort_midpoint:
+        distance = np.where(
+            values < comfort_midpoint,
+            values - comfort_midpoint,
+            comfort_midpoint - values,
+        )
+    else:
+        distance = np.where(
+            values < low, values - low, np.where(values > high, high - values, 0)
+        )
+
+    if absolute:
+        distance = np.abs(distance)
+
+    if dtype == pd.Series:
+        return pd.Series(distance, index=idx, name=name)
+    if dtype == pd.DataFrame:
+        return pd.DataFrame(distance, index=idx, columns=columns)
+
+    return distance
+
+
+def categorise(
+    values: Union[List[float], float], fmt: str = "category"
+) -> Union[pd.Categorical, str]:
+    """Convert a numeric values into their associated UTCI categories."""
+    bins = np.unique([cat.range for cat in UniversalThermalClimateIndex])
+
+    format_options = ["category", "rgba", "hex"]
+    if fmt == "hex":
+        labels = [cat.color for cat in UniversalThermalClimateIndex]
+    elif fmt == "rgba":
+        labels = [
+            to_rgba(i) for i in [cat.color for cat in UniversalThermalClimateIndex]
+        ]
+    elif fmt == "category":
+        labels = [cat.value for cat in UniversalThermalClimateIndex]
+    else:
+        raise ValueError(f"format must be one of {format_options}")
+
+    if isinstance(values, (int, float)):
+        return pd.cut([values], bins, labels=labels)[0]
+
+    if isinstance(values, pd.DataFrame):
+        df = pd.DataFrame(
+            [
+                pd.cut(series, bins, labels=labels).tolist()
+                for _, series in values.iteritems()
+            ]
+        ).T
+        df.index = values.index
+        df.columns = values.columns
+        return df
+
+    return pd.cut(values, bins, labels=labels)

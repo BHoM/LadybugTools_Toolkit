@@ -9,8 +9,10 @@ from typing import Any, List, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from ladybug.epw import EPW, AnalysisPeriod
 from tqdm import tqdm
 
+from ..external_comfort.wind import wind_speed_at_height
 from ..helpers import (
     OpenMeteoVariable,
     rolling_window,
@@ -19,6 +21,7 @@ from ..helpers import (
     weibull_pdf,
     wind_direction_average,
 )
+from ..ladybug_extension.analysis_period import to_datetimes
 from .direction_bins import DirectionBins
 from .plot import cumulative_probability, speed_frequency, timeseries, windrose
 
@@ -48,7 +51,7 @@ class Wind:
         """
         self.validation(wind_speeds, wind_directions, datetimes, height_above_ground)
 
-        self.datetimes = pd.to_datetime(datetimes)
+        self.datetimes: List[datetime] = pd.to_datetime(datetimes)
         self.wind_speeds = pd.Series(
             wind_speeds, index=self.datetimes, name="speed"
         ).sort_index()
@@ -176,28 +179,21 @@ class Wind:
         )
 
     @classmethod
-    def from_epw(cls, epw_file: Union[str, Path]) -> Wind:
-        """Create a Wind object from an EPW file.
+    def from_epw(cls, epw: Union[str, Path, EPW]) -> Wind:
+        """Create a Wind object from an EPW file or object.
 
         Args:
-            epw_file (Union[str, Path]):
-                The path to the EPW file.
+            epw_file (Union[str, Path, EPW]):
+                The path to the EPW file, or an EPW object.
         """
 
-        with open(epw_file, "r", encoding="utf-8") as fp:
-            data = fp.readlines()
+        if isinstance(epw, (str, Path)):
+            epw = EPW(epw)
 
-        start_index = [n + 1 for n, i in enumerate(data) if i.startswith("DATA")][0]
-        wind_directions, wind_speeds = np.array(
-            [[float(j) for j in i.split(",")[20:22]] for i in data[start_index:]]
-        ).T
-        datetimes = pd.date_range(
-            start="2017-01-01 00:00:00", freq="60T", periods=len(wind_directions)
-        )
         return Wind(
-            wind_speeds=wind_speeds,
-            wind_directions=wind_directions,
-            datetimes=datetimes,
+            wind_speeds=epw.wind_speed.values,
+            wind_directions=epw.wind_direction.values,
+            datetimes=to_datetimes(AnalysisPeriod()),
             height_above_ground=10,
         )
 
@@ -459,6 +455,45 @@ class Wind:
             data=probabilities, columns=direction_bins.midpoints, index=percentiles  # type: ignore
         )
         return df.T
+
+    def filter_by_analysis_period(
+        self,
+        analysis_period: AnalysisPeriod,
+    ) -> Wind:
+        """Filter the current object by a ladybug AnalysisPeriod object.
+
+        Args:
+            analysis_period (AnalysisPeriod):
+                An AnalysisPeriod object.
+
+        Returns:
+            Wind:
+                A dataset describing historic wind speed and direction relationship.
+        """
+
+        # get the datetimes for the current object
+        all_month_day_hour_combos = [
+            (dt.month, dt.day, dt.hour) for dt in self.datetimes
+        ]
+
+        # get the months, day, hour combos within the analysis period
+        target_datetimes = to_datetimes(analysis_period)
+        target_month_day_hour_combos = [
+            (dt.month, dt.day, dt.hour) for dt in target_datetimes
+        ]
+
+        # create indices
+        indices = []
+        for idx, i in enumerate(all_month_day_hour_combos):
+            if i in target_month_day_hour_combos:
+                indices.append(idx)
+
+        return Wind(
+            self.ws.iloc[indices].tolist(),
+            self.wd.iloc[indices].tolist(),
+            self.datetimes[indices],
+            self.height_above_ground,
+        )
 
     def filter_by_time(
         self,
@@ -897,7 +932,7 @@ class Wind:
         )
 
     def plot_cumulative_probability(
-        self, percentiles: List[float] = [0.5, 0.95], title: str = None
+        self, percentiles: Tuple[float] = (0.5, 0.95), title: str = None
     ) -> plt.Figure:  # type: ignore
         """Create a cumulative probability plot"""
 
