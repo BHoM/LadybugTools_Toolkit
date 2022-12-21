@@ -919,3 +919,283 @@ def clearness_index(
         ),
         values=ci,
     )
+
+
+def seasonality_from_day_length(epw: EPW) -> pd.Series:
+    """Create a Series containing a category for each timestep of an EPW giving it's season.
+
+    Args:
+        epw (EPW):
+            Input EPW.
+
+    Returns:
+        pd.Series:
+            List of seasons per timestep.
+    """
+
+    # TODO - add warnings when near poles/equator if necessary for dodgy behaviour
+
+    idx = to_datetimes(AnalysisPeriod())
+
+    sun_times = pd.DataFrame.from_dict(
+        [
+            Sunpath.from_location(epw.location).calculate_sunrise_sunset(i.month, i.day)
+            for i in idx
+        ]
+    ).drop_duplicates()
+    sun_times.index = idx[sun_times.index]
+    sun_times["day_length"] = sun_times.sunset - sun_times.sunrise
+
+    shortest_day = sun_times.day_length.idxmin()
+    longest_day = sun_times.day_length.idxmax()
+
+    months = pd.Timedelta(days=3 * 30)
+
+    if (longest_day + months).year != longest_day.year:
+        spring_equinox = shortest_day + months
+        autumn_equinox = shortest_day - months
+
+        autumn_right = autumn_equinox + (months / 2)
+        autumn_left = autumn_equinox - (months / 2)
+        spring_right = spring_equinox + (months / 2)
+        spring_left = spring_equinox - (months / 2)
+
+        spring_mask = (idx > spring_left) & (idx <= spring_right)
+        summer_mask = (idx > spring_right) | (idx <= autumn_left)
+        autumn_mask = (idx > autumn_left) & (idx <= autumn_right)
+        winter_mask = (idx > autumn_right) & (idx <= spring_left)
+
+    else:
+        spring_equinox = longest_day - months
+        autumn_equinox = longest_day + months
+
+        autumn_right = autumn_equinox + (months / 2)
+        autumn_left = autumn_equinox - (months / 2)
+        spring_right = spring_equinox + (months / 2)
+        spring_left = spring_equinox - (months / 2)
+
+        spring_mask = (idx > spring_left) & (idx <= spring_right)
+        summer_mask = (idx > spring_right) & (idx <= autumn_left)
+        autumn_mask = (idx > autumn_left) & (idx <= autumn_right)
+        winter_mask = (idx > autumn_right) | (idx <= spring_left)
+
+    # construct datetime indexed series with categories
+    categories = np.where(
+        spring_mask,
+        "Spring",
+        np.where(
+            summer_mask,
+            "Summer",
+            np.where(
+                autumn_mask, "Autumn", np.where(winter_mask, "Winter", "Undefined")
+            ),
+        ),
+    )
+
+    return pd.Series(categories, index=idx, name="season")
+
+
+def seasonality_from_month(epw: EPW) -> pd.Series:
+    """Create a Series containing a category for each timestep of an EPW giving it's season.
+
+    Args:
+        epw (EPW):
+            Input EPW.
+
+    Returns:
+        pd.Series:
+            List of seasons per timestep.
+    """
+
+    idx = to_datetimes(AnalysisPeriod())
+    if epw.location.latitude >= 0:
+        # northern hemisphere
+        spring_months = [3, 4, 5]
+        summer_months = [6, 7, 8]
+        autumn_months = [9, 10, 11]
+        winter_months = [12, 1, 2]
+    else:
+        # southern hemisphere
+        spring_months = [9, 10, 11]
+        summer_months = [12, 1, 2]
+        autumn_months = [3, 4, 5]
+        winter_months = [6, 7, 8]
+    categories = np.where(
+        idx.month.isin(spring_months),
+        "Spring",
+        np.where(
+            idx.month.isin(summer_months),
+            "Summer",
+            np.where(
+                idx.month.isin(autumn_months),
+                "Autumn",
+                np.where(idx.month.isin(winter_months), "Winter", "Undefined"),
+            ),
+        ),
+    )
+
+    return pd.Series(categories, index=idx, name="season")
+
+
+def seasonality_from_temperature(epw: EPW, sample_period_days: int = 8) -> pd.Series:
+    """Create a Series containing a category for each timestep of an EPW giving it's season.
+
+    Args:
+        epw (EPW):
+            Input EPW.
+
+    Returns:
+        pd.Series:
+            List of seasons per timestep.
+    """
+    sample_period = pd.Timedelta(
+        days=sample_period_days
+    )  # the period over which avg temperature wil be sampled to get the hottest/coldest periods
+
+    # get the avg for the sample periods and whole year
+    dbt = to_series(epw.dry_bulb_temperature).rename("dbt")
+    dbt_period_mean = dbt.resample(sample_period).mean()
+
+    # get the coldest and hottest dates
+    cold_centroid = dbt_period_mean.idxmin() + (sample_period / 2)
+    hot_centroid = dbt_period_mean.idxmax() + (sample_period / 2)
+
+    if epw.location.latitude >= 0:
+        # Northern hemisphere
+
+        spring_months = [2, 3, 4, 5, 6]
+        autumn_months = [8, 9, 10, 11, 12]
+        if cold_centroid < hot_centroid:
+            spring = dbt[
+                ((dbt.index >= cold_centroid) & (dbt.index < hot_centroid))
+                & (dbt.index.month.isin(spring_months))
+            ]
+            autumn = dbt[
+                ((dbt.index >= hot_centroid) | (dbt.index < cold_centroid))
+                & (dbt.index.month.isin(autumn_months))
+            ]
+        else:
+            spring = dbt[
+                ((dbt.index >= cold_centroid) | (dbt.index < hot_centroid))
+                & (dbt.index.month.isin(spring_months))
+            ]
+            autumn = dbt[
+                ((dbt.index >= hot_centroid) & (dbt.index < cold_centroid))
+                & (dbt.index.month.isin(autumn_months))
+            ]
+
+        spring_day = spring.resample(sample_period).mean()
+        spring_lower = spring.quantile(0.33)
+        spring_upper = spring.quantile(0.66)
+        spring_mask = (spring_day > spring_lower) & (spring_day < spring_upper)
+        spring_start = spring_mask[spring_mask].index.min() + (sample_period / 2)
+        spring_end = spring_mask[spring_mask].index.max() + (sample_period / 2)
+        if spring_start.year != dbt.index.year[0]:
+            spring_start = pd.Timestamp(
+                year=dbt.index.year[0],
+                month=spring_start.month,
+                day=spring_start.day,
+            )
+
+        autumn_day = autumn.resample(sample_period).mean()
+        autumn_lower = autumn.quantile(0.33)
+        autumn_upper = autumn.quantile(0.66)
+        autumn_mask = (autumn_day > autumn_lower) & (autumn_day < autumn_upper)
+        autumn_start = autumn_mask[autumn_mask].index.min() + (sample_period / 2)
+        autumn_end = autumn_mask[autumn_mask].index.max() + (sample_period / 2)
+        if autumn_end.year != dbt.index.year[0]:
+            autumn_end = pd.Timestamp(
+                year=dbt.index.year[0],
+                month=autumn_end.month,
+                day=autumn_end.day,
+            )
+
+        summer_start = spring_end
+        summer_end = autumn_start
+
+        categories = np.where(
+            (dbt.index.date >= spring_start.date())
+            & (dbt.index.date < spring_end.date()),
+            "Spring",
+            np.where(
+                (dbt.index.date >= summer_start.date())
+                & (dbt.index.date < summer_end.date()),
+                "Summer",
+                np.where(
+                    (dbt.index.date >= autumn_start.date())
+                    & (dbt.index.date < autumn_end.date()),
+                    "Autumn",
+                    "Winter",
+                ),
+            ),
+        )
+    else:
+        # Southern hemisphere
+
+        spring_months = [8, 9, 10, 11, 12]
+        autumn_months = [2, 3, 4, 5, 6]
+        if cold_centroid < hot_centroid:
+            spring = dbt[
+                ((dbt.index >= cold_centroid) & (dbt.index < hot_centroid))
+                & (dbt.index.month.isin(spring_months))
+            ]
+            autumn = dbt[
+                ((dbt.index >= hot_centroid) | (dbt.index < cold_centroid))
+                & (dbt.index.month.isin(autumn_months))
+            ]
+        else:
+            spring = dbt[
+                ((dbt.index >= cold_centroid) | (dbt.index < hot_centroid))
+                & (dbt.index.month.isin(spring_months))
+            ]
+            autumn = dbt[
+                ((dbt.index >= hot_centroid) | (dbt.index < cold_centroid))
+                & (dbt.index.month.isin(autumn_months))
+            ]
+
+        spring_day = spring.resample(sample_period).mean()
+        spring_lower = spring.quantile(0.33)
+        spring_upper = spring.quantile(0.66)
+        spring_mask = (spring_day > spring_lower) & (spring_day < spring_upper)
+        spring_start = spring_mask[spring_mask].index.min() + (sample_period / 2)
+        spring_end = spring_mask[spring_mask].index.max() + (sample_period / 2)
+        if spring_start.year != dbt.index.year[0]:
+            spring_start = pd.Timestamp(
+                year=dbt.index.year[0],
+                month=spring_start.month,
+                day=spring_start.day,
+            )
+
+        autumn_day = autumn.resample(sample_period).mean()
+        autumn_lower = autumn.quantile(0.33)
+        autumn_upper = autumn.quantile(0.66)
+        autumn_mask = (autumn_day > autumn_lower) & (autumn_day < autumn_upper)
+        autumn_start = autumn_mask[autumn_mask].index.min() + (sample_period / 2)
+        autumn_end = autumn_mask[autumn_mask].index.max() + (sample_period / 2)
+        if autumn_end.year != dbt.index.year[0]:
+            autumn_end = pd.Timestamp(
+                year=dbt.index.year[0],
+                month=autumn_end.month,
+                day=autumn_end.day,
+            )
+
+        winter_start = spring_end
+        winter_end = autumn_start
+
+        categories = np.where(
+            (dbt.index.date >= spring_start.date())
+            & (dbt.index.date < spring_end.date()),
+            "Spring",
+            np.where(
+                (dbt.index.date >= winter_start.date())
+                | (dbt.index.date < winter_end.date()),
+                "Summer",
+                np.where(
+                    (dbt.index.date >= autumn_start.date())
+                    & (dbt.index.date < autumn_end.date()),
+                    "Autumn",
+                    "Winter",
+                ),
+            ),
+        )
+    return pd.Series(categories, index=dbt.index, name="season")
