@@ -2,6 +2,7 @@ import base64
 import io
 import json
 import math
+import re
 import urllib.request
 import warnings
 from datetime import datetime
@@ -570,8 +571,8 @@ def angle_from_north(vector: List[float]) -> float:
 
 def sanitise_string(string: str) -> str:
     """Sanitise a string so that only path-safe characters remain."""
-    keep_characters = (".", "_", "-", "(", ")")
-    return "".join(c for c in string if c.isalnum() or c in keep_characters).rstrip()
+    keep_characters = r"[^.A-Za-z0-9_-]"
+    return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
 
 
 def stringify_df_header(columns: List[Any]) -> List[str]:
