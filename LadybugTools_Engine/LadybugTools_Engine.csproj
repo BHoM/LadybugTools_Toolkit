@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -135,7 +135,6 @@
     <None Include="packages.config" />
     <None Include="Python\README.md" />
     <Content Include="Python\requirements.txt" />
-    <None Include="Versioning_60.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_oM\LadybugTools_oM.csproj">
@@ -165,13 +164,10 @@
       :: create infrastructure necessary to support Python environments
       if not exist "C:\ProgramData\BHoM\Extensions\PythonEnvironments" mkdir "C:\ProgramData\BHoM\Extensions\PythonEnvironments"
       if not exist "C:\ProgramData\BHoM\Extensions\PythonCode" mkdir "C:\ProgramData\BHoM\Extensions\PythonCode"
-
       :: remove any old versions within target directory for current toolkits Python code
       if exist "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" rmdir "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /S /Q
-
       :: move Python code over to toolkit extensions folder, redirecting output to temp log file to silence it
       robocopy "$(ProjectDir)Python" "C:\ProgramData\BHoM\Extensions\PythonCode\$(SolutionName)" /mir /xf "*.pyc" "*.ipynb" /xd "__*__" ".*" &gt; output.log
-
       :: remove temporary log file
       del output.log
 </PreBuildEvent>
