@@ -1,4 +1,5 @@
 import base64
+import contextlib
 import io
 import json
 import math
@@ -12,7 +13,7 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from ladybug.epw import Location
+from ladybug.epw import AnalysisPeriod, Location
 from ladybug.skymodel import (
     calc_horizontal_infrared,
     calc_sky_temperature,
@@ -25,6 +26,21 @@ from ladybug.sunpath import Sunpath
 from matplotlib.figure import Figure
 from scipy.stats import exponweib
 from tqdm import tqdm
+
+
+def default_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, keyed by name."""
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        aps = [
+            AnalysisPeriod(),
+            AnalysisPeriod(st_hour=5, end_hour=12, timestep=1),
+            AnalysisPeriod(st_hour=12, end_hour=17, timestep=1),
+            AnalysisPeriod(st_hour=17, end_hour=21, timestep=1),
+            AnalysisPeriod(st_hour=21, end_hour=5, timestep=1),
+        ]
+
+    return aps
 
 
 def chunks(lst: List[Any], chunksize: int):

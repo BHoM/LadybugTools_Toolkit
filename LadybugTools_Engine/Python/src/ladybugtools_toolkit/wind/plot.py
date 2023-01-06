@@ -367,7 +367,7 @@ def windrose(
     colors = [cmap(i) for i in np.linspace(0, 1, len(data_bins) - 1)]
 
     # create figure
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10), subplot_kw={"projection": "polar"})
+    fig, ax = plt.subplots(1, 1, figsize=(7, 7), subplot_kw={"projection": "polar"})
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
 
