@@ -2,8 +2,13 @@ from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
+from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.psychchart import PsychrometricChart
 from ladybug_geometry.geometry2d import Mesh2D
+from ladybugtools_toolkit.ladybug_extension.analysis_period import (
+    describe,
+    to_datetimes,
+)
 from ladybugtools_toolkit.ladybug_extension.epw import EPW, to_dataframe
 from ladybugtools_toolkit.ladybug_extension.location import to_string
 from matplotlib.collections import PatchCollection
@@ -11,7 +16,9 @@ from matplotlib.colors import Colormap
 from matplotlib.patches import Polygon
 
 
-def psychrometric(epw: EPW, cmap: Colormap = "viridis") -> plt.Figure:
+def psychrometric(
+    epw: EPW, cmap: Colormap = "viridis", analysis_period: AnalysisPeriod = None
+) -> plt.Figure:
     """Create a psychrometric chart using a LB backend.
 
     Args:
@@ -19,19 +26,32 @@ def psychrometric(epw: EPW, cmap: Colormap = "viridis") -> plt.Figure:
             An EPW object.
         cmap (Colormap, optional):
             A colormap to color things with!. Defaults to "viridis".
+        analysis_period (AnalysisPeriod, optional):
+            An analysis period to filter values by. Default is whole year.
 
     Returns:
         plt.Figure:
             A Figure object.
     """
 
-    df = to_dataframe(epw, include_additional=True).droplevel([0, 1], axis=1)
+    if analysis_period is None:
+        analysis_period = AnalysisPeriod()
+
+    df = (
+        to_dataframe(epw, include_additional=True)
+        .droplevel([0, 1], axis=1)
+        .loc[to_datetimes(analysis_period)]
+    )
 
     # create mesh for rendering on chart
     psychart = PsychrometricChart(
-        temperature=epw.dry_bulb_temperature,
-        relative_humidity=epw.relative_humidity,
-        average_pressure=epw.atmospheric_station_pressure.average,
+        temperature=epw.dry_bulb_temperature.filter_by_analysis_period(analysis_period),
+        relative_humidity=epw.relative_humidity.filter_by_analysis_period(
+            analysis_period
+        ),
+        average_pressure=epw.atmospheric_station_pressure.filter_by_analysis_period(
+            analysis_period
+        ).average,
     )
 
     def lb_mesh_to_patch_collection(
@@ -107,7 +127,7 @@ def psychrometric(epw: EPW, cmap: Colormap = "viridis") -> plt.Figure:
 
     ax.axis("off")
 
-    ax.set_title(to_string(epw.location))
+    ax.set_title(f"{to_string(epw.location)}\n{describe(analysis_period)}")
 
     # Generate peak cooling summary
     clg_vals = df.loc[df.idxmax()["Dry Bulb Temperature (C)"]]
