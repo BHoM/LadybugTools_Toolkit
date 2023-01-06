@@ -19,6 +19,7 @@ from ladybug.datautil import (
     collections_to_json,
 )
 
+from ..helpers import wind_direction_average
 from .analysis_period import describe as describe_analysis_period
 from .analysis_period import to_datetimes
 from .header import from_string as header_from_string
@@ -310,20 +311,7 @@ def from_csv(csv_path: Union[Path, str]) -> List[BaseCollection]:
 
 def describe_collection(
     collection: BaseCollection,
-    analysis_period: AnalysisPeriod = AnalysisPeriod(),
-    include_time_period: bool = True,
-    include_most_common: bool = True,
-    include_total: bool = True,
-    include_average: bool = True,
-    include_median: bool = True,
-    include_min: bool = True,
-    include_max: bool = True,
-    include_lowest_month: bool = True,
-    include_highest_month: bool = True,
-    include_lowest_monthly_diurnal: bool = True,
-    include_highest_monthly_diurnal: bool = True,
-    include_max_time: bool = True,
-    include_min_time: bool = True,
+    _n_common: int = 3,
 ) -> List[str]:
     """Describe a datacollection.
 
@@ -337,124 +325,144 @@ def describe_collection(
 
     descriptions = []
 
-    series = to_series(collection).reindex(to_datetimes(analysis_period)).interpolate()
-
-    if isinstance(collection.header.data_type, Angle):
-        warnings.warn(
-            'Non-hourly "angle" data may be spurious as interpolation around North can result in southerly values.'
-        )
+    series = to_series(collection)
 
     name = " ".join(series.name.split(" ")[:-1])
     unit = series.name.split(" ")[-1].replace("(", "").replace(")", "")
+    period_ts = describe_analysis_period(
+        collection.header.analysis_period, include_timestep=True
+    )
+    period = describe_analysis_period(
+        collection.header.analysis_period, include_timestep=False
+    )
 
-    if include_time_period:
-        descriptions.append(
-            f"Data collection represents {name}, for {describe_analysis_period(analysis_period, include_timestep=True)}."
+    if (collection.header.analysis_period.st_month != 1) or (
+        collection.header.analysis_period.end_month != 12
+    ):
+        warnings.warn(
+            f"The data collection being described represents only a portion of a full year."
         )
 
-    if include_min:
+    # summarise data title and time period
+    descriptions.append(
+        f"{name}, for {period_ts} (representing {len(series)} values, each in units of {unit})."
+    )
+
+    # determine if data is time-unit modifiable
+    rate_of_change = False
+    try:
+        collection.to_time_rate_of_change()
+        rate_of_change = True
+    except (AssertionError, ValueError):
+        pass
+
+    if not isinstance(collection.header.data_type, Angle):
+
+        # minimum value (number of times it occurs, and when)
         _min = series.min()
-        if _min == collection.header.data_type.min:
-            warnings.warn(
-                "The minimum value matches the minimum possible value for this collection type."
-            )
-        _min_idx = series.idxmin()
+        _n_min = len(series[series == _min])
+        _min_mean_time = series.groupby(series.index.time).mean().idxmin()
         descriptions.append(
-            f"The minimum {name} is {_min:0.01f}{unit}, occurring on {_min_idx:%b %d} at {_min_idx:%H:%M}."
+            f"Minimum {name} is {_min:,.01f}{unit}, occurring {'once' if _n_min == 1 else f'{_n_min} times'}{f' and typically at {_min_mean_time:%H:%M}' if _n_min > 1 else f' on {series.idxmin():%b %d at %H:%M}'}."
         )
 
-    if include_max:
-        _max = series.max()
-        _max_idx = series.idxmax()
+        # 25%ile
+        _lower = series.quantile(0.25)
+        _n_less = len(series[series < _lower])
         descriptions.append(
-            f"The maximum {name} is {_max:0.01f}{unit}, occurring on {_max_idx:%b %d} at {_max_idx:%H:%M}."
+            f"25%-ile {name} is {_lower:,.01f}{unit}, with {_n_less} occurrences below that value."
         )
 
-    if include_average:
-        _avg = series.mean()
+    if isinstance(collection.header.data_type, Angle):
+        _mean = wind_direction_average(series.values)
+        descriptions.append(f"Mean {name} is {_mean:,.01f}{unit}.")
+    else:
+        # mean value
+        _mean = series.mean()
         _std = series.std()
         descriptions.append(
-            f"The average {name} is {_avg:0.01f}{unit}, with a standard deviation of {_std:0.1f}{unit}."
+            f"Mean {name} is {_mean:,.01f}{unit}, with a standard deviation of {_std:0.1f}{unit}."
         )
 
-    if include_median:
+    if not isinstance(collection.header.data_type, Angle):
+        # median value
         _median = series.median()
-        _median_count = series[series == _median].count()
-        _ = f"The median {name} is {_median:0.01f}{unit}"
-        if _median_count > 1:
-            _ += f" occurring {_median_count} times."
-        else:
-            _ += "."
-        descriptions.append(_)
+        _n_median = len(series[series == _median])
+        descriptions.append(f"Median {name} is {_median:,.01f}{unit}.")
 
-    if include_most_common:
-        _n_common = 3
-        _most_common, _most_common_counts = series.value_counts().reset_index().values.T
-        _most_common_str = " and ".join(
-            ", ".join(_most_common[:_n_common].astype(str)).rsplit(", ", 1)
+        # 75%ile
+        _upper = series.quantile(0.75)
+        _n_more = len(series[series > _upper])
+        descriptions.append(
+            f"75%-ile {name} is {_upper:,.01f}{unit}, with {_n_more} occurrences above that value."
         )
-        _most_common_counts_str = " and ".join(
+
+        # maximum value (number of times it occurs, and when)
+        _max = series.max()
+        _n_max = len(series[series == _max])
+        _max_mean_time = series.groupby(series.index.time).mean().idxmax()
+        descriptions.append(
+            f"Maximum {name} is {_max:,.01f}{unit}, occurring {_n_max} time{f's and typically at {_max_mean_time:%H:%M}' if _n_max > 1 else f' on {series.idxmax():%b %d at %H:%M}'}."
+        )
+
+    # common values
+    _most_common, _most_common_counts = series.value_counts().reset_index().values.T
+    _most_common_str = (
+        " and ".join(
+            f"{unit}, ".join([f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(
+                ", ", 1
+            )
+        )
+        + unit
+    )
+    _most_common_counts_str = (
+        " and ".join(
             ", ".join(_most_common_counts[:_n_common].astype(int).astype(str)).rsplit(
                 ", ", 1
             )
         )
+        + f" times respectively"
+    )
+    descriptions.append(
+        f"The {_n_common} most common {name} values are {_most_common_str}, occurring {_most_common_counts_str}."
+    )
+
+    if not isinstance(collection.header.data_type, Angle):
+
+        # cumulative values
+        if rate_of_change:
+            descriptions.append(
+                f"Cumulative total {name} for {period} is {series.sum():,.0f}{collection.to_time_rate_of_change().header.unit}."
+            )
+
+        # agg months
+        _month_mean = series.resample("MS").mean()
         descriptions.append(
-            f"The {_n_common} most common {name} values are {_most_common_str}{unit}, occuring {_most_common_counts_str} times (out of {series.count()}) respectively."
+            f"The month with the lowest mean {name} is {_month_mean.idxmin():%B}, with a value of {_month_mean.min():,.1f}{unit}."
+        )
+        descriptions.append(
+            f"The month with the highest mean {name} is {_month_mean.idxmax():%B}, with a value of {_month_mean.max():,.1f}{unit}."
         )
 
-    if include_total:
-        _sum = series.sum()
-        descriptions.append(f"The cumulative {name} is {_sum:0.1f}{unit}.")
-
-    _month_avg = series.resample("MS").mean()
-
-    if include_lowest_month:
-        _min_month_avg = _month_avg.min()
-        _min_month = _month_avg.idxmin()
+        # agg times
+        _time_mean = series.groupby(series.index.time).mean()
         descriptions.append(
-            f"The month with the lowest average {name} is {_min_month:%B}, with an average value of {_min_month_avg:0.1f}{unit}."
+            f"The time when the highest mean {name} typically occurs is {_time_mean.idxmax():%H:%M}, with a value of {_time_mean.max():,.1f}{unit}."
+        )
+        descriptions.append(
+            f"The time when the lowest mean {name} typically occurs is {_time_mean.idxmin():%H:%M}, with a mean value of {_time_mean.min():,.1f}{unit}."
         )
 
-    if include_highest_month:
-        _max_month_avg = _month_avg.max()
-        _max_month = _month_avg.idxmax()
+        # diurnal
+        _month_grp = series.resample("MS")
+        _month_grp_min = _month_grp.min()
+        _month_grp_max = _month_grp.max()
+        _month_range_month_avg = _month_grp_max - _month_grp_min
         descriptions.append(
-            f"The month with the highest average {name} is {_max_month:%B}, with an average value of {_max_month_avg:0.1f}{unit}."
+            f"The month when the largest range of {name} typically occurs is {_month_range_month_avg.idxmax():%B}, with values between {_month_grp_min.loc[_month_range_month_avg.idxmax()]:,.1f}{unit} and {_month_grp_max.loc[_month_range_month_avg.idxmax()]:,.1f}{unit}."
         )
-
-    _day_resample = series.resample("1D")
-    _day_min = _day_resample.min()
-    _day_max = _day_resample.max()
-    _day_range_month_avg = (_day_max - _day_min).resample("MS").mean().sort_values()
-
-    if include_lowest_monthly_diurnal:
-        (
-            _diurnal_low_range_month,
-            _diurnal_low_range_value,
-        ) = _day_range_month_avg.reset_index().values[0]
         descriptions.append(
-            f"The month with the lowest average diurnal {name} range is {_diurnal_low_range_month:%B}, with values varying by around {_diurnal_low_range_value:0.1f}{unit}."
-        )
-
-    if include_highest_monthly_diurnal:
-        (
-            _diurnal_high_range_month,
-            _diurnal_high_range_value,
-        ) = _day_range_month_avg.reset_index().values[-1]
-        descriptions.append(
-            f"The month with the highest average diurnal {name} range is {_diurnal_high_range_month:%B}, with values varying by around {_diurnal_high_range_value:0.1f}{unit}."
-        )
-
-    if include_max_time:
-        _max_daily_time = series.groupby(series.index.time).max().idxmax()
-        descriptions.append(
-            f"During the day, the time where the maximum {name} occurs is usually {_max_daily_time:%H:%M}."
-        )
-
-    if include_min_time:
-        _min_daily_time = series.groupby(series.index.time).min().idxmin()
-        descriptions.append(
-            f"During the day, the time where the minimum {name} occurs is usually {_min_daily_time:%H:%M}."
+            f"The month when the smallest range of {name} typically occurs is {_month_range_month_avg.idxmin():%B}, with values between {_month_grp_min.loc[_month_range_month_avg.idxmin()]:,.1f}{unit} and {_month_grp_max.loc[_month_range_month_avg.idxmin()]:,.1f}{unit}."
         )
 
     return descriptions
