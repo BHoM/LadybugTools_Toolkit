@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, AnalysisPeriod
+from matplotlib.colors import Colormap, ListedColormap
 from tqdm import tqdm
 
 from ..external_comfort.wind import wind_speed_at_height
@@ -855,21 +856,27 @@ class Wind:
     def plot_windrose(
         self,
         direction_bins: DirectionBins = DirectionBins(),
+        bins: List[float] = None,
         include_legend: bool = True,
         include_percentages: bool = False,
         title: str = None,
+        cmap: Union[Colormap, str] = "YlGnBu",
     ) -> plt.Figure:  # type: ignore
         """Create a windrose.
 
         Args:
             direction_bins (DirectionBins, optional):
                 A DirectionBins object.
+            bins (List[float], optional):
+                Bins to sort data into.
             include_legend (bool, optional):
                 Set to True to include the legend. Defaults to True.
             include_percentages (bool, optional):
                 Add bin totals as % to rose. Defaults to False.
             title (str, optional):
                 Add a custom title to this plot.
+            cmap (Union[Colormap, str], optional):
+                Use a custom colormap. Defaults to "YlGnBu".
 
         Returns:
             plt.Figure:
@@ -891,8 +898,8 @@ class Wind:
             wind_directions=new_w.wd.tolist(),
             data=new_w.ws.tolist(),
             direction_bins=direction_bins,
-            data_bins=None,
-            cmap="YlGnBu",
+            data_bins=bins,
+            cmap=cmap,
             title=ti,
             include_legend=include_legend,
             include_percentages=include_percentages,
