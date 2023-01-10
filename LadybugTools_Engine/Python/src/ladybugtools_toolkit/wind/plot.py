@@ -446,3 +446,104 @@ def windrose(
     plt.tight_layout()
 
     return fig
+
+
+def windhist(
+    wind_direction_bins: List[float],
+    radial_bins: List[float],
+    values: List[List[float]],
+    cmap: Union[Colormap, str] = None,
+    include_labels: bool = False,
+    include_cbar: bool = True,
+    cmap_label: str = None,
+    cbar_freq: bool = False,
+    title: str = None,
+) -> plt.Figure:
+    """Create a radial 2d heatmap-histogram.
+
+    Args:
+        wind_direction_bins (List[float]): _description_
+        radial_bins (List[float]): _description_
+        values (List[List[float]]): _description_
+        cmap (Union[Colormap, str], optional): _description_. Defaults to None.
+        include_labels (bool, optional): _description_. Defaults to False.
+        include_cbar (bool, optional): _description_. Defaults to True.
+        cmap_label (str, optional): _description_. Defaults to None.
+        cbar_freq (bool, optional): _description_. Defaults to False.
+        title (str, optional): _description_. Defaults to None.
+
+    Raises:
+        NotImplementedError: _description_
+
+    Returns:
+        plt.Figure: _description_
+    """
+
+    # set cmap defaults
+    if isinstance(cmap, str):
+        cmap = plt.get_cmap(cmap)
+    if cmap is None:
+        cmap = plt.get_cmap("magma_r")
+
+    # plot figure
+    fig, ax = plt.subplots(1, 1, figsize=(7, 7), subplot_kw={"projection": "polar"})
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+    pc = ax.pcolormesh(
+        wind_direction_bins,
+        radial_bins,
+        values,
+        cmap=cmap,
+        alpha=1,
+        ec="none",
+        lw=0,
+        zorder=0,
+    )
+
+    # format plot area
+    ax.spines["polar"].set_visible(False)
+    ax.grid(True, which="both", ls="--", zorder=0, alpha=0.25, c="k")
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+    plt.setp(ax.get_yticklabels(), fontsize="small")
+    ax.set_xticks(np.radians((0, 90, 180, 270)), minor=False)
+    ax.set_xticklabels(("N", "E", "S", "W"), minor=False, **{"fontsize": "medium"})
+    ax.set_xticks(
+        np.radians(
+            (22.5, 45, 67.5, 112.5, 135, 157.5, 202.5, 225, 247.5, 292.5, 315, 337.5)
+        ),
+        minor=True,
+    )
+    ax.set_xticklabels(
+        (
+            "NNE",
+            "NE",
+            "ENE",
+            "ESE",
+            "SE",
+            "SSE",
+            "SSW",
+            "SW",
+            "WSW",
+            "WNW",
+            "NW",
+            "NNW",
+        ),
+        minor=True,
+        **{"fontsize": "x-small"},
+    )
+
+    if include_cbar:
+        cb = fig.colorbar(
+            pc, pad=0.07, drawedges=False, label=cmap_label, extend="max", aspect=50
+        )
+        cb.outline.set_visible(False)
+        if cbar_freq:
+            cb.ax.axes.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+
+    if include_labels:
+        raise NotImplementedError("TODO - add functionality")
+
+    if title:
+        ax.set_title(title, x=0, ha="left", va="bottom")
+
+    plt.tight_layout()

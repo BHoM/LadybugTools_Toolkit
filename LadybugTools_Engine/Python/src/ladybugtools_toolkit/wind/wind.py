@@ -24,7 +24,13 @@ from ..helpers import (
 )
 from ..ladybug_extension.analysis_period import to_datetimes
 from .direction_bins import DirectionBins
-from .plot import cumulative_probability, speed_frequency, timeseries, windrose
+from .plot import (
+    cumulative_probability,
+    speed_frequency,
+    timeseries,
+    windhist,
+    windrose,
+)
 
 
 class Wind:
@@ -332,6 +338,10 @@ class Wind:
     def median(self) -> float:
         """Return the median wind speed for this object."""
         return self.ws.median()
+
+    def calm(self) -> float:
+        """Return the proportion of timesteps "calm" (i.e. wind-speed == 0)."""
+        return (self.ws == 0).sum() / len(self.ws)
 
     def percentile(self, percentile: float) -> float:
         """Calculate the wind speed at the given percentile.
@@ -904,6 +914,73 @@ class Wind:
             include_legend=include_legend,
             include_percentages=include_percentages,
         )
+
+    def plot_windhist(
+        self,
+        direction_bins: DirectionBins = DirectionBins(),
+        speed_bins: List[float] = None,
+        density: bool = False,
+        include_cbar: bool = True,
+        title: str = None,
+        cmap: Union[Colormap, str] = "magma_r",
+    ) -> plt.Figure:
+        """_summary_
+
+        Args:
+            direction_bins (DirectionBins, optional): _description_. Defaults to DirectionBins().
+            speed_bins (List[float], optional): _description_. Defaults to None.
+            density (bool, optional): _description_. Defaults to False.
+            include_cbar (bool, optional): _description_. Defaults to True.
+            title (str, optional): _description_. Defaults to None.
+            cmap (Union[Colormap, str], optional): _description_. Defaults to "magma_r".
+
+        Returns:
+            plt.Figure: _description_
+        """
+
+        # remove calm hours and store % calm
+        calm_percentage = self.calm()
+        new_w = self.filter_by_speed(
+            min_speed=0.00001, max_speed=np.inf, inclusive=False
+        )
+
+        if speed_bins is None:
+            _low = int(np.floor(new_w.min()))
+            _high = int(np.ceil(new_w.max()))
+            speed_bins = np.linspace(_low, _high, (_high - _low) + 1)
+
+        if title is not None:
+            ti = f"{title}\n{calm_percentage:0.1%} calm"
+        else:
+            ti = f"{self}\n{calm_percentage:0.1%} calm"
+
+        frequency_table = new_w.frequency_table(
+            speed_bins, direction_bins, density=density, include_counts=False
+        )
+
+        direction_angles = np.deg2rad(direction_bins.midpoints)
+        radial_bins = [np.mean(i) for i in frequency_table.index]
+
+        if density:
+            cmap_label = "Frequency"  #
+            cbar_freq = True
+        else:
+            cmap_label = "n-occurences"
+            cbar_freq = False
+
+        fig = windhist(
+            direction_angles,
+            radial_bins,
+            frequency_table.values,
+            cmap=cmap,
+            include_labels=False,
+            include_cbar=include_cbar,
+            cmap_label=cmap_label,
+            cbar_freq=cbar_freq,
+            title=ti,
+        )
+
+        return fig
 
     def plot_timeseries(self, color: str = "grey") -> plt.Figure:  # type: ignore
         """Create a simple line plot of wind speed.
