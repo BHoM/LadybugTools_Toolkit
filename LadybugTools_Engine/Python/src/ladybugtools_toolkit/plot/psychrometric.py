@@ -11,9 +11,6 @@ from ladybug.datacollection import BaseCollection
 from ladybug.psychchart import PsychrometricChart
 from ladybug_comfort.chart.polygonpmv import PMVParameter, PolygonPMV
 from ladybug_geometry.geometry2d import LineSegment2D, Mesh2D, Polyline2D
-
-# from ladybug_rhino.config import tolerance
-# from ladybug_rhino.fromgeometry import from_polyline2d_to_offset_brep
 from ladybugtools_toolkit.ladybug_extension.analysis_period import (
     describe,
     to_datetimes,
@@ -87,7 +84,10 @@ class PsychrometricPolygons:
         init=True, default=PassiveStrategyParameters()
     )
     pmv_parameter: PMVParameter = field(init=True, default=PMVParameter())
-    # merged: bool = field(init=True, default=False)
+    mean_radiant_temperature: float = field(init=True, default=None)
+    air_speed: float = field(init=True, default=0.1)
+    metabolic_rate: float = field(init=True, default=1.1)
+    clo_value: float = field(init=True, default=0.7)
 
     def __post_init__(self):
         if len(self.strategies) >= 1:
@@ -353,6 +353,7 @@ def psychrometric(
                 )
             else:
                 strategy_warning(polygon_name)
+                return None, None, None
 
             return polygon_name, strategy_poly, dat
 
@@ -380,6 +381,10 @@ def psychrometric(
 
         poly_obj = PolygonPMV(
             psychart,
+            rad_temperature=[psychro_polygons.mean_radiant_temperature],
+            air_speed=[psychro_polygons.air_speed],
+            met_rate=[psychro_polygons.metabolic_rate],
+            clo_value=[psychro_polygons.clo_value],
         )
 
         # add generic comfort polygon
@@ -417,30 +422,31 @@ def psychrometric(
             name, poly, dat = process_polygon(
                 PassiveStrategy.EVAPORATIVE_COOLING.value, ec_poly
             )
-            polygon_data.append(dat)
-            polygon_names.append(name)
-            ax.add_collection(
-                PatchCollection(
-                    [Polygon(poly)],
-                    fc="none",
-                    ec="blue",
-                    zorder=8,
-                    lw=1,
-                    alpha=0.5,
-                    ls="--",
+            if not all(i is None for i in [name, poly, dat]):
+                polygon_data.append(dat)
+                polygon_names.append(name)
+                ax.add_collection(
+                    PatchCollection(
+                        [Polygon(poly)],
+                        fc="none",
+                        ec="blue",
+                        zorder=8,
+                        lw=1,
+                        alpha=0.5,
+                        ls="--",
+                    )
                 )
-            )
-            xx, yy = polygon_centroid(*np.array(poly).T)
-            ax.text(
-                xx,
-                yy,
-                "\n".join(textwrap.wrap(name, 12)),
-                fontsize="xx-small",
-                c="blue",
-                ha="center",
-                va="center",
-                zorder=8,
-            )
+                xx, yy = polygon_centroid(*np.array(poly).T)
+                ax.text(
+                    xx,
+                    yy,
+                    "\n".join(textwrap.wrap(name, 12)),
+                    fontsize="xx-small",
+                    c="blue",
+                    ha="center",
+                    va="center",
+                    zorder=8,
+                )
 
         if PassiveStrategy.MASS_NIGHT_VENTILATION in psychro_polygons.strategies:
             nf_poly = poly_obj.night_flush_polygon(
@@ -491,30 +497,31 @@ def psychrometric(
             name, poly, dat = process_polygon(
                 PassiveStrategy.INTERNAL_HEAT_CAPTURE.value, iht_poly
             )
-            polygon_data.append(dat)
-            polygon_names.append(name)
-            ax.add_collection(
-                PatchCollection(
-                    [Polygon(poly)],
-                    fc="none",
-                    ec="orange",
-                    zorder=8,
-                    lw=1,
-                    alpha=0.5,
-                    ls="--",
+            if not all(i is None for i in [name, poly, dat]):
+                polygon_data.append(dat)
+                polygon_names.append(name)
+                ax.add_collection(
+                    PatchCollection(
+                        [Polygon(poly)],
+                        fc="none",
+                        ec="orange",
+                        zorder=8,
+                        lw=1,
+                        alpha=0.5,
+                        ls="--",
+                    )
                 )
-            )
-            xx, yy = polygon_centroid(*np.array(poly).T)
-            ax.text(
-                xx,
-                yy,
-                "\n".join(textwrap.wrap(name, 12)),
-                fontsize="xx-small",
-                c="orange",
-                ha="center",
-                va="center",
-                zorder=8,
-            )
+                xx, yy = polygon_centroid(*np.array(poly).T)
+                ax.text(
+                    xx,
+                    yy,
+                    "\n".join(textwrap.wrap(name, 12)),
+                    fontsize="xx-small",
+                    c="orange",
+                    ha="center",
+                    va="center",
+                    zorder=8,
+                )
 
         if PassiveStrategy.OCCUPANT_FAN_USE in psychro_polygons.strategies:
             fan_poly = poly_obj.fan_use_polygon(
@@ -523,34 +530,35 @@ def psychrometric(
             name, poly, dat = process_polygon(
                 PassiveStrategy.OCCUPANT_FAN_USE.value, fan_poly
             )
-            polygon_data.append(dat)
-            polygon_names.append(name)
-            ax.add_collection(
-                PatchCollection(
-                    [Polygon(poly)],
-                    fc="none",
-                    ec="cyan",
-                    zorder=8,
-                    lw=1,
-                    alpha=0.5,
-                    ls="--",
+            if not all(i is None for i in [name, poly, dat]):
+                polygon_data.append(dat)
+                polygon_names.append(name)
+                ax.add_collection(
+                    PatchCollection(
+                        [Polygon(poly)],
+                        fc="none",
+                        ec="cyan",
+                        zorder=8,
+                        lw=1,
+                        alpha=0.5,
+                        ls="--",
+                    )
                 )
-            )
-            xx, yy = polygon_centroid(*np.array(poly).T)
-            ax.text(
-                xx,
-                yy,
-                "\n".join(textwrap.wrap(name, 12)),
-                fontsize="xx-small",
-                c="cyan",
-                ha="center",
-                va="center",
-                zorder=8,
-            )
+                xx, yy = polygon_centroid(*np.array(poly).T)
+                ax.text(
+                    xx,
+                    yy,
+                    "\n".join(textwrap.wrap(name, 12)),
+                    fontsize="xx-small",
+                    c="cyan",
+                    ha="center",
+                    va="center",
+                    zorder=8,
+                )
 
         if PassiveStrategy.PASSIVE_SOLAR_HEATING in psychro_polygons.strategies:
             warn(
-                f"{PassiveStrategy.PASSIVE_SOLAR_HEATING} assumes radiation from skylights only given global horizontal radiation."
+                f"{PassiveStrategy.PASSIVE_SOLAR_HEATING} assumes radiation from skylights only, using global horizontal radiation."
             )
             bal_t = (
                 psychro_polygons.strategy_parameters.balance_temperature
@@ -614,11 +622,20 @@ def psychrometric(
         # add total comfort to chart
         comfort_text = []
         for strat, val in list(zip(*[polygon_names, polygon_comfort])):
-            comfort_text.append(f"{strat+':':<22} {val:>02.1%}")
+            comfort_text.append(f"{strat+':':<22} {val:>6.1%}")
+        comfort_text = "\n".join(comfort_text)
+        settings_text = "\n".join(
+            [
+                f'MRT: {"DBT" if psychro_polygons.mean_radiant_temperature is None else psychro_polygons.mean_radiant_temperature}',
+                f" WS: {psychro_polygons.air_speed}m/s",
+                f"CLO: {psychro_polygons.clo_value}",
+                f"MET: {psychro_polygons.metabolic_rate}",
+            ]
+        )
         ax.text(
             0.3,
             0.98,
-            "\n".join(comfort_text),
+            "\n\n".join([settings_text, comfort_text]),
             transform=ax.transAxes,
             ha="left",
             va="top",
