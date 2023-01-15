@@ -1668,6 +1668,15 @@ def spatial_comfort_possible(simulation_directory: Path) -> bool:
 
     simulation_directory = Path(simulation_directory)
 
+    # if process already run (and output files already exist), then return true
+    if all(
+        [
+            SpatialMetric.RAD_TOTAL.filepath(simulation_directory).exists(),
+            SpatialMetric.SKY_VIEW.filepath(simulation_directory).exists(),
+        ]
+    ):
+        return True
+
     # Check for annual irradiance data
     annual_irradiance_directory = simulation_directory / "annual_irradiance"
     if (
