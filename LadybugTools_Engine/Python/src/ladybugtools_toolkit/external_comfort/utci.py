@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.epw import EPW
+from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
 from matplotlib.colors import (
     BoundaryNorm,
@@ -23,8 +25,15 @@ from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
 from ..ladybug_extension.analysis_period import describe as describe_analysis_period
+from ..ladybug_extension.analysis_period import to_boolean
 from ..ladybug_extension.datacollection import from_series, to_series
+from ..ladybug_extension.epw import (
+    seasonality_from_day_length,
+    seasonality_from_month,
+    seasonality_from_temperature,
+)
 from ..plot.colormaps import UTCI_LABELS, UTCI_LEVELS
+from .moisture import evaporative_cooling_effect_collection
 
 
 class UniversalThermalClimateIndex(Enum):
@@ -1121,3 +1130,71 @@ def categorise(
         return df
 
     return pd.cut(values, bins, labels=labels)
+
+
+def determine_utci_temporal_limits(
+    epw: EPW,
+    st_hour: float = 0,
+    end_hour: float = 23,
+    seasonality: str = None,
+    comfort_limits: List[float] = [9, 26],
+) -> pd.DataFrame:
+
+    # sx = [ None, "seasonality_from_day_length", "seasonality_from_month", "seasonality_from_temperature"]
+    # if seasonality not in sx:
+    #     raise ValueError(f"seasonality must be one of {sx}")
+
+    mrt = OutdoorSolarCal(
+        epw.location,
+        epw.direct_normal_radiation,
+        epw.diffuse_horizontal_radiation,
+        epw.horizontal_infrared_radiation_intensity,
+        epw.dry_bulb_temperature,
+    ).mean_radiant_temperature
+    dbt_evap, rh_evap = evaporative_cooling_effect_collection(
+        epw, evaporative_cooling_effectiveness=0.5
+    )
+
+    # perfect shade, wind, evap cooled air at 50%
+    min_utci = UTCI(
+        air_temperature=dbt_evap,
+        rad_temperature=epw.dry_bulb_temperature,
+        rel_humidity=rh_evap,
+        wind_speed=epw.wind_speed,
+    ).universal_thermal_climate_index
+    max_utci = UTCI(
+        air_temperature=epw.dry_bulb_temperature,
+        rad_temperature=mrt,
+        rel_humidity=epw.relative_humidity,
+        wind_speed=epw.wind_speed.get_aligned_collection(0),
+    ).universal_thermal_climate_index
+
+    utci_range = pd.concat([to_series(min_utci), to_series(max_utci)], axis=1).agg(
+        ["min", "max"], axis=1
+    )
+
+    analysis_period = AnalysisPeriod(st_hour=st_hour, end_hour=end_hour)
+    ap_bool = to_boolean(analysis_period)
+
+    low_limit = min(comfort_limits)
+    high_limit = max(comfort_limits)
+
+    temp = utci_range[ap_bool]
+
+    if seasonality is None:
+        temp = (
+            (((temp >= low_limit) & (temp <= high_limit)).sum() / temp.count())
+            .sort_values()
+            .to_frame()
+        )
+        temp.index = ["low", "high"]
+        temp.columns = [describe(analysis_period)]
+    else:
+        seasons = seasonality(epw)[ap_bool]
+        temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
+            seasons
+        ).sum() / temp.groupby(seasons).count()
+        temp = temp.agg(["min", "max"], axis=1)
+        temp.columns = ["low", "high"]
+
+    return temp
