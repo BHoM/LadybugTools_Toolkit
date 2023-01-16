@@ -10,7 +10,7 @@ from ladybugtools_toolkit.external_comfort.material import (
 from ...tests import BASE_IDENTIFIER
 
 MATERIALS = [
-    OpaqueMaterial(BASE_IDENTIFIER, 1, 1, 100, 100),
+    OpaqueMaterial(BASE_IDENTIFIER, 1, 1, 100, 100, "test"),
     OpaqueVegetationMaterial(BASE_IDENTIFIER, 1, 1, 100, 100),
 ]
 

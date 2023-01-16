@@ -25,6 +25,24 @@ def to_datetimes(
     return datetimes
 
 
+def to_boolean(
+    analysis_period: AnalysisPeriod,
+) -> List[bool]:
+    """Convert an AnalysisPeriod object into a list of booleans where values within the Period are also within a default whole analysis period of the same interval.
+
+    Args:
+        analysis_period (AnalysisPeriod): An AnalysisPeriod object.
+
+    Returns:
+        List[bool]: A list of booleans
+    """
+
+    generic_datetimes = to_datetimes(AnalysisPeriod(timestep=analysis_period.timestep))
+    datetimes = to_datetimes(analysis_period)
+
+    return generic_datetimes.isin(datetimes).tolist()
+
+
 def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
     """Convert a list of datetimes (in order from earliest to latest) into an AnalysisPeriod object.
 
