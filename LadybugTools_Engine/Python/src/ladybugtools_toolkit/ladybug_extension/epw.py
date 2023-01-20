@@ -10,12 +10,12 @@ import numpy as np
 import pandas as pd
 from caseconverter import pascalcase
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datacollection import BaseCollection, HourlyContinuousCollection
 from ladybug.datatype.angle import Angle
 from ladybug.datatype.fraction import Fraction, HumidityRatio
 from ladybug.datatype.generic import GenericType
 from ladybug.datatype.specificenergy import Enthalpy
-from ladybug.datatype.temperature import WetBulbTemperature
+from ladybug.datatype.temperature import DryBulbTemperature, WetBulbTemperature
 from ladybug.datatype.time import Time
 from ladybug.epw import EPW, EPWFields, MonthlyCollection
 from ladybug.header import Header
@@ -28,6 +28,7 @@ from ladybug.psychrometrics import (
 from ladybug.skymodel import clearness_index as lb_ci
 from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
+from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
 from .analysis_period import to_datetimes
 from .datacollection import to_series
@@ -1199,3 +1200,69 @@ def seasonality_from_temperature(epw: EPW, sample_period_days: int = 8) -> pd.Se
             ),
         )
     return pd.Series(categories, index=dbt.index, name="season")
+
+
+def degree_time(
+    epws: List[EPW],
+    heat_base: float = 18,
+    cool_base: float = 23,
+    return_type: str = "days",
+    names: List[str] = None,
+):
+
+    cooling_degree_time_v = np.vectorize(cooling_degree_time)
+    heating_degree_time_v = np.vectorize(heating_degree_time)
+
+    if heat_base > cool_base:
+        warnings.warn("cool_base is lower than heat_base!")
+
+    if not return_type.lower() in ["days", "hours"]:
+        raise ValueError('return_type must be one of "days" or "hours".')
+
+    if names is None:
+        names = [Path(i.file_path).stem for i in epws]
+    else:
+        if len(names) != len(epws):
+            raise ValueError("names must be the same length as epws.")
+        names = [str(i) for i in names]
+
+    df = pd.concat(
+        [to_series(epw.dry_bulb_temperature) for epw in epws], axis=1, keys=names
+    )
+
+    cdh = pd.DataFrame(
+        cooling_degree_time_v(df, cool_base), index=df.index, columns=df.columns
+    )
+    hdh = pd.DataFrame(
+        heating_degree_time_v(df, heat_base), index=df.index, columns=df.columns
+    )
+
+    if return_type.lower() == "hours":
+        return (
+            pd.concat(
+                [cdh, hdh],
+                axis=1,
+                keys=[
+                    f"Cooling Degree Hours (>{cool_base})",
+                    f"Heating Degree Hours (<{heat_base})",
+                ],
+            )
+            .reorder_levels([1, 0], axis=1)
+            .sort_index(axis=1)
+        )
+
+    cdd = cdh.resample("1D").sum() / 24
+    hdd = hdh.resample("1D").sum() / 24
+
+    return (
+        pd.concat(
+            [cdd, hdd],
+            axis=1,
+            keys=[
+                f"Cooling Degree Days (>{cool_base})",
+                f"Heating Degree Days (<{heat_base})",
+            ],
+        )
+        .reorder_levels([1, 0], axis=1)
+        .sort_index(axis=1)
+    )
