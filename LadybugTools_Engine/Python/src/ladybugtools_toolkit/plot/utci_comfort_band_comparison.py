@@ -10,9 +10,80 @@ from ..ladybug_extension.datacollection import to_series
 from .colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
 
+def utci_comfort_band_comparison_simple(
+    utcis: List[HourlyContinuousCollection],
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
+    identifiers: List[str] = None,
+    title: str = None,
+    comfort_limits: List[float] = [9, 26],
+    vertical: bool = True,
+) -> plt.Figure:
+
+    if identifiers is None:
+        identifiers = [f"{n}" for n in range(len(utcis))]
+    if len(identifiers) != len(utcis):
+        raise ValueError(
+            "The number of identifiers given does not match the number of UTCI collections given!"
+        )
+
+    colors = ["#3C65AF", "#2EB349", "#C31F25"]
+    levels = [-100, min(comfort_limits), max(comfort_limits), 100]
+    labels = ["Too cold", "Comfortable", "Too hot"]
+
+    df = pd.concat(
+        [to_series(col.filter_by_analysis_period(analysis_period)) for col in utcis],
+        axis=1,
+    )
+    df.columns = [textwrap.fill(label, 15) for label in identifiers]
+
+    # cut utci values into bins based on thresholds
+    counts = pd.concat(
+        [pd.cut(df[i], bins=levels, labels=labels).value_counts() for i in df.columns],
+        axis=1,
+    )
+    counts = counts / counts.sum(axis=0)
+
+    fig, ax = plt.subplots(1, 1, figsize=(2 * len(utcis), 5))
+    counts.T.plot(ax=ax, kind="bar", stacked=True, color=colors, width=0.8)
+
+    handles, labels = ax.get_legend_handles_labels()
+    _ = ax.legend(
+        reversed(handles),
+        reversed(labels),
+        loc="upper left",
+        bbox_to_anchor=[1, 1],
+        frameon=False,
+        fontsize="small",
+        ncol=1,
+        title="Comfort categories",
+    )
+    for spine in ["top", "right", "bottom", "left"]:
+        ax.spines[spine].set_visible(False)
+
+    for c in ax.containers:
+
+        # Optional: if the segment is small or 0, customize the labels
+        labels = [f"{v.get_height():0.1%}" if v.get_height() > 0.035 else "" for v in c]
+
+        # remove the labels parameter if it's not needed for customized labels
+        ax.bar_label(c, labels=labels, label_type="center")
+
+    plt.xticks(rotation=0)
+    plt.gca().yaxis.set_major_locator(plt.NullLocator())
+
+    if title is None:
+        ax.set_title(f"{analysis_period}", y=1, x=0.06, ha="left", va="bottom")
+    else:
+        ax.set_title(f"{title}\n{analysis_period}", y=1, x=0.06, ha="left", va="bottom")
+
+    plt.tight_layout()
+
+    return fig
+
+
 def utci_comfort_band_comparison(
     utcis: List[HourlyContinuousCollection],
-    analysis_period: AnalysisPeriod,
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
     identifiers: List[str] = None,
     title: str = None,
 ) -> plt.Figure:

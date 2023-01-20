@@ -33,7 +33,7 @@ def load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
     return pd.concat([func(i) for i in files], axis=1).sort_index(axis=1)
 
 
-def load_ill_file(ill_file: Union[str, Path]) -> pd.Series:
+def load_ill_file(ill_file: Union[str, Path]) -> pd.DataFrame:
     """Load a Radiance .ill file and return a DataFrame with the data.
 
     Args:
@@ -60,6 +60,41 @@ def load_ill(ill_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFram
         pd.DataFrame: A DataFrame containing the data from the input .ill files.
     """
     return load_files(load_ill_file, ill_files)
+
+
+def load_npy_file(npy_file: Union[str, Path]) -> pd.DataFrame:
+    """Load a Honeybee-Radiance .npy file and return a DataFrame with the data.
+
+    Args:
+        ill_file (Union[str, Path]): The path to the Radiance .ill file.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the data from the .ill file.
+    """
+    npy_file = Path(npy_file)
+
+    # get the "results" directory and sun-up-hours file
+    for parent in npy_file.parents:
+        if parent.name == "results":
+            sun_up_hours_file = parent / "sun-up-hours.txt"
+            break
+
+    df = pd.DataFrame(np.load(npy_file)).T
+    df.columns = pd.MultiIndex.from_product([[npy_file.stem], df.columns])
+    df.index = load_sun_up_hours(sun_up_hours_file)
+    return df
+
+
+def load_npy(npy_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
+    """Load a single Honeybee-Radiance .npy file, or list of Honeybee-Radiance .npy files and return a combined DataFrame with the data.
+
+    Args:
+        npy_files (Union[str, Path, List[Union[str, Path]]]): A single .npy file, or a list of .npy files.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the data from the input .npy files.
+    """
+    return load_files(load_npy_file, npy_files)
 
 
 def load_pts_file(pts_file: Union[str, Path]) -> pd.DataFrame:
