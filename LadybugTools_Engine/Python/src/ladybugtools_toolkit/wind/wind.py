@@ -16,6 +16,7 @@ from tqdm import tqdm
 from ..external_comfort.wind import wind_speed_at_height
 from ..helpers import (
     OpenMeteoVariable,
+    circular_weighted_mean,
     rolling_window,
     scrape_openmeteo,
     weibull_directional,
@@ -237,6 +238,39 @@ class Wind:
         datetimes = df.index.tolist()
         return Wind(wind_speeds, wind_directions, datetimes, 10)
 
+    @classmethod
+    def from_average(
+        cls, wind_objects: List[Wind], weights: List[float] = None
+    ) -> Wind:
+        """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
+
+        # align collections so that intersection only is created
+        df = pd.concat([i.df for i in wind_objects], axis=1)
+
+        # create default weightings if None
+        if weights is None:
+            weights = [1 / len(wind_objects)] * len(wind_objects)
+        else:
+            if sum(weights) != 1:
+                raise ValueError("weights must total 1.")
+
+        # align collections so that intersection only is created
+        df_ws = pd.concat([i.ws for i in wind_objects], axis=1).dropna()
+        df_wd = pd.concat([i.wd for i in wind_objects], axis=1).dropna()
+
+        # construct the weighted means
+        wd_avg = [circular_weighted_mean(i, weights) for r, i in df_wd.iterrows()]
+        ws_avg = np.average(df_ws, axis=1, weights=weights)
+        dts = df_ws.index
+
+        # return the new averaged object
+        return Wind(
+            ws_avg,
+            wd_avg,
+            dts,
+            np.average([i.height_above_ground for i in wind_objects], weights=weights),
+        )
+
     ##################
     # STATIC METHODS #
     ##################
@@ -339,9 +373,9 @@ class Wind:
         """Return the median wind speed for this object."""
         return self.ws.median()
 
-    def calm(self) -> float:
-        """Return the proportion of timesteps "calm" (i.e. wind-speed == 0)."""
-        return (self.ws == 0).sum() / len(self.ws)
+    def calm(self, threshold: float = 0.1) -> float:
+        """Return the proportion of timesteps "calm" (i.e. wind-speed <= 0.1)."""
+        return (self.ws <= threshold).sum() / len(self.ws)
 
     def percentile(self, percentile: float) -> float:
         """Calculate the wind speed at the given percentile.
@@ -871,6 +905,7 @@ class Wind:
         include_percentages: bool = False,
         title: str = None,
         cmap: Union[Colormap, str] = "YlGnBu",
+        calm_threshold: float = 0.1,
     ) -> plt.Figure:  # type: ignore
         """Create a windrose.
 
@@ -894,15 +929,15 @@ class Wind:
         """
 
         # remove calm hours and store % calm
-        calm_percentage = (self.ws == 0).sum() / len(self.ws)
+        calm_percentage = self.calm(calm_threshold)
         new_w = self.filter_by_speed(
-            min_speed=0.00001, max_speed=np.inf, inclusive=False
+            min_speed=calm_threshold, max_speed=np.inf, inclusive=False
         )
 
         if title is not None:
-            ti = f"{title}\n{calm_percentage:0.1%} calm"
+            ti = f"{title}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
         else:
-            ti = f"{self}\n{calm_percentage:0.1%} calm"
+            ti = f"{self}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
 
         return windrose(
             wind_directions=new_w.wd.tolist(),
@@ -923,6 +958,7 @@ class Wind:
         include_cbar: bool = True,
         title: str = None,
         cmap: Union[Colormap, str] = "magma_r",
+        calm_threshold: float = 0.1,
     ) -> plt.Figure:
         """_summary_
 
@@ -939,9 +975,9 @@ class Wind:
         """
 
         # remove calm hours and store % calm
-        calm_percentage = self.calm()
+        calm_percentage = self.calm(calm_threshold)
         new_w = self.filter_by_speed(
-            min_speed=0.00001, max_speed=np.inf, inclusive=False
+            min_speed=calm_threshold, max_speed=np.inf, inclusive=False
         )
 
         if speed_bins is None:
@@ -950,9 +986,9 @@ class Wind:
             speed_bins = np.linspace(_low, _high, (_high - _low) + 1)
 
         if title is not None:
-            ti = f"{title}\n{calm_percentage:0.1%} calm"
+            ti = f"{title}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
         else:
-            ti = f"{self}\n{calm_percentage:0.1%} calm"
+            ti = f"{self}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
 
         frequency_table = new_w.frequency_table(
             speed_bins, direction_bins, density=density, include_counts=False

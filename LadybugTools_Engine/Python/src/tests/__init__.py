@@ -26,5 +26,6 @@ EPW_CSV_FILE = (Path(__file__).parent / "files" / "example.csv",)
 RES_FILE = Path(__file__).parent / "files" / "example.res"
 SQL_FILE = Path(__file__).parent / "files" / "example.sql"
 ILL_FILE = Path(__file__).parent / "files" / "example.ill"
+NPY_FILE = Path(__file__).parent / "files" / "example.npy"
 PTS_FILE = Path(__file__).parent / "files" / "example.pts"
 CFD_DIRECTORY = Path(__file__).parent / "files" / "cfd"

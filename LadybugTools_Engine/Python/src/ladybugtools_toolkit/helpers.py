@@ -23,6 +23,8 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
+from ladybug.datatype.temperature import DryBulbTemperature
+from ladybug.datacollection import BaseCollection
 from matplotlib.figure import Figure
 from scipy.stats import exponweib
 from tqdm import tqdm
@@ -885,8 +887,8 @@ def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
         return (1, np.nan, 0, np.nan)  # type: ignore
 
 
-def wind_direction_average(angles: List[float]) -> float:
-    """Get the average wind direction from a set of wind directions.
+def circular_weighted_mean(angles: List[float], weights: List[float]):
+    """Get the average angle from a set of weighted angles.
 
     Args:
         angles (List[float]):
@@ -897,10 +899,52 @@ def wind_direction_average(angles: List[float]) -> float:
             An average wind direction.
     """
 
+    angles = np.array(angles)
+    weights = np.array(weights)
+
+    if angles.shape != weights.shape:
+        raise ValueError("weights must be the same size as angles.")
+
+    if np.any(angles < 0) or np.any(angles > 360):
+        raise ValueError("Input angles exist outside of expected range (0-360).")
+
+    if weights is None:
+        weights = np.ones_like(angles) / len(angles)
+
+    if sum(weights) != 1:
+        raise ValueError("weights must total 1.")
+
+    x = y = 0.0
+    for angle, weight in zip(angles, weights):
+        x += np.cos(np.radians(angle)) * weight
+        y += np.sin(np.radians(angle)) * weight
+
+    mean = np.degrees(np.arctan2(y, x))
+
+    if mean < 0:
+        mean = 360 + mean
+
+    return mean
+
+
+def wind_direction_average(angles: List[float]) -> float:
+    """Get the average wind direction from a set of wind directions.
+
+    Args:
+        angles (List[float]):
+            A collection of equally weighted wind directions, in degrees from North (0).
+        weights (List[float]):
+            A collection of weights between 0-1, summing to 1.
+
+    Returns:
+        float:
+            An average weighted angle.
+    """
+
     angles = np.array(angles)  # type: ignore
 
     if np.any(angles < 0) or np.any(angles > 360):  # type: ignore
-        raise ValueError("Input wind speeds exist outside of expected range (0-360).")
+        raise ValueError("Input angles exist outside of expected range (0-360).")
 
     if len(angles) == 0:
         return np.NaN
