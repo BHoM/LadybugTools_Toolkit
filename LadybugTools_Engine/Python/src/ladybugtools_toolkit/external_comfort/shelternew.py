@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import warnings
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
@@ -12,7 +12,11 @@ import pandas as pd
 from astropy import units as u
 from astropy.coordinates import SkyCoord, cartesian_to_spherical, spherical_to_cartesian
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
+from ladybug.hourlyplot import HourlyPlot
 from ladybug.sunpath import Sun
+from ladybug_geometry.geometry2d import Vector2D
+from ladybug_geometry.geometry3d import Vector3D
+from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
 from ladybugtools_toolkit.helpers import wind_direction_average
 from matplotlib.collections import PatchCollection
 from shapely.geometry import Polygon
@@ -26,6 +30,90 @@ from spherical_geometry.vector import (
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..ladybug_extension.datacollection import from_series, to_series
 from ..ladybug_extension.epw import Sunpath, sun_position_list
+
+
+def altaz_to_xyz(altitude: float, azimuth: float) -> Tuple[float]:
+    """Convert an altitude and azimuth into xyz coordinates, with x=right, y=forwards, z=up."""
+
+    if (altitude > 90) or (altitude < 0):
+        raise ValueError(f"altitude must be in range 0-90")
+
+    # remap azimuth to 0-360 range
+    azimuth = azimuth % 360
+
+    # convert inputs to radians
+    azimuth = np.deg2rad(azimuth)
+    altitude = np.deg2rad(altitude)
+
+    x_axis = Vector3D(1, 0, 0)
+    north_vector = Vector3D(0, 1, 0)
+
+    x, y, z = north_vector.rotate(x_axis, altitude).rotate_xy(-azimuth).to_array()
+    return x, y, z
+
+
+def xyz_to_altaz(x: float, y: float, z: float) -> Tuple[float]:
+    """Convert an xyz vector into altitude, azimuth coordinates, with altitude in degrees elevation above horizon and azimuth in degrees clockwise from North."""
+    vector = Vector3D(x, y, z).normalize()
+
+    try:
+        azimuth = np.rad2deg(
+            Vector2D(0, 1).angle_clockwise(Vector2D(vector.x, vector.y))
+        )
+    except ZeroDivisionError:
+        return 90.0, 0.0
+
+    altitude = 90 - np.rad2deg(
+        np.arccos(vector.z / np.sqrt(vector.x**2 + vector.y**2 + vector.z**2))
+    )
+
+    return altitude, float(azimuth) % 360
+
+
+def point3d_to_altaz(point: Point3D) -> Tuple[float]:
+    """Convert a ladybug Point3D object into a altitude, azimuth coordinate."""
+    x, y, z = point
+    return xyz_to_altaz(x, y, z)
+
+
+def altaz_to_skycoord(altitude: float, azimuth: float) -> SkyCoord:
+    """Convert an altitude, azimuth coordinate to a SkyCoord object"""
+    return SkyCoord(
+        alt=altitude * u.degree,
+        az=azimuth * u.degree,
+        frame="altaz",
+        representation_type="spherical",
+    )
+
+
+@dataclass(init=True, repr=True, eq=True)
+class ShelterRaDec(BHoMObject):
+    vertices: List[List[float]] = field(
+        init=True, repr=False
+    )  # a list of ra-dec coordinates representing the vertices of the sheltering object
+    wind_porosity: float = field(init=True, repr=True, compare=True, default=0)
+    radiation_porosity: float = field(init=True, repr=True, compare=True, default=0)
+    inside: List[float] = field(init=True, repr=False, default=None)
+
+    _t: str = field(
+        init=False, repr=False, compare=True, default="BH.oM.LadybugTools.Shelter"
+    )
+
+    @staticmethod
+    def xyz_to_radec(
+        xyz: List[List[float]], north_angle: float = 0
+    ) -> List[List[float]]:
+        xyz: np.ndarray = np.array(xyz)
+        # check that size is (n, 3)
+        if len(xyz.shape) != 2:
+            raise ValueError(
+                "xyz must be a list of x, y, z coordinates and 2-dimensional ([[x, y, z], ...])."
+            )
+        if xyz.shape[-1] != 3:
+            raise ValueError(f"xyz shape must be (n, 3), currently it is {xyz.shape}.")
+        ra, dec = vector_to_radec(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2])
+        # ra += 90 + north_angle
+        return ra, dec
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -42,6 +130,8 @@ class Shelter(BHoMObject):
     _t: str = field(
         init=False, repr=False, compare=True, default="BH.oM.LadybugTools.Shelter"
     )
+
+    # TODO - convert all coordinates internally to ra-dec form for easier processing
 
     def __post_init__(self):
 
@@ -68,6 +158,8 @@ class Shelter(BHoMObject):
         sp = self.spherical_polygon
         # if len(list(sp.to_lonlat())) != 1:
         #     raise ValueError("more than 1 spherical_polygon created by this object!")
+
+        self._inside = self.spherical_polygon.inside
 
         # check for self-intersection
         try:
@@ -141,6 +233,63 @@ class Shelter(BHoMObject):
     ) -> List[float]:
         return self.sun_exposure_location(epw.location, analysis_period)
 
+    def wind_exposure(self, azimuth: float) -> float:
+        """Get the factor to be applied to wind from the given azimuth."""
+
+        if self.wind_porosity == 1:
+            return 1
+
+        # create segment where wind wind comes from
+        wind_range = np.array([azimuth - 5, azimuth + 5]) % 360
+        az_inside = wind_direction_average(wind_range)
+        pt_inside = (
+            spherical_to_cartesian(
+                r=1,
+                lon=az_inside * u.degree,
+                lat=45 * u.degree,
+            ),
+        )
+        vertices = np.array(
+            [
+                spherical_to_cartesian(
+                    r=1,
+                    lon=wind_range[0] * u.degree,
+                    lat=0 * u.degree,
+                ),
+                spherical_to_cartesian(
+                    r=1,
+                    lon=wind_range[1] * u.degree,
+                    lat=0 * u.degree,
+                ),
+                spherical_to_cartesian(
+                    r=1,
+                    lon=wind_range[1] * u.degree,
+                    lat=90 * u.degree,
+                ),
+                spherical_to_cartesian(
+                    r=1,
+                    lon=wind_range[0] * u.degree,
+                    lat=90 * u.degree,
+                ),
+            ]
+        )
+        wind_segment = SphericalPolygon(vertices, pt_inside)
+
+        # get proportion of intersection
+        intersection_amount = 1 - wind_segment.overlap(self.spherical_polygon)
+
+        # TODO - fix acceleration part around edges here
+        # Also fix malformed polygon errot that sometimes happens when
+        # sh = Shelter.from_ranges(azimuth_range=[-5, 10], altitude_range=[0, 90])
+        # f = sh.plot()
+        # sh.wind_exposure(2)
+
+        # if proportion < 0.1, then increase exposure by 10% to approximate edge effects
+        if intersection_amount < 0.1:
+            intersection_amount = 1 + (intersection_amount / 0.1)
+
+        return intersection_amount
+
     @classmethod
     def from_ranges(
         cls,
@@ -185,10 +334,6 @@ class Shelter(BHoMObject):
                 lon=az_inside * u.degree,
                 lat=alt_inside * u.degree,
             ),
-        )
-
-        print(
-            f"{azimuth_range} {altitude_range} {angle_between} [{az_inside} {alt_inside}] {pt_inside}"
         )
 
         # convert ranges into XYZ vertices
@@ -335,86 +480,6 @@ class Shelter(BHoMObject):
     #     dictionary = json.loads(json_string)
 
     #     return cls.from_dict(dictionary)
-
-    # def polygons(self) -> List[Polygon]:
-    #     """Return a list of polygons representing the shade of this shelter.
-
-    #     Returns:
-    #         List[Polygon]: A list of polygons representing the shade of this shelter.
-    #     """
-    #     if self._width == 0:
-    #         return []
-
-    #     if self._height == 0:
-    #         return []
-
-    #     if self._crosses_north:
-    #         return [
-    #             Polygon(
-    #                 [
-    #                     (self._start_azimuth, self._start_altitude),
-    #                     (self._start_azimuth, self._end_altitude),
-    #                     (360, self._end_altitude),
-    #                     (360, self._start_altitude),
-    #                     (self._start_azimuth, self._start_altitude),
-    #                 ]
-    #             ),
-    #             Polygon(
-    #                 [
-    #                     (0, self._start_altitude),
-    #                     (0, self._end_altitude),
-    #                     (self._end_azimuth, self._end_altitude),
-    #                     (self._end_azimuth, self._start_altitude),
-    #                     (0, self._start_altitude),
-    #                 ]
-    #             ),
-    #         ]
-
-    #     return [
-    #         Polygon(
-    #             [
-    #                 (self._start_azimuth, self._start_altitude),
-    #                 (self._start_azimuth, self._end_altitude),
-    #                 (self._end_azimuth, self._end_altitude),
-    #                 (self._end_azimuth, self._start_altitude),
-    #             ]
-    #         )
-    #     ]
-
-    # def sun_blocked(self, suns: List[Sun]) -> List[bool]:
-    #     """Return a list of booleans indicating whether the sun is blocked by
-    #         this shelter.
-
-    #     Args:
-    #         suns (List[Sun]]):
-    #             A list of Sun objects.
-
-    #     Returns:
-    #         List[bool]:
-    #             A list of booleans indicating whether the sun (or each of
-    #             the suns) is blocked by this shelter.
-    #     """
-    #     if not isinstance(suns, list):
-    #         suns = [suns]
-    #     blocked = []
-    #     for sun in suns:
-    #         if not isinstance(sun, Sun):
-    #             raise ValueError("Object input is not a Sun.")
-
-    #         in_altitude_range = self._start_altitude < sun.altitude < self._end_altitude
-
-    #         if self._crosses_north:
-    #             in_azimuth_range = (sun.azimuth > self._start_azimuth) or (
-    #                 sun.azimuth < self._end_azimuth
-    #             )
-    #         else:
-    #             in_azimuth_range = self._start_azimuth < sun.azimuth < self._end_azimuth
-
-    #         if in_altitude_range and in_azimuth_range:
-    #             blocked.append(True)
-    #         else:
-    #             blocked.append(False)
-    #     return blocked
 
     # def effective_wind_speed(self, epw: EPW) -> HourlyContinuousCollection:
     #     """Return the wind speed (at original height of 10m from EPW) when subjected to this
