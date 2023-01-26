@@ -2,80 +2,78 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict, List
 
+import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d as mplot3d
 import numpy as np
-import pandas as pd
-from ladybug.epw import EPW, HourlyContinuousCollection
+from honeybee.face import Face
+from ladybug.epw import EPW
 from ladybug.sunpath import Sun
-from shapely.geometry import Polygon
+from ladybug.viewsphere import ViewSphere
+from ladybug_geometry.geometry3d import Face3D, Point3D, Ray3D, Vector3D
+from ladybugtools_toolkit.ladybug_extension.epw import unique_wind_speed_direction
 
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
-from ..ladybug_extension.datacollection import from_series, to_series
 from ..ladybug_extension.epw import sun_position_list
 
 
 @dataclass(init=True, repr=True, eq=True)
 class Shelter(BHoMObject):
-    """An object representing a piece of geometry blocking exposure to wind,
-        sky and sun.
+
+    """A Shelter object, used to determine exposure to sun, sky and wind.
 
     Args:
+        vertices (List[List[float]]):
+            A list of planar [x, y, z] coordinates representing the vertices of the
+            object providing shelter..
         wind_porosity (float, optional):
             The transmissivity of the shelter to wind. Defaults to 0.
         radiation_porosity (float, optional):
-            The transmissivity of the shelter to radiation (from surfaces,
-            sky and sun). Defaults to 0.
-        altitude_range (Tuple[float], optional):
-            The altitude range covered by this shelter.
-            Defaults to (0, 0).
-        azimuth_range (Tuple[float], optional):
-            The azimuth range (from 0 at North, clockwise)
-            covered by this shelter. Defaults to (0, 0).
+            The transmissivity of the shelter to radiation (from surfaces, sky
+            and sun). Defaults to 0.
 
     Returns:
-        Shelter:
-            An object representing a piece of geometry blocking exposure to
-            wind, sky and sun.
+        Shelter: A Shelter object.
     """
 
-    wind_porosity: float = field(init=True, repr=False, compare=True, default=0)
-    radiation_porosity: float = field(init=True, repr=False, compare=True, default=0)
-    altitude_range: List[float] = field(
-        init=True, repr=False, compare=True, default_factory=lambda: [0, 0]
-    )
-    azimuth_range: List[float] = field(
-        init=True, repr=False, compare=True, default_factory=lambda: [0, 0]
-    )
+    vertices: List[List[float]] = field(
+        init=True, repr=False
+    )  # a list of xyz coordinates representing the vertices of the sheltering object
+    wind_porosity: float = field(init=True, repr=True, compare=True, default=0)
+    radiation_porosity: float = field(init=True, repr=True, compare=True, default=0)
 
     _t: str = field(
         init=False, repr=False, compare=True, default="BH.oM.LadybugTools.Shelter"
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+
+        # handle nulls
+        if self.vertices is None:
+            raise ValueError(f"vertices cannot be None")
+        if self.wind_porosity is None:
+            self.wind_porosity = 0
+        if self.radiation_porosity is None:
+            self.radiation_porosity = 0
 
         if (not 0 <= self.wind_porosity <= 1) or (
             not 0 <= self.radiation_porosity <= 1
         ):
-            raise ValueError("porosity must be between 0 and 1")
+            raise ValueError("porosity values must be between 0 and 1")
 
-        if any(
-            [
-                min(self.altitude_range) < 0,
-                max(self.altitude_range) > 90,
-                len(self.altitude_range) != 2,
-            ]
-        ):
-            raise ValueError("altitude_range must be two floats between 0 and 90")
+        if all([self.wind_porosity == 1, self.radiation_porosity == 1]):
+            raise ValueError(
+                "This shelter would have no effect as it does not impact wind or radiation exposure."
+            )
 
-        if any(
-            [
-                min(self.azimuth_range) < 0,
-                max(self.azimuth_range) > 360,
-                len(self.azimuth_range) != 2,
-            ]
-        ):
-            raise ValueError("azimuth_range must be two floats between 0 and 360.")
+        # create face for shelter
+        self.face = Face3D([Point3D(*i) for i in self.vertices])
+        self.face.check_planar(0.001)
+
+        # create origin pt - representing an analytical person-point
+        self.origin = Point3D(0, 0, 1.2)
 
         # wrap methods within this class
         super().__post_init__()
@@ -90,8 +88,7 @@ class Shelter(BHoMObject):
         return cls(
             wind_porosity=sanitised_dict["wind_porosity"],
             radiation_porosity=sanitised_dict["radiation_porosity"],
-            altitude_range=sanitised_dict["altitude_range"],
-            azimuth_range=sanitised_dict["azimuth_range"],
+            vertices=sanitised_dict["vertices"],
         )
 
     @classmethod
@@ -102,351 +99,552 @@ class Shelter(BHoMObject):
 
         return cls.from_dict(dictionary)
 
-    def polygons(self) -> List[Polygon]:
-        """Return a list of polygons representing the shade of this shelter.
+    @classmethod
+    def from_lb_face3d(
+        cls, face: Face3D, wind_porosity: float = 0, radiation_porosity: float = 0
+    ) -> Shelter:
+        """Create a shelter object from a Ladybug Face3D object."""
+        vertices = [i.to_array() for i in face.vertices]
+        return cls(
+            vertices=vertices,
+            wind_porosity=wind_porosity,
+            radiation_porosity=radiation_porosity,
+        )
+
+    @classmethod
+    def from_hb_face(cls, face: Face) -> Shelter:
+        """Create a shelter object from a Honeybee Face object."""
+        vertices = [i.to_array() for i in face.vertices]
+        wind_porosity = 0
+        radiation_porosity = (
+            0
+            if face.properties.radiance.modifier.is_opaque
+            else face.properties.radiance.modifier.average_transmittance
+        )
+        return cls(
+            vertices=vertices,
+            wind_porosity=wind_porosity,
+            radiation_porosity=radiation_porosity,
+        )
+
+    def rotate(self, angle: float) -> Shelter:
+        """Rotate the shelter about 0, 0, 0 by the given angle in degrees clockwise from north at 0.
+
+        Args:
+            angle (float):
+                An angle in degrees.
 
         Returns:
-            List[Polygon]: A list of polygons representing the shade of this shelter.
+            Shelter:
+                The rotated shelter object.
         """
-        if self._width == 0:
-            return []
-
-        if self._height == 0:
-            return []
-
-        if self._crosses_north:
-            return [
-                Polygon(
-                    [
-                        (self._start_azimuth, self._start_altitude),
-                        (self._start_azimuth, self._end_altitude),
-                        (360, self._end_altitude),
-                        (360, self._start_altitude),
-                        (self._start_azimuth, self._start_altitude),
-                    ]
-                ),
-                Polygon(
-                    [
-                        (0, self._start_altitude),
-                        (0, self._end_altitude),
-                        (self._end_azimuth, self._end_altitude),
-                        (self._end_azimuth, self._start_altitude),
-                        (0, self._start_altitude),
-                    ]
-                ),
-            ]
-
-        return [
-            Polygon(
-                [
-                    (self._start_azimuth, self._start_altitude),
-                    (self._start_azimuth, self._end_altitude),
-                    (self._end_azimuth, self._end_altitude),
-                    (self._end_azimuth, self._start_altitude),
-                ]
-            )
+        angle = np.deg2rad(-angle)
+        rotated_vertices = [
+            list(i.to_array())
+            for i in self.face.rotate_xy(angle, Point3D(0, 0, 0)).vertices
         ]
+        return Shelter(rotated_vertices, self.wind_porosity, self.radiation_porosity)
 
-    def sun_blocked(self, suns: List[Sun]) -> List[bool]:
-        """Return a list of booleans indicating whether the sun is blocked by
-            this shelter.
-
-        Args:
-            suns (List[Sun]]):
-                A list of Sun objects.
-
-        Returns:
-            List[bool]:
-                A list of booleans indicating whether the sun (or each of
-                the suns) is blocked by this shelter.
-        """
-        if not isinstance(suns, list):
-            suns = [suns]
-        blocked = []
-        for sun in suns:
-            if not isinstance(sun, Sun):
-                raise ValueError("Object input is not a Sun.")
-
-            in_altitude_range = self._start_altitude < sun.altitude < self._end_altitude
-
-            if self._crosses_north:
-                in_azimuth_range = (sun.azimuth > self._start_azimuth) or (
-                    sun.azimuth < self._end_azimuth
-                )
-            else:
-                in_azimuth_range = self._start_azimuth < sun.azimuth < self._end_azimuth
-
-            if in_altitude_range and in_azimuth_range:
-                blocked.append(True)
-            else:
-                blocked.append(False)
-        return blocked
-
-    def sky_blocked(self) -> float:
-        """Return the proportion of the sky occluded by the shelter (including porosity to increase
-            sky visibility if the shelter is porous).
-
-        Returns:
-            The proportion of sky occluded by the spherical patch
-        """
-
-        if self._width_radians < 0:
-            raise ValueError(
-                "You cannot occlude the sky with a negatively sized patch."
-            )
-
-        if any(
-            [
-                self._start_altitude_radians < 0,
-                self._start_altitude_radians > np.pi / 2,
-                self._end_altitude_radians < 0,
-                self._end_altitude_radians > np.pi / 2,
-            ]
-        ):
-            raise ValueError("Start and end altitudes must be between 0 and pi/2.")
-
-        area_occluded = abs(
-            (np.sin(self._end_altitude_radians) - np.sin(self._start_altitude_radians))
-            * self._width_radians
-            / (2 * np.pi)
-        )
-
-        return area_occluded * (1 - self.radiation_porosity)
-
-    def effective_wind_speed(self, epw: EPW) -> HourlyContinuousCollection:
-        """Return the wind speed (at original height of 10m from EPW) when subjected to this
-            shelter.
-
-           The proportion of shelter occluding the altitude, and the porosity of the shelter
-            determines how much of the wind to block. If not blocked by the shelter, but within 10°,
-            a 10% increase is applied to estimate impact of edge acceleration.
+    def sky_exposure(self, include_radiation_porosity: bool = True) -> float:
+        """Determine the proportion of sky the analytical point is exposed to. Also account for radiation_porosity in that exposure.
 
         Args:
-            epw (EPW): An EPW object.
-
-        Returns:
-            HourlyContinuousCollection: An HourlyContinuousCollection object with the effective wind
-            speed impacted by this shelter.
-        """
-
-        if self.wind_porosity == 1:
-            return epw.wind_speed
-
-        edge_acceleration_width = (
-            10  # degrees either side of edge in which to increase wind speed
-        )
-        edge_acceleration_factor = (
-            1.1  # amount by which to increase wind speed by for edge effects
-        )
-
-        shelter_height_factor = np.interp(self._height / 90, [0, 1], [1, 0.25])
-
-        wind_direction = to_series(epw.wind_direction)
-        wind_speed = to_series(epw.wind_speed)
-        df = pd.concat([wind_speed, wind_direction], axis=1)
-        modified_values = []
-        for _, row in df.iterrows():
-            if self._crosses_north:
-                # wind blocked by shelter
-                if (row[1] > self._start_azimuth) or (row[1] < self._end_azimuth):
-                    modified_values.append(
-                        row[0] * self.wind_porosity * shelter_height_factor
-                    )
-                # wind not blocked by shelter, but it's within 10deg of shelter
-                elif (row[1] > self._start_azimuth - edge_acceleration_width) or (
-                    row[1] < self._end_azimuth + edge_acceleration_width
-                ):
-                    modified_values.append(
-                        row[0]
-                        * edge_acceleration_factor
-                        * self.wind_porosity
-                        * shelter_height_factor
-                    )
-                # wind not blocked by shelter
-                else:
-                    modified_values.append(row[0])
-            else:
-                # wind blocked by shelter
-                if (row[1] > self._start_azimuth) and (row[1] < self._end_azimuth):
-                    modified_values.append(
-                        row[0] * self.wind_porosity * shelter_height_factor
-                    )
-                # wind not blocked by shelter, but it's within 10deg of shelter
-                elif (row[1] > self._start_azimuth - edge_acceleration_width) and (
-                    row[1] < self._end_azimuth + edge_acceleration_width
-                ):
-                    modified_values.append(
-                        row[0]
-                        * edge_acceleration_factor
-                        * self.wind_porosity
-                        * shelter_height_factor
-                    )
-                else:
-                    modified_values.append(row[0])
-        return from_series(
-            pd.Series(modified_values, index=df.index, name="Wind Speed (m/s)")
-        )
-
-    @property
-    def _start_altitude(self) -> float:
-        return min(self.altitude_range)
-
-    @property
-    def _start_altitude_radians(self) -> float:
-        return np.radians(self._start_altitude)
-
-    @property
-    def _end_altitude(self) -> float:
-        return max(self.altitude_range)
-
-    @property
-    def _end_altitude_radians(self) -> float:
-        return np.radians(self._end_altitude)
-
-    @property
-    def _start_azimuth(self) -> float:
-        return self.azimuth_range[0]
-
-    @property
-    def _start_azimuth_radians(self) -> float:
-        return np.radians(self._start_azimuth)
-
-    @property
-    def _end_azimuth(self) -> float:
-        return self.azimuth_range[-1]
-
-    @property
-    def _end_azimuth_radians(self) -> float:
-        return np.radians(self._end_azimuth)
-
-    @property
-    def _width(self) -> float:
-        return (
-            (360 - self._start_azimuth) + self._end_azimuth
-            if self._start_azimuth > self._end_azimuth
-            else self._end_azimuth - self._start_azimuth
-        )
-
-    @property
-    def _width_radians(self) -> float:
-        return np.radians(self._width)
-
-    @property
-    def _height(self) -> float:
-        return self._end_altitude - self._start_altitude
-
-    @property
-    def _height_radians(self) -> float:
-        return np.radians(self._height)
-
-    @property
-    def _crosses_north(self) -> bool:
-        return self._start_azimuth > self._end_azimuth
-
-    def overlaps(self, other_shelter: Shelter) -> bool:
-        """Returns True if this and the other_shelter overlap each other.
-
-        Args:
-            other_shelter (Shelter):
-                The other shelter to assess for overlap.
-
-        Returns:
-            bool:
-                True if this and the other_shelter overlap in any way.
-        """
-        for poly1 in self.polygons():
-            for poly2 in other_shelter.polygons():
-                if any(
-                    [
-                        poly1.crosses(poly2),
-                        poly1.contains(poly2),
-                        poly1.within(poly2),
-                        poly1.covers(poly2),
-                        poly1.covered_by(poly2),
-                        poly1.overlaps(poly2),
-                    ]
-                ):
-                    return True
-        return False
-
-    @staticmethod
-    def any_shelters_overlap(shelters: List[Shelter]) -> bool:
-        """Check whether any shelter in a list overlaps with any other shelter in the list.
-
-        Args:
-            shelters (List[Shelter]):
-                A list of shelter objects.
-
-        Returns:
-            bool:
-                True if any shelter in the list overlaps with any other shelter in the list.
-        """
-
-        for shelter1 in shelters:
-            for shelter2 in shelters:
-                if shelter1 == shelter2:
-                    continue
-                try:
-                    if shelter1.overlaps.__wrapped__(shelter2):
-                        return True
-                except AttributeError:
-                    if shelter1.overlaps(shelter2):
-                        return True
-        return False
-
-    @staticmethod
-    def sun_exposure(shelters: List[Shelter], epw: EPW) -> List[float]:
-        """Return NaN if sun below horizon, and a value between 0-1 for sun-hidden to sun-exposed.
-
-        Args:
-            shelters (List[Shelter]):
-                Shelters that could block the sun.
-            epw (EPW):
-                An EPW object.
-
-        Returns:
-            List[float]:
-                A list of sun visibility values for each hour of the year.
-        """
-
-        suns = sun_position_list(epw)
-        sun_is_up = np.array([sun.altitude > 0 for sun in suns])
-
-        nans = np.empty(len(epw.dry_bulb_temperature))
-        nans[:] = np.NaN
-
-        if len(shelters) == 0:
-            return np.where(sun_is_up, 1, nans)
-
-        blocked = []
-        for shelter in shelters:
-            temp = np.where(shelter.sun_blocked(suns), shelter.radiation_porosity, nans)
-            temp = np.where(np.logical_and(np.isnan(temp), sun_is_up), 1, temp)
-            blocked.append(temp)
-
-        return pd.DataFrame(blocked).T.min(axis=1).values.tolist()
-
-    @staticmethod
-    def sky_exposure(shelters: List[Shelter]) -> float:
-        """Determine the proportion of the sky visible beneath a set of shelters. Includes porosity of
-            shelters in the resultant value (e.g. fully enclosed by a single 50% porous shelter would
-            mean 50% sky exposure).
-
-        Args:
-            shelters (List[Shelter]):
-                Shelters that could block the sun.
+            include_radiation_porosity (bool, optional):
+                If True, then increase exposure according to shelter porosity. Defaults to True.
 
         Returns:
             float:
-                The proportion of sky visible beneath shelters.
+                A value between 0 and 1 denoting the proportion of sky exposure.
+        """
+        view_sphere = ViewSphere()
+        rays = [
+            Ray3D(self.origin, vector) for vector in view_sphere.reinhart_dome_vectors
+        ]
+        n_intersections = sum(
+            [True if self.face.intersect_line_ray(ray) else False for ray in rays]
+        )
+        if include_radiation_porosity:
+            return 1 - ((n_intersections / len(rays)) * (1 - self.radiation_porosity))
+        return 1 - (n_intersections / len(rays))
+
+    def sun_exposure(self, sun: Sun, include_radiation_porosity: bool = True) -> float:
+        """Determine the proportion of sun the analytical point is exposed to. Also account for radiation_porosity in that exposure.
+
+        Args:
+            sun (Sun):
+                A LB Sun object.
+            include_radiation_porosity (bool, optional):
+                If True, then increase exposure according to shelter porosity. Defaults to True.
+
+        Returns:
+            float:
+                A value between 0 and 1 denoting the proportion of sun exposure.
+        """
+        if sun.altitude < 0:
+            return 0
+        ray = Ray3D(self.origin, (sun.position_3d() - self.origin).normalize())
+        if self.face.intersect_line_ray(ray) is None:
+            return 1
+        return self.radiation_porosity if include_radiation_porosity else 0
+
+    def annual_sun_exposure(
+        self, epw: EPW, include_radiation_porosity: bool = True
+    ) -> List[float]:
+        """Calculate annual hourly sun exposure. Overnight hours where sun is below horizon default to 0 sun visibility.
+
+        Args:
+            epw (EPW):
+                A Ladybug EPW object.
+            include_radiation_porosity (bool, optional):
+                If True, then increase exposure according to shelter porosity. Defaults to True.
+
+        Returns:
+            List[float]:
+                A list of annual hourly values denoting sun exposure values.
+        """
+        suns = sun_position_list(epw)
+        return [self.sun_exposure(sun, include_radiation_porosity) for sun in suns]
+
+    def effective_wind_speed(
+        self,
+        wind_direction: float,
+        wind_speed: float,
+        edge_acceleration_factor: float = 1.1,
+        obstruction_band_width: float = 5,
+    ) -> float:
+        """Determine the effective wind speed from a given direction based on shelter obstruction and edge acceleration effects.
+
+        Wind is considered "obstructured" in some way if its direction +/-5 degrees of the shelter.
+        When fully obstructed, then the porosity of the shelter is used to reduce wind speed.
+        Where partially obstructed, the edge effects are expected based on the level of porosity
+        of the shelter.
+        Where not obstructed, then wind is kept per input.
+
+        Args:
+            wind_direction (float):
+                A single wind direction between 0-360.
+            wind_speed (float):
+                A wind speed in m/s.
+            edge_acceleration_factor (float, optional):
+                The proportional increase in wind speed due to edge acceleration around a shelter edge. Defaults to 1.1.
+            obstruction_band_width (float, optional):
+                The azimuthal range over which obstruction is checked. Defaults to 5.
+
+        Returns:
+            float:
+                A resultant wind speed subject to obstruction from the shelter.
         """
 
-        if Shelter.any_shelters_overlap(shelters):
-            raise ValueError(
-                "Shelters overlap, so sky-exposure calculation cannot be completed."
+        if wind_speed == 0:
+            return 0
+
+        if self.wind_porosity == 1:
+            return wind_speed
+
+        # create components for sample vectors
+        left_rad = np.deg2rad((wind_direction - obstruction_band_width) % 360)
+        left_x = np.sin(left_rad)
+        left_y = np.cos(left_rad)
+        center_rad = np.deg2rad(wind_direction)
+        center_x = np.sin(center_rad)
+        center_y = np.cos(center_rad)
+        right_rad = np.deg2rad((wind_direction + obstruction_band_width) % 360)
+        right_x = np.sin(right_rad)
+        right_y = np.cos(right_rad)
+
+        # create sample vectors
+        sample_vectors = []
+        for _z in np.linspace(0, 1, 5):
+            sample_vectors.extend(
+                [
+                    Vector3D(left_x, left_y, _z),
+                    Vector3D(center_x, center_y, _z),
+                    Vector3D(right_x, right_y, _z),
+                ]
             )
 
-        exposure = 1
-        for shelter in shelters:
-            exposure -= shelter.sky_blocked()
-        return exposure
+        # check intersections
+        rays = [Ray3D(self.origin, vector) for vector in sample_vectors]
+        n_intersections = sum(
+            [True if self.face.intersect_line_ray(ray) else False for ray in rays]
+        )
+
+        # return effective wind speed
+        if n_intersections == len(rays):
+            # fully obstructed
+            return wind_speed * self.wind_porosity
+        if n_intersections == 0:
+            # fully unobstructed
+            return wind_speed
+        # get the propostion of obstruction adn adjust acceleration based on that proportion
+        proportion_obstructed = n_intersections / len(rays)
+        return (
+            (wind_speed * self.wind_porosity)
+            * proportion_obstructed  # obstructed wind component
+        ) + (
+            wind_speed
+            * edge_acceleration_factor
+            * (1 - proportion_obstructed)  # edge wind component
+        )
+
+    def annual_effective_wind_speed(
+        self,
+        epw: EPW,
+        edge_acceleration_factor: float = 1.1,
+        obstruction_band_width: float = 5,
+    ) -> List[float]:
+        """Determine the effective wind speed from a given direction based on shelter obstruction and edge acceleration effects.
+
+        Wind is considered "obstructured" in some way if its direction +/-5 degrees of the shelter.
+        When fully obstructed, then the porosity of the shelter is used to reduce wind speed.
+        Where partially obstructed, the edge effects are expected based on the level of porosity
+        of the shelter.
+        Where not obstructed, then wind is kept per input.
+
+        Args:
+            epw (EPW):
+                A Ladybug EPW object.
+            edge_acceleration_factor (float, optional):
+                The proportional increase in wind speed due to edge acceleration around a shelter edge. Defaults to 1.1.
+            obstruction_band_width (float, optional):
+                The azimuthal range over which obstruction is checked. Defaults to 5.
+
+        Returns:
+            List[float]:
+                A resultant list of EPW aligned wind speeds subject to obstruction from the shelter.
+        """
+        ws_wd = unique_wind_speed_direction(epw)
+        ws_effective = {}
+        for ws, wd in ws_wd:
+            ws_effective[(ws, wd)] = self.effective_wind_speed(
+                wd, ws, edge_acceleration_factor, obstruction_band_width
+            )
+        # cast back to original epw
+        effective_wind_speeds = []
+        for ws, wd in list(zip(*[epw.wind_speed.values, epw.wind_direction.values])):
+            effective_wind_speeds.append(ws_effective[(ws, wd)])
+        return effective_wind_speeds
+
+    def set_porosity(self, porosity: float) -> Shelter:
+        return Shelter(self.vertices, porosity, porosity)
+
+    def visualise(self) -> plt.Figure:
+        min_x, min_y, _ = np.array(self.vertices).min(axis=0)
+        max_x, max_y, max_z = np.array(self.vertices).max(axis=0)
+        min_xy = min([min_x, min_y])
+        max_xy = max([max_x, max_y])
+        # get limits
+        fig = plt.figure(figsize=(5, 5))
+        ax = mplot3d.Axes3D(fig, auto_add_to_figure=False)
+        fig.add_axes(ax)
+        ax.scatter(*self.origin.to_array())
+        vtx = np.array([i.to_array() for i in self.face.vertices])
+        tri = mplot3d.art3d.Poly3DCollection([vtx])
+        tri.set_color("grey")
+        tri.set_alpha(0.5)
+        tri.set_edgecolor("k")
+        ax.add_collection3d(tri)
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
+        ax.set_xlim(min_xy, max_xy)
+        ax.set_ylim(min_xy, max_xy)
+        ax.set_zlim(0, max_z)
+        plt.tight_layout()
+        return fig
+
+
+def sky_exposure(
+    shelters: List[Shelter], include_radiation_porosity: bool = True
+) -> float:
+    """Determine the proportion of sky the analytical point is exposed to under a combination of shelters. Also account for radiation_porosity in that exposure.
+
+    Args:
+        shelters (List[Shelter]):
+            A list of shelter objects.
+        include_radiation_porosity (bool, optional):
+            If True, then increase exposure according to shelter porosity. Defaults to True.
+
+    Returns:
+        float:
+            A value between 0 and 1 denoting the proportion of sky exposure.
+    """
+    if len(shelters) == 0:
+        return 1
+
+    vs = ViewSphere()
+    rays = [Ray3D(shelters[0].origin, vector) for vector in vs.reinhart_dome_vectors]
+
+    # get intersections for each patch, for each shelter
+    intersections = []
+    for shelter in shelters:
+        intersections.append(
+            [
+                1
+                if shelter.face.intersect_line_ray(ray) is None
+                else (shelter.radiation_porosity if include_radiation_porosity else 0)
+                for ray in rays
+            ]
+        )
+    return np.array(intersections).prod(axis=0).sum() / len(rays)
+
+
+def sun_exposure(
+    shelters: List[Shelter], sun: Sun, include_radiation_porosity: bool = True
+) -> float:
+    """Determine the proportion of sun the analytical point is exposed to under a combination of shelters. Also account for radiation_porosity in that exposure.
+
+    Args:
+        shelters (List[Shelter]):
+            A list of shelter objects.
+        sun (Sun):
+            A LB Sun object.
+        include_radiation_porosity (bool, optional):
+            If True, then increase exposure according to shelter porosity. Defaults to True.
+
+    Returns:
+        float:
+            A value between 0 and 1 denoting the overall proportion of sky exposure.
+    """
+    if len(shelters) == 0:
+        return 1 if sun.altitude > 0 else 0
+
+    sun_exposures = []
+    for shelter in shelters:
+        sun_exposures.append(shelter.sun_exposure(sun, include_radiation_porosity))
+    return np.prod(sun_exposures)
+
+
+def annual_sun_exposure(
+    shelters: List[Shelter], epw: EPW, include_radiation_porosity: bool = True
+) -> List[float]:
+    """Calculate annual hourly sun exposure under a set of shelters. Where sun is below horizon default to 0 sun visibility.
+
+    Args:
+        shelters (List[Shelter]):
+            A list of shelter objects.
+        epw (EPW):
+            A Ladybug EPW object.
+        include_radiation_porosity (bool, optional):
+            If True, then increase exposure according to shelter porosity. Defaults to True.
+
+    Returns:
+        List[float]:
+            A list of annual hourly values denoting sun exposure values.
+    """
+
+    suns = sun_position_list(epw)
+    if len(shelters) == 0:
+        return [1 if sun.altitude > 0 else 0 for sun in suns]
+
+    sun_exposures = []
+    for shelter in shelters:
+        sun_exposures.append(
+            [shelter.sun_exposure(sun, include_radiation_porosity) for sun in suns]
+        )
+    return np.prod(sun_exposures, axis=0)
+
+
+def effective_wind_speed(
+    shelters: List[Shelter],
+    wind_speed: float,
+    wind_direction: float,
+    edge_acceleration_factor: float = 1.1,
+    obstruction_band_width: float = 5,
+) -> float:
+    """Determine the effective wind speed from a given direction based on multiple obstructing shelters and edge acceleration effects.
+
+    Wind is considered "obstructured" in some way if its direction +/-5 degrees of the shelter.
+    When fully obstructed, then the porosity of the shelter is used to reduce wind speed.
+    Where partially obstructed, the edge effects are expected based on the level of porosity
+    of the shelter.
+    Where not obstructed, then wind is kept per input.
+
+    Args:
+        shelters (List[Shelter]):
+            A list of shelter objects.
+        wind_direction (float):
+            A single wind direction between 0-360.
+        wind_speed (float):
+            A wind speed in m/s.
+        edge_acceleration_factor (float, optional):
+            The proportional increase in wind speed due to edge acceleration around a shelter edge. Defaults to 1.1.
+        obstruction_band_width (float, optional):
+            The azimuthal range over which obstruction is checked. Defaults to 5.
+
+    Returns:
+        float:
+            A resultant wind speed subject to obstruction from the shelter.
+    """
+
+    if len(shelters) == 0:
+        return wind_speed
+
+    effective_wind_speeds = []
+    for shelter in shelters:
+        effective_wind_speeds.append(
+            shelter.effective_wind_speed(
+                wind_direction,
+                wind_speed,
+                edge_acceleration_factor,
+                obstruction_band_width,
+            )
+        )
+    return np.min(effective_wind_speeds)
+
+
+def annual_effective_wind_speed(
+    shelters: List[Shelter],
+    epw: EPW,
+    edge_acceleration_factor: float = 1.1,
+    obstruction_band_width: float = 5,
+) -> List[float]:
+    """Determine the effective wind speed from a given direction based on multiple obstructing shelters and edge acceleration effects.
+
+    Wind is considered "obstructured" in some way if its direction +/-5 degrees of the shelter.
+    When fully obstructed, then the porosity of the shelter is used to reduce wind speed.
+    Where partially obstructed, the edge effects are expected based on the level of porosity
+    of the shelter.
+    Where not obstructed, then wind is kept per input.
+
+    Args:
+        shelters (List[Shelter]):
+            A list of shelter objects.
+        epw (EPW):
+            A Ladybug EPW object.
+        edge_acceleration_factor (float, optional):
+            The proportional increase in wind speed due to edge acceleration around a shelter edge. Defaults to 1.1.
+        obstruction_band_width (float, optional):
+            The azimuthal range over which obstruction is checked. Defaults to 5.
+
+    Returns:
+        List[float]:
+            A resultant list of EPW aligned wind speeds subject to obstruction from the shelter.
+    """
+    if len(shelters) == 0:
+        return epw.wind_speed
+
+    ws_wd = unique_wind_speed_direction(epw)
+    all_effective_wind_speeds = []
+    for shelter in shelters:
+        ws_effective = {}
+        for ws, wd in ws_wd:
+            ws_effective[(ws, wd)] = shelter.effective_wind_speed(
+                wd, ws, edge_acceleration_factor, obstruction_band_width
+            )
+        # cast back to original epw
+        effective_wind_speeds = []
+        for ws, wd in list(zip(*[epw.wind_speed.values, epw.wind_direction.values])):
+            effective_wind_speeds.append(ws_effective[(ws, wd)])
+        all_effective_wind_speeds.append(effective_wind_speeds)
+    return np.min(all_effective_wind_speeds, axis=0)
+
+
+class Shelters(Enum):
+    """A list of pre-defined Shelter forms."""
+
+    _linear_shelter_vertices_north_south = [
+        [2, -1000, 3.5],
+        [2, 1000, 3.5],
+        [-2, 1000, 3.5],
+        [-2, -1000, 3.5],
+    ]
+    _overhead_shelter_vertices_small = [
+        [2, 0, 3.5],
+        [1.879385, 0.68404, 3.5],
+        [1.532089, 1.285575, 3.5],
+        [1, 1.732051, 3.5],
+        [0.347296, 1.969616, 3.5],
+        [-0.347296, 1.969616, 3.5],
+        [-1.0, 1.732051, 3.5],
+        [-1.532089, 1.285575, 3.5],
+        [-1.879385, 0.68404, 3.5],
+        [-2, 0, 3.5],
+        [-1.879385, -0.68404, 3.5],
+        [-1.532089, -1.285575, 3.5],
+        [-1, -1.732051, 3.5],
+        [-0.347296, -1.969616, 3.5],
+        [0.347296, -1.969616, 3.5],
+        [1.0, -1.732051, 3.5],
+        [1.532089, -1.285575, 3.5],
+        [1.879385, -0.68404, 3.5],
+    ]
+    _overhead_shelter_vertices_large = [
+        [250, 0, 3.5],
+        [234.923155, 85.505036, 3.5],
+        [191.511111, 160.696902, 3.5],
+        [125, 216.506351, 3.5],
+        [43.412044, 246.201938, 3.5],
+        [-43.412044, 246.201938, 3.5],
+        [-125.0, 216.506351, 3.5],
+        [-191.511111, 160.696902, 3.5],
+        [-234.923155, 85.505036, 3.5],
+        [-250, 0, 3.5],
+        [-234.923155, -85.505036, 3.5],
+        [-191.511111, -160.696902, 3.5],
+        [-125, -216.506351, 3.5],
+        [-43.412044, -246.201938, 3.5],
+        [43.412044, -246.201938, 3.5],
+        [125.0, -216.506351, 3.5],
+        [191.511111, -160.696902, 3.5],
+        [234.923155, -85.505036, 3.5],
+    ]
+    _directional_shelter_vertices_north = [
+        [1, 1, 0],
+        [-1, 1, 0],
+        [-1, 1, 5],
+        [1, 1, 5],
+    ]
+    _canopy_north = [
+        [1, 1, 5],
+        [-1, 1, 5],
+        [-1, -1, 5],
+        [1, -1, 5],
+    ]
+
+    NORTH_SOUTH_LINEAR = Shelter(
+        vertices=_linear_shelter_vertices_north_south,
+    )
+    EAST_WEST_LINEAR = Shelter(
+        vertices=_linear_shelter_vertices_north_south,
+    ).rotate(90)
+    NORTHEAST_SOUTHWEST_LINEAR = Shelter(
+        vertices=_linear_shelter_vertices_north_south,
+    ).rotate(45)
+    NORTHWEST_SOUTHEAST_LINEAR = Shelter(
+        vertices=_linear_shelter_vertices_north_south,
+    ).rotate(135)
+
+    OVERHEAD_SMALL = Shelter(
+        vertices=_overhead_shelter_vertices_small,
+    )
+    OVERHEAD_LARGE = Shelter(
+        vertices=_overhead_shelter_vertices_large,
+    )
+    CANOPY_N_E_S_W = Shelter(vertices=_canopy_north)
+    CANOPY_NE_SE_SW_NW = Shelter(vertices=_canopy_north).rotate(45)
+
+    NORTH = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    )
+    NORTHEAST = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    ).rotate(45)
+    EAST = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    ).rotate(90)
+    SOUTHEAST = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    ).rotate(135)
+    SOUTH = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    ).rotate(180)
+    SOUTHWEST = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    ).rotate(225)
+    WEST = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    ).rotate(270)
+    NORTHWEST = Shelter(
+        vertices=_directional_shelter_vertices_north,
+    ).rotate(315)
