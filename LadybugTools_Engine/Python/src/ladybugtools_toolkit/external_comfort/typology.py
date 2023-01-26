@@ -11,13 +11,21 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
+from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..helpers import decay_rate_smoother
 from ..ladybug_extension.datacollection import from_series, to_series
+from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
 from .moisture import evaporative_cooling_effect_collection
-from .shelter import Shelter
+from .shelter import (
+    Shelter,
+    Shelters,
+    annual_effective_wind_speed,
+    annual_sun_exposure,
+    sky_exposure,
+)
 from .simulate import SimulationResult
 
 
@@ -58,16 +66,6 @@ class Typology(BHoMObject):
     def __post_init__(self):
         if self.wind_speed_adjustment < 0:
             raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
-
-        if self.shelters:
-            try:
-                if Shelter.any_shelters_overlap.__wrapped__(self.shelters):
-                    raise ValueError("Shelters overlap")
-            except AttributeError:
-                if Shelter.any_shelters_overlap(self.shelters):
-                    raise ValueError(  # pylint: disable=raise-missing-from
-                        "Shelters overlap"
-                    )
 
         if (
             self.evaporative_cooling_effectiveness < 0
@@ -119,11 +117,11 @@ class Typology(BHoMObject):
 
     def sky_exposure(self) -> float:
         """Direct access to "sky_exposure" method for this typology object."""
-        return Shelter.sky_exposure(self.shelters)
+        return sky_exposure(self.shelters, include_radiation_porosity=True)
 
     def sun_exposure(self, epw: EPW) -> List[float]:
         """Direct access to "sun_exposure" method for this typology object."""
-        return Shelter.sun_exposure(self.shelters, epw)
+        return annual_sun_exposure(self.shelters, epw, include_radiation_porosity=True)
 
     def dry_bulb_temperature(self, epw: EPW) -> HourlyContinuousCollection:
         """Get the effective DBT for the given EPW file for this Typology.
@@ -170,12 +168,8 @@ class Typology(BHoMObject):
         if len(self.shelters) == 0:
             return epw.wind_speed * self.wind_speed_adjustment
 
-        collections = []
-        for shelter in self.shelters:
-            collections.append(to_series(shelter.effective_wind_speed(epw)))
-        return from_series(
-            pd.concat(collections, axis=1).min(axis=1).rename("Wind Speed (m/s)")
-            * self.wind_speed_adjustment
+        return (epw.wind_speed * self.wind_speed_adjustment).get_aligned_collection(
+            annual_effective_wind_speed(self.shelters, epw)
         )
 
     def mean_radiant_temperature(
@@ -201,24 +195,15 @@ class Typology(BHoMObject):
             [i > 0 for i in simulation_result.epw.global_horizontal_radiation]
         )
         _sun_exposure = self.sun_exposure(simulation_result.epw)
+        _sky_exposure = self.sky_exposure()
         mrts = []
-        for hour in range(8760):
-            if daytime[hour]:
-                mrts.append(
-                    np.interp(
-                        _sun_exposure[hour],
-                        [0, 1],
-                        [shaded_mrt[hour], unshaded_mrt[hour]],
-                    )
-                )
+        for sun_exp, sun_up, shaded, unshaded in list(
+            zip(*[_sun_exposure, daytime, shaded_mrt.values, unshaded_mrt.values])
+        ):
+            if sun_up:
+                mrts.append(np.interp(sun_exp, [0, 1], [shaded, unshaded]))
             else:
-                mrts.append(
-                    np.interp(
-                        self.sky_exposure(),
-                        [0, 1],
-                        [shaded_mrt[hour], unshaded_mrt[hour]],
-                    )
-                )
+                mrts.append(np.interp(_sky_exposure, [0, 1], [shaded, unshaded]))
 
         # Fill any gaps where sun-visible/sun-occluded values are missing, and apply an
         # exponentially weighted moving average to account for transition between shaded/unshaded
@@ -313,352 +298,168 @@ class Typology(BHoMObject):
 
         return pmv.standard_effective_temperature
 
+    def plot_utci_hist(self, res: SimulationResult) -> None:
+        return utci_heatmap_histogram(
+            self.universal_thermal_climate_index(res), self.name
+        )
+
 
 class Typologies(Enum):
     """A list of pre-defined Typology objects."""
 
     OPENFIELD = Typology(
         name="Openfield",
-        evaporative_cooling_effectiveness=0,
-        shelters=[],
-        wind_speed_adjustment=1,
     )
     ENCLOSED = Typology(
         name="Enclosed",
-        evaporative_cooling_effectiveness=0,
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[0, 360],
-                wind_porosity=0,
-                radiation_porosity=0,
-            )
+            Shelters.NORTH.value,
+            Shelters.EAST.value,
+            Shelters.SOUTH.value,
+            Shelters.WEST.value,
+            Shelters.OVERHEAD_LARGE.value,
         ],
-        wind_speed_adjustment=1,
     )
     POROUS_ENCLOSURE = Typology(
         name="Porous enclosure",
-        evaporative_cooling_effectiveness=0,
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[0, 360],
-                wind_porosity=0,
-                radiation_porosity=0.5,
-            )
+            Shelters.NORTH.value.set_porosity(0.5),
+            Shelters.EAST.value.set_porosity(0.5),
+            Shelters.SOUTH.value.set_porosity(0.5),
+            Shelters.WEST.value.set_porosity(0.5),
+            Shelters.OVERHEAD_LARGE.value.set_porosity(0.5),
         ],
-        wind_speed_adjustment=1,
     )
     SKY_SHELTER = Typology(
         name="Sky-shelter",
-        evaporative_cooling_effectiveness=0,
         shelters=[
-            Shelter(
-                altitude_range=[45, 90],
-                azimuth_range=[0, 360],
-                wind_porosity=0,
-                radiation_porosity=0,
-            )
+            Shelters.OVERHEAD_LARGE.value,
         ],
-        wind_speed_adjustment=1,
     )
     FRITTED_SKY_SHELTER = Typology(
         name="Fritted sky-shelter",
-        evaporative_cooling_effectiveness=0,
         shelters=[
-            Shelter(
-                altitude_range=[45, 90],
-                azimuth_range=[0, 360],
-                wind_porosity=0.5,
-                radiation_porosity=0.5,
-            ),
+            Shelters.OVERHEAD_LARGE.value.set_porosity(0.5),
         ],
-        wind_speed_adjustment=1,
     )
     NEAR_WATER = Typology(
         name="Near water",
         evaporative_cooling_effectiveness=0.15,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 0],
-                azimuth_range=[0, 0],
-                radiation_porosity=1,
-                wind_porosity=1,
-            ),
-        ],
-        wind_speed_adjustment=1,
     )
     MISTING = Typology(
         name="Misting",
         evaporative_cooling_effectiveness=0.3,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 0],
-                azimuth_range=[0, 0],
-                radiation_porosity=1,
-                wind_porosity=1,
-            ),
-        ],
-        wind_speed_adjustment=1,
     )
     PDEC = Typology(
         name="PDEC",
         evaporative_cooling_effectiveness=0.7,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 0],
-                azimuth_range=[0, 0],
-                radiation_porosity=1,
-                wind_porosity=1,
-            ),
-        ],
-        wind_speed_adjustment=1,
     )
     NORTH_SHELTER = Typology(
         name="North shelter",
-        evaporative_cooling_effectiveness=0.0,
         shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[337.5, 22.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.NORTH.value,
         ],
-        wind_speed_adjustment=1,
     )
     NORTHEAST_SHELTER = Typology(
-        name="Northeast shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[22.5, 67.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-        ],
-        wind_speed_adjustment=1,
+        name="Northeast shelter", shelters=[Shelters.NORTHEAST.value]
     )
-    EAST_SHELTER = Typology(
-        name="East shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[67.5, 112.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-        ],
-        wind_speed_adjustment=1,
-    )
+    EAST_SHELTER = Typology(name="East shelter", shelters=[Shelters.EAST.value])
     SOUTHEAST_SHELTER = Typology(
-        name="Southeast shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[112.5, 157.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-        ],
-        wind_speed_adjustment=1,
+        name="Southeast shelter", shelters=[Shelters.SOUTHEAST.value]
     )
     SOUTH_SHELTER = Typology(
         name="South shelter",
-        evaporative_cooling_effectiveness=0.0,
         shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[157.5, 202.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.SOUTH.value,
         ],
-        wind_speed_adjustment=1,
     )
     SOUTHWEST_SHELTER = Typology(
-        name="Southwest shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[202.5, 247.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-        ],
-        wind_speed_adjustment=1,
+        name="Southwest shelter", shelters=[Shelters.SOUTHWEST.value]
     )
-    WEST_SHELTER = Typology(
-        name="West shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[247.5, 292.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-        ],
-        wind_speed_adjustment=1,
-    )
+    WEST_SHELTER = Typology(name="West shelter", shelters=[Shelters.WEST.value])
     NORTHWEST_SHELTER = Typology(
-        name="Northwest shelter",
-        evaporative_cooling_effectiveness=0.0,
-        shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[292.5, 337.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-        ],
-        wind_speed_adjustment=1,
+        name="Northwest shelter", shelters=[Shelters.NORTHWEST.value]
     )
     NORTH_SHELTER_WITH_CANOPY = Typology(
-        name="North shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="North shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[337.5, 22.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.NORTH.value,
+            Shelters.CANOPY_N_E_S_W.value,
         ],
-        wind_speed_adjustment=1,
     )
     NORTHEAST_SHELTER_WITH_CANOPY = Typology(
-        name="Northeast shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="Northeast shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[22.5, 67.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.NORTHEAST.value,
+            Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
-        wind_speed_adjustment=1,
     )
     EAST_SHELTER_WITH_CANOPY = Typology(
-        name="East shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="East shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[67.5, 112.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.EAST.value,
+            Shelters.CANOPY_N_E_S_W.value,
         ],
-        wind_speed_adjustment=1,
     )
     SOUTHEAST_SHELTER_WITH_CANOPY = Typology(
-        name="Southeast shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="Southeast shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[112.5, 157.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.SOUTHEAST.value,
+            Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
-        wind_speed_adjustment=1,
     )
     SOUTH_SHELTER_WITH_CANOPY = Typology(
-        name="South shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="South shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[157.5, 202.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.SOUTH.value,
+            Shelters.CANOPY_N_E_S_W.value,
         ],
-        wind_speed_adjustment=1,
     )
     SOUTHWEST_SHELTER_WITH_CANOPY = Typology(
-        name="Southwest shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="Southwest shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[202.5, 247.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.SOUTHWEST.value,
+            Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
-        wind_speed_adjustment=1,
     )
     WEST_SHELTER_WITH_CANOPY = Typology(
-        name="West shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="West shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[247.5, 292.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.WEST.value,
+            Shelters.CANOPY_N_E_S_W.value,
         ],
-        wind_speed_adjustment=1,
     )
     NORTHWEST_SHELTER_WITH_CANOPY = Typology(
-        name="Northwest shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+        name="Northwest shelter with canopy",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[292.5, 337.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.NORTHWEST.value,
+            Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
-        wind_speed_adjustment=1,
     )
-    EAST_WEST_SHELTER = Typology(
-        name="East-west shelter",
-        evaporative_cooling_effectiveness=0.0,
+
+    NORTHSOUTH_LINEAR_SHELTER = Typology(
+        name="North-south linear overhead shelter",
         shelters=[
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[67.5, 112.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-            Shelter(
-                altitude_range=[0, 70],
-                azimuth_range=[247.5, 292.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.NORTH_SOUTH_LINEAR.value,
         ],
-        wind_speed_adjustment=1,
     )
-    EAST_WEST_SHELTER_WITH_CANOPY = Typology(
-        name="East-west shelter (with canopy)",
-        evaporative_cooling_effectiveness=0.0,
+    NORTHEAST_SOUTHWEST_LINEAR_SHELTER = Typology(
+        name="Northeast-southwest linear overhead shelter",
         shelters=[
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[67.5, 112.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
-            Shelter(
-                altitude_range=[0, 90],
-                azimuth_range=[247.5, 292.5],
-                radiation_porosity=0,
-                wind_porosity=0,
-            ),
+            Shelters.NORTHEAST_SOUTHWEST_LINEAR.value,
         ],
-        wind_speed_adjustment=1,
+    )
+    EAST_WEST_LINEAR_SHELTER = Typology(
+        name="East-west linear overhead shelter",
+        shelters=[
+            Shelters.EAST_WEST_LINEAR.value,
+        ],
+    )
+    NORTHWEST_SOUTHEAST_LINEAR_SHELTER = Typology(
+        name="Northwest-southeast linear overhead shelter",
+        shelters=[
+            Shelters.NORTHWEST_SOUTHEAST_LINEAR.value,
+        ],
     )
 
     def to_json(self) -> str:
