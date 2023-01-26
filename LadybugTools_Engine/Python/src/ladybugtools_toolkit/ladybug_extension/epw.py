@@ -30,7 +30,7 @@ from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
-from .analysis_period import to_datetimes
+from .analysis_period import to_boolean, to_datetimes
 from .datacollection import to_series
 from .header import to_string as header_to_string
 
