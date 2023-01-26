@@ -408,7 +408,7 @@ def describe_monthly(
     utci_collection: HourlyContinuousCollection,
     comfort_limits: Tuple[float] = (9, 26),
     density: bool = True,
-    hours: List[float] = range(8, 21, 1),
+    annual_mask: List[bool] = np.ones(8760).astype(bool),
 ) -> pd.DataFrame:
     """Create a monthly table containing cold/comfortable/hot comfort categories for each month."""
 
@@ -416,7 +416,7 @@ def describe_monthly(
     s = to_series(utci_collection)
 
     # filter for hours
-    s = s[s.index.hour.isin(hours)]
+    s = s[annual_mask]
 
     # get counts
     month_counts = s.groupby(s.index.month).count()
