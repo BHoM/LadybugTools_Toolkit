@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2022, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2023, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -32,7 +32,7 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Query
     {
-        [Description("Get a material object from it's Enum.")]
+        [Description("Get a material object from its Enum.")]
         [Input("material", "An enum value representing a pre-defined ILBTMaterial object.")]
         [Output("material", "A material object to pass into the External Comfort workflow.")]
         public static ILBTMaterial GetMaterial(this Materials material)
@@ -254,4 +254,5 @@ namespace BH.Engine.LadybugTools
         }
     }
 }
+
 

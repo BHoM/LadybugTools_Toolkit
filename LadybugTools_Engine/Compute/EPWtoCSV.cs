@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2022, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2023, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -54,7 +54,7 @@ namespace BH.Engine.LadybugTools
             {
                 "from pathlib import Path",
                 "from ladybug.epw import EPW",
-                "from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe",
+                "from ladybugtools_toolkit.ladybug_extension.epw import to_dataframe",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",
@@ -69,3 +69,4 @@ namespace BH.Engine.LadybugTools
         }
     }
 }
+
