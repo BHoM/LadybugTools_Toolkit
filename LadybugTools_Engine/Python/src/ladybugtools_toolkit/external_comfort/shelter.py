@@ -18,6 +18,65 @@ from ladybugtools_toolkit.ladybug_extension.epw import unique_wind_speed_directi
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..ladybug_extension.epw import sun_position_list
 
+_LINEAR_SHELTER_VERTICES_NORTH_SOUTH = [
+    [2, -1000, 3.5],
+    [2, 1000, 3.5],
+    [-2, 1000, 3.5],
+    [-2, -1000, 3.5],
+]
+_OVERHEAD_SHELTER_VERTICES_SMALL = [
+    [2, 0, 3.5],
+    [1.879385, 0.68404, 3.5],
+    [1.532089, 1.285575, 3.5],
+    [1, 1.732051, 3.5],
+    [0.347296, 1.969616, 3.5],
+    [-0.347296, 1.969616, 3.5],
+    [-1.0, 1.732051, 3.5],
+    [-1.532089, 1.285575, 3.5],
+    [-1.879385, 0.68404, 3.5],
+    [-2, 0, 3.5],
+    [-1.879385, -0.68404, 3.5],
+    [-1.532089, -1.285575, 3.5],
+    [-1, -1.732051, 3.5],
+    [-0.347296, -1.969616, 3.5],
+    [0.347296, -1.969616, 3.5],
+    [1.0, -1.732051, 3.5],
+    [1.532089, -1.285575, 3.5],
+    [1.879385, -0.68404, 3.5],
+]
+_OVERHEAD_SHELTER_VERTICES_LARGE = [
+    [250, 0, 3.5],
+    [234.923155, 85.505036, 3.5],
+    [191.511111, 160.696902, 3.5],
+    [125, 216.506351, 3.5],
+    [43.412044, 246.201938, 3.5],
+    [-43.412044, 246.201938, 3.5],
+    [-125.0, 216.506351, 3.5],
+    [-191.511111, 160.696902, 3.5],
+    [-234.923155, 85.505036, 3.5],
+    [-250, 0, 3.5],
+    [-234.923155, -85.505036, 3.5],
+    [-191.511111, -160.696902, 3.5],
+    [-125, -216.506351, 3.5],
+    [-43.412044, -246.201938, 3.5],
+    [43.412044, -246.201938, 3.5],
+    [125.0, -216.506351, 3.5],
+    [191.511111, -160.696902, 3.5],
+    [234.923155, -85.505036, 3.5],
+]
+_DIRECTIONAL_SHELTER_VERTICES_NORTH = [
+    [1, 1, 0],
+    [-1, 1, 0],
+    [-1, 1, 5],
+    [1, 1, 5],
+]
+_CANOPY_NORTH = [
+    [1, 1, 5],
+    [-1, 1, 5],
+    [-1, -1, 5],
+    [1, -1, 5],
+]
+
 
 @dataclass(init=True, repr=True, eq=True)
 class Shelter(BHoMObject):
@@ -326,31 +385,26 @@ class Shelter(BHoMObject):
         return effective_wind_speeds
 
     def set_porosity(self, porosity: float) -> Shelter:
+        """Return this shelter with an adjusted porosity value applied to both wind and radiation components."""
         return Shelter(self.vertices, porosity, porosity)
 
     def visualise(self) -> plt.Figure:
-        min_x, min_y, _ = np.array(self.vertices).min(axis=0)
-        max_x, max_y, max_z = np.array(self.vertices).max(axis=0)
-        min_xy = min([min_x, min_y])
-        max_xy = max([max_x, max_y])
-        # get limits
+        """Visualise this shelter to check validity and that it exists where you think it should!"""
         fig = plt.figure(figsize=(5, 5))
         ax = mplot3d.Axes3D(fig, auto_add_to_figure=False)
         fig.add_axes(ax)
         ax.scatter(*self.origin.to_array())
+        # add shelter as a polygon
         vtx = np.array([i.to_array() for i in self.face.vertices])
         tri = mplot3d.art3d.Poly3DCollection([vtx])
         tri.set_color("grey")
         tri.set_alpha(0.5)
         tri.set_edgecolor("k")
         ax.add_collection3d(tri)
+        # format axes
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel("z")
-        ax.set_xlim(min_xy, max_xy)
-        ax.set_ylim(min_xy, max_xy)
-        ax.set_zlim(0, max_z)
-        plt.tight_layout()
         return fig
 
 
@@ -543,108 +597,49 @@ def annual_effective_wind_speed(
 class Shelters(Enum):
     """A list of pre-defined Shelter forms."""
 
-    _linear_shelter_vertices_north_south = [
-        [2, -1000, 3.5],
-        [2, 1000, 3.5],
-        [-2, 1000, 3.5],
-        [-2, -1000, 3.5],
-    ]
-    _overhead_shelter_vertices_small = [
-        [2, 0, 3.5],
-        [1.879385, 0.68404, 3.5],
-        [1.532089, 1.285575, 3.5],
-        [1, 1.732051, 3.5],
-        [0.347296, 1.969616, 3.5],
-        [-0.347296, 1.969616, 3.5],
-        [-1.0, 1.732051, 3.5],
-        [-1.532089, 1.285575, 3.5],
-        [-1.879385, 0.68404, 3.5],
-        [-2, 0, 3.5],
-        [-1.879385, -0.68404, 3.5],
-        [-1.532089, -1.285575, 3.5],
-        [-1, -1.732051, 3.5],
-        [-0.347296, -1.969616, 3.5],
-        [0.347296, -1.969616, 3.5],
-        [1.0, -1.732051, 3.5],
-        [1.532089, -1.285575, 3.5],
-        [1.879385, -0.68404, 3.5],
-    ]
-    _overhead_shelter_vertices_large = [
-        [250, 0, 3.5],
-        [234.923155, 85.505036, 3.5],
-        [191.511111, 160.696902, 3.5],
-        [125, 216.506351, 3.5],
-        [43.412044, 246.201938, 3.5],
-        [-43.412044, 246.201938, 3.5],
-        [-125.0, 216.506351, 3.5],
-        [-191.511111, 160.696902, 3.5],
-        [-234.923155, 85.505036, 3.5],
-        [-250, 0, 3.5],
-        [-234.923155, -85.505036, 3.5],
-        [-191.511111, -160.696902, 3.5],
-        [-125, -216.506351, 3.5],
-        [-43.412044, -246.201938, 3.5],
-        [43.412044, -246.201938, 3.5],
-        [125.0, -216.506351, 3.5],
-        [191.511111, -160.696902, 3.5],
-        [234.923155, -85.505036, 3.5],
-    ]
-    _directional_shelter_vertices_north = [
-        [1, 1, 0],
-        [-1, 1, 0],
-        [-1, 1, 5],
-        [1, 1, 5],
-    ]
-    _canopy_north = [
-        [1, 1, 5],
-        [-1, 1, 5],
-        [-1, -1, 5],
-        [1, -1, 5],
-    ]
-
     NORTH_SOUTH_LINEAR = Shelter(
-        vertices=_linear_shelter_vertices_north_south,
+        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     )
     EAST_WEST_LINEAR = Shelter(
-        vertices=_linear_shelter_vertices_north_south,
+        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     ).rotate(90)
     NORTHEAST_SOUTHWEST_LINEAR = Shelter(
-        vertices=_linear_shelter_vertices_north_south,
+        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     ).rotate(45)
     NORTHWEST_SOUTHEAST_LINEAR = Shelter(
-        vertices=_linear_shelter_vertices_north_south,
+        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     ).rotate(135)
 
     OVERHEAD_SMALL = Shelter(
-        vertices=_overhead_shelter_vertices_small,
+        vertices=_OVERHEAD_SHELTER_VERTICES_SMALL,
     )
     OVERHEAD_LARGE = Shelter(
-        vertices=_overhead_shelter_vertices_large,
+        vertices=_OVERHEAD_SHELTER_VERTICES_LARGE,
     )
-    CANOPY_N_E_S_W = Shelter(vertices=_canopy_north)
-    CANOPY_NE_SE_SW_NW = Shelter(vertices=_canopy_north).rotate(45)
+    CANOPY_N_E_S_W = Shelter(vertices=_CANOPY_NORTH)
+    CANOPY_NE_SE_SW_NW = Shelter(vertices=_CANOPY_NORTH).rotate(45)
 
     NORTH = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     )
     NORTHEAST = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(45)
     EAST = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(90)
     SOUTHEAST = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(135)
     SOUTH = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(180)
     SOUTHWEST = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(225)
     WEST = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(270)
     NORTHWEST = Shelter(
-        vertices=_directional_shelter_vertices_north,
+        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(315)
