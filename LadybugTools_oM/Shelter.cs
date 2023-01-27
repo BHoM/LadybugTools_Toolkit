@@ -22,6 +22,7 @@
 
 
 using BH.oM.Base;
+using BH.oM.Geometry;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -29,16 +30,13 @@ namespace BH.oM.LadybugTools
 {
     public class Shelter : BHoMObject
     {
-        [Description("Shelter porosity (0-1).")]
+        [Description("Wind porosity (0-1).")]
         public virtual double WindPorosity { get; set; } = 0.0;
 
         [Description("Radiation porosity (0-1).")]
         public virtual double RadiationPorosity { get; set; } = 0.0;
 
-        [Description("The azimuth range covered by this shelter.")]
-        public virtual List<double> AzimuthRange { get; set; } = new List<double>() { 0, 0 };
-    
-        [Description("The altitude range covered by this shelter.")]
-        public virtual List<double> AltitudeRange { get; set; } = new List<double>() { 0, 0 };
+        [Description("The vertices of this shelter object.")]
+        public virtual List<List<double>> Vertices { get; set; } = new List<List<double>>();
     }
 }

@@ -122,6 +122,7 @@
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Compute\SimulationResult.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
+    <Compile Include="Create\Shelter.cs" />
     <Compile Include="Convert\PascalCaseToSnakeCase.cs" />
     <Compile Include="Convert\SanitiseString.cs" />
     <Compile Include="Convert\SnakeCaseToPascalCase.cs" />
@@ -144,9 +145,7 @@
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Create\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.5.12.50810.13095\build\net35\RhinoCommon.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
