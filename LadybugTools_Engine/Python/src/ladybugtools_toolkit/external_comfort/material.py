@@ -16,13 +16,12 @@ class OpaqueMaterial(BHoMObject):  # pylint: disable=invalid-name
     """An object representing a material."""
 
     identifier: str = field(repr=True, compare=True)
+    source: str = field(repr=False, compare=True)
+
     thickness: float = field(repr=False, compare=True)
     conductivity: float = field(repr=False, compare=True)
     density: float = field(repr=False, compare=True)
     specific_heat: float = field(repr=False, compare=True)
-
-    source: str = field(repr=False, compare=True)
-
     roughness: str = field(repr=False, compare=True, default="MediumRough")
     thermal_absorptance: float = field(repr=False, compare=True, default=0.9)
     solar_absorptance: float = field(repr=False, compare=True, default=0.7)

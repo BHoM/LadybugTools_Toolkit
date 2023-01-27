@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
-
 from ladybugtools_toolkit.external_comfort.material import Materials
 from ladybugtools_toolkit.external_comfort.typology import (
     Shelter,
@@ -16,17 +15,11 @@ from ...tests import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
 EPW_OBJ = EPW(EPW_FILE)
 GROUND_MATERIAL = Materials.ASPHALT_PAVEMENT.value
 SHADE_MATERIAL = Materials.FABRIC.value
+GENERIC_SHELTER = Shelter([[0, 0, 5], [1, 1, 5], [1, 0, 5]])
 
 TYPOLOGY = Typology(
     name=EXTERNAL_COMFORT_IDENTIFIER,
-    shelters=[
-        Shelter(
-            wind_porosity=0.5,
-            radiation_porosity=0.5,
-            altitude_range=(45, 90),
-            azimuth_range=(90, 270),
-        )
-    ],
+    shelters=[GENERIC_SHELTER],
     evaporative_cooling_effectiveness=0.1,
 )
 
@@ -39,7 +32,7 @@ def test_sky_exposure():
 def test_sun_exposure():
     """_"""
     x = np.array(TYPOLOGY.sun_exposure(EPW_OBJ))
-    assert x[~np.isnan(x)].sum() == 4093
+    assert x[~np.isnan(x)].sum() == 4465
 
 
 def test_dry_bulb_temperature():
@@ -59,7 +52,7 @@ def test_relative_humidity():
 def test_wind_speed():
     """_"""
     assert TYPOLOGY.wind_speed(EPW_OBJ).average == pytest.approx(
-        2.026758704337967, rel=0.1
+        3.2418835616436126, rel=0.1
     )
 
 

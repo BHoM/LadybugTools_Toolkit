@@ -12,8 +12,7 @@ from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
 from ..ladybug_extension.datacollection import to_series
 from ..ladybug_extension.epw import to_dataframe
 from ..ladybug_extension.location import to_string as location_to_string
-from ..plot.colormaps import (DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP,
-                              WS_COLORMAP)
+from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMAP
 from ..plot.timeseries_heatmap import timeseries_heatmap
 from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
 from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
@@ -21,6 +20,7 @@ from ..plot.utci_heatmap import utci_heatmap
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
 from .simulate import SimulationResult
 from .typology import Typology
+from .utci import utci
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -99,14 +99,35 @@ class ExternalComfort(BHoMObject):
             )
             else self.typology.mean_radiant_temperature(self.simulation_result)
         )
-        self.universal_thermal_climate_index = (
-            self.universal_thermal_climate_index
-            if isinstance(
-                getattr(self, "universal_thermal_climate_index"),
-                HourlyContinuousCollection,
+        if isinstance(
+            getattr(self, "universal_thermal_climate_index"), HourlyContinuousCollection
+        ):
+            pass
+        elif all(
+            [
+                isinstance(
+                    getattr(self, "dry_bulb_temperature"), HourlyContinuousCollection
+                ),
+                isinstance(
+                    getattr(self, "relative_humidity"), HourlyContinuousCollection
+                ),
+                isinstance(getattr(self, "wind_speed"), HourlyContinuousCollection),
+                isinstance(
+                    getattr(self, "mean_radiant_temperature"),
+                    HourlyContinuousCollection,
+                ),
+            ]
+        ):
+            self.universal_thermal_climate_index = utci(
+                air_temperature=self.dry_bulb_temperature,
+                relative_humidity=self.relative_humidity,
+                mean_radiant_temperature=self.mean_radiant_temperature,
+                wind_speed=self.wind_speed,
             )
-            else self.typology.universal_thermal_climate_index(self.simulation_result)
-        )
+        else:
+            self.universal_thermal_climate_index = (
+                self.typology.universal_thermal_climate_index(self.simulation_result)
+            )
 
         # populate metadata in metrics with current ExternalComfort config
         if self.typology.sky_exposure() != 1:
