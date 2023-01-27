@@ -49,8 +49,11 @@ namespace BH.oM.LadybugTools
         SouthwestShelterWithCanopy,
         WestShelterWithCanopy,
         NorthwestShelterWithCanopy,
-        EastWestShelter,
-        EastWestShelterWithCanopy,
+        NorthsouthLinearShelter,
+        NortheastSouthwestLinearShelter,
+        EastWestLinearShelter,
+        NorthwestSoutheastLinearShelter,
+
     };
 }
 

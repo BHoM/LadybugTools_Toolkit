@@ -128,6 +128,7 @@
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Compute\SimulationResult.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
+    <Compile Include="Create\Shelter.cs" />
     <Compile Include="Convert\PascalCaseToSnakeCase.cs" />
     <Compile Include="Convert\SanitiseString.cs" />
     <Compile Include="Convert\SnakeCaseToPascalCase.cs" />
@@ -149,9 +150,7 @@
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Create\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

@@ -4,20 +4,20 @@
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
- *                                           
- *                                                                              
- * The BHoM is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3.0 of the License, or          
- * (at your option) any later version.                                          
- *                                                                              
- * The BHoM is distributed in the hope that it will be useful,              
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                 
- * GNU Lesser General Public License for more details.                          
- *                                                                            
- * You should have received a copy of the GNU Lesser General Public License     
- * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
+ *
+ *
+ * The BHoM is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3.0 of the License, or
+ * (at your option) any later version.
+ *
+ * The BHoM is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
  */
 
 using BH.oM.Base.Attributes;
@@ -49,7 +49,9 @@ namespace BH.Engine.LadybugTools
                     return new Typology()
                     {
                         Name = "Openfield",
-                        Shelters = new List<Shelter>(),
+                        Shelters = new List<Shelter>()
+                        {
+                        },
                         EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
@@ -60,15 +62,67 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        0,
-                                        360
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 0},
+                                    new List<double>() {-1, 1, 0},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {1, 1, 5},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.0, -0.9999999999999999, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 5.0},
+                                    new List<double>() {1.0, -0.9999999999999999, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 5.0},
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 5.0},
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {250, 0, 3.5},
+                                    new List<double>() {234.923155, 85.505036, 3.5},
+                                    new List<double>() {191.511111, 160.696902, 3.5},
+                                    new List<double>() {125, 216.506351, 3.5},
+                                    new List<double>() {43.412044, 246.201938, 3.5},
+                                    new List<double>() {-43.412044, 246.201938, 3.5},
+                                    new List<double>() {-125.0, 216.506351, 3.5},
+                                    new List<double>() {-191.511111, 160.696902, 3.5},
+                                    new List<double>() {-234.923155, 85.505036, 3.5},
+                                    new List<double>() {-250, 0, 3.5},
+                                    new List<double>() {-234.923155, -85.505036, 3.5},
+                                    new List<double>() {-191.511111, -160.696902, 3.5},
+                                    new List<double>() {-125, -216.506351, 3.5},
+                                    new List<double>() {-43.412044, -246.201938, 3.5},
+                                    new List<double>() {43.412044, -246.201938, 3.5},
+                                    new List<double>() {125.0, -216.506351, 3.5},
+                                    new List<double>() {191.511111, -160.696902, 3.5},
+                                    new List<double>() {234.923155, -85.505036, 3.5},
+                                }
                             },
                         },
                         EvaporativeCoolingEffectiveness = 0,
@@ -80,16 +134,68 @@ namespace BH.Engine.LadybugTools
                         Name = "Porous enclosure",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
-                                WindPorosity = 0,
-                                    RadiationPorosity = 0.5,
-                                    AzimuthRange = new List < double > () {
-                                        0,
-                                        360
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                WindPorosity = 0.5,
+                                RadiationPorosity = 0.5,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 0},
+                                    new List<double>() {-1, 1, 0},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {1, 1, 5},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0.5,
+                                RadiationPorosity = 0.5,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.0, -0.9999999999999999, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 5.0},
+                                    new List<double>() {1.0, -0.9999999999999999, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0.5,
+                                RadiationPorosity = 0.5,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 5.0},
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0.5,
+                                RadiationPorosity = 0.5,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 5.0},
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0.5,
+                                RadiationPorosity = 0.5,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {250, 0, 3.5},
+                                    new List<double>() {234.923155, 85.505036, 3.5},
+                                    new List<double>() {191.511111, 160.696902, 3.5},
+                                    new List<double>() {125, 216.506351, 3.5},
+                                    new List<double>() {43.412044, 246.201938, 3.5},
+                                    new List<double>() {-43.412044, 246.201938, 3.5},
+                                    new List<double>() {-125.0, 216.506351, 3.5},
+                                    new List<double>() {-191.511111, 160.696902, 3.5},
+                                    new List<double>() {-234.923155, 85.505036, 3.5},
+                                    new List<double>() {-250, 0, 3.5},
+                                    new List<double>() {-234.923155, -85.505036, 3.5},
+                                    new List<double>() {-191.511111, -160.696902, 3.5},
+                                    new List<double>() {-125, -216.506351, 3.5},
+                                    new List<double>() {-43.412044, -246.201938, 3.5},
+                                    new List<double>() {43.412044, -246.201938, 3.5},
+                                    new List<double>() {125.0, -216.506351, 3.5},
+                                    new List<double>() {191.511111, -160.696902, 3.5},
+                                    new List<double>() {234.923155, -85.505036, 3.5},
+                                }
                             },
                         },
                         EvaporativeCoolingEffectiveness = 0,
@@ -102,15 +208,27 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        0,
-                                        360
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        45,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {250, 0, 3.5},
+                                    new List<double>() {234.923155, 85.505036, 3.5},
+                                    new List<double>() {191.511111, 160.696902, 3.5},
+                                    new List<double>() {125, 216.506351, 3.5},
+                                    new List<double>() {43.412044, 246.201938, 3.5},
+                                    new List<double>() {-43.412044, 246.201938, 3.5},
+                                    new List<double>() {-125.0, 216.506351, 3.5},
+                                    new List<double>() {-191.511111, 160.696902, 3.5},
+                                    new List<double>() {-234.923155, 85.505036, 3.5},
+                                    new List<double>() {-250, 0, 3.5},
+                                    new List<double>() {-234.923155, -85.505036, 3.5},
+                                    new List<double>() {-191.511111, -160.696902, 3.5},
+                                    new List<double>() {-125, -216.506351, 3.5},
+                                    new List<double>() {-43.412044, -246.201938, 3.5},
+                                    new List<double>() {43.412044, -246.201938, 3.5},
+                                    new List<double>() {125.0, -216.506351, 3.5},
+                                    new List<double>() {191.511111, -160.696902, 3.5},
+                                    new List<double>() {234.923155, -85.505036, 3.5},
+                                }
                             },
                         },
                         EvaporativeCoolingEffectiveness = 0,
@@ -123,15 +241,27 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0.5,
-                                    RadiationPorosity = 0.5,
-                                    AzimuthRange = new List < double > () {
-                                        0,
-                                        360
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        45,
-                                        90
-                                    },
+                                RadiationPorosity = 0.5,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {250, 0, 3.5},
+                                    new List<double>() {234.923155, 85.505036, 3.5},
+                                    new List<double>() {191.511111, 160.696902, 3.5},
+                                    new List<double>() {125, 216.506351, 3.5},
+                                    new List<double>() {43.412044, 246.201938, 3.5},
+                                    new List<double>() {-43.412044, 246.201938, 3.5},
+                                    new List<double>() {-125.0, 216.506351, 3.5},
+                                    new List<double>() {-191.511111, 160.696902, 3.5},
+                                    new List<double>() {-234.923155, 85.505036, 3.5},
+                                    new List<double>() {-250, 0, 3.5},
+                                    new List<double>() {-234.923155, -85.505036, 3.5},
+                                    new List<double>() {-191.511111, -160.696902, 3.5},
+                                    new List<double>() {-125, -216.506351, 3.5},
+                                    new List<double>() {-43.412044, -246.201938, 3.5},
+                                    new List<double>() {43.412044, -246.201938, 3.5},
+                                    new List<double>() {125.0, -216.506351, 3.5},
+                                    new List<double>() {191.511111, -160.696902, 3.5},
+                                    new List<double>() {234.923155, -85.505036, 3.5},
+                                }
                             },
                         },
                         EvaporativeCoolingEffectiveness = 0,
@@ -141,19 +271,8 @@ namespace BH.Engine.LadybugTools
                     return new Typology()
                     {
                         Name = "Near water",
-                        Shelters = new List<Shelter>() {
-                            new Shelter() {
-                                WindPorosity = 1,
-                                    RadiationPorosity = 1,
-                                    AzimuthRange = new List < double > () {
-                                        0,
-                                        0
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        0
-                                    },
-                            },
+                        Shelters = new List<Shelter>()
+                        {
                         },
                         EvaporativeCoolingEffectiveness = 0.15,
                         WindSpeedAdjustment = 1,
@@ -162,19 +281,8 @@ namespace BH.Engine.LadybugTools
                     return new Typology()
                     {
                         Name = "Misting",
-                        Shelters = new List<Shelter>() {
-                            new Shelter() {
-                                WindPorosity = 1,
-                                    RadiationPorosity = 1,
-                                    AzimuthRange = new List < double > () {
-                                        0,
-                                        0
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        0
-                                    },
-                            },
+                        Shelters = new List<Shelter>()
+                        {
                         },
                         EvaporativeCoolingEffectiveness = 0.3,
                         WindSpeedAdjustment = 1,
@@ -183,19 +291,8 @@ namespace BH.Engine.LadybugTools
                     return new Typology()
                     {
                         Name = "PDEC",
-                        Shelters = new List<Shelter>() {
-                            new Shelter() {
-                                WindPorosity = 1,
-                                    RadiationPorosity = 1,
-                                    AzimuthRange = new List < double > () {
-                                        0,
-                                        0
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        0
-                                    },
-                            },
+                        Shelters = new List<Shelter>()
+                        {
                         },
                         EvaporativeCoolingEffectiveness = 0.7,
                         WindSpeedAdjustment = 1,
@@ -207,18 +304,16 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        337.5,
-                                        22.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 0},
+                                    new List<double>() {-1, 1, 0},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {1, 1, 5},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.NortheastShelter:
@@ -228,18 +323,16 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        22.5,
-                                        67.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.4142135623730951, 0.0, 0.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 0.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 5.0},
+                                    new List<double>() {1.4142135623730951, 0.0, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.EastShelter:
@@ -249,18 +342,16 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        67.5,
-                                        112.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.0, -0.9999999999999999, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 5.0},
+                                    new List<double>() {1.0, -0.9999999999999999, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.SoutheastShelter:
@@ -270,18 +361,16 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        112.5,
-                                        157.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.1102230246251565e-16, -1.414213562373095, 0.0},
+                                    new List<double>() {1.414213562373095, 1.1102230246251565e-16, 0.0},
+                                    new List<double>() {1.414213562373095, 1.1102230246251565e-16, 5.0},
+                                    new List<double>() {1.1102230246251565e-16, -1.414213562373095, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.SouthShelter:
@@ -291,18 +380,16 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        157.5,
-                                        202.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 5.0},
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.SouthwestShelter:
@@ -312,18 +399,16 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        202.5,
-                                        247.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-1.4142135623730951, -2.220446049250313e-16, 0.0},
+                                    new List<double>() {2.220446049250313e-16, -1.4142135623730951, 0.0},
+                                    new List<double>() {2.220446049250313e-16, -1.4142135623730951, 5.0},
+                                    new List<double>() {-1.4142135623730951, -2.220446049250313e-16, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.WestShelter:
@@ -333,18 +418,16 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        247.5,
-                                        292.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 5.0},
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.NorthwestShelter:
@@ -354,252 +437,324 @@ namespace BH.Engine.LadybugTools
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        292.5,
-                                        337.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        70
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-3.3306690738754696e-16, 1.414213562373095, 0.0},
+                                    new List<double>() {-1.414213562373095, -3.3306690738754696e-16, 0.0},
+                                    new List<double>() {-1.414213562373095, -3.3306690738754696e-16, 5.0},
+                                    new List<double>() {-3.3306690738754696e-16, 1.414213562373095, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.NorthShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "North shelter (with canopy)",
+                        Name = "North shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        337.5,
-                                        22.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 0},
+                                    new List<double>() {-1, 1, 0},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {1, 1, 5},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 5},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {-1, -1, 5},
+                                    new List<double>() {1, -1, 5},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.NortheastShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "Northeast shelter (with canopy)",
+                        Name = "Northeast shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        22.5,
-                                        67.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.4142135623730951, 0.0, 0.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 0.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 5.0},
+                                    new List<double>() {1.4142135623730951, 0.0, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 5.0},
+                                    new List<double>() {-1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, -1.4142135623730951, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.EastShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "East shelter (with canopy)",
+                        Name = "East shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        67.5,
-                                        112.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.0, -0.9999999999999999, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 0.0},
+                                    new List<double>() {0.9999999999999999, 1.0, 5.0},
+                                    new List<double>() {1.0, -0.9999999999999999, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 5},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {-1, -1, 5},
+                                    new List<double>() {1, -1, 5},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.SoutheastShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "Southeast shelter (with canopy)",
+                        Name = "Southeast shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        112.5,
-                                        157.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.1102230246251565e-16, -1.414213562373095, 0.0},
+                                    new List<double>() {1.414213562373095, 1.1102230246251565e-16, 0.0},
+                                    new List<double>() {1.414213562373095, 1.1102230246251565e-16, 5.0},
+                                    new List<double>() {1.1102230246251565e-16, -1.414213562373095, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 5.0},
+                                    new List<double>() {-1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, -1.4142135623730951, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.SouthShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "South shelter (with canopy)",
+                        Name = "South shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        157.5,
-                                        202.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 0.0},
+                                    new List<double>() {1.0000000000000002, -0.9999999999999999, 5.0},
+                                    new List<double>() {-0.9999999999999999, -1.0000000000000002, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 5},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {-1, -1, 5},
+                                    new List<double>() {1, -1, 5},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.SouthwestShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "Southwest shelter (with canopy)",
+                        Name = "Southwest shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        202.5,
-                                        247.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-1.4142135623730951, -2.220446049250313e-16, 0.0},
+                                    new List<double>() {2.220446049250313e-16, -1.4142135623730951, 0.0},
+                                    new List<double>() {2.220446049250313e-16, -1.4142135623730951, 5.0},
+                                    new List<double>() {-1.4142135623730951, -2.220446049250313e-16, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 5.0},
+                                    new List<double>() {-1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, -1.4142135623730951, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.WestShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "West shelter (with canopy)",
+                        Name = "West shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        247.5,
-                                        292.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 0.0},
+                                    new List<double>() {-0.9999999999999998, -1.0000000000000002, 5.0},
+                                    new List<double>() {-1.0000000000000002, 0.9999999999999998, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1, 1, 5},
+                                    new List<double>() {-1, 1, 5},
+                                    new List<double>() {-1, -1, 5},
+                                    new List<double>() {1, -1, 5},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 case Typologies.NorthwestShelterWithCanopy:
                     return new Typology()
                     {
-                        Name = "Northwest shelter (with canopy)",
+                        Name = "Northwest shelter with canopy",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
                                 WindPorosity = 0,
-                                    RadiationPorosity = 0,
-                                    AzimuthRange = new List < double > () {
-                                        292.5,
-                                        337.5
-                                    },
-                                    AltitudeRange = new List < double > () {
-                                        0,
-                                        90
-                                    },
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-3.3306690738754696e-16, 1.414213562373095, 0.0},
+                                    new List<double>() {-1.414213562373095, -3.3306690738754696e-16, 0.0},
+                                    new List<double>() {-1.414213562373095, -3.3306690738754696e-16, 5.0},
+                                    new List<double>() {-3.3306690738754696e-16, 1.414213562373095, 5.0},
+                                }
+                            },
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, 1.4142135623730951, 5.0},
+                                    new List<double>() {-1.4142135623730951, 0.0, 5.0},
+                                    new List<double>() {0.0, -1.4142135623730951, 5.0},
+                                }
                             },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
-                case Typologies.EastWestShelter:
+                case Typologies.NorthsouthLinearShelter:
                     return new Typology()
                     {
-                        Name = "East-west shelter",
+                        Name = "North-south linear overhead shelter",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
-                                    WindPorosity = 0,
-                                        RadiationPorosity = 0,
-                                        AzimuthRange = new List < double > () {
-                                            67.5,
-                                            112.5
-                                        },
-                                        AltitudeRange = new List < double > () {
-                                            0,
-                                            70
-                                        },
-                                },
-                                new Shelter() {
-                                    WindPorosity = 0,
-                                        RadiationPorosity = 0,
-                                        AzimuthRange = new List < double > () {
-                                            247.5,
-                                            292.5
-                                        },
-                                        AltitudeRange = new List < double > () {
-                                            0,
-                                            70
-                                        },
-                                },
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {2, -1000, 3.5},
+                                    new List<double>() {2, 1000, 3.5},
+                                    new List<double>() {-2, 1000, 3.5},
+                                    new List<double>() {-2, -1000, 3.5},
+                                }
+                            },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
-                case Typologies.EastWestShelterWithCanopy:
+                case Typologies.NortheastSouthwestLinearShelter:
                     return new Typology()
                     {
-                        Name = "East-west shelter (with canopy)",
+                        Name = "Northeast-southwest linear overhead shelter",
                         Shelters = new List<Shelter>() {
                             new Shelter() {
-                                    WindPorosity = 0,
-                                        RadiationPorosity = 0,
-                                        AzimuthRange = new List < double > () {
-                                            67.5,
-                                            112.5
-                                        },
-                                        AltitudeRange = new List < double > () {
-                                            0,
-                                            90
-                                        },
-                                },
-                                new Shelter() {
-                                    WindPorosity = 0,
-                                        RadiationPorosity = 0,
-                                        AzimuthRange = new List < double > () {
-                                            247.5,
-                                            292.5
-                                        },
-                                        AltitudeRange = new List < double > () {
-                                            0,
-                                            90
-                                        },
-                                },
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-705.6925676241744, -708.5209947489207, 3.5},
+                                    new List<double>() {708.5209947489207, 705.6925676241744, 3.5},
+                                    new List<double>() {705.6925676241744, 708.5209947489207, 3.5},
+                                    new List<double>() {-708.5209947489207, -705.6925676241744, 3.5},
+                                }
+                            },
                         },
-                        EvaporativeCoolingEffectiveness = 0.0,
+                        EvaporativeCoolingEffectiveness = 0,
+                        WindSpeedAdjustment = 1,
+                    };
+                case Typologies.EastWestLinearShelter:
+                    return new Typology()
+                    {
+                        Name = "East-west linear overhead shelter",
+                        Shelters = new List<Shelter>() {
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-1000.0, -2.0000000000000613, 3.5},
+                                    new List<double>() {1000.0, -1.9999999999999387, 3.5},
+                                    new List<double>() {1000.0, 2.0000000000000613, 3.5},
+                                    new List<double>() {-1000.0, 1.9999999999999387, 3.5},
+                                }
+                            },
+                        },
+                        EvaporativeCoolingEffectiveness = 0,
+                        WindSpeedAdjustment = 1,
+                    };
+                case Typologies.NorthwestSoutheastLinearShelter:
+                    return new Typology()
+                    {
+                        Name = "Northwest-southeast linear overhead shelter",
+                        Shelters = new List<Shelter>() {
+                            new Shelter() {
+                                WindPorosity = 0,
+                                RadiationPorosity = 0,
+                                Vertices = new List<List<double>>() {
+                                    new List<double>() {-708.5209947489207, 705.6925676241743, 3.5},
+                                    new List<double>() {705.6925676241744, -708.5209947489205, 3.5},
+                                    new List<double>() {708.5209947489207, -705.6925676241743, 3.5},
+                                    new List<double>() {-705.6925676241744, 708.5209947489205, 3.5},
+                                }
+                            },
+                        },
+                        EvaporativeCoolingEffectiveness = 0,
                         WindSpeedAdjustment = 1,
                     };
                 default:

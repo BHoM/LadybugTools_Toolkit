@@ -30,6 +30,8 @@ namespace BH.oM.LadybugTools
     {
         [Description("The identifier for this material object.")]
         public virtual string Identifier { get; set; }
+        [Description("The source for this material object.")]
+        public virtual string Source { get; set; }
     }
 }
 

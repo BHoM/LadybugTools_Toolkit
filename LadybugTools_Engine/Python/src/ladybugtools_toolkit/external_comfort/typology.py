@@ -18,7 +18,7 @@ from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..helpers import decay_rate_smoother
 from ..ladybug_extension.datacollection import from_series, to_series
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
-from .moisture import evaporative_cooling_effect_collection
+from .moisture import evaporative_cooling_effect, evaporative_cooling_effect_collection
 from .shelter import (
     Shelter,
     Shelters,
@@ -40,9 +40,9 @@ class Typology(BHoMObject):
         shelters (List[Shelter], optional):
             A list of shelters modifying exposure to the elements.
             Defaults to None.
-        evaporative_cooling_effectiveness (float, optional):
+        evaporative_cooling_effectiveness (Union[float, List[float]), optional):
             An amount of evaporative cooling to add to results calculated by
-            this typology. Defaults to 0.
+            this typology. Defaults to 0. Can also be a list of 8760 values.
         wind_speed_adjustment (float, optional):
             A factor to multiply wind speed by. Defaults to 1.
 
@@ -54,7 +54,7 @@ class Typology(BHoMObject):
     shelters: List[Shelter] = field(
         init=True, compare=True, repr=True, default_factory=list
     )
-    evaporative_cooling_effectiveness: float = field(
+    evaporative_cooling_effectiveness: Union[float, List[float]] = field(
         init=True, compare=True, repr=True, default=0
     )
     wind_speed_adjustment: float = field(init=True, compare=True, repr=True, default=1)
@@ -64,14 +64,25 @@ class Typology(BHoMObject):
     )
 
     def __post_init__(self):
+
         if self.wind_speed_adjustment < 0:
             raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
-
-        if (
-            self.evaporative_cooling_effectiveness < 0
-            or self.evaporative_cooling_effectiveness > 1
-        ):
-            raise ValueError("Evaporative cooling effect must be between 0 and 1.")
+        if isinstance(self.evaporative_cooling_effectiveness, (float, int)):
+            if (
+                self.evaporative_cooling_effectiveness < 0
+                or self.evaporative_cooling_effectiveness > 1
+            ):
+                raise ValueError("Evaporative cooling effect must be between 0 and 1.")
+        else:
+            if len(self.evaporative_cooling_effectiveness) != 8760:
+                raise ValueError(
+                    "Evaporative cooling effect can only currently be either a single value applied across the entire year, or a list of 8760 values."
+                )
+            if (
+                min(self.evaporative_cooling_effectiveness) < 0
+                or max(self.evaporative_cooling_effectiveness) > 1
+            ):
+                raise ValueError("Evaporative cooling effect must be between 0 and 1.")
 
         # wrap methods within this class
         super().__post_init__()
@@ -134,10 +145,27 @@ class Typology(BHoMObject):
             HourlyContinuousCollection: The effective DBT following application of any evaporative
                 cooling effects.
         """
-        # TODO - add ability to specify evap clg magnitude via schedule
-        return evaporative_cooling_effect_collection(
-            epw, self.evaporative_cooling_effectiveness
-        )[0]
+        if isinstance(self.evaporative_cooling_effectiveness, (float, int)):
+            return evaporative_cooling_effect_collection(
+                epw, self.evaporative_cooling_effectiveness
+            )[0]
+        else:
+            dbt_evap, _ = np.array(
+                [
+                    evaporative_cooling_effect(dbt, rh, evap_clg, ap)
+                    for dbt, rh, evap_clg, ap in list(
+                        zip(
+                            *[
+                                epw.dry_bulb_temperature,
+                                epw.relative_humidity,
+                                self.evaporative_cooling_effectiveness,
+                                epw.atmospheric_station_pressure,
+                            ]
+                        )
+                    )
+                ]
+            ).T
+            return epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
 
     def relative_humidity(self, epw: EPW) -> HourlyContinuousCollection:
         """Get the effective RH for the given EPW file for this Typology.
@@ -150,9 +178,27 @@ class Typology(BHoMObject):
             HourlyContinuousCollection: The effective RH following application of any evaporative
                 cooling effects.
         """
-        return evaporative_cooling_effect_collection(
-            epw, self.evaporative_cooling_effectiveness
-        )[1]
+        if isinstance(self.evaporative_cooling_effectiveness, (float, int)):
+            return evaporative_cooling_effect_collection(
+                epw, self.evaporative_cooling_effectiveness
+            )[1]
+        else:
+            _, rh_evap = np.array(
+                [
+                    evaporative_cooling_effect(dbt, rh, evap_clg, ap)
+                    for dbt, rh, evap_clg, ap in list(
+                        zip(
+                            *[
+                                epw.dry_bulb_temperature,
+                                epw.relative_humidity,
+                                self.evaporative_cooling_effectiveness,
+                                epw.atmospheric_station_pressure,
+                            ]
+                        )
+                    )
+                ]
+            ).T
+            return epw.relative_humidity.get_aligned_collection(rh_evap)
 
     def wind_speed(self, epw: EPW) -> HourlyContinuousCollection:
         """Calculate wind speed when subjected to a set of shelters.
@@ -205,13 +251,12 @@ class Typology(BHoMObject):
             else:
                 mrts.append(np.interp(_sky_exposure, [0, 1], [shaded, unshaded]))
 
-        # Fill any gaps where sun-visible/sun-occluded values are missing, and apply an
-        # exponentially weighted moving average to account for transition between shaded/unshaded
-        # periods.
+        # Fill any gaps where sun-visible/sun-occluded values are missing
         mrt_series = pd.Series(
             mrts, index=shaded_mrt.index, name=shaded_mrt.name
         ).interpolate()
 
+        # apply an exponentially weighted moving average to account for transition between shaded/unshaded periods on surrounding surface temperatures
         mrt_series = decay_rate_smoother(
             mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25
         )
