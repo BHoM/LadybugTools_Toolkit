@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Union
 
 import numpy as np
 import pandas as pd
-from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datacollection import (
     BaseCollection,
     HourlyContinuousCollection,
@@ -340,7 +339,7 @@ def describe_collection(
         collection.header.analysis_period.end_month != 12
     ):
         warnings.warn(
-            f"The data collection being described represents only a portion of a full year."
+            "The data collection being described represents only a portion of a full year."
         )
 
     # summarise data title and time period
@@ -421,7 +420,7 @@ def describe_collection(
                 ", ", 1
             )
         )
-        + f" times respectively"
+        + " times respectively"
     )
     descriptions.append(
         f"The {_n_common} most common {name} values are {_most_common_str}, occurring {_most_common_counts_str}."

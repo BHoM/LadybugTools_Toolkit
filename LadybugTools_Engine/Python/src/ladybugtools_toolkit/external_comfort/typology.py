@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Union
@@ -11,7 +12,6 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
-from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
@@ -149,23 +149,22 @@ class Typology(BHoMObject):
             return evaporative_cooling_effect_collection(
                 epw, self.evaporative_cooling_effectiveness
             )[0]
-        else:
-            dbt_evap, _ = np.array(
-                [
-                    evaporative_cooling_effect(dbt, rh, evap_clg, ap)
-                    for dbt, rh, evap_clg, ap in list(
-                        zip(
-                            *[
-                                epw.dry_bulb_temperature,
-                                epw.relative_humidity,
-                                self.evaporative_cooling_effectiveness,
-                                epw.atmospheric_station_pressure,
-                            ]
-                        )
+        dbt_evap, _ = np.array(
+            [
+                evaporative_cooling_effect(dbt, rh, evap_clg, ap)
+                for dbt, rh, evap_clg, ap in list(
+                    zip(
+                        *[
+                            epw.dry_bulb_temperature,
+                            epw.relative_humidity,
+                            self.evaporative_cooling_effectiveness,
+                            epw.atmospheric_station_pressure,
+                        ]
                     )
-                ]
-            ).T
-            return epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
+                )
+            ]
+        ).T
+        return epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
 
     def relative_humidity(self, epw: EPW) -> HourlyContinuousCollection:
         """Get the effective RH for the given EPW file for this Typology.
@@ -182,23 +181,22 @@ class Typology(BHoMObject):
             return evaporative_cooling_effect_collection(
                 epw, self.evaporative_cooling_effectiveness
             )[1]
-        else:
-            _, rh_evap = np.array(
-                [
-                    evaporative_cooling_effect(dbt, rh, evap_clg, ap)
-                    for dbt, rh, evap_clg, ap in list(
-                        zip(
-                            *[
-                                epw.dry_bulb_temperature,
-                                epw.relative_humidity,
-                                self.evaporative_cooling_effectiveness,
-                                epw.atmospheric_station_pressure,
-                            ]
-                        )
+        _, rh_evap = np.array(
+            [
+                evaporative_cooling_effect(dbt, rh, evap_clg, ap)
+                for dbt, rh, evap_clg, ap in list(
+                    zip(
+                        *[
+                            epw.dry_bulb_temperature,
+                            epw.relative_humidity,
+                            self.evaporative_cooling_effectiveness,
+                            epw.atmospheric_station_pressure,
+                        ]
                     )
-                ]
-            ).T
-            return epw.relative_humidity.get_aligned_collection(rh_evap)
+                )
+            ]
+        ).T
+        return epw.relative_humidity.get_aligned_collection(rh_evap)
 
     def wind_speed(self, epw: EPW) -> HourlyContinuousCollection:
         """Calculate wind speed when subjected to a set of shelters.
@@ -344,6 +342,10 @@ class Typology(BHoMObject):
         return pmv.standard_effective_temperature
 
     def plot_utci_hist(self, res: SimulationResult) -> None:
+        """Convenience method to plot UTCI histogram directly from a typology."""
+        warnings.warn(
+            "While it is possible to call from a Typology object, the recommended method of calling the UTCI historgam is from an ExternalComfort object."
+        )
         return utci_heatmap_histogram(
             self.universal_thermal_climate_index(res), self.name
         )

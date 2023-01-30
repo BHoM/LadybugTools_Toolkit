@@ -12,6 +12,8 @@ from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
 from ..ladybug_extension.datacollection import to_series
+from .colormap_sequential import colormap_sequential
+from .timeseries_heatmap import timeseries_heatmap
 
 
 def utci_distance_to_comfortable(
@@ -282,3 +284,47 @@ def utci_distance_to_comfortable(
     plt.tight_layout()
 
     return fig
+
+
+def utci_distance_to_comfortable_jr(
+    utci_collection: HourlyContinuousCollection,
+    title: str = None,
+    comfort_thresholds: Tuple[float] = (9, 26),
+) -> Figure:
+    """Plot the distance (in C) to comfortable for a given Ladybug HourlyContinuousCollection
+        containing UTCI values - using a different, less funky colour-scheme.
+
+    Args:
+        collection (HourlyContinuousCollection):
+            A Ladybug Universal Thermal Climate Index HourlyContinuousCollection object.
+        title (str, optional):
+            A title to place at the top of the plot. Defaults to None.
+        comfort_thresholds (List[float], optional):
+            The comfortable band of UTCI temperatures. Defaults to [9, 26].
+    Returns:
+        Figure:
+            A matplotlib Figure object.
+    """
+
+    low_limit = min(comfort_thresholds)
+    high_limit = max(comfort_thresholds)
+
+    vals = np.array(utci_collection.values)
+    vals = np.where(
+        vals < low_limit,
+        vals - low_limit,
+        np.where(vals > high_limit, vals - high_limit, 0),
+    )
+    new_collection = utci_collection.get_aligned_collection(vals)
+
+    if title is None:
+        ti = f'Distance to "comfortable" (between {low_limit}C and {high_limit}C UTCI)'
+    else:
+        ti = f'Distance to "comfortable" (between {low_limit}C and {high_limit}C UTCI) - {title}'
+
+    return timeseries_heatmap(
+        to_series(new_collection),
+        cmap=colormap_sequential("#00A9E0", "w", "#ba000d"),
+        vlims=(-20, 20),
+        title=ti,
+    )
