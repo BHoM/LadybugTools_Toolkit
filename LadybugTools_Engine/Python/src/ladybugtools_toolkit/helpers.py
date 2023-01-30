@@ -23,8 +23,6 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
-from ladybug.datatype.temperature import DryBulbTemperature
-from ladybug.datacollection import BaseCollection
 from matplotlib.figure import Figure
 from scipy.stats import exponweib
 from tqdm import tqdm
@@ -722,6 +720,7 @@ class OpenMeteoVariable(Enum):
 
     @property
     def conversion_name(self) -> str:
+        """Convert the enum value into a Ladybug dataype string representation (for this toolkit)."""
         d = {
             self.TEMPERATURE_2M.value: "Dry Bulb Temperature (C)",
             self.DEWPOINT_2M.value: "Dew Point Temperature (C)",

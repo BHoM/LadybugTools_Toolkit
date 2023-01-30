@@ -1,5 +1,5 @@
 import textwrap
-from typing import List
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,13 +11,30 @@ from .colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
 
 def utci_comfort_band_comparison_simple(
-    utcis: List[HourlyContinuousCollection],
+    utcis: Tuple[HourlyContinuousCollection],
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
-    identifiers: List[str] = None,
+    identifiers: Tuple[str] = None,
     title: str = None,
-    comfort_limits: List[float] = [9, 26],
-    vertical: bool = True,
+    comfort_limits: Tuple[float] = (9, 26),
 ) -> plt.Figure:
+    """Create a proportional bar chart showing how differnet UTCI collections compare in terms of time within each simplified comfort band.
+
+    Args:
+        utcis (List[HourlyContinuousCollection]):
+            A list if UTCI collections.
+        analysis_period (AnalysisPeriod, optional):
+            An analysis period ot a[p[ly to all collections. Defaults to AnalysisPeriod().
+        identifiers (List[str], optional):
+            A list of names to give each collection. Defaults to None.
+        title (str, optional):
+            An optional title. Defaults to None.
+        comfort_limits (List[float], optional):
+            Modify the default comfort limits. Defaults to [9, 26].
+
+    Returns:
+        plt.Figure:
+            A figure object.
+    """
 
     if identifiers is None:
         identifiers = [f"{n}" for n in range(len(utcis))]
@@ -82,9 +99,9 @@ def utci_comfort_band_comparison_simple(
 
 
 def utci_comfort_band_comparison(
-    utcis: List[HourlyContinuousCollection],
+    utcis: Tuple[HourlyContinuousCollection],
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
-    identifiers: List[str] = None,
+    identifiers: Tuple[str] = None,
     title: str = None,
 ) -> plt.Figure:
     """Plot a collection of UTCIs as thermal comfort category bars.
