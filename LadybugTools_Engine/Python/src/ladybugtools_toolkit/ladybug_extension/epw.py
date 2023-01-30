@@ -1,4 +1,6 @@
+import calendar
 import copy
+import datetime
 import itertools
 import json
 import warnings
@@ -8,14 +10,13 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from caseconverter import pascalcase
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datacollection import BaseCollection, HourlyContinuousCollection
+from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.angle import Angle
 from ladybug.datatype.fraction import Fraction, HumidityRatio
 from ladybug.datatype.generic import GenericType
 from ladybug.datatype.specificenergy import Enthalpy
-from ladybug.datatype.temperature import DryBulbTemperature, WetBulbTemperature
+from ladybug.datatype.temperature import WetBulbTemperature
 from ladybug.datatype.time import Time
 from ladybug.epw import EPW, EPWFields, MonthlyCollection
 from ladybug.header import Header
@@ -30,7 +31,7 @@ from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
-from .analysis_period import to_boolean, to_datetimes
+from .analysis_period import to_datetimes
 from .datacollection import to_series
 from .header import to_string as header_to_string
 
@@ -922,8 +923,8 @@ def clearness_index(
     )
 
 
-def seasonality_from_day_length(epw: EPW) -> pd.Series:
-    """Create a Series containing a category for each timestep of an EPW giving it's season.
+def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
+    """Create a Series containing a category for each timestep of an EPW giving it's season based on day length (using sunrise/sunset).
 
     Args:
         epw (EPW):
@@ -934,20 +935,34 @@ def seasonality_from_day_length(epw: EPW) -> pd.Series:
             List of seasons per timestep.
     """
 
-    # TODO - add warnings when near poles/equator if necessary for dodgy behaviour
-
+    # get datetimes to query sun
     idx = to_datetimes(AnalysisPeriod())
+    df = pd.Series([0] * len(idx), index=idx).resample("1D").mean()
 
     sun_times = pd.DataFrame.from_dict(
         [
             Sunpath.from_location(epw.location).calculate_sunrise_sunset(i.month, i.day)
-            for i in idx
+            for i in df.index
         ]
-    ).drop_duplicates()
-    sun_times.index = idx[sun_times.index]
+    )
+    sun_times.index = df.index
     sun_times["day_length"] = sun_times.sunset - sun_times.sunrise
 
+    if sun_times.sunset.isna().sum():
+        warnings.warn(
+            "This location is near the north/south pole and is subject to periods where sun neither rises or sets."
+        )
+
+    def _timedelta_to_str(timedelta: datetime.timedelta) -> str:
+        s = timedelta.seconds
+        hours, remainder = divmod(s, 3600)
+        minutes, _ = divmod(remainder, 60)
+        return f"{hours:02d}:{minutes:02d}"
+
+    shortest_day_length = _timedelta_to_str(sun_times.day_length.min())
     shortest_day = sun_times.day_length.idxmin()
+    middlest_day_length = _timedelta_to_str(sun_times.day_length.mean())
+    longest_day_length = _timedelta_to_str(sun_times.day_length.max())
     longest_day = sun_times.day_length.idxmax()
 
     months = pd.Timedelta(days=3 * 30)
@@ -983,12 +998,26 @@ def seasonality_from_day_length(epw: EPW) -> pd.Series:
     # construct datetime indexed series with categories
     categories = np.where(
         spring_mask,
-        "Spring",
+        f"Spring ({middlest_day_length} average sun-up time, {spring_left:%b %d} to {spring_right: %b %d})"
+        if annotate
+        else "Spring",
         np.where(
             summer_mask,
-            "Summer",
+            f"Summer ({longest_day_length} average sun-up time, {spring_right:%b %d} to {autumn_left: %b %d})"
+            if annotate
+            else "Summer",
             np.where(
-                autumn_mask, "Autumn", np.where(winter_mask, "Winter", "Undefined")
+                autumn_mask,
+                f"Autumn ({middlest_day_length} average sun-up time, {autumn_left:%b %d} to {autumn_right: %b %d})"
+                if annotate
+                else "Autumn",
+                np.where(
+                    winter_mask,
+                    f"Winter ({shortest_day_length} average sun-up time, {autumn_right:%b %d} to {spring_left: %b %d})"
+                    if annotate
+                    else "Winter",
+                    "Undefined",
+                ),
             ),
         ),
     )
@@ -996,12 +1025,14 @@ def seasonality_from_day_length(epw: EPW) -> pd.Series:
     return pd.Series(categories, index=idx, name="season")
 
 
-def seasonality_from_month(epw: EPW) -> pd.Series:
+def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving it's season.
 
     Args:
         epw (EPW):
             Input EPW.
+        annotate (bool, optional):
+            If True, then note months included in each season in the category labels.
 
     Returns:
         pd.Series:
@@ -1012,25 +1043,40 @@ def seasonality_from_month(epw: EPW) -> pd.Series:
     if epw.location.latitude >= 0:
         # northern hemisphere
         spring_months = [3, 4, 5]
+        spring_month_labels = [calendar.month_abbr[i] for i in spring_months]
         summer_months = [6, 7, 8]
+        summer_month_labels = [calendar.month_abbr[i] for i in summer_months]
         autumn_months = [9, 10, 11]
+        autumn_month_labels = [calendar.month_abbr[i] for i in autumn_months]
         winter_months = [12, 1, 2]
+        winter_month_labels = [calendar.month_abbr[i] for i in winter_months]
     else:
         # southern hemisphere
         spring_months = [9, 10, 11]
+        spring_month_labels = [calendar.month_abbr[i] for i in spring_months]
         summer_months = [12, 1, 2]
+        summer_month_labels = [calendar.month_abbr[i] for i in summer_months]
         autumn_months = [3, 4, 5]
+        autumn_month_labels = [calendar.month_abbr[i] for i in autumn_months]
         winter_months = [6, 7, 8]
+        winter_month_labels = [calendar.month_abbr[i] for i in winter_months]
+
     categories = np.where(
         idx.month.isin(spring_months),
-        "Spring",
+        f"Spring ({', '.join(spring_month_labels)})" if annotate else "Spring",
         np.where(
             idx.month.isin(summer_months),
-            "Summer",
+            f"Summer ({', '.join(summer_month_labels)})" if annotate else "Summer",
             np.where(
                 idx.month.isin(autumn_months),
-                "Autumn",
-                np.where(idx.month.isin(winter_months), "Winter", "Undefined"),
+                f"Autumn ({', '.join(autumn_month_labels)})" if annotate else "Autumn",
+                np.where(
+                    idx.month.isin(winter_months),
+                    f"Winter ({', '.join(winter_month_labels)})"
+                    if annotate
+                    else "Winter",
+                    "Undefined",
+                ),
             ),
         ),
     )
@@ -1038,168 +1084,188 @@ def seasonality_from_month(epw: EPW) -> pd.Series:
     return pd.Series(categories, index=idx, name="season")
 
 
-def seasonality_from_temperature(epw: EPW, sample_period_days: int = 8) -> pd.Series:
+def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving it's season.
-
     Args:
         epw (EPW):
             Input EPW.
-
     Returns:
         pd.Series:
             List of seasons per timestep.
     """
-    sample_period = pd.Timedelta(
-        days=sample_period_days
-    )  # the period over which avg temperature wil be sampled to get the hottest/coldest periods
-
-    # get the avg for the sample periods and whole year
     dbt = to_series(epw.dry_bulb_temperature).rename("dbt")
-    dbt_period_mean = dbt.resample(sample_period).mean()
+    new_idx = pd.date_range(
+        f"{dbt.index[0].year - 1}-01-01 00:00:00", freq="60T", periods=len(dbt) * 3
+    )
+    dbt_3year = pd.Series(
+        index=new_idx, data=np.array([[i] * 3 for i in dbt.values]).T.flatten()
+    )
 
-    # get the coldest and hottest dates
-    cold_centroid = dbt_period_mean.idxmin() + (sample_period / 2)
-    hot_centroid = dbt_period_mean.idxmax() + (sample_period / 2)
+    # check that weatherfile is "seasonal", by checking avg variance
+    if dbt.std() <= 2.5:
+        warnings.warn(
+            "Input dataset has a low variance, indicating that seasonality may not be determined accurately from dry-bulb temperature."
+        )
 
-    if epw.location.latitude >= 0:
-        # Northern hemisphere
+    # resample to weeks to get min and max week, and then min/max datetime within the middle of that week
+    dbt_week_mean = dbt.resample("1W").mean()
+    peak_summer = (dbt_week_mean.idxmax() + pd.Timedelta(days=3)).date()
+    if peak_summer.year != dbt.index[0].year:
+        peak_summer = datetime.datetime(
+            dbt.index[0].year, peak_summer.month, peak_summer.day
+        ).date()
+    peak_winter = (dbt_week_mean.idxmin() + pd.Timedelta(days=3)).date()
+    if peak_winter.year != dbt.index[0].year:
+        peak_winter = datetime.datetime(
+            dbt.index[0].year, peak_winter.month, peak_winter.day
+        ).date()
 
-        spring_months = [2, 3, 4, 5, 6]
-        autumn_months = [8, 9, 10, 11, 12]
-        if cold_centroid < hot_centroid:
-            spring = dbt[
-                ((dbt.index >= cold_centroid) & (dbt.index < hot_centroid))
-                & (dbt.index.month.isin(spring_months))
-            ]
-            autumn = dbt[
-                ((dbt.index >= hot_centroid) | (dbt.index < cold_centroid))
-                & (dbt.index.month.isin(autumn_months))
-            ]
-        else:
-            spring = dbt[
-                ((dbt.index >= cold_centroid) | (dbt.index < hot_centroid))
-                & (dbt.index.month.isin(spring_months))
-            ]
-            autumn = dbt[
-                ((dbt.index >= hot_centroid) & (dbt.index < cold_centroid))
-                & (dbt.index.month.isin(autumn_months))
-            ]
-
-        spring_day = spring.resample(sample_period).mean()
-        spring_lower = spring.quantile(0.33)
-        spring_upper = spring.quantile(0.66)
-        spring_mask = (spring_day > spring_lower) & (spring_day < spring_upper)
-        spring_start = spring_mask[spring_mask].index.min() + (sample_period / 2)
-        spring_end = spring_mask[spring_mask].index.max() + (sample_period / 2)
-        if spring_start.year != dbt.index.year[0]:
-            spring_start = pd.Timestamp(
-                year=dbt.index.year[0],
-                month=spring_start.month,
-                day=spring_start.day,
-            )
-
-        autumn_day = autumn.resample(sample_period).mean()
-        autumn_lower = autumn.quantile(0.33)
-        autumn_upper = autumn.quantile(0.66)
-        autumn_mask = (autumn_day > autumn_lower) & (autumn_day < autumn_upper)
-        autumn_start = autumn_mask[autumn_mask].index.min() + (sample_period / 2)
-        autumn_end = autumn_mask[autumn_mask].index.max() + (sample_period / 2)
-        if autumn_end.year != dbt.index.year[0]:
-            autumn_end = pd.Timestamp(
-                year=dbt.index.year[0],
-                month=autumn_end.month,
-                day=autumn_end.day,
-            )
-
-        summer_start = spring_end
-        summer_end = autumn_start
-
-        categories = np.where(
-            (dbt.index.date >= spring_start.date())
-            & (dbt.index.date < spring_end.date()),
-            "Spring",
-            np.where(
-                (dbt.index.date >= summer_start.date())
-                & (dbt.index.date < summer_end.date()),
-                "Summer",
-                np.where(
-                    (dbt.index.date >= autumn_start.date())
-                    & (dbt.index.date < autumn_end.date()),
-                    "Autumn",
-                    "Winter",
-                ),
-            ),
+    # get ranges of dates between peak days - regardless of whether they cross the year boundary
+    if peak_summer > peak_winter:
+        # print("summer later in year")
+        summer_to_winter_3year_mask = (dbt_3year.index.date > peak_summer) & (
+            dbt_3year.index.date < peak_winter + datetime.timedelta(days=365)
+        )
+        winter_to_summer_3year_mask = (dbt_3year.index.date <= peak_summer) & (
+            dbt_3year.index.date > peak_winter
         )
     else:
-        # Southern hemisphere
-
-        spring_months = [8, 9, 10, 11, 12]
-        autumn_months = [2, 3, 4, 5, 6]
-        if cold_centroid < hot_centroid:
-            spring = dbt[
-                ((dbt.index >= cold_centroid) & (dbt.index < hot_centroid))
-                & (dbt.index.month.isin(spring_months))
-            ]
-            autumn = dbt[
-                ((dbt.index >= hot_centroid) | (dbt.index < cold_centroid))
-                & (dbt.index.month.isin(autumn_months))
-            ]
-        else:
-            spring = dbt[
-                ((dbt.index >= cold_centroid) | (dbt.index < hot_centroid))
-                & (dbt.index.month.isin(spring_months))
-            ]
-            autumn = dbt[
-                ((dbt.index >= hot_centroid) | (dbt.index < cold_centroid))
-                & (dbt.index.month.isin(autumn_months))
-            ]
-
-        spring_day = spring.resample(sample_period).mean()
-        spring_lower = spring.quantile(0.33)
-        spring_upper = spring.quantile(0.66)
-        spring_mask = (spring_day > spring_lower) & (spring_day < spring_upper)
-        spring_start = spring_mask[spring_mask].index.min() + (sample_period / 2)
-        spring_end = spring_mask[spring_mask].index.max() + (sample_period / 2)
-        if spring_start.year != dbt.index.year[0]:
-            spring_start = pd.Timestamp(
-                year=dbt.index.year[0],
-                month=spring_start.month,
-                day=spring_start.day,
-            )
-
-        autumn_day = autumn.resample(sample_period).mean()
-        autumn_lower = autumn.quantile(0.33)
-        autumn_upper = autumn.quantile(0.66)
-        autumn_mask = (autumn_day > autumn_lower) & (autumn_day < autumn_upper)
-        autumn_start = autumn_mask[autumn_mask].index.min() + (sample_period / 2)
-        autumn_end = autumn_mask[autumn_mask].index.max() + (sample_period / 2)
-        if autumn_end.year != dbt.index.year[0]:
-            autumn_end = pd.Timestamp(
-                year=dbt.index.year[0],
-                month=autumn_end.month,
-                day=autumn_end.day,
-            )
-
-        winter_start = spring_end
-        winter_end = autumn_start
-
-        categories = np.where(
-            (dbt.index.date >= spring_start.date())
-            & (dbt.index.date < spring_end.date()),
-            "Spring",
-            np.where(
-                (dbt.index.date >= winter_start.date())
-                | (dbt.index.date < winter_end.date()),
-                "Summer",
-                np.where(
-                    (dbt.index.date >= autumn_start.date())
-                    & (dbt.index.date < autumn_end.date()),
-                    "Autumn",
-                    "Winter",
-                ),
-            ),
+        # print("summer earlier in year")
+        winter_to_summer_3year_mask = (dbt_3year.index.date > peak_winter) & (
+            dbt_3year.index.date < peak_summer + datetime.timedelta(days=365)
         )
-    return pd.Series(categories, index=dbt.index, name="season")
+        summer_to_winter_3year_mask = (dbt_3year.index.date <= peak_winter) & (
+            dbt_3year.index.date > peak_summer
+        )
+
+    # create subset of 3-year data containing values where spring/autumn can be defined
+    autumn_series = dbt_3year[summer_to_winter_3year_mask]
+    spring_series = dbt_3year[winter_to_summer_3year_mask]
+
+    # get the 25/75% values for the range
+    autumn_lower_limit = autumn_series.quantile(0.25)
+    spring_lower_limit = spring_series.quantile(0.25)
+    autumn_upper_limit = autumn_series.quantile(0.75)
+    spring_upper_limit = spring_series.quantile(0.75)
+
+    # get the number of hours in each day in the mask where the majority of hours are within that band
+    autumn_temp = (
+        autumn_series.between(autumn_lower_limit, autumn_upper_limit, inclusive="left")
+        .groupby(autumn_series.index.date)
+        .sum()
+        > 12
+    )
+    spring_temp = (
+        spring_series.between(spring_lower_limit, spring_upper_limit, inclusive="left")
+        .groupby(spring_series.index.date)
+        .sum()
+        > 12
+    )
+
+    # convert timestamps to epoch and get the weighted mean date for those dates where it's "spring"/"autumn"-y
+    autumn_epoch = pd.to_datetime(autumn_temp.index).view("int64").astype("float64")
+    autumn_weighted_mean_date = pd.to_datetime(
+        (autumn_epoch * autumn_temp.astype(int)).sum() / autumn_temp.sum()
+    ).date()
+    peak_autumn = datetime.datetime(
+        dbt.index.year[0],
+        autumn_weighted_mean_date.month,
+        autumn_weighted_mean_date.day,
+    ).date()
+
+    spring_epoch = pd.to_datetime(spring_temp.index).view("int64").astype("float64")
+    spring_weighted_mean_date = pd.to_datetime(
+        (spring_epoch * spring_temp.astype(int)).sum() / spring_temp.sum()
+    ).date()
+    peak_spring = datetime.datetime(
+        dbt.index.year[0],
+        spring_weighted_mean_date.month,
+        spring_weighted_mean_date.day,
+    ).date()
+
+    # determine the midpoints between seasonal peaks to get the ranges of dates over which seasons occur
+    if peak_spring > peak_winter:
+        # print("spring happens after winter in the same year")
+        spring_start = peak_spring + (peak_winter - peak_spring) / 2
+    else:
+        # print("spring happens after winter in a different year")
+        _peak_winter = datetime.datetime(
+            peak_winter.year - 1, peak_winter.month, peak_winter.day
+        ).date()
+        spring_start = peak_spring + (_peak_winter - peak_spring) / 2
+        if spring_start.year != dbt.index[0].year:
+            spring_start = datetime.datetime(
+                dbt.index[0].year, spring_start.month, spring_start.day
+            ).date()
+
+    if peak_autumn > peak_summer:
+        # print("autumn happens after summer in the same year")
+        autumn_start = peak_autumn + (peak_summer - peak_autumn) / 2
+    else:
+        # print("autumn happens after summer in a different year")
+        _peak_summer = datetime.datetime(
+            peak_summer.year - 1, peak_summer.month, peak_summer.day
+        ).date()
+        autumn_start = peak_autumn + (_peak_summer - peak_autumn) / 2
+        if autumn_start.year != dbt.index[0].year:
+            autumn_start = datetime.datetime(
+                dbt.index[0].year, autumn_start.month, autumn_start.day
+            ).date()
+
+    if peak_winter > peak_autumn:
+        # print("winter happens after autumn in the same year")
+        winter_start = peak_winter + (peak_autumn - peak_winter) / 2
+    else:
+        # print("winter happens after autumn in a different year")
+        _peak_autumn = datetime.datetime(
+            peak_autumn.year - 1, peak_autumn.month, peak_autumn.day
+        ).date()
+        winter_start = peak_winter + (_peak_autumn - peak_winter) / 2
+        if winter_start.year != dbt.index[0].year:
+            winter_start = datetime.datetime(
+                dbt.index[0].year, winter_start.month, winter_start.day
+            ).date()
+
+    if peak_summer > peak_spring:
+        # print("summer happens after spring in the same year")
+        summer_start = peak_summer + (peak_spring - peak_summer) / 2
+    else:
+        # print("summer happens after spring in a different year")
+        _peak_spring = datetime.datetime(
+            peak_spring.year - 1, peak_spring.month, peak_spring.day
+        ).date()
+        summer_start = peak_summer + (_peak_spring - peak_summer) / 2
+        if summer_start.year != dbt.index[0].year:
+            summer_start = datetime.datetime(
+                dbt.index[0].year, summer_start.month, summer_start.day
+            ).date()
+
+    temp = dbt.to_frame()
+    s = pd.Series(index=dbt.index, data=np.nan)
+    s.loc[spring_start] = "Spring"
+    s.loc[summer_start] = "Summer"
+    s.loc[autumn_start] = "Autumn"
+    s.loc[winter_start] = "Winter"
+    s.ffill(inplace=True)
+    s.loc[temp.index == temp.index.min()] = s.iloc[-1]
+    s.ffill(inplace=True)
+
+    # get mean temps if annotated
+    if annotate:
+        s[
+            s == "Spring"
+        ] = f"Spring ({dbt[s == 'Spring'].mean():0.1f}°C average temperature, {spring_start:%b %d} to {summer_start:%b %d})"
+        s[
+            s == "Summer"
+        ] = f"Summer ({dbt[s == 'Summer'].mean():0.1f}°C average temperature, {summer_start:%b %d} to {autumn_start:%b %d})"
+        s[
+            s == "Autumn"
+        ] = f"Autumn ({dbt[s == 'Autumn'].mean():0.1f}°C average temperature, {autumn_start:%b %d} to {winter_start:%b %d})"
+        s[
+            s == "Winter"
+        ] = f"Winter ({dbt[s == 'Winter'].mean():0.1f}°C average temperature, {winter_start:%b %d} to {spring_start:%b %d})"
+
+    return s
 
 
 def degree_time(
