@@ -22,7 +22,7 @@ from PIL import Image
 
 from ...bhomutil.analytics import CONSOLE_LOGGER
 from ...bhomutil.bhom_object import BHoMObject
-from ...helpers import load_dataset, sanitise_string, store_dataset
+from ...helpers import sanitise_string
 from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from ...ladybug_extension.analysis_period import describe as describe_analysis_period
 from ...ladybug_extension.analysis_period import to_datetimes

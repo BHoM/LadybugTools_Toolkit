@@ -1319,7 +1319,8 @@ def feasible_comfort_temporal(
         ]
         temp.index = [calendar.month_abbr[i] for i in temp.index]
         return temp
-    elif seasonality is None:
+
+    if seasonality is None:
         temp = (
             (((temp >= low_limit) & (temp <= high_limit)).sum() / temp.count())
             .sort_values()
@@ -1330,10 +1331,12 @@ def feasible_comfort_temporal(
             "Maximum comfortable time [0-1]",
         ]
         temp.columns = [ap_description]
-        temp = temp.T
-    elif (
-        seasonality == seasonality_from_month
-    ):  # pylint: disable=comparison-with-callable
+        return temp.T
+
+    if (
+        seasonality
+        == seasonality_from_month  # pylint: disable=comparison-with-callable
+    ):
         seasons = seasonality_from_month(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -1348,9 +1351,12 @@ def feasible_comfort_temporal(
         temp.index = [
             f"{i} between {st_hour:02d}:00 and {end_hour:02d}:00" for i in temp.index
         ]
-    elif (
-        seasonality == seasonality_from_day_length
-    ):  # pylint: disable=comparison-with-callable
+        return temp
+
+    if (
+        seasonality
+        == seasonality_from_day_length  # pylint: disable=comparison-with-callable
+    ):
         seasons = seasonality_from_day_length(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -1365,9 +1371,12 @@ def feasible_comfort_temporal(
         temp.index = [
             f"{i} between {st_hour:02d}:00 and {end_hour:02d}:00" for i in temp.index
         ]
-    elif (
-        seasonality == seasonality_from_temperature
-    ):  # pylint: disable=comparison-with-callable
+        return temp
+
+    if (
+        seasonality
+        == seasonality_from_temperature  # pylint: disable=comparison-with-callable
+    ):
         seasons = seasonality_from_temperature(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -1382,7 +1391,6 @@ def feasible_comfort_temporal(
         temp.index = [
             f"{i} between {st_hour:02d}:00 and {end_hour:02d}:00" for i in temp.index
         ]
-    else:
-        raise ValueError("How did you get here?")
+        return temp
 
-    return temp
+    raise ValueError("How did you get here?")

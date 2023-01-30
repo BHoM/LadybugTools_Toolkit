@@ -1,6 +1,6 @@
 import textwrap
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 from typing import List, Union
 from warnings import warn
 
@@ -289,7 +289,7 @@ def psychrometric(
 
     # add legend
     keys = "WS: Wind speed | WD: Wind direction | DBT: Dry-bulb temperature | WBT: Wet-bulb temperature\nRH: Relative humidity | DPT: Dew-point temperature | h: Enthalpy | HR: Humidity ratio"
-    te = ax.text(
+    keys_text = ax.text(
         1,
         -0.05,
         keys,

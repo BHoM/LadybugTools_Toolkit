@@ -1274,7 +1274,26 @@ def degree_time(
     cool_base: float = 23,
     return_type: str = "days",
     names: List[str] = None,
-):
+) -> pd.DataFrame:
+    """Get the heating/cooling degree days/hours from a given set of EPW
+    objects.
+
+    Args:
+        epws (List[EPW]):
+            A list of EPW objcts.
+        heat_base (float, optional):
+            The temperature at which heating kicks in. Defaults to 18.
+        cool_base (float, optional):
+            The temperature at which cooling kicks in. Defaults to 23.
+        return_type (str, optional):
+            Return days or hours. Defaults to "days".
+        names (List[str], optional):
+            Names to overide EPW names with. Defaults to None.
+
+    Returns:
+        pd.DataFrame:
+            A summary table.
+    """
 
     cooling_degree_time_v = np.vectorize(cooling_degree_time)
     heating_degree_time_v = np.vectorize(heating_degree_time)
@@ -1282,7 +1301,7 @@ def degree_time(
     if heat_base > cool_base:
         warnings.warn("cool_base is lower than heat_base!")
 
-    if not return_type.lower() in ["days", "hours"]:
+    if return_type.lower() not in ["days", "hours"]:
         raise ValueError('return_type must be one of "days" or "hours".')
 
     if names is None:
