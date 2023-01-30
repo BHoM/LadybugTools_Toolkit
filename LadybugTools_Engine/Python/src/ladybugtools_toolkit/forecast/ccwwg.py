@@ -26,8 +26,6 @@ from ladybug.skymodel import calc_horizontal_infrared
 from ladybugtools_toolkit.ladybug_extension.datacollection import from_series, to_series
 from scipy import spatial
 
-from ..bhomutil.analytics import CONSOLE_LOGGER, bhom_analytics
-
 # load the requisite dataset into memory for querying
 _DATASET_PATH = (
     Path(ladybugtools_toolkit.__file__).parent.parent / "data" / "HadCM3_A2.npz"

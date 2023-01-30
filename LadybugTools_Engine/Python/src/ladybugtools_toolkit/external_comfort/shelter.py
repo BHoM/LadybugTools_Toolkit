@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Any, Dict, List
 
 import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d as mplot3d
 import numpy as np
 from honeybee.face import Face
 from ladybug.epw import EPW
@@ -14,6 +13,7 @@ from ladybug.sunpath import Sun
 from ladybug.viewsphere import ViewSphere
 from ladybug_geometry.geometry3d import Face3D, Point3D, Ray3D, Vector3D
 from ladybugtools_toolkit.ladybug_extension.epw import unique_wind_speed_direction
+from mpl_toolkits import mplot3d
 
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..ladybug_extension.epw import sun_position_list
@@ -111,7 +111,7 @@ class Shelter(BHoMObject):
 
         # handle nulls
         if self.vertices is None:
-            raise ValueError(f"vertices cannot be None")
+            raise ValueError("vertices cannot be None")
         if self.wind_porosity is None:
             self.wind_porosity = 0
         if self.radiation_porosity is None:
@@ -219,9 +219,7 @@ class Shelter(BHoMObject):
         rays = [
             Ray3D(self.origin, vector) for vector in view_sphere.reinhart_dome_vectors
         ]
-        n_intersections = sum(
-            [True if self.face.intersect_line_ray(ray) else False for ray in rays]
-        )
+        n_intersections = sum(bool(self.face.intersect_line_ray(ray)) for ray in rays)
         if include_radiation_porosity:
             return 1 - ((n_intersections / len(rays)) * (1 - self.radiation_porosity))
         return 1 - (n_intersections / len(rays))
@@ -324,9 +322,7 @@ class Shelter(BHoMObject):
 
         # check intersections
         rays = [Ray3D(self.origin, vector) for vector in sample_vectors]
-        n_intersections = sum(
-            [True if self.face.intersect_line_ray(ray) else False for ray in rays]
-        )
+        n_intersections = sum(bool(self.face.intersect_line_ray(ray)) for ray in rays)
 
         # return effective wind speed
         if n_intersections == len(rays):
@@ -426,8 +422,11 @@ def sky_exposure(
     if len(shelters) == 0:
         return 1
 
-    vs = ViewSphere()
-    rays = [Ray3D(shelters[0].origin, vector) for vector in vs.reinhart_dome_vectors]
+    view_sphere = ViewSphere()
+    rays = [
+        Ray3D(shelters[0].origin, vector)
+        for vector in view_sphere.reinhart_dome_vectors
+    ]
 
     # get intersections for each patch, for each shelter
     intersections = []
