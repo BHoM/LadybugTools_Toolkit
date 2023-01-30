@@ -1,8 +1,9 @@
+import calendar
 import warnings
 from calendar import month_name
 from concurrent.futures import ProcessPoolExecutor
-from enum import Enum, auto
-from typing import Any, List, Tuple, Union
+from enum import Enum
+from typing import Callable, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -11,15 +12,7 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
-from matplotlib.colors import (
-    BoundaryNorm,
-    Colormap,
-    LinearSegmentedColormap,
-    ListedColormap,
-    is_color_like,
-    rgb2hex,
-    to_rgba,
-)
+from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap, to_rgba
 from numpy.typing import NDArray
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
@@ -32,7 +25,7 @@ from ..ladybug_extension.epw import (
     seasonality_from_month,
     seasonality_from_temperature,
 )
-from ..plot.colormaps import UTCI_LABELS, UTCI_LEVELS
+from ..plot.colormaps import UTCI_LABELS
 from .moisture import evaporative_cooling_effect_collection
 
 
@@ -1098,20 +1091,33 @@ def distance_to_comfortable(
 
 
 def categorise(
-    values: Union[List[float], float], fmt: str = "category"
+    values: Union[List[float], float], fmt: str = "category", simplified: bool = False
 ) -> Union[pd.Categorical, str]:
     """Convert a numeric values into their associated UTCI categories."""
-    bins = np.unique([cat.range for cat in UniversalThermalClimateIndex])
+
+    if simplified:
+        bins = np.array([-np.inf, 9, 26, np.inf])
+    else:
+        bins = np.unique([cat.range for cat in UniversalThermalClimateIndex])
 
     format_options = ["category", "rgba", "hex"]
     if fmt == "hex":
-        labels = [cat.color for cat in UniversalThermalClimateIndex]
+        if simplified:
+            labels = ["#3C65AF", "#2EB349", "#C31F25"]
+        else:
+            labels = [cat.color for cat in UniversalThermalClimateIndex]
     elif fmt == "rgba":
-        labels = [
-            to_rgba(i) for i in [cat.color for cat in UniversalThermalClimateIndex]
-        ]
+        if simplified:
+            labels = [to_rgba(i) for i in ["#3C65AF", "#2EB349", "#C31F25"]]
+        else:
+            labels = [
+                to_rgba(i) for i in [cat.color for cat in UniversalThermalClimateIndex]
+            ]
     elif fmt == "category":
-        labels = [cat.value for cat in UniversalThermalClimateIndex]
+        if simplified:
+            labels = ["Too cold", "Comfortable", "Too hot"]
+        else:
+            labels = [cat.value for cat in UniversalThermalClimateIndex]
     else:
         raise ValueError(f"format must be one of {format_options}")
 
@@ -1132,19 +1138,19 @@ def categorise(
     return pd.cut(values, bins, labels=labels)
 
 
-def determine_utci_temporal_limits(
-    epw: EPW,
-    st_hour: float = 0,
-    end_hour: float = 23,
-    seasonality: str = None,
-    comfort_limits: List[float] = [9, 26],
-) -> pd.DataFrame:
+def feasible_utci_limits(
+    epw: EPW, as_dataframe: bool = False
+) -> List[HourlyContinuousCollection]:
+    """Calculate the absolute min/max collections of UTCI based on possible shade, wind and moisture conditions.
 
-    # sx = [ None, "seasonality_from_day_length", "seasonality_from_month", "seasonality_from_temperature"]
-    # if seasonality not in sx:
-    #     raise ValueError(f"seasonality must be one of {sx}")
+    Args:
+        epw (EPW): The EPW object for which limits will be calculated.
+        as_dataframe (bool): Return the output as a dataframe with two columns, instread of two separate collections.
 
-    mrt = OutdoorSolarCal(
+    Returns:
+        List[HourlyContinuousCollection]: The lowest UTCI and highest UTCI temperatures for each hour of the year.
+    """
+    mrt_unshaded = OutdoorSolarCal(
         epw.location,
         epw.direct_normal_radiation,
         epw.diffuse_horizontal_radiation,
@@ -1155,19 +1161,138 @@ def determine_utci_temporal_limits(
         epw, evaporative_cooling_effectiveness=0.5
     )
 
-    # perfect shade, wind, evap cooled air at 50%
+    # weatherfile wind, perect shade, evaporatively cooled air
     min_utci = UTCI(
         air_temperature=dbt_evap,
         rad_temperature=epw.dry_bulb_temperature,
         rel_humidity=rh_evap,
         wind_speed=epw.wind_speed,
     ).universal_thermal_climate_index
+
+    # max UTCI - no wind, no shade, no additional moisture in air
     max_utci = UTCI(
         air_temperature=epw.dry_bulb_temperature,
-        rad_temperature=mrt,
+        rad_temperature=mrt_unshaded,
         rel_humidity=epw.relative_humidity,
         wind_speed=epw.wind_speed.get_aligned_collection(0),
     ).universal_thermal_climate_index
+
+    # get the low-high values for each hour, and create the new collections
+    abs_min = np.min([min_utci.values, max_utci.values], axis=0)
+    abs_max = np.max([min_utci.values, max_utci.values], axis=0)
+
+    if as_dataframe:
+        return pd.concat(
+            [
+                to_series(min_utci.get_aligned_collection(abs_min)),
+                to_series(max_utci.get_aligned_collection(abs_max)),
+            ],
+            axis=1,
+            keys=["min", "max"],
+        )
+
+    return min_utci.get_aligned_collection(abs_min), max_utci.get_aligned_collection(
+        abs_max
+    )
+
+
+def feasible_comfort_category(
+    epw: EPW,
+    st_hour: int = 0,
+    end_hour: int = 23,
+    density: bool = True,
+    simplified: bool = False,
+) -> pd.DataFrame:
+    """
+    Based on the best/worst conditions that could be envisaged in an EPWs
+    location, determine what the upper and lower bounds for UTCI values might
+    be for each hour of the year.
+
+    Args:
+        epw (EPW):
+            An EPW object
+        st_hour (float, optional):
+            The start hour for any time-based filtering to apply. Defaults to 0.
+        end_hour (float, optional):
+            The end-hour for any time-based filtering to apply. Defaults to 23.
+        density (bool, optional):
+            Return proportion of time rather than number of hours. Defaults to True.
+        simplified (bool, optional):
+            Simplify comfort categories to use below/within/upper instead of
+            discrete UTCI categories. Defaults to False.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    df = feasible_utci_limits(epw, as_dataframe=True)
+    df = categorise(df, simplified=simplified)
+
+    if (st_hour < 0) or (end_hour < 0) or (st_hour > 23) or (end_hour > 23):
+        raise ValueError("hours must be within the range 0-23.")
+    if st_hour > end_hour:
+        hours = [i for i in range(0, 24, 1) if ((i >= end_hour) or (i <= st_hour))]
+    else:
+        hours = [i for i in range(0, 24, 1) if ((i >= st_hour) and (i <= end_hour))]
+
+    cats = ["Too cold", "Comfortable", "Too hot"] if simplified else UTCI_LABELS
+    columns = pd.MultiIndex.from_product(
+        [[i.capitalize() for i in cats], ["min", "max"]]
+    )
+
+    temps = []
+    for col_label in ["min", "max"]:
+        temp = df[col_label][df.index.hour.isin(hours)]
+        temp = temp.groupby(temp.index.month).value_counts(normalize=density).unstack()
+        temp.columns = pd.MultiIndex.from_product([temp.columns, [col_label]])
+        temps.append(temp)
+    temp = pd.concat(temps, axis=1).reindex(columns=columns).fillna(0)
+    temp.index = [calendar.month_abbr[i] for i in temp.index]
+    return temp
+
+
+def feasible_comfort_temporal(
+    epw: EPW,
+    st_hour: float = 0,
+    end_hour: float = 23,
+    seasonality: Union[Callable, str] = "monthly",
+    comfort_limits: Tuple[float] = (9, 26),
+) -> pd.DataFrame:
+    """
+    Based on the min/max feasible proportion of time where comfort can be
+    achieved, get the temporal probabilities that this may happen for the
+    given summarisation method.
+
+    Args:
+        epw (EPW):
+            An EPW object.
+        st_hour (float, optional):
+            The start hour for any time-based filtering to apply. Defaults to 0.
+        end_hour (float, optional):
+            The end-hour for any time-based filtering to apply. Defaults to 23.
+        seasonality (Callable, optional):
+            How to present results in any annual-seasonal summarisation. Defaults to "monthly".
+        comfort_limits (List[float], optional):
+            What is considerred the upper and lower limits of "comfort". Defaults to [9, 26] per UTCI standard.
+
+    Returns:
+        pd.DataFrame:
+            A summary table.
+    """
+
+    sx = [
+        None,
+        seasonality_from_day_length,
+        seasonality_from_month,
+        seasonality_from_temperature,
+        "monthly",
+    ]
+    if seasonality not in sx:
+        raise ValueError(f"seasonality must be one of {sx}")
+
+    min_utci, max_utci = feasible_utci_limits(epw)
 
     utci_range = pd.concat([to_series(min_utci), to_series(max_utci)], axis=1).agg(
         ["min", "max"], axis=1
@@ -1175,26 +1300,89 @@ def determine_utci_temporal_limits(
 
     analysis_period = AnalysisPeriod(st_hour=st_hour, end_hour=end_hour)
     ap_bool = to_boolean(analysis_period)
+    ap_description = describe_analysis_period(analysis_period)
 
     low_limit = min(comfort_limits)
     high_limit = max(comfort_limits)
 
     temp = utci_range[ap_bool]
 
-    if seasonality is None:
+    if seasonality == "monthly":
+        temp = (temp >= low_limit) & (temp <= high_limit)
+        temp = (
+            temp.groupby(temp.index.month).sum()
+            / temp.groupby(temp.index.month).count()
+        )
+        temp.columns = [
+            "Minimum comfortable time [0-1]",
+            "Maximum comfortable time [0-1]",
+        ]
+        temp.index = [calendar.month_abbr[i] for i in temp.index]
+        return temp
+    elif seasonality is None:
         temp = (
             (((temp >= low_limit) & (temp <= high_limit)).sum() / temp.count())
             .sort_values()
             .to_frame()
         )
-        temp.index = ["low", "high"]
-        temp.columns = [describe(analysis_period)]
-    else:
-        seasons = seasonality(epw)[ap_bool]
+        temp.index = [
+            "Minimum comfortable time [0-1]",
+            "Maximum comfortable time [0-1]",
+        ]
+        temp.columns = [ap_description]
+        temp = temp.T
+    elif (
+        seasonality == seasonality_from_month
+    ):  # pylint: disable=comparison-with-callable
+        seasons = seasonality_from_month(epw, annotate=True)[ap_bool]
+        keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
             seasons
         ).sum() / temp.groupby(seasons).count()
         temp = temp.agg(["min", "max"], axis=1)
-        temp.columns = ["low", "high"]
+        temp.columns = [
+            "Minimum comfortable time [0-1]",
+            "Maximum comfortable time [0-1]",
+        ]
+        temp = temp.T[keys].T
+        temp.index = [
+            f"{i} between {st_hour:02d}:00 and {end_hour:02d}:00" for i in temp.index
+        ]
+    elif (
+        seasonality == seasonality_from_day_length
+    ):  # pylint: disable=comparison-with-callable
+        seasons = seasonality_from_day_length(epw, annotate=True)[ap_bool]
+        keys = seasons.unique()
+        temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
+            seasons
+        ).sum() / temp.groupby(seasons).count()
+        temp = temp.agg(["min", "max"], axis=1)
+        temp.columns = [
+            "Minimum comfortable time [0-1]",
+            "Maximum comfortable time [0-1]",
+        ]
+        temp = temp.T[keys].T
+        temp.index = [
+            f"{i} between {st_hour:02d}:00 and {end_hour:02d}:00" for i in temp.index
+        ]
+    elif (
+        seasonality == seasonality_from_temperature
+    ):  # pylint: disable=comparison-with-callable
+        seasons = seasonality_from_temperature(epw, annotate=True)[ap_bool]
+        keys = seasons.unique()
+        temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
+            seasons
+        ).sum() / temp.groupby(seasons).count()
+        temp = temp.agg(["min", "max"], axis=1)
+        temp.columns = [
+            "Minimum comfortable time [0-1]",
+            "Maximum comfortable time [0-1]",
+        ]
+        temp = temp.T[keys].T
+        temp.index = [
+            f"{i} between {st_hour:02d}:00 and {end_hour:02d}:00" for i in temp.index
+        ]
+    else:
+        raise ValueError("How did you get here?")
 
     return temp
