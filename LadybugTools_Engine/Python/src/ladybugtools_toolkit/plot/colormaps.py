@@ -1,6 +1,30 @@
-from matplotlib.colors import BoundaryNorm, ListedColormap
+from typing import Union
+
+from ladybug.color import Colorset
+from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap, ListedColormap
 
 from .colormap_sequential import colormap_sequential
+
+
+def get_lb_colormap(name: Union[int, str] = "original") -> LinearSegmentedColormap:
+    cs = Colorset()
+
+    cmap_strings = []
+    for cm in dir(cs):
+        if cm.startswith("_"):
+            continue
+        if cm == "ToString":
+            continue
+        cmap_strings.append(cm)
+
+    if name not in cmap_strings:
+        raise ValueError(f"name must be one of {cmap_strings}")
+
+    lb_cmap = getattr(cs, name)()
+    rgb = [[getattr(rgb, i) / 255 for i in ["r", "g", "b", "a"]] for rgb in lb_cmap]
+    rgb = [tuple(i) for i in rgb]
+    return colormap_sequential(*rgb)
+
 
 UTCI_COLORMAP = ListedColormap(
     [

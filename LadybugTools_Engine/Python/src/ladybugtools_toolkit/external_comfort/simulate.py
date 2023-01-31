@@ -6,6 +6,7 @@ import io
 import itertools
 import json
 import shutil
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
@@ -24,8 +25,14 @@ from honeybee_energy.simulation.parameter import (
 )
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
 from ladybug.wea import Wea
-from ladybug_comfort.collection.solarcal import HorizontalSolarCal
+from ladybug_comfort.collection.solarcal import (
+    HorizontalRefSolarCal,
+    HorizontalSolarCal,
+    OutdoorSolarCal,
+    outdoor_sky_heat_exch,
+)
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
+from ladybugtools_toolkit.ladybug_extension.datacollection import average
 from lbt_recipes.recipe import Recipe, RecipeSettings
 from tqdm import tqdm
 
@@ -90,7 +97,13 @@ def simulation_id(
     epw_id = sanitise_string(Path(epw_file).stem)
     ground_material_id = sanitise_string(ground_material.identifier)
     shade_material_id = sanitise_string(shade_material.identifier)
-    return f"{epw_id}__{ground_material_id}__{shade_material_id}"
+    id_string = f"{epw_id}__{ground_material_id}__{shade_material_id}"
+    if len(id_string) > 100:
+        warnings.warn(
+            "simulation ID would be longer than 100 characters. In order for this to work it needs to be shortened. As such it might make things break if we try to reload this configuration in the future!"
+        )
+        id_string = id_string[:100]
+    return id_string
 
 
 def surface_temperature(
@@ -213,25 +226,25 @@ def surface_temperature_results_load(
     df = load_sql(sql_path)
 
     return {
-        "shaded_below_temperature": from_series(
+        "shaded_down_temperature": from_series(
             df.filter(regex="GROUND_ZONE_UP_SHADED")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
             .rename("Ground Temperature (C)")
         ),
-        "unshaded_below_temperature": from_series(
+        "unshaded_down_temperature": from_series(
             df.filter(regex="GROUND_ZONE_UP_UNSHADED")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
             .rename("Ground Temperature (C)")
         ),
-        "shaded_above_temperature": from_series(
+        "shaded_up_temperature": from_series(
             df.filter(regex="SHADE_ZONE_DOWN")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
             .rename("Sky Temperature (C)")
         ),
-        "unshaded_above_temperature": epw.sky_temperature,
+        "unshaded_up_temperature": epw.sky_temperature,
     }
 
 
@@ -286,12 +299,9 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
 
     wd = working_directory(model, True)
 
-    total_irradiance = wd / "annual_irradiance/results/total/UNSHADED.ill"
-    direct_irradiance = wd / "annual_irradiance/results/direct/UNSHADED.ill"
-
     if solar_radiation_results_exist(model, epw):
         CONSOLE_LOGGER.info(f"[{model.identifier}] - Loading annual irradiance")
-        return solar_radiation_results_load(total_irradiance, direct_irradiance)
+        return solar_radiation_results_load(model)
 
     epw.save((wd / filename(epw, True)).as_posix())
 
@@ -304,7 +314,6 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
     recipe.input_value_by_name("north", 0)
     recipe.input_value_by_name("timestep", 1)
     recipe.input_value_by_name("output-type", "solar")
-    recipe.input_value_by_name("grid-filter", "UNSHADED")
     recipe_settings = RecipeSettings()
     _ = recipe.run(
         settings=recipe_settings,
@@ -312,55 +321,97 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
         queenbee_path=QUEENBEE_PATH,
     )
 
-    return solar_radiation_results_load(total_irradiance, direct_irradiance)
+    return solar_radiation_results_load(model)
 
 
-def solar_radiation_results_load(
-    total_irradiance: Path, direct_irradiance: Path
-) -> Dict[str, HourlyContinuousCollection]:
+def solar_radiation_results_load(model: Model) -> Dict[str, HourlyContinuousCollection]:
     """Load results from the solar radiation simulation.
 
     Args:
-        total_irradiance (Path): An ILL file containing total irradiance.
-        direct_irradiance (Path): An ILL file containing direct irradiance.
+        model (Model): A honeybee Model to be run through Radiance.
 
     Returns:
         Dict[str, HourlyContinuousCollection]: A dictionary containing
             radiation-related collections.
     """
 
-    unshaded_total = (
-        make_annual(load_ill(total_irradiance))
+    wd = working_directory(model, False)
+
+    shaded_down_direct_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/SHADED_DOWN.ill"))
+        .squeeze()
         .fillna(0)
-        .sum(axis=1)
-        .rename("GlobalHorizontalRadiation (Wh/m2)")
+        .rename("Irradiance (W/m2)")
     )
-    unshaded_direct = (
-        make_annual(load_ill(direct_irradiance))
+    shaded_up_direct_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/SHADED_UP.ill"))
+        .squeeze()
         .fillna(0)
-        .sum(axis=1)
-        .rename("DirectNormalRadiation (Wh/m2)")
+        .rename("Irradiance (W/m2)")
     )
-    unshaded_diffuse = (unshaded_total - unshaded_direct).rename(
-        "DiffuseHorizontalRadiation (Wh/m2)"
+    unshaded_down_direct_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/UNSHADED_DOWN.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
     )
-    _shaded = pd.Series(
-        [0] * len(unshaded_total), index=unshaded_total.index, name="base"
+    unshaded_up_direct_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/UNSHADED_UP.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    shaded_down_total_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/SHADED_DOWN.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    shaded_up_total_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/SHADED_UP.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    unshaded_down_total_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/UNSHADED_DOWN.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    unshaded_up_total_irradiance = from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/UNSHADED_UP.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    shaded_down_diffuse_irradiance = (
+        shaded_down_total_irradiance - shaded_down_direct_irradiance
+    )
+    shaded_up_diffuse_irradiance = (
+        shaded_up_total_irradiance - shaded_up_direct_irradiance
+    )
+    unshaded_down_diffuse_irradiance = (
+        unshaded_down_total_irradiance - unshaded_down_direct_irradiance
+    )
+    unshaded_up_diffuse_irradiance = (
+        unshaded_up_total_irradiance - unshaded_up_direct_irradiance
     )
 
+    # load data and return in dict
     return {
-        "unshaded_direct_radiation": from_series(unshaded_direct),
-        "unshaded_diffuse_radiation": from_series(unshaded_diffuse),
-        "unshaded_total_radiation": from_series(unshaded_total),
-        "shaded_direct_radiation": from_series(
-            _shaded.rename("DirectNormalRadiation (Wh/m2)")
-        ),
-        "shaded_diffuse_radiation": from_series(
-            _shaded.rename("DiffuseHorizontalRadiation (Wh/m2)")
-        ),
-        "shaded_total_radiation": from_series(
-            _shaded.rename("GlobalHorizontalRadiation (Wh/m2)")
-        ),
+        "shaded_down_diffuse_irradiance": shaded_down_diffuse_irradiance,
+        "shaded_down_direct_irradiance": shaded_down_direct_irradiance,
+        "shaded_down_total_irradiance": shaded_down_total_irradiance,
+        "shaded_up_diffuse_irradiance": shaded_up_diffuse_irradiance,
+        "shaded_up_direct_irradiance": shaded_up_direct_irradiance,
+        "shaded_up_total_irradiance": shaded_up_total_irradiance,
+        "unshaded_down_diffuse_irradiance": unshaded_down_diffuse_irradiance,
+        "unshaded_down_direct_irradiance": unshaded_down_direct_irradiance,
+        "unshaded_down_total_irradiance": unshaded_down_total_irradiance,
+        "unshaded_up_diffuse_irradiance": unshaded_up_diffuse_irradiance,
+        "unshaded_up_direct_irradiance": unshaded_up_direct_irradiance,
+        "unshaded_up_total_irradiance": unshaded_up_total_irradiance,
     }
 
 
@@ -397,8 +448,14 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
     # Check that the output files necessary to reload exist
     if not all(
         [
-            (wd / "annual_irradiance/results/direct/UNSHADED.ill").exists(),
-            (wd / "annual_irradiance/results/total/UNSHADED.ill").exists(),
+            (wd / "annual_irradiance/results/direct/SHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/direct/SHADED_UP.ill").exists(),
+            (wd / "annual_irradiance/results/direct/UNSHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/direct/UNSHADED_UP.ill").exists(),
+            (wd / "annual_irradiance/results/total/SHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/total/SHADED_UP.ill").exists(),
+            (wd / "annual_irradiance/results/total/UNSHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/total/UNSHADED_UP.ill").exists(),
         ]
     ):
         return False
@@ -407,20 +464,22 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
 
 
 def longwave_radiant_temperature(
-    collections: List[HourlyContinuousCollection], view_factors: List[float]
+    collections: List[HourlyContinuousCollection], view_factors: List[float] = None
 ) -> HourlyContinuousCollection:
     """Calculate the LW MRT from a list of surface temperature collections, and view
         factors to each of those surfaces.
 
     Args:
         collections (List[HourlyContinuousCollection]): A list of hourly continuous collections.
-        view_factors (List[float]): A list of view factors to each of the collections.
+        view_factors (List[float]): A list of view factors to each of the collections. If None, then all input collections are weighted equally.
 
     Returns:
         HourlyContinuousCollection: An HourlyContinuousCollection of the effective radiant
             temperature.
     """
 
+    if view_factors is None:
+        view_factors = [1 / len(collections)] * len(collections)
     if len(collections) != len(view_factors):
         raise ValueError("The number of collections and view factors must be the same.")
     if sum(view_factors) != 1:
@@ -441,6 +500,135 @@ def longwave_radiant_temperature(
     )
     mrt_series.name = "Radiant Temperature (C)"
     return from_series(mrt_series)
+
+
+def mean_radiant_temperature_osc_ensemble(
+    epw: EPW,
+    model: Model,
+    longwave_mrt: HourlyContinuousCollection,
+    sky_exposure: float,
+) -> Dict[str, HourlyContinuousCollection]:
+    """"""
+    mrts = []
+    for posture in ["seated", "standing"]:
+        for body_azimuth in np.arange(0, 360, 30):
+            scp = SolarCalParameter(
+                posture=posture,
+                body_azimuth=body_azimuth,
+            )
+            mrts.append(
+                OutdoorSolarCal(
+                    location=epw.location,
+                    direct_normal_solar=epw.direct_normal_radiation,
+                    diffuse_horizontal_solar=epw.diffuse_horizontal_radiation,
+                    horizontal_infrared=epw.horizontal_infrared_radiation_intensity,
+                    surface_temperatures=longwave_mrt,
+                    floor_reflectance=[
+                        i
+                        for i in model.faces
+                        if i.identifier == "GROUND_ZONE_UP_UNSHADED"
+                    ][0].properties.energy.construction.outside_solar_reflectance,
+                    sky_exposure=sky_exposure,
+                    fraction_body_exposed=1,
+                    solarcal_body_parameter=scp,
+                ).mean_radiant_temperature
+            )
+
+    return {
+        "mean_radiant_temperature": average(mrts),
+    }
+
+
+def mean_radiant_temperature_hscr(
+    epw: EPW,
+    direct_horizontal_solar: HourlyContinuousCollection,
+    diffuse_horizontal_solar: HourlyContinuousCollection,
+    reflected_horizontal_solar: HourlyContinuousCollection,
+    longwave_mrt: HourlyContinuousCollection,
+    solar_cal_params: SolarCalParameter = SolarCalParameter(),
+) -> Dict[str, HourlyContinuousCollection]:
+    """Calculate MRT using a composite Radiance results approach.
+    Args:
+        epw (EPW): An EPW object.
+        direct_horizontal_solar (HourlyContinuousCollection): Upwards facing direct component from Radiance sim.
+        diffuse_horizontal_solar (HourlyContinuousCollection): Upwards facing diffuse component from Radiance sim.
+        reflected_horizontal_solar (HourlyContinuousCollection): Downwards facing diffuse component from Radiance sim.
+        longwave_mrt (HourlyContinuousCollection): Surrounding surface temperature.
+
+    Returns:
+        Dict[str, HourlyContinuousCollection]: A collection of results.
+    """
+    horizontal_solar_cal = HorizontalRefSolarCal(
+        location=epw.location,
+        direct_horizontal_solar=direct_horizontal_solar,
+        diffuse_horizontal_solar=diffuse_horizontal_solar,
+        reflected_horizontal_solar=reflected_horizontal_solar,
+        longwave_mrt=longwave_mrt,
+        fraction_body_exposed=1,
+        solarcal_body_parameter=solar_cal_params,
+    )
+    return {
+        "mean_radiant_temperature": horizontal_solar_cal.mean_radiant_temperature,
+    }
+
+
+def mean_radiant_temperature_osc(
+    model: Model,
+    epw: EPW,
+    longwave_mrt: HourlyContinuousCollection,
+    sky_exposure: float,
+    solar_cal_params: SolarCalParameter = SolarCalParameter(),
+) -> Dict[str, HourlyContinuousCollection]:
+    """Calculate MRT using a composite Outdoor Solar Comfort approach.
+    Args:
+        model (Model): The model to check for.
+        epw (EPW): An EPW object.
+        longwave_mrt (HourlyContinuousCollection): Surrounding surface tempertaure.
+
+    Returns:
+        Dict[str, HourlyContinuousCollection]: A collection of results.
+    """
+    solar_cal = OutdoorSolarCal(
+        location=epw.location,
+        direct_normal_solar=epw.direct_normal_radiation,
+        diffuse_horizontal_solar=epw.diffuse_horizontal_radiation,
+        horizontal_infrared=epw.horizontal_infrared_radiation_intensity,
+        surface_temperatures=longwave_mrt,
+        floor_reflectance=[
+            i for i in model.faces if i.identifier == "GROUND_ZONE_UP_UNSHADED"
+        ][0].properties.energy.construction.outside_solar_reflectance,
+        sky_exposure=sky_exposure,
+        fraction_body_exposed=1,
+        solarcal_body_parameter=solar_cal_params,
+    )
+    return {
+        "mean_radiant_temperature": solar_cal.mean_radiant_temperature,
+    }
+
+
+def mean_radiant_temperature_hsc(
+    model: Model,
+    epw: EPW,
+    direct_horizontal_solar: HourlyContinuousCollection,
+    diffuse_horizontal_solar: HourlyContinuousCollection,
+    longwave_mrt: HourlyContinuousCollection,
+    solar_cal_params: SolarCalParameter = SolarCalParameter(),
+):
+    """"""
+    solar_cal = HorizontalSolarCal(
+        location=epw.location,
+        direct_horizontal_solar=direct_horizontal_solar,
+        diffuse_horizontal_solar=diffuse_horizontal_solar,
+        longwave_mrt=longwave_mrt,
+        fraction_body_exposed=1,
+        floor_reflectance=[
+            i for i in model.faces if i.identifier == "GROUND_ZONE_UP_UNSHADED"
+        ][0].properties.energy.construction.outside_solar_reflectance,
+        solarcal_body_parameter=solar_cal_params,
+    )
+    return {
+        "mean_radiant_temperature": solar_cal.mean_radiant_temperature,
+    }
 
 
 def direct_sun_hours(
@@ -545,101 +733,76 @@ class SimulationResult(BHoMObject):
     )
     identifier: str = field(repr=True, compare=True, default=None)
 
-    shaded_above_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    shaded_down_direct_irradiance: HourlyContinuousCollection = field(
+        repr=False, init=True, compare=False, default=None
     )
-    shaded_below_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+
+    shaded_down_diffuse_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
-    shaded_diffuse_radiation: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    shaded_down_direct_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
-    shaded_direct_radiation: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    shaded_down_total_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    shaded_down_temperature: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    shaded_up_diffuse_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    shaded_up_direct_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    shaded_up_total_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    shaded_up_temperature: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
     shaded_longwave_mean_radiant_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
-    )
-    shaded_mean_radiant_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+        init=True, repr=False, compare=False, default=None
     )
     shaded_shortwave_mean_radiant_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+        init=True, repr=False, compare=False, default=None
     )
-    shaded_total_radiation: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    shaded_mean_radiant_temperature: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
-    unshaded_above_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+
+    unshaded_down_diffuse_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
-    unshaded_below_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    unshaded_down_direct_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
-    unshaded_diffuse_radiation: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    unshaded_down_total_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
-    unshaded_direct_radiation: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    unshaded_down_temperature: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    unshaded_up_diffuse_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    unshaded_up_direct_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    unshaded_up_total_irradiance: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
+    )
+    unshaded_up_temperature: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
     unshaded_longwave_mean_radiant_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
-    )
-    unshaded_mean_radiant_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+        init=True, repr=False, compare=False, default=None
     )
     unshaded_shortwave_mean_radiant_temperature: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+        init=True, repr=False, compare=False, default=None
     )
-    unshaded_total_radiation: HourlyContinuousCollection = field(
-        repr=False,
-        init=True,
-        compare=False,
-        default=None,
+    unshaded_mean_radiant_temperature: HourlyContinuousCollection = field(
+        init=True, repr=False, compare=False, default=None
     )
 
     _t: str = field(
@@ -676,22 +839,28 @@ class SimulationResult(BHoMObject):
                 sanitised_dict[material] = material_from_dict(sanitised_dict[material])
 
         for simulated_result in [
-            "shaded_above_temperature",
-            "shaded_below_temperature",
-            "shaded_diffuse_radiation",
-            "shaded_direct_radiation",
+            "shaded_down_diffuse_irradiance",
+            "shaded_down_direct_irradiance",
+            "shaded_down_temperature",
+            "shaded_down_total_irradiance",
             "shaded_longwave_mean_radiant_temperature",
             "shaded_mean_radiant_temperature",
             "shaded_shortwave_mean_radiant_temperature",
-            "shaded_total_radiation",
-            "unshaded_above_temperature",
-            "unshaded_below_temperature",
-            "unshaded_diffuse_radiation",
-            "unshaded_direct_radiation",
+            "shaded_up_diffuse_irradiance",
+            "shaded_up_direct_irradiance",
+            "shaded_up_temperature",
+            "shaded_up_total_irradiance",
+            "unshaded_down_diffuse_irradiance",
+            "unshaded_down_direct_irradiance",
+            "unshaded_down_temperature",
+            "unshaded_down_total_irradiance",
             "unshaded_longwave_mean_radiant_temperature",
             "unshaded_mean_radiant_temperature",
             "unshaded_shortwave_mean_radiant_temperature",
-            "unshaded_total_radiation",
+            "unshaded_up_diffuse_irradiance",
+            "unshaded_up_direct_irradiance",
+            "unshaded_up_temperature",
+            "unshaded_up_total_irradiance",
         ]:
             if isinstance(sanitised_dict[simulated_result], dict):
                 if "type" in sanitised_dict[simulated_result].keys():
@@ -708,10 +877,14 @@ class SimulationResult(BHoMObject):
             ground_material=sanitised_dict["ground_material"],
             shade_material=sanitised_dict["shade_material"],
             identifier=sanitised_dict["identifier"],
-            shaded_above_temperature=sanitised_dict["shaded_above_temperature"],
-            shaded_below_temperature=sanitised_dict["shaded_below_temperature"],
-            shaded_diffuse_radiation=sanitised_dict["shaded_diffuse_radiation"],
-            shaded_direct_radiation=sanitised_dict["shaded_direct_radiation"],
+            shaded_down_diffuse_irradiance=sanitised_dict[
+                "shaded_down_diffuse_irradiance"
+            ],
+            shaded_down_direct_irradiance=sanitised_dict[
+                "shaded_down_direct_irradiance"
+            ],
+            shaded_down_temperature=sanitised_dict["shaded_down_temperature"],
+            shaded_down_total_irradiance=sanitised_dict["shaded_down_total_irradiance"],
             shaded_longwave_mean_radiant_temperature=sanitised_dict[
                 "shaded_longwave_mean_radiant_temperature"
             ],
@@ -721,11 +894,20 @@ class SimulationResult(BHoMObject):
             shaded_shortwave_mean_radiant_temperature=sanitised_dict[
                 "shaded_shortwave_mean_radiant_temperature"
             ],
-            shaded_total_radiation=sanitised_dict["shaded_total_radiation"],
-            unshaded_above_temperature=sanitised_dict["unshaded_above_temperature"],
-            unshaded_below_temperature=sanitised_dict["unshaded_below_temperature"],
-            unshaded_diffuse_radiation=sanitised_dict["unshaded_diffuse_radiation"],
-            unshaded_direct_radiation=sanitised_dict["unshaded_direct_radiation"],
+            shaded_up_diffuse_irradiance=sanitised_dict["shaded_up_diffuse_irradiance"],
+            shaded_up_direct_irradiance=sanitised_dict["shaded_up_direct_irradiance"],
+            shaded_up_temperature=sanitised_dict["shaded_up_temperature"],
+            shaded_up_total_irradiance=sanitised_dict["shaded_up_total_irradiance"],
+            unshaded_down_diffuse_irradiance=sanitised_dict[
+                "unshaded_down_diffuse_irradiance"
+            ],
+            unshaded_down_direct_irradiance=sanitised_dict[
+                "unshaded_down_direct_irradiance"
+            ],
+            unshaded_down_temperature=sanitised_dict["unshaded_down_temperature"],
+            unshaded_down_total_irradiance=sanitised_dict[
+                "unshaded_down_total_irradiance"
+            ],
             unshaded_longwave_mean_radiant_temperature=sanitised_dict[
                 "unshaded_longwave_mean_radiant_temperature"
             ],
@@ -735,7 +917,14 @@ class SimulationResult(BHoMObject):
             unshaded_shortwave_mean_radiant_temperature=sanitised_dict[
                 "unshaded_shortwave_mean_radiant_temperature"
             ],
-            unshaded_total_radiation=sanitised_dict["unshaded_total_radiation"],
+            unshaded_up_diffuse_irradiance=sanitised_dict[
+                "unshaded_up_diffuse_irradiance"
+            ],
+            unshaded_up_direct_irradiance=sanitised_dict[
+                "unshaded_up_direct_irradiance"
+            ],
+            unshaded_up_temperature=sanitised_dict["unshaded_up_temperature"],
+            unshaded_up_total_irradiance=sanitised_dict["unshaded_up_total_irradiance"],
         )
 
     @classmethod
@@ -761,28 +950,34 @@ class SimulationResult(BHoMObject):
     def is_run(self) -> bool:
         """Helper method to determine whether this object is populated with simulation results."""
         variables = [
-            "shaded_above_temperature",
-            "shaded_below_temperature",
-            "shaded_diffuse_radiation",
-            "shaded_direct_radiation",
+            "shaded_down_diffuse_irradiance",
+            "shaded_down_direct_irradiance",
+            "shaded_down_temperature",
+            "shaded_down_total_irradiance",
             "shaded_longwave_mean_radiant_temperature",
             "shaded_mean_radiant_temperature",
             "shaded_shortwave_mean_radiant_temperature",
-            "shaded_total_radiation",
-            "unshaded_above_temperature",
-            "unshaded_below_temperature",
-            "unshaded_diffuse_radiation",
-            "unshaded_direct_radiation",
+            "shaded_up_diffuse_irradiance",
+            "shaded_up_direct_irradiance",
+            "shaded_up_temperature",
+            "shaded_up_total_irradiance",
+            "unshaded_down_diffuse_irradiance",
+            "unshaded_down_direct_irradiance",
+            "unshaded_down_temperature",
+            "unshaded_down_total_irradiance",
             "unshaded_longwave_mean_radiant_temperature",
             "unshaded_mean_radiant_temperature",
             "unshaded_shortwave_mean_radiant_temperature",
-            "unshaded_total_radiation",
+            "unshaded_up_diffuse_irradiance",
+            "unshaded_up_direct_irradiance",
+            "unshaded_up_temperature",
+            "unshaded_up_total_irradiance",
         ]
         if any(getattr(self, i) is None for i in variables):
             return False
         return True
 
-    def run(self) -> SimulationResult:
+    def run(self, method: str = "osc") -> SimulationResult:
         """Run this SimulationResult and return the populated object."""
 
         # create object to populate
@@ -797,88 +992,104 @@ class SimulationResult(BHoMObject):
         # get surface temperature and radiation simulation results
         solar_radiation_results = solar_radiation(model, epw)
         surface_temperature_results = surface_temperature(model, epw)
-
+        results = {**solar_radiation_results, **surface_temperature_results}
         # populate simulated variables
-        sim_res.unshaded_direct_radiation = solar_radiation_results[
-            "unshaded_direct_radiation"
-        ]
-        sim_res.unshaded_diffuse_radiation = solar_radiation_results[
-            "unshaded_diffuse_radiation"
-        ]
-        sim_res.unshaded_total_radiation = solar_radiation_results[
-            "unshaded_total_radiation"
-        ]
-        sim_res.shaded_direct_radiation = solar_radiation_results[
-            "shaded_direct_radiation"
-        ]
-        sim_res.shaded_diffuse_radiation = solar_radiation_results[
-            "shaded_diffuse_radiation"
-        ]
-        sim_res.shaded_total_radiation = solar_radiation_results[
-            "shaded_total_radiation"
-        ]
-
-        sim_res.shaded_below_temperature = surface_temperature_results[
-            "shaded_below_temperature"
-        ]
-        sim_res.unshaded_below_temperature = surface_temperature_results[
-            "unshaded_below_temperature"
-        ]
-        sim_res.shaded_above_temperature = surface_temperature_results[
-            "shaded_above_temperature"
-        ]
-        sim_res.unshaded_above_temperature = surface_temperature_results[
-            "unshaded_above_temperature"
-        ]
+        for k, v in results.items():
+            setattr(sim_res, k, v)
 
         # calculate other variables
         sim_res.shaded_longwave_mean_radiant_temperature = longwave_radiant_temperature(
             [
-                sim_res.shaded_below_temperature,
-                sim_res.shaded_above_temperature,
+                sim_res.shaded_down_temperature,
+                sim_res.shaded_up_temperature,
             ],
             [0.5, 0.5],
         )
         sim_res.unshaded_longwave_mean_radiant_temperature = (
             longwave_radiant_temperature(
                 [
-                    sim_res.unshaded_below_temperature,
-                    sim_res.unshaded_above_temperature,
+                    sim_res.unshaded_down_temperature,
+                    sim_res.unshaded_up_temperature,
                 ],
                 [0.5, 0.5],
             )
         )
 
-        # calculate MRT for shaded/unshaded
-        solar_body_par = SolarCalParameter()
+        # calculate MRT
+        if method == "hscr":
+            shaded_mrt_cal = mean_radiant_temperature_hscr(
+                epw=sim_res.epw,
+                direct_horizontal_solar=sim_res.shaded_up_direct_irradiance,
+                diffuse_horizontal_solar=sim_res.shaded_up_diffuse_irradiance,
+                reflected_horizontal_solar=sim_res.shaded_down_total_irradiance,
+                longwave_mrt=sim_res.shaded_longwave_mean_radiant_temperature,
+            )
+            unshaded_mrt_cal = mean_radiant_temperature_hscr(
+                epw=sim_res.epw,
+                direct_horizontal_solar=sim_res.unshaded_up_direct_irradiance,
+                diffuse_horizontal_solar=sim_res.unshaded_up_diffuse_irradiance,
+                reflected_horizontal_solar=sim_res.unshaded_down_total_irradiance,
+                longwave_mrt=sim_res.unshaded_longwave_mean_radiant_temperature,
+            )
+        elif method == "hsc":
+            shaded_mrt_cal = mean_radiant_temperature_hsc(
+                model=sim_res.model,
+                epw=sim_res.epw,
+                direct_horizontal_solar=sim_res.shaded_up_direct_irradiance,
+                diffuse_horizontal_solar=sim_res.shaded_up_diffuse_irradiance,
+                longwave_mrt=sim_res.shaded_longwave_mean_radiant_temperature,
+            )
+            unshaded_mrt_cal = mean_radiant_temperature_hsc(
+                model=sim_res.model,
+                epw=sim_res.epw,
+                direct_horizontal_solar=sim_res.unshaded_up_direct_irradiance,
+                diffuse_horizontal_solar=sim_res.unshaded_up_diffuse_irradiance,
+                longwave_mrt=sim_res.unshaded_longwave_mean_radiant_temperature,
+            )
+        elif method == "osc":
+            shaded_mrt_cal = mean_radiant_temperature_osc(
+                model=sim_res.model,
+                epw=sim_res.epw,
+                longwave_mrt=sim_res.shaded_longwave_mean_radiant_temperature,
+                sky_exposure=0,
+            )
+            unshaded_mrt_cal = mean_radiant_temperature_osc(
+                model=sim_res.model,
+                epw=sim_res.epw,
+                longwave_mrt=sim_res.unshaded_longwave_mean_radiant_temperature,
+                sky_exposure=1,
+            )
+        elif method == "ensemble":
+            shaded_mrt_cal = mean_radiant_temperature_osc_ensemble(
+                model=sim_res.model,
+                epw=sim_res.epw,
+                longwave_mrt=sim_res.shaded_longwave_mean_radiant_temperature,
+                sky_exposure=0,
+            )
+            unshaded_mrt_cal = mean_radiant_temperature_osc_ensemble(
+                model=sim_res.model,
+                epw=sim_res.epw,
+                longwave_mrt=sim_res.unshaded_longwave_mean_radiant_temperature,
+                sky_exposure=1,
+            )
+        else:
+            raise ValueError(
+                "The method chosen to run the solar MRT approximation is not possible."
+            )
 
-        fract_body_exp = 1  # represents fully exposed human
-        ground_reflectivity = 0  # 0 as Radiance includes ground reflectivity
+        for k, v in shaded_mrt_cal.items():
+            setattr(sim_res, f"shaded_{k}", v)
+        for k, v in unshaded_mrt_cal.items():
+            setattr(sim_res, f"unshaded_{k}", v)
 
-        _shaded = HorizontalSolarCal(
-            epw.location,
-            sim_res.shaded_direct_radiation,
-            sim_res.shaded_diffuse_radiation,
-            sim_res.shaded_longwave_mean_radiant_temperature,
-            fract_body_exp,
-            ground_reflectivity,
-            solar_body_par,
+        sim_res.shaded_shortwave_mean_radiant_temperature = (
+            sim_res.shaded_mean_radiant_temperature
+            - sim_res.shaded_longwave_mean_radiant_temperature
         )
-        _unshaded = HorizontalSolarCal(
-            epw.location,
-            sim_res.unshaded_direct_radiation,
-            sim_res.unshaded_diffuse_radiation,
-            sim_res.unshaded_longwave_mean_radiant_temperature,
-            fract_body_exp,
-            ground_reflectivity,
-            solar_body_par,
+        sim_res.unshaded_shortwave_mean_radiant_temperature = (
+            sim_res.unshaded_mean_radiant_temperature
+            - sim_res.unshaded_longwave_mean_radiant_temperature
         )
-
-        sim_res.shaded_shortwave_mean_radiant_temperature = _shaded.mrt_delta
-        sim_res.unshaded_shortwave_mean_radiant_temperature = _unshaded.mrt_delta
-
-        sim_res.shaded_mean_radiant_temperature = _shaded.mean_radiant_temperature
-        sim_res.unshaded_mean_radiant_temperature = _unshaded.mean_radiant_temperature
 
         return sim_res
 
@@ -907,7 +1118,7 @@ class SimulationResult(BHoMObject):
                 series = to_series(v)
                 category = "Shaded" if k.lower().startswith("shaded") else "Unshaded"
                 obj_series.append(
-                    series.rename((self.identifier, category, series.name))
+                    series.rename((self.identifier, category, f"{series.name} ({k})"))
                 )
         obj_df = pd.concat(obj_series, axis=1)
 
