@@ -88,6 +88,7 @@ def _create_ground_zone(
     ground_top_construction = OpaqueConstruction(
         identifier="GROUND_CONSTRUCTION_TOP", materials=[material]
     )
+    ground_top_modifier = ground_top_construction.to_radiance_solar_exterior()
     ground_interface_construction = OpaqueConstruction(
         identifier="GROUND_CONSTRUCTION_INTERFACE",
         materials=[
@@ -112,6 +113,7 @@ def _create_ground_zone(
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.roof_ceiling
             face.properties.energy.construction = ground_top_construction
+            face.properties.radiance.modifier = ground_top_modifier
         elif face.normal.z == -1:
             face.identifier = f"GROUND_ZONE_DOWN_{shade_id}"
             face.boundary_condition = boundary_conditions.ground
@@ -124,7 +126,6 @@ def _create_ground_zone(
             face.boundary_condition = boundary_conditions.ground
             face.type = face_types.wall
             face.properties.energy.construction = ground_interface_construction
-
     return ground_zone
 
 
@@ -166,7 +167,7 @@ def _create_shade_zone(
     shade_construction = OpaqueConstruction(
         identifier="SHADE_CONSTRUCTION", materials=[material]
     )
-
+    shade_modifier = shade_construction.to_radiance_solar_exterior()
     for face in shade_zone.faces:
         face: Face
         if face.normal.z == 1:
@@ -174,16 +175,19 @@ def _create_shade_zone(
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.roof_ceiling
             face.properties.energy.construction = shade_construction
+            face.properties.radiance.modifier = shade_modifier
         elif face.normal.z == -1:
             face.identifier = "SHADE_ZONE_DOWN"
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.floor
             face.properties.energy.construction = shade_construction
+            face.properties.radiance.modifier = shade_modifier
         else:
             face.identifier = f"SHADE_ZONE_{face.cardinal_direction().upper()}"
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.wall
             face.properties.energy.construction = shade_construction
+            face.properties.radiance.modifier = shade_modifier
 
     return shade_zone
 
@@ -276,19 +280,8 @@ def create_model(
     displacement_vector._y = 500  # pylint: disable=protected-access
     # necessary due to issue setting property in 1.5.0
 
-    sensor_grid = SensorGrid(
-        identifier="_",
-        sensors=[
-            Sensor(pos=Point3D(0, 0, 1.2), dir=Point3D(0, 0, 1)),
-            Sensor(pos=Point3D(0, 0, 1.2), dir=Point3D(0, 0, -1)),
-        ],
-    )
-
     # unshaded case
     ground_zone_unshaded = _create_ground_zone(ground_material, shaded=False)
-
-    unshaded_grid = sensor_grid.duplicate()
-    unshaded_grid.identifier = "UNSHADED"
 
     # shaded case
     ground_zone_shaded = _create_ground_zone(ground_material, shaded=True)
@@ -301,6 +294,40 @@ def create_model(
     for shade in shades:
         shade.move(displacement_vector)
 
+    # create grids
+    sensor_grids = [
+        SensorGrid(
+            identifier="UNSHADED_UP",
+            sensors=[
+                Sensor(pos=Point3D(0, 0, 1.2), dir=Point3D(0, 0, 1)),
+            ],
+        ),
+        SensorGrid(
+            identifier="UNSHADED_DOWN",
+            sensors=[
+                Sensor(pos=Point3D(0, 0, 1.2), dir=Point3D(0, 0, -1)),
+            ],
+        ),
+        SensorGrid(
+            identifier="SHADED_UP",
+            sensors=[
+                Sensor(
+                    pos=Point3D(0, 0, 1.2).move(displacement_vector),
+                    dir=Point3D(0, 0, 1),
+                ),
+            ],
+        ),
+        SensorGrid(
+            identifier="SHADED_DOWN",
+            sensors=[
+                Sensor(
+                    pos=Point3D(0, 0, 1.2).move(displacement_vector),
+                    dir=Point3D(0, 0, -1),
+                ),
+            ],
+        ),
+    ]
+
     if identifier is None:
         identifier = str(uuid.uuid4())
 
@@ -310,6 +337,7 @@ def create_model(
         orphaned_shades=shades,
     )
 
-    model.properties.radiance.sensor_grids = [unshaded_grid]
+    # assign grids
+    model.properties.radiance.sensor_grids = sensor_grids
 
     return model
