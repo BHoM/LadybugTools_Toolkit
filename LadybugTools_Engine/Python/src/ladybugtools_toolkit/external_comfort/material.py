@@ -205,6 +205,31 @@ def material_from_dict(
         return OpaqueVegetationMaterial.from_dict(dictionary)
 
 
+def create_material(
+    obj: Any,
+) -> Union[Dict[str, Any], EnergyMaterial, EnergyMaterialVegetation]:
+    if isinstance(obj, dict):
+        try:
+            return OpaqueMaterial.from_lbt(EnergyMaterial.from_dict(obj))
+        except:
+            try:
+                return OpaqueVegetationMaterial.from_lbt(
+                    EnergyMaterialVegetation.from_dict(obj)
+                )
+            except:
+                try:
+                    return OpaqueMaterial.from_dict(obj)
+                except:
+                    return OpaqueVegetationMaterial.from_dict(obj)
+
+    if isinstance(obj, EnergyMaterial):
+        return OpaqueMaterial.from_lbt(obj)
+    if isinstance(obj, EnergyMaterialVegetation):
+        return OpaqueVegetationMaterial.from_lbt(obj)
+
+    raise ValueError("input not of known type")
+
+
 class Materials(Enum):
     """
     Enum of predefined materials for use in External Comfort simulation
@@ -233,22 +258,8 @@ class Materials(Enum):
     DRY_SAND: OpaqueMaterial = OpaqueMaterial.from_lbt(
         opaque_material_by_identifier("Dry Sand")
     )
-    GRASSY_LAWN: OpaqueVegetationMaterial = OpaqueVegetationMaterial(
-        identifier="Grassy Lawn",
-        roughness="MediumRough",
-        thickness=0.1,
-        conductivity=0.35,
-        density=1100,
-        specific_heat=1200,
-        soil_thermal_absorptance=0.9,
-        soil_solar_absorptance=0.7,
-        soil_visible_absorptance=0.7,
-        plant_height=0.2,
-        leaf_area_index=1.0,
-        leaf_reflectivity=0.22,
-        leaf_emissivity=0.95,
-        min_stomatal_resist=180,
-        source="LadybugTools - pre-release",
+    GRASSY_LAWN: OpaqueVegetationMaterial = OpaqueVegetationMaterial.from_lbt(
+        opaque_material_by_identifier("Grassy Lawn")
     )
     METAL: OpaqueMaterial = OpaqueMaterial.from_lbt(
         opaque_material_by_identifier("Metal Surface")
@@ -1271,4 +1282,1443 @@ class Materials(Enum):
         thermal_absorptance=0.95,
         solar_absorptance=0.9299999999999999,
         visible_absorptance=0.9299999999999999,
+    )
+
+    # materials from LBT
+    LBT_12InGypsumBoard: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "1/2 in. Gypsum Board",
+            "roughness": "Smooth",
+            "thickness": 0.0127,
+            "conductivity": 0.15989299909405463,
+            "density": 800.0018291911765,
+            "specific_heat": 1089.2971854559414,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.5,
+        }
+    )
+    LBT_12InGypsum: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "1/2IN Gypsum",
+            "roughness": "Smooth",
+            "thickness": 0.0127,
+            "conductivity": 0.15989299909405608,
+            "density": 784.9017946651944,
+            "specific_heat": 829.4648292921422,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.4,
+            "visible_absorptance": 0.4,
+        }
+    )
+    LBT_100MmNormalweightConcreteFloor: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "100mm Normalweight concrete floor",
+            "roughness": "MediumRough",
+            "thickness": 0.1016,
+            "conductivity": 2.3089016425031033,
+            "density": 2322.006775596,
+            "specific_heat": 832.0199665271966,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_12InNormalweightConcreteFloor: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "12 in. Normalweight Concrete Floor",
+            "roughness": "MediumRough",
+            "thickness": 0.30479999999999996,
+            "conductivity": 2.308455174420426,
+            "density": 2322.005309227381,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_1InStucco: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "1IN Stucco",
+            "roughness": "Smooth",
+            "thickness": 0.025299999999999993,
+            "conductivity": 0.6913373548329222,
+            "density": 1858.004248296516,
+            "specific_heat": 836.4603158042426,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.92,
+        }
+    )
+    LBT_25MmStucco: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "25mm Stucco",
+            "roughness": "Smooth",
+            "thickness": 0.0254,
+            "conductivity": 0.7195184959232496,
+            "density": 1856.0042437235265,
+            "specific_heat": 839.4583814522845,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_4InNormalweightConcreteFloor: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "4 in. Normalweight Concrete Floor",
+            "roughness": "MediumRough",
+            "thickness": 0.1016,
+            "conductivity": 2.308455174420426,
+            "density": 2322.005309227381,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_4InNormalweightConcreteWall: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "4 in. Normalweight Concrete Wall",
+            "roughness": "MediumRough",
+            "thickness": 0.1016,
+            "conductivity": 2.308455174420426,
+            "density": 2322.005309227381,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_58InGypsumBoard: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "5/8 in. Gypsum Board",
+            "roughness": "MediumSmooth",
+            "thickness": 0.0159,
+            "conductivity": 0.15989299909405463,
+            "density": 800.0018291911765,
+            "specific_heat": 1089.2971854559414,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_58InPlywood: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "5/8 in. Plywood",
+            "roughness": "Smooth",
+            "thickness": 0.0159,
+            "conductivity": 0.11991974932054163,
+            "density": 544.0012438499998,
+            "specific_heat": 1209.2198113776988,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_6InHeavyweightConcreteRoof: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "6 in. Heavyweight Concrete Roof",
+            "roughness": "MediumRough",
+            "thickness": 0.15239999999999998,
+            "conductivity": 2.308455174420426,
+            "density": 2322.005309227381,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_6InNormalweightConcreteFloor: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "6 in. Normalweight Concrete Floor",
+            "roughness": "MediumRough",
+            "thickness": 0.15239999999999998,
+            "conductivity": 2.308455174420426,
+            "density": 2322.005309227381,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_8InConcreteBlockBasementWall: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "8 in. Concrete Block Basement Wall",
+            "roughness": "MediumRough",
+            "thickness": 0.2032,
+            "conductivity": 1.325113229991986,
+            "density": 1842.0042117126811,
+            "specific_heat": 911.4119570053389,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_8InConcreteBlockWall: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "8 in. Concrete Block Wall",
+            "roughness": "MediumRough",
+            "thickness": 0.2032,
+            "conductivity": 0.7195184959232496,
+            "density": 800.0018291911765,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_8InNormalweightConcreteFloor: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "8 in. Normalweight Concrete Floor",
+            "roughness": "MediumRough",
+            "thickness": 0.2032,
+            "conductivity": 2.308455174420426,
+            "density": 2322.005309227381,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_8InNormalweightConcreteWall: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "8 in. Normalweight Concrete Wall",
+            "roughness": "MediumRough",
+            "thickness": 0.2032,
+            "conductivity": 2.308455174420426,
+            "density": 2322.005309227381,
+            "specific_heat": 831.4635397241673,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_8InConcreteHwRefbldg: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "8IN CONCRETE HW RefBldg",
+            "roughness": "Rough",
+            "thickness": 0.2032,
+            "conductivity": 1.3101232613269185,
+            "density": 2240.0051217352993,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_8InConcreteHw: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "8IN Concrete HW",
+            "roughness": "MediumRough",
+            "thickness": 0.2033000000000001,
+            "conductivity": 1.7284433202067357,
+            "density": 2243.0051285947593,
+            "specific_heat": 836.4603158042426,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.65,
+            "visible_absorptance": 0.65,
+        }
+    )
+    LBT_AcousticCeiling: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Acoustic Ceiling",
+            "roughness": "MediumSmooth",
+            "thickness": 0.0127,
+            "conductivity": 0.056961880927257194,
+            "density": 288.0006585088233,
+            "specific_heat": 1338.1366342435858,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.2,
+        }
+    )
+    LBT_AsphaltShingles: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Asphalt Shingles",
+            "roughness": "VeryRough",
+            "thickness": 0.003199999999999976,
+            "conductivity": 0.03997324977351388,
+            "density": 1120.002560867648,
+            "specific_heat": 1259.1875721784268,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_AtticfloorInsulation: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "AtticFloor Insulation",
+            "roughness": "MediumRough",
+            "thickness": 0.23789999999999986,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_BuiltUpRoofing: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Built-up Roofing",
+            "roughness": "Rough",
+            "thickness": 0.009499999999999998,
+            "conductivity": 0.15989299909405463,
+            "density": 1120.002560867648,
+            "specific_heat": 1459.0586153813556,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_BuiltUpRoofingHighlyReflective: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Built-up Roofing - Highly Reflective",
+            "roughness": "Rough",
+            "thickness": 0.009499999999999998,
+            "conductivity": 0.15989299909405463,
+            "density": 1120.002560867648,
+            "specific_heat": 1459.0586153813556,
+            "thermal_absorptance": 0.75,
+            "solar_absorptance": 0.45,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_BulkStorageProductsMaterial: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Bulk Storage Products Material",
+            "roughness": "Rough",
+            "thickness": 2.4384049429641195,
+            "conductivity": 1.4410356988618083,
+            "density": 200.23111933632342,
+            "specific_heat": 836.2604510890168,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_Carpet34InCbes: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Carpet - 3/4 in. CBES",
+            "roughness": "Smooth",
+            "thickness": 0.019049999999999997,
+            "conductivity": 0.05000063634028838,
+            "density": 288.33299999999997,
+            "specific_heat": 1380.753138075314,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_F08MetalSurface: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "F08 Metal surface",
+            "roughness": "Smooth",
+            "thickness": 0.0008000000000000003,
+            "conductivity": 45.249718743617805,
+            "density": 7824.017889489713,
+            "specific_heat": 499.6776080073138,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_F16AcousticTile: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "F16 Acoustic tile",
+            "roughness": "MediumSmooth",
+            "thickness": 0.019100000000000002,
+            "conductivity": 0.05995987466027089,
+            "density": 368.0008414279416,
+            "specific_heat": 589.6195774486317,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.3,
+            "visible_absorptance": 0.3,
+        }
+    )
+    LBT_G0113MmGypsumBoard: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "G01 13mm gypsum board",
+            "roughness": "Smooth",
+            "thickness": 0.0127,
+            "conductivity": 0.15992392281605958,
+            "density": 800.0023344,
+            "specific_heat": 1090.0261589958159,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.5,
+        }
+    )
+    LBT_G01A19MmGypsumBoard: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "G01a 19mm gypsum board",
+            "roughness": "MediumSmooth",
+            "thickness": 0.018999999999999996,
+            "conductivity": 0.15989299909405608,
+            "density": 800.0018291911781,
+            "specific_heat": 1089.2971854559455,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.4,
+            "visible_absorptance": 0.4,
+        }
+    )
+    LBT_G0525MmWood: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "G05 25mm wood",
+            "roughness": "MediumSmooth",
+            "thickness": 0.0254,
+            "conductivity": 0.14989968665067757,
+            "density": 608.0013901852949,
+            "specific_heat": 1628.949002103841,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.5,
+            "visible_absorptance": 0.5,
+        }
+    )
+    LBT_Ground_Floor_R11_T2013: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Ground_Floor_R11_T2013",
+            "roughness": "Smooth",
+            "thickness": 0.044227242,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_Ground_Floor_R17_T2013: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Ground_Floor_R17_T2013",
+            "roughness": "Smooth",
+            "thickness": 0.06891629599999999,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_Ground_Floor_R22_T2013: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Ground_Floor_R22_T2013",
+            "roughness": "Smooth",
+            "thickness": 0.08918575,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_GypsumBoard12InCbes: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Gypsum Board - 1/2 in. CBES",
+            "roughness": "Smooth",
+            "thickness": 0.0127,
+            "conductivity": 0.16000030671169507,
+            "density": 640.74,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_GypsumOrPlasterBoard38In: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Gypsum Or Plaster Board - 3/8 in.",
+            "roughness": "MediumSmooth",
+            "thickness": 0.009499999999999998,
+            "conductivity": 0.5796121217159504,
+            "density": 800.0018291911765,
+            "specific_heat": 1089.2971854559414,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_HwConcrete: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "HW CONCRETE",
+            "roughness": "Rough",
+            "thickness": 0.1016,
+            "conductivity": 1.310376644700027,
+            "density": 2240.0065363199997,
+            "specific_heat": 836.8200836820084,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_HwConcrete8In: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "HW CONCRETE 8 in",
+            "roughness": "Rough",
+            "thickness": 0.2032,
+            "conductivity": 1.310376644700027,
+            "density": 2240.0065363199997,
+            "specific_heat": 836.8200836820084,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_I0125MmInsulationBoard: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "I01 25mm insulation board",
+            "roughness": "MediumRough",
+            "thickness": 0.0254,
+            "conductivity": 0.029979937330135372,
+            "density": 43.000098319025845,
+            "specific_heat": 1209.2198113776988,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.6,
+            "visible_absorptance": 0.6,
+        }
+    )
+    LBT_I0250MmInsulationBoard: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "I02 50mm insulation board",
+            "roughness": "MediumRough",
+            "thickness": 0.0508,
+            "conductivity": 0.029979937330135372,
+            "density": 43.000098319025845,
+            "specific_heat": 1209.2198113776988,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.6,
+            "visible_absorptance": 0.6,
+        }
+    )
+    LBT_IeadNonresRoofInsulation176: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "IEAD NonRes Roof Insulation-1.76",
+            "roughness": "MediumRough",
+            "thickness": 0.07398050297987159,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_IeadRoofInsulationR347Ip: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "IEAD Roof Insulation R-3.47 IP",
+            "roughness": "MediumRough",
+            "thickness": 0.029942459748632622,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_Insulation1M: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Insulation 1m",
+            "roughness": "Smooth",
+            "thickness": 0.9999979999999999,
+            "conductivity": 0.01999967801037276,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_M01100MmBrick: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "M01 100mm brick",
+            "roughness": "MediumRough",
+            "thickness": 0.1016,
+            "conductivity": 0.8894048074606842,
+            "density": 1920.0043900588325,
+            "specific_heat": 789.4906206515565,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_M11100MmLightweightConcrete: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "M11 100mm lightweight concrete",
+            "roughness": "MediumRough",
+            "thickness": 0.1016,
+            "conductivity": 0.5296455594990593,
+            "density": 1280.0029267058849,
+            "specific_heat": 839.4583814522887,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.5,
+            "visible_absorptance": 0.5,
+        }
+    )
+    LBT_M15200MmHeavyweightConcrete: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "M15 200mm heavyweight concrete",
+            "roughness": "MediumRough",
+            "thickness": 0.2032,
+            "conductivity": 1.9486959264588086,
+            "density": 2240.0051217352993,
+            "specific_heat": 899.4196944131631,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.5,
+            "visible_absorptance": 0.5,
+        }
+    )
+    LBT_MatCc054HwConcrete: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "MAT-CC05 4 HW CONCRETE",
+            "roughness": "Rough",
+            "thickness": 0.1016,
+            "conductivity": 1.3101232613269185,
+            "density": 2240.0051217352993,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.85,
+            "visible_absorptance": 0.85,
+        }
+    )
+    LBT_MatCc058HwConcrete: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "MAT-CC05 8 HW CONCRETE",
+            "roughness": "Rough",
+            "thickness": 0.2032,
+            "conductivity": 1.3101232613269185,
+            "density": 2240.0051217352993,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.85,
+            "visible_absorptance": 0.85,
+        }
+    )
+    LBT_MassNonresWallInsulation043: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Mass NonRes Wall Insulation-0.43",
+            "roughness": "MediumRough",
+            "thickness": 0.0004367814266280437,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MassWallInsulationR423Ip: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Mass Wall Insulation R-4.23 IP",
+            "roughness": "MediumRough",
+            "thickness": 0.0365371685816,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalBuildingSemiCondWallInsulation054: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Building Semi-Cond Wall Insulation-0.54",
+            "roughness": "MediumRough",
+            "thickness": 0.015345987404915393,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalBuildingWallInsulationR414Ip: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Building Wall Insulation R-4.14 IP",
+            "roughness": "MediumRough",
+            "thickness": 0.0356729086642,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalDecking: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Decking",
+            "roughness": "MediumSmooth",
+            "thickness": 0.0014999999999999994,
+            "conductivity": 44.97590198266915,
+            "density": 7680.017560235314,
+            "specific_heat": 418.1302223805201,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.6,
+            "visible_absorptance": 0.6,
+        }
+    )
+    LBT_MetalRoofInsulationR521Ip: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Roof Insulation R-5.21 IP",
+            "roughness": "MediumRough",
+            "thickness": 0.044938850457399995,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalRoofSurface: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Roof Surface",
+            "roughness": "Smooth",
+            "thickness": 0.0007999999999999979,
+            "conductivity": 45.24971874361766,
+            "density": 7824.017889489713,
+            "specific_heat": 499.67760800730963,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalRoofSurfaceHighlyReflective: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Roof Surface - Highly Reflective",
+            "roughness": "Smooth",
+            "thickness": 0.0007999999999999979,
+            "conductivity": 45.24971874361766,
+            "density": 7824.017889489713,
+            "specific_heat": 499.67760800730963,
+            "thermal_absorptance": 0.75,
+            "solar_absorptance": 0.45,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalRoofing: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Roofing",
+            "roughness": "MediumSmooth",
+            "thickness": 0.0014999999999999994,
+            "conductivity": 44.97590198266915,
+            "density": 7680.017560235314,
+            "specific_heat": 418.1302223805201,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.6,
+            "visible_absorptance": 0.6,
+        }
+    )
+    LBT_MetalRoofingHighlyReflective: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Roofing - Highly Reflective",
+            "roughness": "MediumSmooth",
+            "thickness": 0.0014999999999999994,
+            "conductivity": 44.97590198266915,
+            "density": 7680.017560235314,
+            "specific_heat": 418.1302223805201,
+            "thermal_absorptance": 0.75,
+            "solar_absorptance": 0.45,
+            "visible_absorptance": 0.6,
+        }
+    )
+    LBT_MetalSemiCondRoofInsulation105: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Semi-Cond Roof Insulation-1.05",
+            "roughness": "MediumRough",
+            "thickness": 0.04226733019063131,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalSiding: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Siding",
+            "roughness": "Smooth",
+            "thickness": 0.0014999999999999994,
+            "conductivity": 44.92993274542956,
+            "density": 7688.877580493597,
+            "specific_heat": 409.7356385659975,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MetalStandingSeam116InCbes: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Standing Seam - 1/16 in. CBES",
+            "roughness": "MediumRough",
+            "thickness": 0.001524,
+            "conductivity": 0.579999310186949,
+            "density": 7820.552070000001,
+            "specific_heat": 502.09205020920496,
+            "thermal_absorptance": 0.85,
+            "solar_absorptance": 0.37,
+            "visible_absorptance": 0.85,
+        }
+    )
+    LBT_MetalSurface: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Metal Surface",
+            "roughness": "Smooth",
+            "thickness": 0.0007999999999999979,
+            "conductivity": 45.24971874361766,
+            "density": 7824.017889489713,
+            "specific_heat": 499.67760800730963,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_Nacm_Carpet34In: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "NACM_Carpet 3/4in",
+            "roughness": "Smooth",
+            "thickness": 0.019049999999999997,
+            "conductivity": 0.05000063634028838,
+            "density": 288.33299999999997,
+            "specific_heat": 1380.753138075314,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.9,
+        }
+    )
+    LBT_Nacm_Concrete4In_140LbFt3: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "NACM_Concrete 4in_140lb/ft3",
+            "roughness": "MediumRough",
+            "thickness": 0.1016,
+            "conductivity": 1.9500003149271867,
+            "density": 2239.0659299999998,
+            "specific_heat": 920.5020920502092,
+            "thermal_absorptance": 0.75,
+            "solar_absorptance": 0.92,
+            "visible_absorptance": 0.75,
+        }
+    )
+    LBT_Nacm_GypsumBoard58In: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "NACM_Gypsum Board 5/8in",
+            "roughness": "MediumRough",
+            "thickness": 0.016002,
+            "conductivity": 0.16000030671169507,
+            "density": 640.74,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.5,
+        }
+    )
+    LBT_Plywood58InCbes: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Plywood - 5/8 in. CBES",
+            "roughness": "Smooth",
+            "thickness": 0.016002,
+            "conductivity": 0.11999950937659305,
+            "density": 480.555,
+            "specific_heat": 1882.8451882845188,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_R1_R1420: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "R1_R14.20",
+            "roughness": "Smooth",
+            "thickness": 0.05756529,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_R2_R1290: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "R2_R12.90",
+            "roughness": "Smooth",
+            "thickness": 0.052295298000000004,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_R3_R1774: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "R3_R17.74",
+            "roughness": "Smooth",
+            "thickness": 0.071916036,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_R4_R2028: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "R4_R20.28",
+            "roughness": "Smooth",
+            "thickness": 0.082211418,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_R_R30: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "R_R30",
+            "roughness": "Smooth",
+            "thickness": 0.121616978,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_R_R38: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "R_R38",
+            "roughness": "Smooth",
+            "thickness": 0.154048206,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_R_T24_2013_2486: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "R_T24_2013_24.86",
+            "roughness": "Smooth",
+            "thickness": 0.100779834,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_RoofInsulation18: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Roof Insulation [18]",
+            "roughness": "MediumRough",
+            "thickness": 0.16929999999999995,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_RoofMembrane: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Roof Membrane",
+            "roughness": "VeryRough",
+            "thickness": 0.009499999999999998,
+            "conductivity": 0.15989299909405608,
+            "density": 1121.29256381722,
+            "specific_heat": 1459.0586153813556,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_RoofMembraneHighlyReflective: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Roof Membrane - Highly Reflective",
+            "roughness": "VeryRough",
+            "thickness": 0.009499999999999998,
+            "conductivity": 0.15989299909405608,
+            "density": 1121.29256381722,
+            "specific_heat": 1459.0586153813556,
+            "thermal_absorptance": 0.75,
+            "solar_absorptance": 0.45,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_StdWood6In: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Std Wood 6 in.",
+            "roughness": "MediumSmooth",
+            "thickness": 0.14999999999999997,
+            "conductivity": 0.11991974932054163,
+            "density": 540.0012347040437,
+            "specific_heat": 1209.2198113776988,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_StdWood6InchFurnishings: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Std Wood 6inch Furnishings",
+            "roughness": "MediumSmooth",
+            "thickness": 0.150114,
+            "conductivity": 0.11999950937659305,
+            "density": 539.983635,
+            "specific_heat": 1213.389121338912,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_SteelFrameNonresWallInsulation073: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Steel Frame NonRes Wall Insulation-0.73",
+            "roughness": "MediumRough",
+            "thickness": 0.020278246975300705,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_SteelFrameWallInsulationR102Ip: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Steel Frame Wall Insulation R-1.02 IP",
+            "roughness": "MediumRough",
+            "thickness": 0.008836428479,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_SteelFrameCavity: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Steel Frame/Cavity",
+            "roughness": "MediumRough",
+            "thickness": 0.08890018021223342,
+            "conductivity": 0.08405993542170573,
+            "density": 641.3803214581126,
+            "specific_heat": 501.75627065341007,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_Stucco78InCbes: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Stucco - 7/8 in. CBES",
+            "roughness": "MediumRough",
+            "thickness": 0.022352,
+            "conductivity": 0.7000002608778985,
+            "density": 1855.102485,
+            "specific_heat": 836.8200836820084,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W1_R860: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W1_R8.60",
+            "roughness": "Smooth",
+            "thickness": 0.034862008,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W2_R1113: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W2_R11.13",
+            "roughness": "Smooth",
+            "thickness": 0.045119036,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W3_R1136: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W3_R11.36",
+            "roughness": "Smooth",
+            "thickness": 0.04605147,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W4_R1262: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W4_R12.62",
+            "roughness": "Smooth",
+            "thickness": 0.05115915599999999,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W_T24_2013_R1399: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W_T24_2013_R13.99",
+            "roughness": "Smooth",
+            "thickness": 0.056714136,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W_M1_R15: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W_m1_R15",
+            "roughness": "Smooth",
+            "thickness": 0.060808362,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W_M2_R19: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W_m2_R19",
+            "roughness": "Smooth",
+            "thickness": 0.077023976,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_W_M3_R21: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "W_m3_R21",
+            "roughness": "Smooth",
+            "thickness": 0.08513190999999999,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_WallInsulation31: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Wall Insulation [31]",
+            "roughness": "MediumRough",
+            "thickness": 0.03370000000000008,
+            "conductivity": 0.043171109755394975,
+            "density": 91.0002080704965,
+            "specific_heat": 836.4603158042426,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.5,
+            "visible_absorptance": 0.5,
+        }
+    )
+    LBT_WoodFrameNonresWallInsulation073: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Wood Frame NonRes Wall Insulation-0.73",
+            "roughness": "MediumRough",
+            "thickness": 0.020278246975300705,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_WoodFrameWallInsulationR161Ip: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Wood Frame Wall Insulation R-1.61 IP",
+            "roughness": "MediumRough",
+            "thickness": 0.013873826709999999,
+            "conductivity": 0.04896723097255453,
+            "density": 265.0006059195773,
+            "specific_heat": 836.2604447610418,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_WoodSiding: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Wood Siding",
+            "roughness": "MediumSmooth",
+            "thickness": 0.010000000000000004,
+            "conductivity": 0.10992643687716327,
+            "density": 544.6212452676245,
+            "specific_heat": 1209.2198113776988,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.78,
+            "visible_absorptance": 0.78,
+        }
+    )
+    LBT_Ceiling_2_Insulation: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "ceiling_2_Insulation",
+            "roughness": "Smooth",
+            "thickness": 0.100778564,
+            "conductivity": 0.02300770107232491,
+            "density": 16.0185,
+            "specific_heat": 1129.7071129707113,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_DrySand: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Dry Sand",
+            "roughness": "Rough",
+            "thickness": 0.2,
+            "conductivity": 0.33,
+            "density": 1555.0,
+            "specific_heat": 800.0,
+            "thermal_absorptance": 0.85,
+            "solar_absorptance": 0.65,
+            "visible_absorptance": 0.65,
+        }
+    )
+    LBT_DryDust: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Dry Dust",
+            "roughness": "Rough",
+            "thickness": 0.2,
+            "conductivity": 0.5,
+            "density": 1600.0,
+            "specific_heat": 1026.0,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.7,
+            "visible_absorptance": 0.7,
+        }
+    )
+    LBT_MoistSoil: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Moist Soil",
+            "roughness": "Rough",
+            "thickness": 0.2,
+            "conductivity": 1.0,
+            "density": 1250.0,
+            "specific_heat": 1252.0,
+            "thermal_absorptance": 0.92,
+            "solar_absorptance": 0.75,
+            "visible_absorptance": 0.75,
+        }
+    )
+    LBT_Mud: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Mud",
+            "roughness": "MediumRough",
+            "thickness": 0.2,
+            "conductivity": 1.4,
+            "density": 1840.0,
+            "specific_heat": 1480.0,
+            "thermal_absorptance": 0.95,
+            "solar_absorptance": 0.8,
+            "visible_absorptance": 0.8,
+        }
+    )
+    LBT_ConcretePavement: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Concrete Pavement",
+            "roughness": "MediumRough",
+            "thickness": 0.2,
+            "conductivity": 1.73,
+            "density": 2243.0,
+            "specific_heat": 837.0,
+            "thermal_absorptance": 0.9,
+            "solar_absorptance": 0.65,
+            "visible_absorptance": 0.65,
+        }
+    )
+    LBT_AsphaltPavement: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Asphalt Pavement",
+            "roughness": "MediumRough",
+            "thickness": 0.2,
+            "conductivity": 0.75,
+            "density": 2360.0,
+            "specific_heat": 920.0,
+            "thermal_absorptance": 0.93,
+            "solar_absorptance": 0.87,
+            "visible_absorptance": 0.87,
+        }
+    )
+    LBT_SolidRock: OpaqueMaterial = create_material(
+        {
+            "type": "EnergyMaterial",
+            "identifier": "Solid Rock",
+            "roughness": "MediumRough",
+            "thickness": 0.2,
+            "conductivity": 3.0,
+            "density": 2700.0,
+            "specific_heat": 790.0,
+            "thermal_absorptance": 0.96,
+            "solar_absorptance": 0.55,
+            "visible_absorptance": 0.55,
+        }
+    )
+    LBT_GrassyLawn: OpaqueVegetationMaterial = create_material(
+        {
+            "type": "EnergyMaterialVegetation",
+            "identifier": "Grassy Lawn",
+            "plant_height": 0.2,
+            "leaf_area_index": 1.0,
+            "leaf_reflectivity": 0.22,
+            "leaf_emissivity": 0.95,
+            "min_stomatal_resist": 180.0,
+            "roughness": "MediumRough",
+            "thickness": 0.1,
+            "conductivity": 0.35,
+            "density": 1100.0,
+            "specific_heat": 1200.0,
+            "soil_thermal_absorptance": 0.9,
+            "soil_solar_absorptance": 0.7,
+            "soil_visible_absorptance": 0.7,
+            "sat_vol_moist_cont": 0.3,
+            "residual_vol_moist_cont": 0.01,
+            "init_vol_moist_cont": 0.1,
+            "moist_diff_model": "Simple",
+        }
     )
