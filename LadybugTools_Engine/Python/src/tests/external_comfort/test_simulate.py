@@ -3,11 +3,8 @@ from ladybug.epw import EPW
 from ladybugtools_toolkit.external_comfort.material import Materials
 from ladybugtools_toolkit.external_comfort.model import create_model
 from ladybugtools_toolkit.external_comfort.simulate import (
-    SimulationResult,
-    longwave_radiant_temperature,
-    solar_radiation,
-    surface_temperature,
-)
+    SimulationResult, longwave_radiant_temperature, solar_radiation,
+    surface_temperature)
 
 from ...tests import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
 
@@ -24,7 +21,7 @@ def test_solar_radiation():
         identifier=EXTERNAL_COMFORT_IDENTIFIER,
     )
     result = solar_radiation(model, EPW_OBJ)
-    assert result["unshaded_total_radiation"].average == pytest.approx(203, rel=1.5)
+    assert result["unshaded_up_total_irradiance"].average == pytest.approx(203, rel=1.5)
 
 
 def test_surface_temperature():
@@ -36,7 +33,7 @@ def test_surface_temperature():
     )
     result = surface_temperature(model, EPW_OBJ)
     assert (
-        result["unshaded_above_temperature"].average == EPW_OBJ.sky_temperature.average
+        result["unshaded_up_temperature"].average == EPW_OBJ.sky_temperature.average
     )
 
 
