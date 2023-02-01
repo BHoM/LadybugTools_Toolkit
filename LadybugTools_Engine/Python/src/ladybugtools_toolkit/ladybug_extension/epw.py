@@ -1328,8 +1328,8 @@ def degree_time(
                 [cdh, hdh],
                 axis=1,
                 keys=[
-                    f"Cooling Degree Hours (>{cool_base})",
-                    f"Heating Degree Hours (<{heat_base})",
+                    f"Cooling Degree Hours (>{cool_base}°C)",
+                    f"Heating Degree Hours (<{heat_base}°C)",
                 ],
             )
             .reorder_levels([1, 0], axis=1)
