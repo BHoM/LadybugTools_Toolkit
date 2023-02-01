@@ -27,6 +27,7 @@ from ladybugtools_toolkit.ladybug_extension.datacollection import from_series, t
 from scipy import spatial
 
 # load the requisite dataset into memory for querying
+# https://burohappold.sharepoint.com/:u:/r/sites/BHoM/Datasets/CCWorldWeatherGen/HadCM3_A2.npz
 _DATASET_PATH = (
     Path(ladybugtools_toolkit.__file__).parent.parent / "data" / "HadCM3_A2.npz"
 )

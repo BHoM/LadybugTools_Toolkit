@@ -1161,39 +1161,38 @@ def feasible_utci_limits(
         epw, evaporative_cooling_effectiveness=0.5
     )
 
-    # weatherfile wind, perect shade, evaporatively cooled air
-    min_utci = UTCI(
-        air_temperature=dbt_evap,
-        rad_temperature=epw.dry_bulb_temperature,
-        rel_humidity=rh_evap,
-        wind_speed=epw.wind_speed,
-    ).universal_thermal_climate_index
-
-    # max UTCI - no wind, no shade, no additional moisture in air
-    max_utci = UTCI(
-        air_temperature=epw.dry_bulb_temperature,
-        rad_temperature=mrt_unshaded,
-        rel_humidity=epw.relative_humidity,
-        wind_speed=epw.wind_speed.get_aligned_collection(0),
-    ).universal_thermal_climate_index
-
-    # get the low-high values for each hour, and create the new collections
-    abs_min = np.min([min_utci.values, max_utci.values], axis=0)
-    abs_max = np.max([min_utci.values, max_utci.values], axis=0)
+    utcis = []
+    for _dbt in [epw.dry_bulb_temperature, dbt_evap]:
+        for _rh in [epw.relative_humidity, rh_evap]:
+            for _ws in [
+                epw.wind_speed,
+                epw.wind_speed.get_aligned_collection(0),
+                epw.wind_speed * 1.1,
+            ]:
+                for _mrt in [epw.dry_bulb_temperature, mrt_unshaded]:
+                    utcis.append(
+                        UTCI(
+                            air_temperature=_dbt,
+                            rad_temperature=_mrt,
+                            rel_humidity=_rh,
+                            wind_speed=_ws,
+                        ).universal_thermal_climate_index,
+                    )
+    df = pd.concat([to_series(i) for i in utcis], axis=1)
+    min_utci = from_series(df.min(axis=1).rename("Universal Thermal Climate Index (C)"))
+    max_utci = from_series(df.max(axis=1).rename("Universal Thermal Climate Index (C)"))
 
     if as_dataframe:
         return pd.concat(
             [
-                to_series(min_utci.get_aligned_collection(abs_min)),
-                to_series(max_utci.get_aligned_collection(abs_max)),
+                to_series(min_utci),
+                to_series(max_utci),
             ],
             axis=1,
             keys=["min", "max"],
         )
 
-    return min_utci.get_aligned_collection(abs_min), max_utci.get_aligned_collection(
-        abs_max
-    )
+    return min_utci, max_utci
 
 
 def feasible_comfort_category(
