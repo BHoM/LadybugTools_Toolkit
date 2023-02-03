@@ -1139,13 +1139,14 @@ def categorise(
 
 
 def feasible_utci_limits(
-    epw: EPW, as_dataframe: bool = False
+    epw: EPW, include_additional_moisture: bool = True, as_dataframe: bool = False
 ) -> List[HourlyContinuousCollection]:
     """Calculate the absolute min/max collections of UTCI based on possible shade, wind and moisture conditions.
 
     Args:
         epw (EPW): The EPW object for which limits will be calculated.
         as_dataframe (bool): Return the output as a dataframe with two columns, instread of two separate collections.
+        include_additional_moisture (bool): Include the effect of evaporative cooling on the UTCI limits.
 
     Returns:
         List[HourlyContinuousCollection]: The lowest UTCI and highest UTCI temperatures for each hour of the year.
@@ -1162,8 +1163,16 @@ def feasible_utci_limits(
     )
 
     utcis = []
-    for _dbt in [epw.dry_bulb_temperature, dbt_evap]:
-        for _rh in [epw.relative_humidity, rh_evap]:
+    for _dbt in (
+        [epw.dry_bulb_temperature, dbt_evap]
+        if include_additional_moisture
+        else [epw.dry_bulb_temperature]
+    ):
+        for _rh in (
+            [epw.relative_humidity, rh_evap]
+            if include_additional_moisture
+            else [epw.relative_humidity]
+        ):
             for _ws in [
                 epw.wind_speed,
                 epw.wind_speed.get_aligned_collection(0),
@@ -1201,6 +1210,7 @@ def feasible_comfort_category(
     end_hour: int = 23,
     density: bool = True,
     simplified: bool = False,
+    include_additional_moisture: bool = True,
 ) -> pd.DataFrame:
     """
     Based on the best/worst conditions that could be envisaged in an EPWs
@@ -1219,6 +1229,8 @@ def feasible_comfort_category(
         simplified (bool, optional):
             Simplify comfort categories to use below/within/upper instead of
             discrete UTCI categories. Defaults to False.
+        include_additional_moisture (bool, optional):
+            Include the effect of evaporative cooling on the UTCI limits. Defaults to True.
 
     Raises:
         ValueError: _description_
@@ -1226,7 +1238,9 @@ def feasible_comfort_category(
     Returns:
         pd.DataFrame: _description_
     """
-    df = feasible_utci_limits(epw, as_dataframe=True)
+    df = feasible_utci_limits(
+        epw, as_dataframe=True, include_additional_moisture=include_additional_moisture
+    )
     df = categorise(df, simplified=simplified)
 
     if (st_hour < 0) or (end_hour < 0) or (st_hour > 23) or (end_hour > 23):
@@ -1258,6 +1272,7 @@ def feasible_comfort_temporal(
     end_hour: float = 23,
     seasonality: Union[Callable, str] = "monthly",
     comfort_limits: Tuple[float] = (9, 26),
+    include_additional_moisture: bool = True,
 ) -> pd.DataFrame:
     """
     Based on the min/max feasible proportion of time where comfort can be
@@ -1275,6 +1290,8 @@ def feasible_comfort_temporal(
             How to present results in any annual-seasonal summarisation. Defaults to "monthly".
         comfort_limits (List[float], optional):
             What is considerred the upper and lower limits of "comfort". Defaults to [9, 26] per UTCI standard.
+        include_additional_moisture (bool, optional):
+            Include the effect of evaporative cooling on the UTCI limits. Defaults to True.
 
     Returns:
         pd.DataFrame:
@@ -1291,7 +1308,9 @@ def feasible_comfort_temporal(
     if seasonality not in sx:
         raise ValueError(f"seasonality must be one of {sx}")
 
-    min_utci, max_utci = feasible_utci_limits(epw)
+    min_utci, max_utci = feasible_utci_limits(
+        epw, include_additional_moisture=include_additional_moisture
+    )
 
     utci_range = pd.concat([to_series(min_utci), to_series(max_utci)], axis=1).agg(
         ["min", "max"], axis=1

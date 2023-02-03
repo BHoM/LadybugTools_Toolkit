@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -14,6 +14,7 @@ from .lighten_color import lighten_color
 def utci_comparison_diurnal(
     collections: List[HourlyContinuousCollection],
     collection_ids: List[str] = None,
+    colors: List[Any] = None,
 ) -> Figure:
     """Plot a set of UTCI collections on a single figure for monthly diurnal periods.
 
@@ -22,6 +23,8 @@ def utci_comparison_diurnal(
             A list of UTCI collections.
         collection_ids (List[str], optional):
             A list of descriptions for each of the input collections. Defaults to None.
+        colors (List[Any], optional):
+            A list of colors to use for the lines. Defaults to None which uses the cycler to determine which colors to use.
 
     Returns:
         Figure:
@@ -39,6 +42,13 @@ def utci_comparison_diurnal(
             raise ValueError(
                 f"Collection {n} data type is not UTCI and cannot be used in this plot."
             )
+
+    if colors is not None:
+        if len(colors) != len(collections):
+            raise ValueError(
+                "The number of colors must match the number of collections."
+            )
+        plt.rcParams["axes.prop_cycle"] = plt.cycler(color=colors)
 
     months = [
         "January",
