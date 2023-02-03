@@ -23,6 +23,7 @@
 using BH.oM.Base.Attributes;
 using BH.oM.Python;
 using System.ComponentModel;
+using System.Collections.Generic;
 using System.IO;
 
 namespace BH.Engine.LadybugTools
@@ -34,12 +35,33 @@ namespace BH.Engine.LadybugTools
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
         public static PythonEnvironment InstallPythonEnv_LBT(bool run = false)
         {
-            return BH.Engine.Python.Compute.InstallReferencedVirtualenv(
+            string referencedExecutable = @"C:\Program Files\ladybug_tools\python\python.exe";
+
+            PythonEnvironment env = BH.Engine.Python.Compute.InstallReferencedVirtualenv(
                 name: Query.ToolkitName(),
-                executable: @"C:\Program Files\ladybug_tools\python\python.exe",
+                executable: referencedExecutable,
                 localPackage: Path.Combine(Engine.Python.Query.CodeDirectory(), Query.ToolkitName()),
                 run: run
             );
+
+            // check here to ensure that referenced executable is using same version as local BHoM environment executable
+            List<string> packagesToCheck = new List<string>() { "lbt-ladybug", "lbt-dragonfly", "lbt-honeybee", "lbt-recipes" };
+            string installed;
+            string referenced;
+            foreach ( string package in packagesToCheck )
+            {
+                installed = BH.Engine.Python.Compute.RunCommandStdout($"{BH.Engine.Python.Modify.AddQuotesIfRequired(env.Executable)}  -m pip freeze | FindStr {package}");
+                referenced = BH.Engine.Python.Compute.RunCommandStdout($"{BH.Engine.Python.Modify.AddQuotesIfRequired(referencedExecutable)}  -m pip freeze | FindStr {package}");
+                if (installed != referenced)
+                {
+                    BH.Engine.Base.Compute.RecordWarning($"BHoM environment {package} does not match referenced package version ({installed} != {referenced}). " +
+                        $"This can be caused by the BHoM version and installed version becoming out of sync. " +
+                        $"Try deleteing the {Path.Combine(Engine.Python.Query.EnvironmentsDirectory(), Query.ToolkitName())} directory and re-running the " +
+                        $"{System.Reflection.MethodBase.GetCurrentMethod().Name} method again to fix this.");
+                }
+            }
+
+            return env;
         }
     }
 }

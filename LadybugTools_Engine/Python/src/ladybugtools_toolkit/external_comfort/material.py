@@ -246,37 +246,37 @@ class Materials(Enum):
     - https://github.com/ladybug-tools/honeybee-energy-standards
     """
 
-    ASPHALT_PAVEMENT: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Asphalt Pavement")
-    )
-    CONCRETE_PAVEMENT: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Concrete Pavement")
-    )
-    DRY_DUST: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Dry Dust")
-    )
-    DRY_SAND: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Dry Sand")
-    )
-    GRASSY_LAWN: OpaqueVegetationMaterial = OpaqueVegetationMaterial.from_lbt(
-        opaque_material_by_identifier("Grassy Lawn")
-    )
-    METAL: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Metal Surface")
-    )
-    METAL_REFLECTIVE: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Metal Roof Surface - Highly Reflective")
-    )
-    MOIST_SOIL: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Moist Soil")
-    )
-    MUD: OpaqueMaterial = OpaqueMaterial.from_lbt(opaque_material_by_identifier("Mud"))
-    SOLID_ROCK: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Solid Rock")
-    )
-    WOOD_SIDING: OpaqueMaterial = OpaqueMaterial.from_lbt(
-        opaque_material_by_identifier("Wood Siding")
-    )
+    # ASPHALT_PAVEMENT: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Asphalt Pavement")
+    # )
+    # CONCRETE_PAVEMENT: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Concrete Pavement")
+    # )
+    # DRY_DUST: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Dry Dust")
+    # )
+    # DRY_SAND: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Dry Sand")
+    # )
+    # GRASSY_LAWN: OpaqueVegetationMaterial = OpaqueVegetationMaterial.from_lbt(
+    #     opaque_material_by_identifier("Grassy Lawn")
+    # )
+    # METAL: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Metal Surface")
+    # )
+    # METAL_REFLECTIVE: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Metal Roof Surface - Highly Reflective")
+    # )
+    # MOIST_SOIL: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Moist Soil")
+    # )
+    # MUD: OpaqueMaterial = OpaqueMaterial.from_lbt(opaque_material_by_identifier("Mud"))
+    # SOLID_ROCK: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Solid Rock")
+    # )
+    # WOOD_SIDING: OpaqueMaterial = OpaqueMaterial.from_lbt(
+    #     opaque_material_by_identifier("Wood Siding")
+    # )
 
     # CUSTOM MATERIALS
 
