@@ -9,14 +9,15 @@ from ladybugtools_toolkit.external_comfort.material import Materials
 from ladybugtools_toolkit.external_comfort.typology import Typologies
 
 from ...tests import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
-
+GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
+SHADE_MATERIAL = Materials.FABRIC.value
 
 def test_external_comfort():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -29,8 +30,8 @@ def test_to_dataframe():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -42,8 +43,8 @@ def test_plot_utci_day_comfort_metrics():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -56,8 +57,8 @@ def test_plot_utci_heatmap():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -70,8 +71,8 @@ def test_plot_utci_heatmap_histogram():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -84,8 +85,8 @@ def test_plot_utci_distance_to_comfortable():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -98,8 +99,8 @@ def test_plot_dbt_heatmap():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -112,8 +113,8 @@ def test_plot_rh_heatmap():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -126,8 +127,8 @@ def test_plot_ws_heatmap():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -140,8 +141,8 @@ def test_plot_mrt_heatmap():
     """_"""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -154,8 +155,8 @@ def test_to_dict():
     """Test whether an object can be converted to a dictionary."""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -169,8 +170,8 @@ def test_to_json():
     """Test whether an object can be converted to a json string."""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -184,8 +185,8 @@ def test_from_dict_native():
     """Test whether an object can be converted from a dictionary directly."""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
@@ -199,8 +200,8 @@ def test_from_json_native():
     """Test whether an object can be converted from a json string directly."""
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typologies.EAST_SHELTER_WITH_CANOPY.value
