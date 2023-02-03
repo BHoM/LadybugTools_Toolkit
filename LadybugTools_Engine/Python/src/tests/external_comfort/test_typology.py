@@ -13,7 +13,7 @@ from ladybugtools_toolkit.external_comfort.typology import (
 from ...tests import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
 
 EPW_OBJ = EPW(EPW_FILE)
-GROUND_MATERIAL = Materials.ASPHALT_PAVEMENT.value
+GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
 SHADE_MATERIAL = Materials.FABRIC.value
 GENERIC_SHELTER = Shelter([[0, 0, 5], [1, 1, 5], [1, 0, 5]])
 
