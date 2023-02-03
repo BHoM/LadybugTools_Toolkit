@@ -32,7 +32,7 @@ from ..tests import EPW_FILE
 
 EPW_OBJ = EPW(EPW_FILE)
 
-GROUND_MATERIAL = Materials.ASPHALT_PAVEMENT.value
+GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
 LB_UTCI_COLLECTION = UTCI(
     EPW_OBJ.dry_bulb_temperature,
     EPW_OBJ.relative_humidity,
