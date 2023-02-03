@@ -30,7 +30,7 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Create the BHoM Python envrionment for LadybugTools_Toolkit. This creates a replica of what is found in the Pollination installed python environment, for extension using BHoM.")]
+        [Description("Create the BHoM Python environment for LadybugTools_Toolkit. This creates a replica of what is found in the Pollination installed python environment, for extension using BHoM.")]
         [Input("run", "Run the installation process.")]
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
         public static PythonEnvironment InstallPythonEnv_LBT(bool run = false)

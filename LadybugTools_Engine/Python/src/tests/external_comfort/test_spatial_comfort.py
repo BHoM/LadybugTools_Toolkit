@@ -21,6 +21,9 @@ SPATIAL_COMFORT_DIRECTORY.mkdir(parents=True, exist_ok=True)
 CFD_LOCAL_DIRECTORY = SPATIAL_COMFORT_DIRECTORY / "cfd"
 CFD_LOCAL_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
+GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
+SHADE_MATERIAL = Materials.FABRIC.value
+
 # copy cfd values into local directory for testing
 for file in list(CFD_DIRECTORY.glob("**/*")):
     shutil.copy(file, CFD_LOCAL_DIRECTORY)
@@ -97,8 +100,8 @@ def test_spatial_comfort():
 
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
 
@@ -113,8 +116,8 @@ def test_spatial_comfort_processing():
 
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
 
@@ -136,8 +139,8 @@ def test_spatial_comfort_summary():
 
     sim_res = SimulationResult(
         EPW_FILE,
-        Materials.ASPHALT_PAVEMENT.value,
-        Materials.FABRIC.value,
+        GROUND_MATERIAL,
+        SHADE_MATERIAL,
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
 
