@@ -211,3 +211,4 @@ cython_debug/
 # Testing files
 *.ipynb
 .dev/
+build.bat

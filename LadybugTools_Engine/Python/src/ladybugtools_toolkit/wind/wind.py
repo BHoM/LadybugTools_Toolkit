@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, AnalysisPeriod
+from ladybugtools_toolkit.plot.wind_matrix import wind_matrix
 from matplotlib.colors import Colormap, ListedColormap
 from tqdm import tqdm
 
@@ -893,6 +894,43 @@ class Wind:
         self.df.to_csv(csv_path)
         return csv_path
 
+    def wind_matrix(self) -> pd.DataFrame:
+        """Calculate average wind speed and direction for each month and hour of day in a pandas DataFrame.
+        Returns:
+            pd.DataFrame:
+                A DataFrame containing average wind speed and direction for each month and hour of day.
+        """
+
+        wind_directions = (
+            (
+                (
+                    self.wd.groupby(
+                        [self.wd.index.month, self.wd.index.hour], axis=0
+                    ).apply(wind_direction_average)
+                    # + 90
+                )
+                % 360
+            )
+            .unstack()
+            .T
+        )
+        wind_directions.columns = [
+            calendar.month_abbr[i] for i in wind_directions.columns
+        ]
+        wind_speeds = (
+            self.ws.groupby([self.ws.index.month, self.ws.index.hour], axis=0)
+            .mean()
+            .unstack()
+            .T
+        )
+        wind_speeds.columns = [calendar.month_abbr[i] for i in wind_speeds.columns]
+
+        df = pd.concat(
+            [wind_directions, wind_speeds], axis=1, keys=["direction", "speed"]
+        )
+
+        return df
+
     ##################################
     # PLOTTING/VISUALISATION METHODS #
     ##################################
@@ -1017,6 +1055,26 @@ class Wind:
         )
 
         return fig
+
+    def plot_wind_matrix(self, title: str = None, cmap: Union[Colormap, str] = "YlGnBu", show_values: bool = False) -> plt.Figure:  # type: ignore
+        """Create a plot showing the annual wind speed and direction bins using the month_time_average method."""
+        df = self.wind_matrix()
+
+        wind_speed_bins = df["speed"]
+        wind_direction_bins = df["direction"]
+
+        if title is None:
+            title = f"{self}"
+        else:
+            title = f"{self}\n{title}"
+
+        return wind_matrix(
+            wind_speeds=wind_speed_bins,
+            wind_directions=wind_direction_bins,
+            cmap=cmap,
+            title=title,
+            show_values=show_values,
+        )
 
     def plot_timeseries(self, color: str = "grey") -> plt.Figure:  # type: ignore
         """Create a simple line plot of wind speed.
