@@ -12,4 +12,4 @@ def to_string(location: Location) -> str:
         str:
             A simple string representation of the Location object.
     """
-    return f"{location.country} - {location.city}"
+    return f"{location.country.strip()} - {location.city.strip()}"
