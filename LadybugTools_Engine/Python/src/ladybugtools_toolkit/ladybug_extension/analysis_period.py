@@ -1,7 +1,8 @@
 import calendar
 from datetime import datetime
-from typing import List
+from typing import List, Union
 
+import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 
@@ -26,21 +27,38 @@ def to_datetimes(
 
 
 def to_boolean(
-    analysis_period: AnalysisPeriod,
+    analysis_periods: Union[List[AnalysisPeriod], AnalysisPeriod],
 ) -> List[bool]:
     """Convert an AnalysisPeriod object into a list of booleans where values within the Period are also within a default whole analysis period of the same interval.
 
     Args:
-        analysis_period (AnalysisPeriod): An AnalysisPeriod object.
+        analysis_periods (List[AnalysisPeriod]): A list of AnalysisPeriod objects.
 
     Returns:
         List[bool]: A list of booleans
     """
 
-    generic_datetimes = to_datetimes(AnalysisPeriod(timestep=analysis_period.timestep))
-    datetimes = to_datetimes(analysis_period)
+    if isinstance(analysis_periods, AnalysisPeriod):
+        analysis_periods = [analysis_periods]
 
-    return generic_datetimes.isin(datetimes).tolist()
+    # check timestep of each analysis period is the same
+    if len(set([ap.timestep for ap in analysis_periods])) > 1:
+        raise ValueError("All analysis periods must have the same timestep.")
+
+    # remove duplicates from list
+    analysis_periods = list(set(analysis_periods))
+
+    # create a generic set of datetimes for the same timestep
+    generic_datetimes = to_datetimes(
+        AnalysisPeriod(timestep=analysis_periods[0].timestep)
+    )
+
+    # for each analysis period in analysis_periods, create a list of booleans where values within the Period are also within a default whole analysis period of the same interval
+    bools = []
+    for ap in analysis_periods:
+        bools.append(generic_datetimes.isin(to_datetimes(ap)))
+
+    return np.any(bools, axis=0)
 
 
 def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
@@ -71,7 +89,7 @@ def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
 
 
 def describe(
-    analysis_period: AnalysisPeriod,
+    analysis_period: List[AnalysisPeriod],
     save_path: bool = False,
     include_timestep: bool = False,
 ) -> str:
@@ -85,6 +103,16 @@ def describe(
     Returns:
         str: A description of the analysis period.
     """
+
+    if isinstance(analysis_period, AnalysisPeriod):
+        analysis_period = [analysis_period]
+
+    # remove duplicates from list
+    analysis_period = list(set(analysis_period))
+
+    # check timestep of each analysis period is the same
+    if len(set(ap.timestep for ap in analysis_period)) > 1:
+        raise ValueError("All analysis periods must have the same timestep.")
 
     timestep = {
         1: "hour",
@@ -102,11 +130,21 @@ def describe(
     }
 
     if save_path:
+        if len(analysis_period) != 1:
+            raise ValueError("Only one analysis period can be used for a save path.")
+        analysis_period = analysis_period[0]
         if include_timestep:
             return f"{analysis_period.st_month:02}{analysis_period.st_day:02}_{analysis_period.end_month:02}{analysis_period.end_day:02}_{analysis_period.st_hour:02}_{analysis_period.end_hour:02}_{analysis_period.timestep:02}"
         return f"{analysis_period.st_month:02}{analysis_period.st_day:02}_{analysis_period.end_month:02}{analysis_period.end_day:02}_{analysis_period.st_hour:02}_{analysis_period.end_hour:02}"
 
-    if include_timestep:
-        return f"{calendar.month_abbr[analysis_period.st_month]} {analysis_period.st_day:02} to {calendar.month_abbr[analysis_period.end_month]} {analysis_period.end_day:02} between {analysis_period.st_hour:02}:00 and {analysis_period.end_hour:02}:00, every {timestep[analysis_period.timestep]}"
+    base_str = []
+    for ap in analysis_period:
+        base_str.append(
+            f"{calendar.month_abbr[ap.st_month]} {ap.st_day:02} to {calendar.month_abbr[ap.end_month]} {ap.end_day:02} between {ap.st_hour:02}:00 and {ap.end_hour + 1 if ap.end_hour != 23 else 0:02}:00"
+        )
+    base_str = ", and ".join(base_str)
 
-    return f"{calendar.month_abbr[analysis_period.st_month]} {analysis_period.st_day:02} to {calendar.month_abbr[analysis_period.end_month]} {analysis_period.end_day:02} between {analysis_period.st_hour:02}:00 and {analysis_period.end_hour:02}:00"
+    if include_timestep:
+        return f"{base_str}, every {timestep[analysis_period[0].timestep]}"
+
+    return base_str

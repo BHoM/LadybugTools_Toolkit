@@ -6,7 +6,7 @@ import math
 import re
 import urllib.request
 import warnings
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -355,6 +355,22 @@ def figure_to_base64(figure: Figure, html: bool = False) -> str:
         return f"{content_type};charset={content_encoding};base64,{base64_string}"
 
     return base64_string
+
+
+def timedelta_tostring(timedelta: timedelta) -> str:
+    """timedelta objects don't have a nice string representation, so this function converts them.
+
+    Args:
+        timedelta (datetime.timedelta):
+            The timedelta object to convert.
+    Returns:
+        str:
+            A string representation of the timedelta object.
+    """
+    s = timedelta.seconds
+    hours, remainder = divmod(s, 3600)
+    minutes, _ = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}"
 
 
 def decay_rate_smoother(

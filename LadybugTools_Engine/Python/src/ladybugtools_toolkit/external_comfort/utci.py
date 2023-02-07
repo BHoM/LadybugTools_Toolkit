@@ -3,7 +3,7 @@ import warnings
 from calendar import month_name
 from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
-from typing import Callable, List, Tuple, Union
+from typing import Any, Callable, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1091,35 +1091,18 @@ def distance_to_comfortable(
 
 
 def categorise(
-    values: Union[List[float], float], fmt: str = "category", simplified: bool = False
+    values: Union[List[float], float],
+    fmt: str = "category",
+    simplified: bool = False,
+    comfort_limits: Tuple[float] = (9, 26),
 ) -> Union[pd.Categorical, str]:
     """Convert a numeric values into their associated UTCI categories."""
 
-    if simplified:
-        bins = np.array([-np.inf, 9, 26, np.inf])
-    else:
-        bins = np.unique([cat.range for cat in UniversalThermalClimateIndex])
-
-    format_options = ["category", "rgba", "hex"]
-    if fmt == "hex":
-        if simplified:
-            labels = ["#3C65AF", "#2EB349", "#C31F25"]
-        else:
-            labels = [cat.color for cat in UniversalThermalClimateIndex]
-    elif fmt == "rgba":
-        if simplified:
-            labels = [to_rgba(i) for i in ["#3C65AF", "#2EB349", "#C31F25"]]
-        else:
-            labels = [
-                to_rgba(i) for i in [cat.color for cat in UniversalThermalClimateIndex]
-            ]
-    elif fmt == "category":
-        if simplified:
-            labels = ["Too cold", "Comfortable", "Too hot"]
-        else:
-            labels = [cat.value for cat in UniversalThermalClimateIndex]
-    else:
-        raise ValueError(f"format must be one of {format_options}")
+    labels, bins = utci_comfort_categories(
+        simplified=simplified,
+        comfort_limits=comfort_limits,
+        rtype=fmt,
+    )
 
     if isinstance(values, (int, float)):
         return pd.cut([values], bins, labels=labels)[0]
@@ -1198,7 +1181,7 @@ def feasible_utci_limits(
                 to_series(max_utci),
             ],
             axis=1,
-            keys=["min", "max"],
+            keys=["lowest", "highest"],
         )
 
     return min_utci, max_utci
@@ -1206,11 +1189,12 @@ def feasible_utci_limits(
 
 def feasible_comfort_category(
     epw: EPW,
-    st_hour: int = 0,
-    end_hour: int = 23,
+    analysis_periods: Union[List[AnalysisPeriod], AnalysisPeriod] = AnalysisPeriod(),
     density: bool = True,
     simplified: bool = False,
-    include_additional_moisture: bool = True,
+    comfort_limits: Tuple[float] = (9, 26),
+    include_additional_moisture: bool = False,
+    met_rate_adjustment_value: float = None,
 ) -> pd.DataFrame:
     """
     Based on the best/worst conditions that could be envisaged in an EPWs
@@ -1238,31 +1222,69 @@ def feasible_comfort_category(
     Returns:
         pd.DataFrame: _description_
     """
+    if isinstance(analysis_periods, AnalysisPeriod):
+        analysis_periods = [analysis_periods]
+
+    hours = to_boolean(analysis_periods)
+
+    for ap in analysis_periods:
+        if (ap.st_month != 1) or (ap.end_month != 12):
+            raise ValueError("Analysis periods must be for the whole year.")
+
+    cats, _ = utci_comfort_categories(
+        simplified=simplified,
+        comfort_limits=comfort_limits,
+    )
+    # calculate lower and upper bounds
     df = feasible_utci_limits(
         epw, as_dataframe=True, include_additional_moisture=include_additional_moisture
     )
-    df = categorise(df, simplified=simplified)
+    if met_rate_adjustment_value is not None:
+        df["lowest"] = met_rate_adjustment(
+            from_series(df["lowest"].rename("Universal Thermal Climate Index (C)")),
+            met_rate_adjustment_value,
+        ).values
+        df["highest"] = met_rate_adjustment(
+            from_series(df["highest"].rename("Universal Thermal Climate Index (C)")),
+            met_rate_adjustment_value,
+        ).values
 
-    if (st_hour < 0) or (end_hour < 0) or (st_hour > 23) or (end_hour > 23):
-        raise ValueError("hours must be within the range 0-23.")
-    if st_hour > end_hour:
-        hours = [i for i in range(0, 24, 1) if ((i >= end_hour) or (i <= st_hour))]
-    else:
-        hours = [i for i in range(0, 24, 1) if ((i >= st_hour) and (i <= end_hour))]
+    # filter by hours
+    df_filtered = df.loc[hours]
 
-    cats = ["Too cold", "Comfortable", "Too hot"] if simplified else UTCI_LABELS
-    columns = pd.MultiIndex.from_product(
-        [[i.capitalize() for i in cats], ["min", "max"]]
+    # categorise
+    df_cat = categorise(
+        df_filtered, simplified=simplified, comfort_limits=comfort_limits
     )
 
-    temps = []
-    for col_label in ["min", "max"]:
-        temp = df[col_label][df.index.hour.isin(hours)]
-        temp = temp.groupby(temp.index.month).value_counts(normalize=density).unstack()
-        temp.columns = pd.MultiIndex.from_product([temp.columns, [col_label]])
-        temps.append(temp)
-    temp = pd.concat(temps, axis=1).reindex(columns=columns).fillna(0)
+    # join categories and get low/high lims
+    temp = pd.concat(
+        [
+            df_cat.groupby(df_cat.index.month)
+            .lowest.value_counts(normalize=density)
+            .unstack()
+            .reindex(cats, axis=1)
+            .fillna(0),
+            df_cat.groupby(df_cat.index.month)
+            .highest.value_counts(normalize=density)
+            .unstack()
+            .reindex(cats, axis=1)
+            .fillna(0),
+        ],
+        axis=1,
+    )
+    columns = pd.MultiIndex.from_product([cats, ["lowest", "highest"]])
+
+    temp = pd.concat(
+        [
+            temp.groupby(temp.columns, axis=1).min(),
+            temp.groupby(temp.columns, axis=1).max(),
+        ],
+        axis=1,
+        keys=["lowest", "highest"],
+    ).reorder_levels(order=[1, 0], axis=1)[columns]
     temp.index = [calendar.month_abbr[i] for i in temp.index]
+
     return temp
 
 
@@ -1313,7 +1335,7 @@ def feasible_comfort_temporal(
     )
 
     utci_range = pd.concat([to_series(min_utci), to_series(max_utci)], axis=1).agg(
-        ["min", "max"], axis=1
+        ["lowest", "highest"], axis=1
     )
 
     analysis_period = AnalysisPeriod(st_hour=st_hour, end_hour=end_hour)
@@ -1360,7 +1382,7 @@ def feasible_comfort_temporal(
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
             seasons
         ).sum() / temp.groupby(seasons).count()
-        temp = temp.agg(["min", "max"], axis=1)
+        temp = temp.agg(["lowest", "highest"], axis=1)
         temp.columns = [
             "Minimum comfortable time [0-1]",
             "Maximum comfortable time [0-1]",
@@ -1380,7 +1402,7 @@ def feasible_comfort_temporal(
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
             seasons
         ).sum() / temp.groupby(seasons).count()
-        temp = temp.agg(["min", "max"], axis=1)
+        temp = temp.agg(["lowest", "highest"], axis=1)
         temp.columns = [
             "Minimum comfortable time [0-1]",
             "Maximum comfortable time [0-1]",
@@ -1400,7 +1422,7 @@ def feasible_comfort_temporal(
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
             seasons
         ).sum() / temp.groupby(seasons).count()
-        temp = temp.agg(["min", "max"], axis=1)
+        temp = temp.agg(["lowest", "highest"], axis=1)
         temp.columns = [
             "Minimum comfortable time [0-1]",
             "Maximum comfortable time [0-1]",
@@ -1412,3 +1434,53 @@ def feasible_comfort_temporal(
         return temp
 
     raise ValueError("How did you get here?")
+
+
+def utci_comfort_categories(
+    simplified: bool = False,
+    comfort_limits: Tuple[float] = (9, 26),
+    rtype: str = "category",
+) -> List[List[Any]]:
+    """Create a list of UTCI comfort categories based on given configuration.
+
+    Args:
+        simplified (bool, optional):
+            Return simplified categories. Defaults to False.
+        comfort_limits (Tuple[float], optional):
+            Modify simplified categories. Defaults to (9, 26).
+        rtype (str, optional):
+            Return type - category or color. Defaults to "category".
+
+    Returns:
+        List[List[Any]]:
+            A list of UTCI comfort categories - in the form [[category_0, category_n], [bound_0, ..., bound_n+1]]
+    """
+
+    rtypes = ["category", "color"]
+    if rtype not in rtypes:
+        raise ValueError(f"rtype must be one of {rtypes}")
+
+    if rtype == "color":
+        if simplified:
+            labels = ["#3C65AF", "#2EB349", "#C31F25"]
+        else:
+            labels = [cat.color for cat in UniversalThermalClimateIndex]
+    else:
+        if simplified:
+            labels = [
+                f"Too cold (<{min(comfort_limits)}°C)",
+                f"Comfortable ({min(comfort_limits)}°C ≤ x ≤ {max(comfort_limits)}°C)",
+                f"Too hot (>{max(comfort_limits)}°C)",
+            ]
+        else:
+            labels = [i.value for i in UniversalThermalClimateIndex]
+
+    if simplified:
+        bounds = [-np.inf, min(comfort_limits), max(comfort_limits), np.inf]
+    else:
+        bounds = np.unique([i.range for i in UniversalThermalClimateIndex]).tolist()
+
+    return (
+        labels,
+        bounds,
+    )
