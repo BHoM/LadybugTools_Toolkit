@@ -509,7 +509,16 @@ def forecast_epw(epw: EPW, emissions_scenario: str, forecast_year: int) -> EPW:
 
     # create an "empty" epw object eready to populate
     new_epw = EPW.from_missing_values(epw.is_leap_year)
-    new_epw.location = epw.location
+    new_epw.location = Location(
+        latitude=epw.location.latitude,
+        longitude=epw.location.longitude,
+        source=f"{epw.location.source} {emissions_scenario}-{forecast_year}",
+        city=epw.location.city,
+        country=epw.location.country,
+        elevation=epw.location.elevation,
+        state=epw.location.state,
+        station_id=epw.location.station_id,
+    )
     new_epw.comments_1 = f"{epw.comments_1}. Forecast using transformation factors from the IPCC HadCM3 {emissions_scenario} emissions scenario for {forecast_year} according to the methodology from Jentsch M.F., James P.A.B., Bourikas L. and Bahaj A.S. (2013) Transforming existing weather data for worldwide locations to enable energy and building performance simulation under future climates, Renewable Energy, Volume 55, pp 514-524."
     new_epw.comments_2 = epw.comments_2
     new_epw._file_path = (
