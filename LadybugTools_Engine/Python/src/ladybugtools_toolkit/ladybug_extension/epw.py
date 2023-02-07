@@ -31,6 +31,7 @@ from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
+from ..helpers import timedelta_tostring
 from .analysis_period import to_datetimes
 from .datacollection import to_series
 from .header import to_string as header_to_string
@@ -923,16 +924,20 @@ def clearness_index(
     )
 
 
-def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
-    """Create a Series containing a category for each timestep of an EPW giving it's season based on day length (using sunrise/sunset).
+def seasonality_from_day_length_location(
+    location: Location, annotate: bool = False
+) -> pd.Series:
+    """Calculate the seasonality of day length for a given location.
 
     Args:
-        epw (EPW):
-            Input EPW.
+        location (Location):
+            A Ladybug location object.
+        annotate (bool, optional):
+            Annotate the values returned with the day length. Defaults to False.
 
     Returns:
         pd.Series:
-            List of seasons per timestep.
+            A pandas series of season categorisation values.
     """
 
     # get datetimes to query sun
@@ -941,7 +946,7 @@ def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
 
     sun_times = pd.DataFrame.from_dict(
         [
-            Sunpath.from_location(epw.location).calculate_sunrise_sunset(i.month, i.day)
+            Sunpath.from_location(location).calculate_sunrise_sunset(i.month, i.day)
             for i in df.index
         ]
     )
@@ -953,16 +958,10 @@ def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
             "This location is near the north/south pole and is subject to periods where sun neither rises or sets."
         )
 
-    def _timedelta_to_str(timedelta: datetime.timedelta) -> str:
-        s = timedelta.seconds
-        hours, remainder = divmod(s, 3600)
-        minutes, _ = divmod(remainder, 60)
-        return f"{hours:02d}:{minutes:02d}"
-
-    shortest_day_length = _timedelta_to_str(sun_times.day_length.min())
+    shortest_day_length = timedelta_tostring(sun_times.day_length.min())
     shortest_day = sun_times.day_length.idxmin()
-    middlest_day_length = _timedelta_to_str(sun_times.day_length.mean())
-    longest_day_length = _timedelta_to_str(sun_times.day_length.max())
+    middlest_day_length = timedelta_tostring(sun_times.day_length.mean())
+    longest_day_length = timedelta_tostring(sun_times.day_length.max())
     longest_day = sun_times.day_length.idxmax()
 
     months = pd.Timedelta(days=3 * 30)
@@ -1025,87 +1024,59 @@ def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
     return pd.Series(categories, index=idx, name="season")
 
 
-def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
-    """Create a Series containing a category for each timestep of an EPW giving it's season.
+def seasonality_from_temperature_timeseries(
+    series: pd.Series, annotate: bool = False
+) -> pd.Series:
+    """Calculate the seasonality of a temperature timeseries.
 
     Args:
-        epw (EPW):
-            Input EPW.
+        series (pd.Series):
+            A pandas series of temperature values.
         annotate (bool, optional):
-            If True, then note months included in each season in the category labels.
-
+            Annotate the values returned with the day length. Defaults to False.
     Returns:
         pd.Series:
-            List of seasons per timestep.
+            A pandas series of season categorisation values.
+
     """
 
-    idx = to_datetimes(AnalysisPeriod())
-    if epw.location.latitude >= 0:
-        # northern hemisphere
-        spring_months = [3, 4, 5]
-        spring_month_labels = [calendar.month_abbr[i] for i in spring_months]
-        summer_months = [6, 7, 8]
-        summer_month_labels = [calendar.month_abbr[i] for i in summer_months]
-        autumn_months = [9, 10, 11]
-        autumn_month_labels = [calendar.month_abbr[i] for i in autumn_months]
-        winter_months = [12, 1, 2]
-        winter_month_labels = [calendar.month_abbr[i] for i in winter_months]
-    else:
-        # southern hemisphere
-        spring_months = [9, 10, 11]
-        spring_month_labels = [calendar.month_abbr[i] for i in spring_months]
-        summer_months = [12, 1, 2]
-        summer_month_labels = [calendar.month_abbr[i] for i in summer_months]
-        autumn_months = [3, 4, 5]
-        autumn_month_labels = [calendar.month_abbr[i] for i in autumn_months]
-        winter_months = [6, 7, 8]
-        winter_month_labels = [calendar.month_abbr[i] for i in winter_months]
+    if not isinstance(series.index, pd.DatetimeIndex):
+        raise ValueError(f"The series's index must be of type {type(pd.DatetimeIndex)}")
 
-    categories = np.where(
-        idx.month.isin(spring_months),
-        f"Spring ({', '.join(spring_month_labels)})" if annotate else "Spring",
-        np.where(
-            idx.month.isin(summer_months),
-            f"Summer ({', '.join(summer_month_labels)})" if annotate else "Summer",
-            np.where(
-                idx.month.isin(autumn_months),
-                f"Autumn ({', '.join(autumn_month_labels)})" if annotate else "Autumn",
-                np.where(
-                    idx.month.isin(winter_months),
-                    f"Winter ({', '.join(winter_month_labels)})"
-                    if annotate
-                    else "Winter",
-                    "Undefined",
-                ),
-            ),
-        ),
-    )
+    # remove NaN values
+    series.dropna(axis=0, how="any", inplace=True)
 
-    return pd.Series(categories, index=idx, name="season")
+    # remove duplicates in input series
+    series = series.loc[~series.index.duplicated()]
 
-
-def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
-    """Create a Series containing a category for each timestep of an EPW giving it's season.
-    Args:
-        epw (EPW):
-            Input EPW.
-    Returns:
-        pd.Series:
-            List of seasons per timestep.
-    """
-    dbt = to_series(epw.dry_bulb_temperature).rename("dbt")
-    new_idx = pd.date_range(
-        f"{dbt.index[0].year - 1}-01-01 00:00:00", freq="60T", periods=len(dbt) * 3
-    )
-    dbt_3year = pd.Series(
-        index=new_idx, data=np.array([[i] * 3 for i in dbt.values]).T.flatten()
-    )
+    # check that series is long enough
+    if max(series.index) - min(series.index) < pd.Timedelta(hours=364):
+        raise ValueError(
+            "Input dataset must be at least 365 days long to determine seasonality."
+        )
 
     # check that weatherfile is "seasonal", by checking avg variance
-    if dbt.std() <= 2.5:
+    if series.std() <= 2.5:
         warnings.warn(
             "Input dataset has a low variance, indicating that seasonality may not be determined accurately from dry-bulb temperature."
         )
+
+    # create the aggregate year
+    dbt = series.groupby(
+        [series.index.month, series.index.day, series.index.hour]
+    ).mean()
+    try:
+        dbt.drop((2, 29), axis=0, inplace=True)
+    except KeyError:
+        pass
+    dbt.index = pd.date_range("2017-01-01 00:00:00", freq="60T", periods=8760)
+    dbt.name = "dbt"
+
+    # prepare a 3-year dataset using the aggregate year from the input data and drop leap days if included
+    dbt_3year = pd.Series(
+        index=pd.date_range("2016-01-01 00:00:00", freq="60T", periods=len(dbt) * 3),
+        data=np.array([[i] * 3 for i in dbt.values]).T.flatten(),
+    )
 
     # resample to weeks to get min and max week, and then min/max datetime within the middle of that week
     dbt_week_mean = dbt.resample("1W").mean()
@@ -1266,6 +1237,99 @@ def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
         ] = f"Winter ({dbt[s == 'Winter'].mean():0.1f}°C average temperature, {winter_start:%b %d} to {spring_start:%b %d})"
 
     return s
+
+
+def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
+    """Create a Series containing a category for each timestep of an EPW giving it's season based on day length (using sunrise/sunset).
+
+    Args:
+        epw (EPW):
+            Input EPW.
+        annotate (bool, optional):
+            If True, then note average sun-up times in the category labels.
+
+    Returns:
+        pd.Series:
+            List of seasons per timestep.
+    """
+
+    return seasonality_from_day_length_location(epw.location, annotate)
+
+
+def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
+    """Create a Series containing a category for each timestep of an EPW giving it's season.
+
+    Args:
+        epw (EPW):
+            Input EPW.
+        annotate (bool, optional):
+            If True, then note months included in each season in the category labels.
+
+    Returns:
+        pd.Series:
+            List of seasons per timestep.
+    """
+
+    idx = to_datetimes(AnalysisPeriod())
+    if epw.location.latitude >= 0:
+        # northern hemisphere
+        spring_months = [3, 4, 5]
+        spring_month_labels = [calendar.month_abbr[i] for i in spring_months]
+        summer_months = [6, 7, 8]
+        summer_month_labels = [calendar.month_abbr[i] for i in summer_months]
+        autumn_months = [9, 10, 11]
+        autumn_month_labels = [calendar.month_abbr[i] for i in autumn_months]
+        winter_months = [12, 1, 2]
+        winter_month_labels = [calendar.month_abbr[i] for i in winter_months]
+    else:
+        # southern hemisphere
+        spring_months = [9, 10, 11]
+        spring_month_labels = [calendar.month_abbr[i] for i in spring_months]
+        summer_months = [12, 1, 2]
+        summer_month_labels = [calendar.month_abbr[i] for i in summer_months]
+        autumn_months = [3, 4, 5]
+        autumn_month_labels = [calendar.month_abbr[i] for i in autumn_months]
+        winter_months = [6, 7, 8]
+        winter_month_labels = [calendar.month_abbr[i] for i in winter_months]
+
+    categories = np.where(
+        idx.month.isin(spring_months),
+        f"Spring ({', '.join(spring_month_labels)})" if annotate else "Spring",
+        np.where(
+            idx.month.isin(summer_months),
+            f"Summer ({', '.join(summer_month_labels)})" if annotate else "Summer",
+            np.where(
+                idx.month.isin(autumn_months),
+                f"Autumn ({', '.join(autumn_month_labels)})" if annotate else "Autumn",
+                np.where(
+                    idx.month.isin(winter_months),
+                    f"Winter ({', '.join(winter_month_labels)})"
+                    if annotate
+                    else "Winter",
+                    "Undefined",
+                ),
+            ),
+        ),
+    )
+
+    return pd.Series(categories, index=idx, name="season")
+
+
+def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
+    """Create a Series containing a category for each timestep of an EPW giving it's season.
+    Args:
+        epw (EPW):
+            Input EPW.
+        annotate (bool, optional):
+            If True, then note average temperatures in each season in the category labels.
+    Returns:
+        pd.Series:
+            List of seasons per hourly-timestep.
+    """
+
+    return seasonality_from_temperature_timeseries(
+        to_series(epw.dry_bulb_temperature), annotate
+    )
 
 
 def degree_time(
