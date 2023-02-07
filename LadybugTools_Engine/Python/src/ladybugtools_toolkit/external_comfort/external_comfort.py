@@ -8,6 +8,7 @@ import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from matplotlib.figure import Figure
 
+from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
 from ..ladybug_extension.datacollection import to_series
 from ..ladybug_extension.epw import to_dataframe
@@ -118,6 +119,7 @@ class ExternalComfort(BHoMObject):
                 ),
             ]
         ):
+            CONSOLE_LOGGER.info(f"[{self.typology.name}] - Calculating UTCI")
             self.universal_thermal_climate_index = utci(
                 air_temperature=self.dry_bulb_temperature,
                 relative_humidity=self.relative_humidity,

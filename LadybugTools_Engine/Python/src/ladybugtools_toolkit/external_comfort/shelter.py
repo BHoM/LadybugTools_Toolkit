@@ -204,6 +204,20 @@ class Shelter(BHoMObject):
         ]
         return Shelter(rotated_vertices, self.wind_porosity, self.radiation_porosity)
 
+    def move(self, vector: Vector3D) -> Shelter:
+        """Move the shelter by the given vector.
+
+        Args:
+            vector (Vector3D):
+                A Vector3D representing the movement.
+
+        Returns:
+            Shelter:
+                The moved shelter object.
+        """
+        moved_vertices = [list(i.to_array()) for i in self.face.move(vector).vertices]
+        return Shelter(moved_vertices, self.wind_porosity, self.radiation_porosity)
+
     def sky_exposure(self, include_radiation_porosity: bool = True) -> float:
         """Determine the proportion of sky the analytical point is exposed to. Also account for radiation_porosity in that exposure.
 
