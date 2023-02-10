@@ -139,6 +139,7 @@ class SpatialComfort(BHoMObject):
         # create default triangulation
         self._points_x: List[float] = self.points.x.values
         self._points_y: List[float] = self.points.y.values
+        self._points_z: List[float] = self.points.z.values
         self._triangulation = create_triangulation(
             self._points_x,
             self._points_y,
@@ -586,6 +587,11 @@ class SpatialComfort(BHoMObject):
     def points_xy(self) -> np.ndarray:
         """Get the points associated with this object as an array of [[x, y], [x, y], ...]"""
         return np.stack([self._points_x, self._points_y], axis=1)
+
+    @property
+    def points_xyz(self) -> np.ndarray:
+        """Get the points associated with this object as an array of [[x, y, z], [x, y, z], ...]"""
+        return np.stack([self._points_x, self._points_y, self._points_z], axis=1)
 
     @property
     def coldest_day(self) -> datetime:

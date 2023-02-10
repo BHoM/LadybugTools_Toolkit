@@ -4,12 +4,14 @@ from typing import List, Union
 import matplotlib.pyplot as plt
 import numpy as np
 from ladybug.epw import EPW
-from matplotlib.colors import Colormap
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.figure import Figure
 
 from ..helpers import wind_direction_average
 from ..ladybug_extension.datacollection import to_series
 from ..ladybug_extension.epw import filename
+from .relative_luminance import contrasting_color, relative_luminance
 
 
 def wind_matrix(
@@ -55,6 +57,9 @@ def wind_matrix(
     ax.invert_yaxis()
     ax.get_xlim()
 
+    norm = Normalize(vmin=wind_speeds.min(), vmax=wind_speeds.max(), clip=True)
+    mapper = ScalarMappable(norm=norm, cmap=cmap)
+
     _x = np.sin(np.deg2rad(wind_directions))
     _y = np.cos(np.deg2rad(wind_directions))
 
@@ -72,11 +77,17 @@ def wind_matrix(
 
     if show_values:
         for _xx, row in enumerate(wind_directions.T):
-            for _yy, col in enumerate(row.T):
+            for _yy, local_direction in enumerate(row.T):
+                local_speed = wind_speeds[_yy, _xx]
+                cell_color = mapper.to_rgba(local_speed)
+                text_color = contrasting_color(cell_color)
+                if _xx == 0 and _yy == 0:
+                    print(cell_color, text_color)
                 ax.text(
                     _xx,
                     _yy + 1,
-                    f"{col:0.0f}°",
+                    f"{local_direction:0.0f}°",
+                    color=text_color,
                     ha="left",
                     va="bottom",
                     fontsize="xx-small",
@@ -84,7 +95,8 @@ def wind_matrix(
                 ax.text(
                     _xx + 1,
                     _yy,
-                    f"{wind_speeds[_yy, _xx]:0.1f}m/s",
+                    f"{local_speed:0.1f}m/s",
+                    color=text_color,
                     ha="right",
                     va="top",
                     fontsize="xx-small",

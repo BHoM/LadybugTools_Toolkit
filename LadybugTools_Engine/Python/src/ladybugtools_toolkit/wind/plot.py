@@ -277,10 +277,10 @@ def timeseries(
 
 
 def windrose(
-    wind_directions: List[float],
+    wind_direction: List[float],
     data: List[float] = None,
     direction_bins: DirectionBins = DirectionBins(),
-    data_bins: List[float] = None,
+    data_bins: Union[int, List[float]] = None,
     cmap: Union[Colormap, str] = None,
     title: str = None,
     include_legend: bool = True,
@@ -328,10 +328,13 @@ def windrose(
             28.4,
             32.6,
         ]
+    if isinstance(data_bins, int):
+        data_bins = np.linspace(min(data), max(data), data_bins + 1).round(1)
 
     # set cmap defaults
     if isinstance(cmap, str):
         cmap = plt.get_cmap(cmap)
+
     if cmap is None:
         cmap = ListedColormap(
             colors=[
@@ -354,10 +357,10 @@ def windrose(
     # bin input data
     thetas = np.deg2rad(direction_bins.midpoints)
     width = np.deg2rad(direction_bins.bin_width)
-    binned_data = direction_bins.bin_data(wind_directions, data)
+    binned_data = direction_bins.bin_data(wind_direction, data)
     radiis = np.array(
         [
-            np.histogram(values, data_bins, density=False)[0]
+            np.histogram(a=values, bins=data_bins, density=False)[0]
             for _, values in binned_data.items()
         ]
     )
@@ -373,12 +376,11 @@ def windrose(
 
     # plot binned data
     for theta, radii, bottom in zip(*[thetas, radiis, bottoms]):
-        bars = ax.bar(theta, radii, width=width, bottom=bottom, color=colors, zorder=2)
+        _ = ax.bar(theta, radii, width=width, bottom=bottom, color=colors, zorder=2)
 
     if include_percentages:
         percentages = [
-            len(vals) / len(wind_directions)
-            for (low, high), vals in binned_data.items()
+            len(vals) / len(wind_direction) for (low, high), vals in binned_data.items()
         ]
         for theta, radii, percentage in zip(*[thetas, radiis.sum(axis=1), percentages]):
             tt = ax.text(
@@ -429,7 +431,7 @@ def windrose(
             mpatches.Patch(color=colors[n], label=f"{i} to {j}")
             for n, (i, j) in enumerate(rolling_window(data_bins, 2))
         ]
-        lgd = ax.legend(
+        _ = ax.legend(
             handles=handles,
             bbox_to_anchor=(1.1, 0.5),
             loc="center left",

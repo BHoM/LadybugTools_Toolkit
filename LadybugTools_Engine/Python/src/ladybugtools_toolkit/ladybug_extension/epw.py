@@ -35,6 +35,7 @@ from ..helpers import timedelta_tostring
 from .analysis_period import to_datetimes
 from .datacollection import to_series
 from .header import to_string as header_to_string
+from .location import to_string as location_to_string
 
 
 def to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
@@ -90,7 +91,7 @@ def to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
             s = to_series(getattr(epw, prop))
             s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
             all_series.append(s)
-        except ValueError:
+        except (ValueError, TypeError):
             warnings.warn(
                 f"{prop} is not available in this EPW file. This is most likely because this file does not follow normal EPW content conventions."
             )
@@ -163,26 +164,23 @@ def from_dataframe(
             An EPW object.
     """
 
-    # Check dataframe shape for leaped-ness and length
-    if sum((dataframe.index.month == 2) & (dataframe.index.day == 29)) != 0:
-        leap_yr = True
-        if len(dataframe.index) != 8784:
-            raise ValueError(
-                "The dataframe must have 8784 rows as it contains a 29th of February, suggesting a leap year."
-            )
-    else:
-        leap_yr = False
-        if len(dataframe.index) != 8760:
-            raise ValueError(
-                "The dataframe must have 8760 rows as it does not contain a 29th of February, suggesting a non-leap year."
-            )
+    if dataframe.index.year.min() != dataframe.index.year.max():
+        raise ValueError("This method only works for year-long dataframes.")
+
+    # check for leaped-ness
+    leap_yr = dataframe.index[0].is_leap_year
+    periods = 8760 if not leap_yr else 8784
+    if len(dataframe) != periods:
+        raise ValueError(
+            f"The dataframe must have {periods} rows as it is a leap year."
+        )
 
     # adjust columns format to match expected format
     if isinstance(dataframe.columns, pd.MultiIndex):
         dataframe.columns = dataframe.columns.get_level_values(-1)
     elif not isinstance(dataframe.columns[0], str):
         raise ValueError(
-            "The dataframes column headers are not in the expected format."
+            "The input dataframes column headers are not in the expected format."
         )
 
     # create "empty" EPW object
@@ -242,17 +240,24 @@ def from_dataframe(
         "zenith_luminance",
     ]
 
-    try:
-        for prop in properties:
+    for prop in properties:
+        try:
             setattr(
                 getattr(epw_obj, prop),
                 "values",
                 dataframe[header_to_string(getattr(epw_obj, prop).header)].values,
             )
-    except KeyError:
-        warnings.warn(
-            f"{prop} cannot be added to EPW as it doesn't exist in the Pandas DataFrame."
-        )
+        except KeyError:
+            warnings.warn(
+                f"{prop} cannot be added to EPW as it doesn't exist in the Pandas DataFrame."
+            )
+
+    # set file-path property to avoid issues downstream
+    epw_obj._file_path = (
+        "C:/EPW_from_dataframe.epw"
+        if location is None
+        else f"C:/{location_to_string(location)}.epw"
+    )
 
     return epw_obj
 

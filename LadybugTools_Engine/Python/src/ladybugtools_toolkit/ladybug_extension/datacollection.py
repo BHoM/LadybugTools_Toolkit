@@ -214,7 +214,9 @@ def from_series(series: pd.Series) -> BaseCollection:
         BaseCollection: A Ladybug BaseCollection-like object.
     """
 
-    header = header_from_string(series.name)
+    header = header_from_string(
+        series.name, is_leap_year=series.index.is_leap_year.any()
+    )
     header.metadata["source"] = "From custom pd.Series"
 
     freq = pd.infer_freq(series.index)
