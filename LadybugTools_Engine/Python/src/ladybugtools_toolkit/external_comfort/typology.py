@@ -52,12 +52,12 @@ class Typology(BHoMObject):
 
     name: str = field(init=True, compare=True, repr=True)
     shelters: List[Shelter] = field(
-        init=True, compare=True, repr=True, default_factory=list
+        init=True, compare=True, repr=False, default_factory=list
     )
     evaporative_cooling_effectiveness: Union[float, List[float]] = field(
-        init=True, compare=True, repr=True, default=0
+        init=True, compare=True, repr=False, default=0
     )
-    wind_speed_adjustment: float = field(init=True, compare=True, repr=True, default=1)
+    wind_speed_adjustment: float = field(init=True, compare=True, repr=False, default=1)
 
     _t: str = field(
         init=False, compare=True, repr=False, default="BH.oM.LadybugTools.Typology"
@@ -211,6 +211,9 @@ class Typology(BHoMObject):
 
         if len(self.shelters) == 0:
             return epw.wind_speed * self.wind_speed_adjustment
+
+        if self.wind_speed_adjustment == 0:
+            epw.wind_speed.get_aligned_collection(0)
 
         return (epw.wind_speed * self.wind_speed_adjustment).get_aligned_collection(
             annual_effective_wind_speed(self.shelters, epw)

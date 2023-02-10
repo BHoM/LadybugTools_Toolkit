@@ -42,12 +42,14 @@ def to_multiindex(header: Header) -> pd.MultiIndex:
     return pd.MultiIndex.from_arrays([[i] for i in values], names=names)
 
 
-def from_string(string: str) -> Header:
+def from_string(string: str, is_leap_year: bool = False) -> Header:
     """Convert a string into a Ladybug header object.
 
     Args:
         string (str):
             A Ladybug header string.
+        is_leap_year (bool, optional):
+            A boolean to indicate whether the header is for a leap year. Default is False.
 
     Returns:
         Header:
@@ -69,7 +71,11 @@ def from_string(string: str) -> Header:
     except KeyError:
         data_type = GenericType(name=data_type, unit=unit)
 
-    return Header(data_type=data_type, unit=unit, analysis_period=AnalysisPeriod())
+    return Header(
+        data_type=data_type,
+        unit=unit,
+        analysis_period=AnalysisPeriod(is_leap_year=is_leap_year),
+    )
 
 
 def from_multiindex(multiindex: pd.MultiIndex) -> Header:
