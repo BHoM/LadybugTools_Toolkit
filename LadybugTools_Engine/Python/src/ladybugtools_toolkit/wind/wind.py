@@ -978,7 +978,7 @@ class Wind:
             ti = f"{self}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
 
         return windrose(
-            wind_directions=new_w.wd.tolist(),
+            wind_direction=new_w.wd.tolist(),
             data=new_w.ws.tolist(),
             direction_bins=direction_bins,
             data_bins=bins,

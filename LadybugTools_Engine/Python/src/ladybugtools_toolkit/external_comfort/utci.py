@@ -17,14 +17,13 @@ from numpy.typing import NDArray
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
-from ..ladybug_extension.analysis_period import describe as describe_analysis_period
+from ..ladybug_extension.analysis_period import \
+    describe as describe_analysis_period
 from ..ladybug_extension.analysis_period import to_boolean
 from ..ladybug_extension.datacollection import from_series, to_series
-from ..ladybug_extension.epw import (
-    seasonality_from_day_length,
-    seasonality_from_month,
-    seasonality_from_temperature,
-)
+from ..ladybug_extension.epw import (seasonality_from_day_length,
+                                     seasonality_from_month,
+                                     seasonality_from_temperature)
 from ..plot.colormaps import UTCI_LABELS
 from .moisture import evaporative_cooling_effect_collection
 
@@ -399,44 +398,58 @@ def describe(
 
 def describe_monthly(
     utci_collection: HourlyContinuousCollection,
-    comfort_limits: Tuple[float] = (9, 26),
     density: bool = True,
-    annual_mask: List[bool] = np.ones(8760).astype(bool),
+    simplified: bool = False,
+    comfort_limits: Tuple[float] = (9, 26),
+    analysis_periods: Union[List[AnalysisPeriod], AnalysisPeriod] = AnalysisPeriod(),
 ) -> pd.DataFrame:
-    """Create a monthly table containing cold/comfortable/hot comfort categories for each month."""
+    """Create a monthly table containing cold/comfortable/hot comfort categories for each month.
+
+    Args:
+        utci_collection (HourlyContinuousCollection):
+            A collection containing UTCI values.
+        density (bool, optional):
+            Whether to return the density of each category, or the value
+            counts. Defaults to True.
+        simplified (bool, optional):
+            Whether to return simplified categories. Defaults to False.
+        comfort_limits (Tuple[float], optional):
+            Bespoke comfort limits to apply to simplified categories.
+            Defaults to (9, 26).
+        analysis_periods (Union[List[AnalysisPeriod], AnalysisPeriod], optional):
+            A combinatorial set of analysis periods over which to summaries
+            the collection. Defaults to all hours in all months.
+    Returns:
+        pd.DataFrame:
+            A monthly table containing categorical comfort categories for
+            each month within analysis periods specified.
+    """
+
+    # create mask if necessary
+    if isinstance(analysis_periods, AnalysisPeriod):
+        analysis_periods = [analysis_periods]
+    annual_mask = to_boolean(analysis_periods)
 
     # convert
-    s = to_series(utci_collection)
+    utci_series = to_series(utci_collection)[annual_mask]
 
-    # filter for hours
-    s = s[annual_mask]
-
-    # get counts
-    month_counts = s.groupby(s.index.month).count()
-
-    # calculate metrics
-    cold = (s < min(comfort_limits)).groupby(s.index.month).sum()
-    hot = (s > max(comfort_limits)).groupby(s.index.month).sum()
-    comfortable = month_counts - cold - hot
-
-    # convert to percentage if density == True
-    if density:
-        cold = cold / month_counts
-        hot = hot / month_counts
-        comfortable = comfortable / month_counts
-
-    df = pd.concat(
-        [cold, comfortable, hot],
-        axis=1,
-        keys=[
-            f"Too cold (<{min(comfort_limits)})",
-            "Comfortable",
-            f"Too Hot (>{max(comfort_limits)})",
-        ],
+    # categorise
+    utci_categories = categorise(
+        utci_series, simplified=simplified, comfort_limits=comfort_limits
     )
-    df.index = [month_name[i] for i in cold.index]
 
-    return df
+    # groupby month
+    df_summary = (
+        utci_categories.groupby(utci_categories.index.month).value_counts().unstack()
+    )
+    if density:
+        df_summary = (
+            df_summary.T / utci_categories.groupby(utci_categories.index.month).count()
+        ).T
+
+    df_summary.index = [calendar.month_abbr[i] for i in df_summary.index]
+
+    return df_summary
 
 
 def met_rate_adjustment(
@@ -1204,24 +1217,26 @@ def feasible_comfort_category(
     Args:
         epw (EPW):
             An EPW object
-        st_hour (float, optional):
-            The start hour for any time-based filtering to apply. Defaults to 0.
-        end_hour (float, optional):
-            The end-hour for any time-based filtering to apply. Defaults to 23.
+        analysis_periods (Union[List[AnalysisPeriod], AnalysisPeriod], optional):
+            An analysis period or list of analysis periods to calculate the hours to be included in the output. Defaults to AnalysisPeriod().
         density (bool, optional):
             Return proportion of time rather than number of hours. Defaults to True.
         simplified (bool, optional):
             Simplify comfort categories to use below/within/upper instead of
             discrete UTCI categories. Defaults to False.
+        comfort_limits (Tuple[float], optional):
+            The lower and upper limits for the simplified comfort categories. Defaults to (9, 26).
         include_additional_moisture (bool, optional):
             Include the effect of evaporative cooling on the UTCI limits. Defaults to True.
-
-    Raises:
-        ValueError: _description_
+        met_rate_adjustment_value (float, optional):
+            The value to adjust the metabolic rate by. Defaults to None which in turn defaults to the standard for UTCI of 2.3 MET.
 
     Returns:
         pd.DataFrame: _description_
     """
+
+    # TODO - simplify this method to make use of the parts already completed in "describe_monthly"
+
     if isinstance(analysis_periods, AnalysisPeriod):
         analysis_periods = [analysis_periods]
 
