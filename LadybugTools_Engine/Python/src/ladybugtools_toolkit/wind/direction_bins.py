@@ -148,13 +148,13 @@ class DirectionBins:
             )
 
         # create bin labels
-        bin_labels = [(i, j) for i, j in zip(*[self.lows, self.highs])]  # type: ignore
+        bin_labels = list(zip(*[self.lows, self.highs]))  # type: ignore
 
         # bin data
         temp = pd.DataFrame([direction_data, other_data]).T
         d = {}
         for low, high in bin_labels:
-            d[(low, high)] = temp[1][(temp[0] >= low) & (temp[0] < high)].tolist()
+            d[(low, high)] = temp[1][(temp[0] > low) & (temp[0] <= high)].tolist()
 
         # combine split bins if present
         if self.is_split:

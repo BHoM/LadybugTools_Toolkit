@@ -59,6 +59,11 @@ def utci_feasibility(
         comfort_limits=comfort_limits,
         rtype="category",
     )
+    colors, _ = utci_comfort_categories(
+        simplified=simplified,
+        comfort_limits=comfort_limits,
+        rtype="color",
+    )
 
     fig, axes = plt.subplots(1, 12, figsize=(10, 4), sharey=True, sharex=False)
 
@@ -74,7 +79,7 @@ def utci_feasibility(
             ypos,
             width=high.values - low.values,
             left=low.values,
-            fc="k",
+            color=colors,
             zorder=3,
             alpha=0.8,
         )
@@ -121,7 +126,7 @@ def utci_feasibility(
             )
 
         if simplified:
-            for nn, i in enumerate(["#3C65AF", "#2EB349", "#C31F25"]):
+            for nn, i in enumerate(colors):
                 ax.axhspan(ymin=nn - 0.5, ymax=nn + 0.5, fc=i, alpha=0.2, zorder=1)
         else:
             for nn, i in enumerate(UniversalThermalClimateIndex):
@@ -129,7 +134,7 @@ def utci_feasibility(
                     ymin=nn - 0.5, ymax=nn + 0.5, fc=i.color, alpha=0.2, zorder=1
                 )
 
-        ax.set_xlim(0, 1)
+        ax.set_xlim(-0.1, 1.1)
         ax.set_ylim(-0.5, len(ypos) - 0.5)
         for spine in ["left", "bottom"]:
             ax.spines[spine].set_visible(False)

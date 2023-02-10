@@ -724,12 +724,12 @@ class SimulationResult(BHoMObject):
             temperature simulation.
     """
 
-    epw_file: Path = field(repr=True, compare=True)
+    epw_file: Path = field(repr=False, compare=True)
     ground_material: Union[OpaqueVegetationMaterial, OpaqueMaterial] = field(
-        repr=True, compare=True
+        repr=False, compare=True
     )
     shade_material: Union[OpaqueVegetationMaterial, OpaqueMaterial] = field(
-        repr=True, compare=True
+        repr=False, compare=True
     )
     identifier: str = field(repr=True, compare=True, default=None)
 

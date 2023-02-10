@@ -100,11 +100,13 @@ def _query_factors(
     return np.average(data[:, nearest_point_indices], axis=1, weights=weights)
 
 
-def _factors_to_annual(factors: List[float]) -> List[float]:
+def _factors_to_annual(factors: List[float], leap_year: bool = False) -> List[float]:
     """Cast monthly morphing factors to annual hourly ones."""
     if len(factors) != 12:
         raise ValueError(f"This method won't work ({len(factors)} != 12).")
-    year_idx = pd.date_range("2017-01-01 00:00:00", freq="60T", periods=8760)
+    year_idx = pd.date_range(
+        "2017-01-01 00:00:00", freq="60T", periods=8784 if leap_year else 8760
+    )
     month_idx = pd.date_range("2017-01-01 00:00:00", freq="MS", periods=12)
 
     # expand values across an entire year, filling NaNs where unavailable, and bookend
@@ -122,6 +124,7 @@ def _forecast_dry_bulb_temperature(
     dbt_collection: HourlyContinuousCollection,
     emissions_scenario: str,
     forecast_year: int,
+    leap_year: bool = False,
 ) -> HourlyContinuousCollection:
     """Forecast dry bulb temperature using IPCC HadCM3 forecast model."""
 
@@ -140,13 +143,16 @@ def _forecast_dry_bulb_temperature(
     # attempt to transform the input data
     series = to_series(dbt_collection)
     tmin = _factors_to_annual(
-        _query_factors(location, emissions_scenario, forecast_year, "TMIN")
+        factors=_query_factors(location, emissions_scenario, forecast_year, "TMIN"),
+        leap_year=leap_year,
     )
     temp = _factors_to_annual(
-        _query_factors(location, emissions_scenario, forecast_year, "TEMP")
+        factors=_query_factors(location, emissions_scenario, forecast_year, "TEMP"),
+        leap_year=leap_year,
     )
     tmax = _factors_to_annual(
-        _query_factors(location, emissions_scenario, forecast_year, "TMAX")
+        factors=_query_factors(location, emissions_scenario, forecast_year, "TMAX"),
+        leap_year=leap_year,
     )
 
     dbt_0_monthly_average_daily_max = (
@@ -187,6 +193,7 @@ def _forecast_relative_humidity(
     rh_collection: HourlyContinuousCollection,
     emissions_scenario: str,
     forecast_year: int,
+    leap_year: bool = False,
 ) -> HourlyContinuousCollection:
     """Forecast relative humidity using IPCC HadCM3 forecast model."""
 
@@ -205,7 +212,8 @@ def _forecast_relative_humidity(
     # attempt to transform the input data
     series = to_series(rh_collection)
     rhum = _factors_to_annual(
-        _query_factors(location, emissions_scenario, forecast_year, "RHUM")
+        factors=_query_factors(location, emissions_scenario, forecast_year, "RHUM"),
+        leap_year=leap_year,
     )
 
     rh_new = (series + rhum).clip(0, 110)
@@ -226,6 +234,7 @@ def _forecast_atmospheric_pressure(
     ap_collection: HourlyContinuousCollection,
     emissions_scenario: str,
     forecast_year: int,
+    leap_year: bool = False,
 ) -> HourlyContinuousCollection:
     """Forecast atmospheric pressure using IPCC HadCM3 forecast model."""
 
@@ -244,13 +253,14 @@ def _forecast_atmospheric_pressure(
     # attempt to transform the input data
     series = to_series(ap_collection)
     mslp = _factors_to_annual(
-        _query_factors(location, emissions_scenario, forecast_year, "MSLP")
+        factors=_query_factors(location, emissions_scenario, forecast_year, "MSLP"),
+        leap_year=leap_year,
     )
 
     ap_new = series + mslp
 
     # last check to ensure results arent weird
-    avg_diff_limit = 100
+    avg_diff_limit = 200
     if not np.allclose(series, ap_new, atol=avg_diff_limit):
         warnings.warn(
             "Forecast for atmospheric pressure returns values beyond feasible range of transformation. The original data will be returned instead."
@@ -288,6 +298,7 @@ def _forecast_wind_speed(
     ws_collection: HourlyContinuousCollection,
     emissions_scenario: str,
     forecast_year: int,
+    leap_year: bool = False,
 ) -> HourlyContinuousCollection:
     """Forecast wind speed using IPCC HadCM3 forecast model."""
 
@@ -304,7 +315,8 @@ def _forecast_wind_speed(
     # attempt to transform the input data
     series = to_series(ws_collection)
     wind = _factors_to_annual(
-        _query_factors(location, emissions_scenario, forecast_year, "WIND")
+        factors=_query_factors(location, emissions_scenario, forecast_year, "WIND"),
+        leap_year=leap_year,
     )
 
     ws_new = (1 + wind / 100) * series  # * 0.514444
@@ -325,6 +337,7 @@ def _forecast_sky_cover(
     sc_collection: HourlyContinuousCollection,
     emissions_scenario: str,
     forecast_year: int,
+    leap_year: bool = False,
 ) -> HourlyContinuousCollection:
     """Forecast sky cover using IPCC HadCM3 forecast model."""
 
@@ -343,7 +356,8 @@ def _forecast_sky_cover(
     # attempt to transform the input data
     series = to_series(sc_collection)
     ccov = _factors_to_annual(
-        _query_factors(location, emissions_scenario, forecast_year, "TCLW")
+        factors=_query_factors(location, emissions_scenario, forecast_year, "TCLW"),
+        leap_year=leap_year,
     )
 
     sc_new = (series + (ccov / 10)).clip(0, 10)
@@ -543,28 +557,49 @@ def forecast_epw(epw: EPW, emissions_scenario: str, forecast_year: int) -> EPW:
 
     # forecast variables
     new_epw.dry_bulb_temperature.values = _forecast_dry_bulb_temperature(
-        epw.location, epw.dry_bulb_temperature, emissions_scenario, forecast_year
+        epw.location,
+        epw.dry_bulb_temperature,
+        emissions_scenario,
+        forecast_year,
+        epw.is_leap_year,
     ).values
     new_epw.relative_humidity.values = _forecast_relative_humidity(
-        epw.location, epw.relative_humidity, emissions_scenario, forecast_year
+        epw.location,
+        epw.relative_humidity,
+        emissions_scenario,
+        forecast_year,
+        epw.is_leap_year,
     ).values
     new_epw.atmospheric_station_pressure.values = _forecast_atmospheric_pressure(
         epw.location,
         epw.atmospheric_station_pressure,
         emissions_scenario,
         forecast_year,
+        epw.is_leap_year,
     )
     new_epw.dew_point_temperature.values = _calculate_dew_point_temperature(
         new_epw.dry_bulb_temperature, new_epw.relative_humidity
     ).values
     new_epw.wind_speed.values = _forecast_wind_speed(
-        epw.location, epw.wind_speed, emissions_scenario, forecast_year
+        epw.location,
+        epw.wind_speed,
+        emissions_scenario,
+        forecast_year,
+        epw.is_leap_year,
     ).values
     new_epw.total_sky_cover.values = _forecast_sky_cover(
-        epw.location, epw.total_sky_cover, emissions_scenario, forecast_year
+        epw.location,
+        epw.total_sky_cover,
+        emissions_scenario,
+        forecast_year,
+        epw.is_leap_year,
     ).values
     new_epw.opaque_sky_cover.values = _forecast_sky_cover(
-        epw.location, epw.opaque_sky_cover, emissions_scenario, forecast_year
+        epw.location,
+        epw.opaque_sky_cover,
+        emissions_scenario,
+        forecast_year,
+        epw.is_leap_year,
     ).values
     new_epw.horizontal_infrared_radiation_intensity.values = (
         _calculate_horizontal_infrared_radiation_intensity(
