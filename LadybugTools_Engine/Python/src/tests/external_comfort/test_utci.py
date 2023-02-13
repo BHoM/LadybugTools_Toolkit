@@ -33,5 +33,5 @@ def test_describe_utci_collection():
         describe_utci(
             LB_UTCI_COLLECTION, AnalysisPeriod(st_month=6, end_month=3), sep=" "
         )
-        == 'In this summary, thermal comfort or periods experiencing no thermal stress, are UTCI values of between 9°C and 26°C. For Jun 01 to Mar 31 between 00:00 and 23:00, "No thermal stress" is expected for 2633 out of a possible 7296 hours (36.1%). "Cold stress" is expected for 4655 hours (63.8%). "Heat stress" is expected for 8 hours (0.1%).'
+        == 'In this summary, thermal comfort or periods experiencing no thermal stress, are UTCI values of between 9°C and 26°C. For Jun 01 to Mar 31 between 00:00 and 00:00, "No thermal stress" is expected for 2633 out of a possible 7296 hours (36.1%). "Cold stress" is expected for 4655 hours (63.8%). "Heat stress" is expected for 8 hours (0.1%).'
     )

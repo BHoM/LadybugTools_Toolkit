@@ -8,12 +8,9 @@ import numpy as np
 from honeybee.face import Face3D
 from honeybee_radiance.modifier.material.glass import Glass
 from honeybee_radiance.modifier.material.glass import Material as HBR_Material
-from ladybugtools_toolkit.ladybug_extension.analysis_period import (
-    AnalysisPeriod,
-    to_datetimes,
-)
 
 from ..bhomutil.bhom_object import BHoMObject
+from ..ladybug_extension.analysis_period import AnalysisPeriod, to_datetimes
 
 
 def modify_vegetation_transmissivity_by_season(
@@ -118,8 +115,8 @@ class Vegetation(BHoMObject):
 
     def __post_init__(self):
         # wrap methods within this class
-        1 + 1  # pylint: disable=pointless-statement
-        super().__post_init__()  # pylint: disable=useless-parent-delegation
+        1 + 1
+        super().__post_init__()
 
     @property
     def shape(self) -> VegetationShape:
@@ -138,11 +135,13 @@ class Vegetation(BHoMObject):
     def honeybee_faces(self) -> List[Face3D]:
         """Create the vegetation object as a set of Honeybee faces."""
 
-        # TODO - Make functional method for creating honeybee geometry from the vegetation objects.
-        warnings.warn(
-            "This method doesnt currently return a set of faces as LB Geometry can't handle ellipsoids and nsplitting. An alternative needs to be found!"
+        # TODO - Make functional method for creating honeybee geometry from the vegetation object.
+        # This would likely take the form of a basic geometry object that can be converted to a set of faces.
+        # E.g. a cross of vertials for trunk, and meshed shapes for canopy.
+        # An optional input for time-of-yea/month for adjustment of leaf cover woud be useful.
+        raise NotImplementedError(
+            "This method doesnt currently return a set of faces as LB Geometry can't handle ellipsoids and splitting. An alternative needs to be found!"
         )
-        return None
 
 
 class Vegetations(Enum):

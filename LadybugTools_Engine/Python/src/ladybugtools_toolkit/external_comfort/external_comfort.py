@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
+import numpy as np
 import pandas as pd
-from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.epw import HourlyContinuousCollection
+from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
-from ..ladybug_extension.datacollection import to_series
+from ..ladybug_extension.datacollection import from_series, to_series
 from ..ladybug_extension.epw import to_dataframe
 from ..ladybug_extension.location import to_string as location_to_string
 from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMAP
@@ -19,6 +21,7 @@ from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
 from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
 from ..plot.utci_heatmap import utci_heatmap
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
+from .moisture import evaporative_cooling_effect
 from .simulate import SimulationResult
 from .typology import Typology
 from .utci import utci
@@ -257,6 +260,90 @@ class ExternalComfort(BHoMObject):
         df = pd.concat(dfs, axis=1)
 
         return df
+
+    def feasible_utci_limits(
+        self, include_additional_moisture: bool = True, as_dataframe: bool = False
+    ) -> Union[pd.DataFrame, List[HourlyContinuousCollection]]:
+        """Calculate the absolute min/max collections of UTCI based on possible shade, wind and moisture adjustments to a pre-computed ExternalComfort condition.
+
+        Args:
+            include_additional_moisture (bool):
+                Include the effect of evaporative cooling on the UTCI limits.
+            as_dataframe (bool):
+                Return the output as a dataframe with two columns, instread of two separate collections.
+
+        Returns:
+            List[HourlyContinuousCollection]: The lowest UTCI and highest UTCI temperatures for each hour of the year.
+        """
+
+        epw = self.simulation_result.epw
+
+        dbt_evap, rh_evap = np.array(
+            [
+                evaporative_cooling_effect(
+                    dry_bulb_temperature=_dbt,
+                    relative_humidity=_rh,
+                    evaporative_cooling_effectiveness=0.5,
+                    atmospheric_pressure=_atm,
+                )
+                for _dbt, _rh, _atm in list(
+                    zip(
+                        *[
+                            epw.dry_bulb_temperature,
+                            epw.relative_humidity,
+                            epw.atmospheric_station_pressure,
+                        ]
+                    )
+                )
+            ]
+        ).T
+        dbt_evap = epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
+        rh_evap = epw.relative_humidity.get_aligned_collection(rh_evap)
+
+        dbt_rh_options = (
+            [[dbt_evap, rh_evap], [epw.dry_bulb_temperature, epw.relative_humidity]]
+            if include_additional_moisture
+            else [[epw.dry_bulb_temperature, epw.relative_humidity]]
+        )
+
+        utcis = []
+        for _dbt, _rh in dbt_rh_options:
+            for _ws in [
+                self.wind_speed,
+                self.wind_speed.get_aligned_collection(0),
+                self.wind_speed * 1.1,
+            ]:
+                for _mrt in [
+                    self.dry_bulb_temperature,
+                    self.mean_radiant_temperature,
+                ]:
+                    utcis.append(
+                        UTCI(
+                            air_temperature=_dbt,
+                            rad_temperature=_mrt,
+                            rel_humidity=_rh,
+                            wind_speed=_ws,
+                        ).universal_thermal_climate_index,
+                    )
+        df = pd.concat([to_series(i) for i in utcis], axis=1)
+        min_utci = from_series(
+            df.min(axis=1).rename("Universal Thermal Climate Index (C)")
+        )
+        max_utci = from_series(
+            df.max(axis=1).rename("Universal Thermal Climate Index (C)")
+        )
+
+        if as_dataframe:
+            return pd.concat(
+                [
+                    to_series(min_utci),
+                    to_series(max_utci),
+                ],
+                axis=1,
+                keys=["lowest", "highest"],
+            )
+
+        return min_utci, max_utci
 
     @property
     def plot_title_string(self) -> str:

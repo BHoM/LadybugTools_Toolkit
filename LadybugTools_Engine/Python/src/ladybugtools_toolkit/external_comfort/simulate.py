@@ -29,7 +29,6 @@ from ladybug_comfort.collection.solarcal import (
     HorizontalRefSolarCal,
     HorizontalSolarCal,
     OutdoorSolarCal,
-    outdoor_sky_heat_exch,
 )
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
 from ladybugtools_toolkit.ladybug_extension.datacollection import average
@@ -508,7 +507,23 @@ def mean_radiant_temperature_osc_ensemble(
     longwave_mrt: HourlyContinuousCollection,
     sky_exposure: float,
 ) -> Dict[str, HourlyContinuousCollection]:
-    """"""
+    """Generate a set of mean radiant temperature collections for a given model and EPW using a range of body positions and orientations.
+
+    Args:
+        epw (EPW):
+            A Ladybug EPW object.
+        model (Model):
+            A Honeybee model object.
+        longwave_mrt (HourlyContinuousCollection):
+            A Ladybug HourlyContinuousCollection of longwave radiant temperatures.
+        sky_exposure (float):
+            A number between 0 and 1 for the fraction of the sky dome that is exposed
+
+    Returns:
+        Dict[str, HourlyContinuousCollection]:
+            A dictionary of the average mean radiant temperature for each simulated
+            combinations of body position and orientation.
+    """
     mrts = []
     for posture in ["seated", "standing"]:
         for body_azimuth in np.arange(0, 360, 30):
@@ -614,7 +629,26 @@ def mean_radiant_temperature_hsc(
     longwave_mrt: HourlyContinuousCollection,
     solar_cal_params: SolarCalParameter = SolarCalParameter(),
 ):
-    """"""
+    """Calculate MRT using a composite Horizontal Solar Cal approach.
+
+    Args:
+        model (Model):
+            The model to check ground reflectance for.
+        epw (EPW):
+            An EPW object.
+        direct_horizontal_solar (HourlyContinuousCollection):
+            Upwards facing direct component from Radiance sim.
+        diffuse_horizontal_solar (HourlyContinuousCollection):
+            Upwards facing diffuse component from Radiance sim.
+        longwave_mrt (HourlyContinuousCollection):
+            Surrounding surface temperature.
+        solar_cal_params (SolarCalParameter, optional):
+            A SolarCalParameter object. Defaults to SolarCalParameter().
+
+    Returns:
+        Dict[str, HourlyContinuousCollection]: A dict containing the mean radiant temperature.
+
+    """
     solar_cal = HorizontalSolarCal(
         location=epw.location,
         direct_horizontal_solar=direct_horizontal_solar,
@@ -1139,6 +1173,20 @@ class SimulationResult(BHoMObject):
         analysis_period: AnalysisPeriod = None,
         comfort_limits: Tuple[float] = (9, 26),
     ) -> pd.DataFrame:
+        """Determine the relative impact of different measures to adjust UTCI.
+
+        Args:
+            n_steps (int, optional):
+                The number of steps to calculate per variable (n_steps**3 is the number of calculations run). Defaults to 8.
+            analysis_period (AnalysisPeriod, optional):
+                A period to apply to results. Defaults to None.
+            comfort_limits (Tuple[float], optional):
+                Optional limits to set what is considered comfortable. Defaults to (9, 26).
+
+        Returns:
+            pd.DataFrame:
+                A table of relative UTCI impact proportions.
+        """
 
         # TODO - break method out into parts - namely basic inputs and single Series output, referenced from elsewhere
 

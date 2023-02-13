@@ -53,7 +53,6 @@ def skymatrix(
     ).filter_by_analysis_period(analysis_period)
     wea_duration = len(wea) / wea.timestep
     wea_folder = Path(tempfile.gettempdir())
-    metd = epw.direct_normal_radiation.header.metadata
     wea_path = wea_folder / "skymatrix.wea"
     wea_file = wea.write(wea_path.as_posix())
 

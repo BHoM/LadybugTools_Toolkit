@@ -276,9 +276,7 @@ def create_model(
             A model containing geometry describing a shaded and unshaded
             external comfort scenario, including sensor grids for simulation.
     """
-    displacement_vector = Vector3D()
-    displacement_vector._y = 500  # pylint: disable=protected-access
-    # necessary due to issue setting property in 1.5.0
+    displacement_vector = Vector3D(y=500)
 
     # unshaded case
     ground_zone_unshaded = _create_ground_zone(ground_material, shaded=False)

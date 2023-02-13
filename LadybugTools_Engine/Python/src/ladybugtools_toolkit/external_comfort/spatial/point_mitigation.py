@@ -11,6 +11,25 @@ from ..external_comfort import ExternalComfort, SimulationResult, Typology
 
 
 class PointMitigation:
+    """Adjust point-location-based UTCI using adjustments to the composite DBT, MRT, RH and WS values in-situ.
+
+    Args:
+        simulation_result (SimulationResult):
+            The simulation result to get point-values from.
+        point_dbt (Union[pd.Series, HourlyContinuousCollection]):
+            The DBT values to set for the theoretical point.
+        point_mrt (Union[pd.Series, HourlyContinuousCollection]):
+            The MRT values to set for the theoretical point.
+        point_rh (Union[pd.Series, HourlyContinuousCollection]):
+            The RH values to set for the theoretical point.
+        point_ws (Union[pd.Series, HourlyContinuousCollection]):
+            The WS values to set for the theoretical point.
+
+    Returns:
+        PointMitigation:
+            The PointMitigation object.
+    """
+
     def __init__(
         self,
         simulation_result: SimulationResult,
@@ -19,6 +38,7 @@ class PointMitigation:
         point_rh: Union[pd.Series, HourlyContinuousCollection],
         point_ws: Union[pd.Series, HourlyContinuousCollection],
     ) -> PointMitigation:
+
         self._point_dbt = (
             point_dbt
             if isinstance(point_dbt, HourlyContinuousCollection)
@@ -58,5 +78,13 @@ class PointMitigation:
         return f"{self.__class__.__name__}"
 
     def apply_mitigation(self, typology: Typology) -> ExternalComfort:
-        """_"""
+        """Apply the new typology to the the ExternalComfort result.
+
+        Args:
+            typology (Typology):
+                The new typology to apply to the result.
+        Returns:
+            ExternalComfort:
+                The ExternalComfort result with the new typology applied.
+        """
         return ExternalComfort(self.simulation_result, typology)

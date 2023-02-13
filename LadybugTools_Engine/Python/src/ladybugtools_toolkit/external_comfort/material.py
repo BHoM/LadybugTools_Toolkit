@@ -5,14 +5,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, Union
 
-from honeybee_energy.lib.materials import opaque_material_by_identifier
 from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
 
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 
 
 @dataclass(init=True, repr=True, eq=True)
-class OpaqueMaterial(BHoMObject):  # pylint: disable=invalid-name
+class OpaqueMaterial(BHoMObject):
     """An object representing a material."""
 
     identifier: str = field(repr=True, compare=True)
@@ -94,7 +93,7 @@ class OpaqueMaterial(BHoMObject):  # pylint: disable=invalid-name
 
 
 @dataclass(init=True, repr=True, eq=True)
-class OpaqueVegetationMaterial(BHoMObject):  # pylint: disable=invalid-name
+class OpaqueVegetationMaterial(BHoMObject):
     """An object representing a vegetation material."""
 
     identifier: float = field(repr=True, compare=True)
@@ -201,13 +200,14 @@ def material_from_dict(
     """Attempt to convert a dictionary into a material object."""
     try:
         return OpaqueMaterial.from_dict(dictionary)
-    except Exception:  # pylint: disable=[broad-except]
+    except Exception:
         return OpaqueVegetationMaterial.from_dict(dictionary)
 
 
 def create_material(
     obj: Any,
 ) -> Union[Dict[str, Any], EnergyMaterial, EnergyMaterialVegetation]:
+    """Attempt to convert an object into a material object suitable for LBT_Tk External Comfort workflows."""
     if isinstance(obj, dict):
         try:
             return OpaqueMaterial.from_lbt(EnergyMaterial.from_dict(obj))

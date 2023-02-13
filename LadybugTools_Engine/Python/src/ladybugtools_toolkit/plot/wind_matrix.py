@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from ..helpers import wind_direction_average
 from ..ladybug_extension.datacollection import to_series
 from ..ladybug_extension.epw import filename
-from .relative_luminance import contrasting_color, relative_luminance
+from .relative_luminance import contrasting_color
 
 
 def wind_matrix(
@@ -81,8 +81,6 @@ def wind_matrix(
                 local_speed = wind_speeds[_yy, _xx]
                 cell_color = mapper.to_rgba(local_speed)
                 text_color = contrasting_color(cell_color)
-                if _xx == 0 and _yy == 0:
-                    print(cell_color, text_color)
                 ax.text(
                     _xx,
                     _yy + 1,
