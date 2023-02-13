@@ -1,5 +1,5 @@
 import textwrap
-from typing import List, Tuple
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd

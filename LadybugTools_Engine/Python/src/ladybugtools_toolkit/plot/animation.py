@@ -39,3 +39,5 @@ def animation(
         duration=ms_per_image,
         loop=0,
     )
+
+    return output_gif

@@ -28,12 +28,10 @@ def _log_folder() -> Path:
 def _bhom_version() -> str:
     """Return the version of BHoM installed (using the BHoM.dll in the root BHoM directory."""
     bhom_dll: Path = _bhom_dir() / "Assemblies" / "BHoM.dll"
-    info = GetFileVersionInfo(
-        bhom_dll.as_posix(), "\\"
-    )  # pylint: disable=[no-name-in-module]
+    info = GetFileVersionInfo(bhom_dll.as_posix(), "\\")
     ms = info["FileVersionMS"]
     ls = info["FileVersionLS"]
-    return f"{HIWORD(ms)}.{LOWORD(ms)}.{HIWORD(ls)}.{LOWORD(ls)}"  # pylint: disable=[no-name-in-module]
+    return f"{HIWORD(ms)}.{LOWORD(ms)}.{HIWORD(ls)}.{LOWORD(ls)}"
 
 
 def _ticks(dt: datetime = datetime.utcnow(), short: bool = False) -> int:

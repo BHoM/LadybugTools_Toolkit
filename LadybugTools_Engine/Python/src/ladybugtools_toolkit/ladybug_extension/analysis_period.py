@@ -42,7 +42,7 @@ def to_boolean(
         analysis_periods = [analysis_periods]
 
     # check timestep of each analysis period is the same
-    if len(set([ap.timestep for ap in analysis_periods])) > 1:
+    if len(set(ap.timestep for ap in analysis_periods)) > 1:
         raise ValueError("All analysis periods must have the same timestep.")
 
     # remove duplicates from list

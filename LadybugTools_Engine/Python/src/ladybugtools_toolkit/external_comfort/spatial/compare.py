@@ -16,7 +16,18 @@ from .spatial_comfort import SpatialComfort, SpatialMetric
 def get_common_pt_indices(
     spatial_result_1: SpatialComfort, spatial_result_2: SpatialComfort
 ) -> List[List[int]]:
-    """_"""
+    """Get the indices of the points that are common between two spatial comfort cases.
+
+    Args:
+        spatial_result_1 (SpatialComfort):
+            A SpatialComfort object.
+        spatial_result_2 (SpatialComfort):
+            A SpatialComfort object.
+
+    Returns (List[List[int]]):
+        A list of two lists of indices that correspond to the points in the two.
+
+    """
     return pd.merge(
         spatial_result_1.points.reset_index()[["index", "x", "y"]],
         spatial_result_2.points.reset_index()[["index", "x", "y"]],
@@ -29,7 +40,20 @@ def get_triangulation(
     spatial_result_2: SpatialComfort,
     alpha: float = 1.9,
 ) -> Triangulation:
-    """_"""
+    """Get a triangulation of the points that are common between two spatial comfort cases.
+
+    Args:
+        spatial_result_1 (SpatialComfort):
+            A SpatialComfort object.
+        spatial_result_2 (SpatialComfort):
+            A SpatialComfort object.
+        alpha (float, optional):
+            A number between 0 and 2 that controls the distance between vertices of the triangulation, above which cells are removed. Default is 1.9.
+
+    Returns (Triangulation):
+        A matplotlib Triangulation object.
+    """
+
     sc1_idx, _ = get_common_pt_indices(spatial_result_1, spatial_result_2)
     xx = spatial_result_1.points.iloc[sc1_idx].x.values
     yy = spatial_result_1.points.iloc[sc1_idx].y.values
@@ -40,13 +64,29 @@ def compare_utci(
     spatial_result_1: SpatialComfort,
     spatial_result_2: SpatialComfort,
     metric: SpatialMetric,
-    analysis_period: AnalysisPeriod = None,
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
     alpha: float = 1.9,
 ) -> plt.Figure:
-    """_"""
+    """Plot the difference in typical UTCI between two spatial comfort cases.
 
-    if analysis_period is None:
-        analysis_period = AnalysisPeriod()
+    Args:
+        spatial_result_1 (SpatialComfort):
+            A SpatialComfort object.
+        spatial_result_2 (SpatialComfort):
+            A SpatialComfort object.
+        metric (SpatialMetric):
+            The metric to be plotted. Can be either SpatialMetric.UTCI_INTERPOLATED or SpatialMetric.UTCI_CALCULATED.
+        analysis_period (AnalysisPeriod, optional):
+            The analysis period overwhich comparison shoudl be made. Defaults to AnalysisPeriod().
+        alpha (float, optional):
+            An alpha value from which to create the triangulation between point locations. Defaults to 1.9.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        plt.Figure: _description_
+    """
 
     if metric.value not in [
         SpatialMetric.UTCI_INTERPOLATED.value,
@@ -67,13 +107,13 @@ def compare_utci(
 
     # calculate typical UTCI
     utci_1 = (
-        spatial_result_1._get_spatial_metric(metric)
+        spatial_result_1.get_spatial_metric(metric)
         .iloc[index_mask, col_mask_1]
         .mean(axis=0)
         .reset_index(drop=True)
     )
     utci_2 = (
-        spatial_result_2._get_spatial_metric(metric)
+        spatial_result_2.get_spatial_metric(metric)
         .iloc[index_mask, col_mask_2]
         .mean(axis=0)
         .reset_index(drop=True)
@@ -95,8 +135,8 @@ def compare_utci(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1._points_x), max(spatial_result_1._points_x)])
-    ax.set_ylim([min(spatial_result_1._points_y), max(spatial_result_1._points_y)])
+    ax.set_xlim([min(spatial_result_1.points.x), max(spatial_result_1.points.x)])
+    ax.set_ylim([min(spatial_result_1.points.y), max(spatial_result_1.points.y)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, utci_diff.values, **tcf_properties)
@@ -124,13 +164,25 @@ def compare_utci(
 def compare_mrt(
     spatial_result_1: SpatialComfort,
     spatial_result_2: SpatialComfort,
-    analysis_period: AnalysisPeriod = None,
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
     alpha: float = 1.9,
 ) -> plt.Figure:
-    """_"""
+    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory as it must load two sets of results to compare them.
 
-    if analysis_period is None:
-        analysis_period = AnalysisPeriod()
+    Args:
+        spatial_result_1 (SpatialComfort):
+            The first SpatialComfort object.
+        spatial_result_2 (SpatialComfort):
+            The second SpatialComfort object.
+        analysis_period (AnalysisPeriod, optional):
+            The analysis period to use for the comparison. Defaults to AnalysisPeriod().
+        alpha (float, optional):
+            An alpha value to use for the triangulation. Defaults to 1.9.
+
+    Returns:
+        plt.Figure:
+            A matplotlib figure.
+    """
 
     CONSOLE_LOGGER.info(
         f"[SpatialComfort - Comparison] - Plotting MRT difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
@@ -147,13 +199,13 @@ def compare_mrt(
 
     # calculate typical MRT
     mrt_1 = (
-        spatial_result_1._get_spatial_metric(metric)
+        spatial_result_1.get_spatial_metric(metric)
         .iloc[index_mask, col_mask_1]
         .mean(axis=0)
         .reset_index(drop=True)
     )
     mrt_2 = (
-        spatial_result_2._get_spatial_metric(metric)
+        spatial_result_2.get_spatial_metric(metric)
         .iloc[index_mask, col_mask_2]
         .mean(axis=0)
         .reset_index(drop=True)
@@ -175,8 +227,8 @@ def compare_mrt(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1._points_x), max(spatial_result_1._points_x)])
-    ax.set_ylim([min(spatial_result_1._points_y), max(spatial_result_1._points_y)])
+    ax.set_xlim([min(spatial_result_1.points_x), max(spatial_result_1.points_x)])
+    ax.set_ylim([min(spatial_result_1.points_y), max(spatial_result_1.points_y)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, mrt_diff.values, **tcf_properties)
@@ -208,7 +260,22 @@ def compare_ws(
     analysis_period: AnalysisPeriod = None,
     alpha: float = 1.9,
 ) -> plt.Figure:
-    """_"""
+    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory as it must load two sets of results to compare them.
+
+    Args:
+        spatial_result_1 (SpatialComfort):
+            The first SpatialComfort object.
+        spatial_result_2 (SpatialComfort):
+            The second SpatialComfort object.
+        analysis_period (AnalysisPeriod, optional):
+            The analysis period to use for the comparison. Defaults to AnalysisPeriod().
+        alpha (float, optional):
+            An alpha value to use for the triangulation. Defaults to 1.9.
+
+    Returns:
+        plt.Figure:
+            A matplotlib figure.
+    """
 
     if analysis_period is None:
         analysis_period = AnalysisPeriod()
@@ -231,13 +298,13 @@ def compare_ws(
 
     # calculate typical WS
     ws_1 = (
-        spatial_result_1._get_spatial_metric(metric)
+        spatial_result_1.get_spatial_metric(metric)
         .iloc[index_mask, col_mask_1]
         .mean(axis=0)
         .reset_index(drop=True)
     )
     ws_2 = (
-        spatial_result_2._get_spatial_metric(metric)
+        spatial_result_2.get_spatial_metric(metric)
         .iloc[index_mask, col_mask_2]
         .mean(axis=0)
         .reset_index(drop=True)
@@ -259,8 +326,8 @@ def compare_ws(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1._points_x), max(spatial_result_1._points_x)])
-    ax.set_ylim([min(spatial_result_1._points_y), max(spatial_result_1._points_y)])
+    ax.set_xlim([min(spatial_result_1.points_x), max(spatial_result_1.points_x)])
+    ax.set_ylim([min(spatial_result_1.points_y), max(spatial_result_1.points_y)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, ws_diff.values, **tcf_properties)
@@ -293,7 +360,26 @@ def compare_distance_to_comfortable(
     comfort_limits: Tuple[float] = (9, 26),
     alpha: float = 1.9,
 ) -> plt.Figure:
-    """_"""
+    """For a given metric, plot the difference between two SpatialComfort objects.
+
+    Args:
+        spatial_result_1 (SpatialComfort):
+            The first SpatialComfort object to compare.
+        spatial_result_2 (SpatialComfort):
+            The second SpatialComfort object to compare.
+        metric (SpatialMetric):
+            The metric to compare.
+        analysis_period (AnalysisPeriod, optional):
+            An optional analysis period to limit the comparison to. Defaults to None.
+        comfort_limits (Tuple[float], optional):
+            The comfort limits to use for the comparison. Defaults to (9, 26).
+        alpha (float, optional):
+            An alpha value to use for triangulation. Defaults to 1.9.
+
+    Returns:
+        plt.Figure:
+            A matplotlib figure object.
+    """
 
     if analysis_period is None:
         analysis_period = AnalysisPeriod()
@@ -318,7 +404,7 @@ def compare_distance_to_comfortable(
     # filter for target time period and calculate distance to comfort midband
     comfort_distance_1 = (
         abs(
-            spatial_result_1._get_spatial_metric(metric).iloc[index_mask, col_mask_1]
+            spatial_result_1.get_spatial_metric(metric).iloc[index_mask, col_mask_1]
             - comfort_mid
         )
         .T.reset_index(drop=True)
@@ -326,7 +412,7 @@ def compare_distance_to_comfortable(
     )
     comfort_distance_2 = (
         abs(
-            spatial_result_2._get_spatial_metric(metric).iloc[index_mask, col_mask_2]
+            spatial_result_2.get_spatial_metric(metric).iloc[index_mask, col_mask_2]
             - comfort_mid
         )
         .T.reset_index(drop=True)
@@ -349,8 +435,8 @@ def compare_distance_to_comfortable(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1._points_x), max(spatial_result_1._points_x)])
-    ax.set_ylim([min(spatial_result_1._points_y), max(spatial_result_1._points_y)])
+    ax.set_xlim([min(spatial_result_1.points_x), max(spatial_result_1.points_x)])
+    ax.set_ylim([min(spatial_result_1.points_y), max(spatial_result_1.points_y)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, -comfort_diff.mean(axis=0).values, **tcf_properties)

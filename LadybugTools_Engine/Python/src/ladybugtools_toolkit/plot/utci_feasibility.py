@@ -4,7 +4,7 @@ from typing import Tuple, Union
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-from ladybug.datacollection import AnalysisPeriod, HourlyContinuousCollection
+from ladybug.datacollection import AnalysisPeriod
 from ladybug.epw import EPW
 from matplotlib.figure import Figure
 
@@ -14,11 +14,7 @@ from ..external_comfort.utci import (
     utci_comfort_categories,
 )
 from ..ladybug_extension.analysis_period import describe as describe_ap
-from ..ladybug_extension.datacollection import to_series
 from ..ladybug_extension.location import to_string
-from .colormaps import UTCI_BOUNDARYNORM, UTCI_COLORMAP
-from .lighten_color import lighten_color
-from .timeseries_heatmap import timeseries_heatmap
 
 
 def utci_feasibility(

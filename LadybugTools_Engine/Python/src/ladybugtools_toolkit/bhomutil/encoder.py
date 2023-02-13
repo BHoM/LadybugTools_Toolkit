@@ -55,9 +55,7 @@ class BHoMEncoder(json.JSONEncoder):
         except AttributeError:
             try:
                 return str(o)
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 pass
 
-        return super(BHoMEncoder, self).default(
-            o
-        )  # pylint: disable=super-with-arguments
+        return super(BHoMEncoder, self).default(o)

@@ -7,6 +7,20 @@ from .colormap_sequential import colormap_sequential
 
 
 def get_lb_colormap(name: Union[int, str] = "original") -> LinearSegmentedColormap:
+    """Create a Matplotlib from a colormap provided by Ladybug.
+
+    Args:
+        name (Union[int, str], optional):
+            The name of the colormap to create. Defaults to "original".
+
+    Raises:
+        ValueError:
+            If an invalid LB colormap name is provided, return a list of potential values to use.
+
+    Returns:
+        LinearSegmentedColormap:
+            A Matplotlib colormap object.
+    """
     cs = Colorset()
 
     cmap_strings = []

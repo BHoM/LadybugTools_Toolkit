@@ -253,7 +253,7 @@ def from_dataframe(
             )
 
     # set file-path property to avoid issues downstream
-    epw_obj._file_path = (
+    epw_obj._file_path = (  # pylint: disable=protected-access
         "C:/EPW_from_dataframe.epw"
         if location is None
         else f"C:/{location_to_string(location)}.epw"
@@ -396,7 +396,7 @@ def solar_time_hour(
     hour_values = [i.hour for i in epw.dry_bulb_temperature.datetimes]
 
     solar_time = [
-        sunpath._calculate_solar_time(j, k, False)
+        sunpath._calculate_solar_time(j, k, False)  # pylint: disable=protected-access
         for j, k in list(zip(*[hour_values, eot.values]))
     ]
 

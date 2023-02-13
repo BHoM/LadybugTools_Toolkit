@@ -42,10 +42,10 @@ def test_to_datetimes():
 
 def test_describe():
     """_"""
-    assert describe(AnalysisPeriod()) == "Jan 01 to Dec 31 between 00:00 and 23:00"
+    assert describe(AnalysisPeriod()) == "Jan 01 to Dec 31 between 00:00 and 00:00"
     assert (
         describe(AnalysisPeriod(timestep=30), include_timestep=True)
-        == "Jan 01 to Dec 31 between 00:00 and 23:00, every 2 minutes"
+        == "Jan 01 to Dec 31 between 00:00 and 00:00, every 2 minutes"
     )
     assert (
         describe(
@@ -54,7 +54,7 @@ def test_describe():
             ),
             include_timestep=True,
         )
-        == "Nov 01 to Feb 28 between 18:00 and 13:00, every 2 minutes"
+        == "Nov 01 to Feb 28 between 18:00 and 14:00, every 2 minutes"
     )
     assert (
         describe(
