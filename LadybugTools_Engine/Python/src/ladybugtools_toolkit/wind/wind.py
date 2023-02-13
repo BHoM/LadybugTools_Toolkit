@@ -307,7 +307,6 @@ class Wind:
                 ) from exc
 
             if isinstance(arg_value, str):
-                print("hey")
                 raise ValueError(f"{arg_name} must be single-dimension iterable")
 
             # check that iterable is flat

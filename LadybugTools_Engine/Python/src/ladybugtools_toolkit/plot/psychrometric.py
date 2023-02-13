@@ -24,16 +24,30 @@ from matplotlib.patches import Polygon
 
 def strategy_warning(polygon_name):
     """Give a warning about a polygon not fitting on the chart."""
-    msg = (
-        'Polygon "{}" could not fit on the chart given the current location of '
-        "the comfort polygon(s).\nTry moving the comfort polygon(s) by changing "
-        "its criteria to see the missing polygon.".format(polygon_name)
-    )
+    msg = f'Polygon "{polygon_name}" could not fit on the chart.\nTry moving the comfort polygon(s) by changingits criteria.'
     warn(msg)
 
 
 @dataclass(init=True, repr=True)
 class PassiveStrategyParameters:
+    """Parameters for passive strategies for reducing thermal discomfort.
+
+    Args:
+        day_above_comfort: The number of degrees above the comfort temperature that
+            the day temperature is allowed to be. (Default: 12)
+        night_below_comfort: The number of degrees below the comfort temperature that
+            the night temperature is allowed to be. (Default: 3)
+        fan_air_speed: The air speed in m/s that the fan is assumed to be blowing
+            at. (Default: 1)
+        balance_temperature: The temperature in degrees Celcius at which the
+            balance point between sensible and latent heat transfer occurs.
+            (Default: 12.8)
+        solar_heat_capacity: The heat capacity of the solar radiation in J/m2/K.
+            (Default: 50)
+        time_constant: The time constant of the thermal mass in hours.
+            (Default: 8)
+    """
+
     day_above_comfort: float = field(init=True, default=12)
     night_below_comfort: float = field(init=True, default=3)
     fan_air_speed: float = field(init=True, default=1)
@@ -70,6 +84,8 @@ class PassiveStrategyParameters:
 
 
 class PassiveStrategy(Enum):
+    """Passive strategies for reducing thermal discomfort."""
+
     EVAPORATIVE_COOLING = "Evaporative Cooling"
     MASS_NIGHT_VENTILATION = "Mass + Night Vent"
     OCCUPANT_FAN_USE = "Occupant Use of Fans"
@@ -79,6 +95,28 @@ class PassiveStrategy(Enum):
 
 @dataclass(init=True, repr=True)
 class PsychrometricPolygons:
+    """A collection of polygons for use in a psychrometric chart.
+
+    Args:
+        strategies (List[PassiveStrategy], optional):
+            A list of passive strategies to include in the chart. Default is None.
+        strategy_parameters (PassiveStrategyParameters, optional):
+            A PassiveStrategyParameters object to use for the passive strategies.
+        pmv_parameter (PMVParameter, optional):
+            A PMVParameter object to use for the comfort polygon.
+        mean_radiant_temperature (float, optional):
+            A mean radiant temperature to use for the comfort polygon. Default is None.
+        air_speed (float, optional):
+            An air speed to use for the comfort polygon. Default is 0.1.
+        metabolic_rate (float, optional):
+            A metabolic rate to use for the comfort polygon. Default is 1.1.
+        clo_value (float, optional):
+            A clothing value to use for the comfort polygon. Default is 0.7.
+
+    Returns:
+        PsychrometricPolygons: A collection of polygons for use in a psychrometric chart.
+    """
+
     strategies: List[PassiveStrategy] = field(init=True, default_factory=list)
     strategy_parameters: PassiveStrategyParameters = field(
         init=True, default=PassiveStrategyParameters()
@@ -289,7 +327,7 @@ def psychrometric(
 
     # add legend
     keys = "WS: Wind speed | WD: Wind direction | DBT: Dry-bulb temperature | WBT: Wet-bulb temperature\nRH: Relative humidity | DPT: Dew-point temperature | h: Enthalpy | HR: Humidity ratio"
-    keys_text = ax.text(
+    ax.text(
         1,
         -0.05,
         keys,
@@ -607,7 +645,7 @@ def psychrometric(
         polygon_comfort = (
             [dat.average for dat in polygon_data]
             if isinstance(polygon_data[0], BaseCollection)
-            else [dat for dat in polygon_data]
+            else polygon_data
         )
         if isinstance(polygon_data[0], BaseCollection):
             merged_vals = merge_polygon_data(polygon_data)

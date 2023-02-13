@@ -1,6 +1,5 @@
 import calendar
 import warnings
-from calendar import month_name
 from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
 from typing import Any, Callable, List, Tuple, Union
@@ -12,23 +11,25 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
-from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap, to_rgba
+from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap
 from numpy.typing import NDArray
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
-from ..ladybug_extension.analysis_period import \
-    describe as describe_analysis_period
+from ..ladybug_extension.analysis_period import describe as describe_analysis_period
 from ..ladybug_extension.analysis_period import to_boolean
 from ..ladybug_extension.datacollection import from_series, to_series
-from ..ladybug_extension.epw import (seasonality_from_day_length,
-                                     seasonality_from_month,
-                                     seasonality_from_temperature)
-from ..plot.colormaps import UTCI_LABELS
-from .moisture import evaporative_cooling_effect_collection
+from ..ladybug_extension.epw import (
+    seasonality_from_day_length,
+    seasonality_from_month,
+    seasonality_from_temperature,
+)
+from .moisture import evaporative_cooling_effect
 
 
 class UniversalThermalClimateIndex(Enum):
+    """An enumeration of the different categories of UTCI."""
+
     EXTREME_COLD_STRESS = "Extreme cold stress"
     VERY_STRONG_COLD_STRESS = "Very strong cold stress"
     STRONG_COLD_STRESS = "Strong cold stress"
@@ -1154,35 +1155,51 @@ def feasible_utci_limits(
         epw.horizontal_infrared_radiation_intensity,
         epw.dry_bulb_temperature,
     ).mean_radiant_temperature
-    dbt_evap, rh_evap = evaporative_cooling_effect_collection(
-        epw, evaporative_cooling_effectiveness=0.5
+    dbt_evap, rh_evap = np.array(
+        [
+            evaporative_cooling_effect(
+                dry_bulb_temperature=_dbt,
+                relative_humidity=_rh,
+                evaporative_cooling_effectiveness=0.5,
+                atmospheric_pressure=_atm,
+            )
+            for _dbt, _rh, _atm in list(
+                zip(
+                    *[
+                        epw.dry_bulb_temperature,
+                        epw.relative_humidity,
+                        epw.atmospheric_station_pressure,
+                    ]
+                )
+            )
+        ]
+    ).T
+    dbt_evap = epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
+    rh_evap = epw.relative_humidity.get_aligned_collection(rh_evap)
+
+    dbt_rh_options = (
+        [[dbt_evap, rh_evap], [epw.dry_bulb_temperature, epw.relative_humidity]]
+        if include_additional_moisture
+        else [[epw.dry_bulb_temperature, epw.relative_humidity]]
     )
 
     utcis = []
-    for _dbt in (
-        [epw.dry_bulb_temperature, dbt_evap]
-        if include_additional_moisture
-        else [epw.dry_bulb_temperature]
-    ):
-        for _rh in (
-            [epw.relative_humidity, rh_evap]
-            if include_additional_moisture
-            else [epw.relative_humidity]
-        ):
-            for _ws in [
-                epw.wind_speed,
-                epw.wind_speed.get_aligned_collection(0),
-                epw.wind_speed * 1.1,
-            ]:
-                for _mrt in [epw.dry_bulb_temperature, mrt_unshaded]:
-                    utcis.append(
-                        UTCI(
-                            air_temperature=_dbt,
-                            rad_temperature=_mrt,
-                            rel_humidity=_rh,
-                            wind_speed=_ws,
-                        ).universal_thermal_climate_index,
-                    )
+    utcis = []
+    for _dbt, _rh in dbt_rh_options:
+        for _ws in [
+            epw.wind_speed,
+            epw.wind_speed.get_aligned_collection(0),
+            epw.wind_speed * 1.1,
+        ]:
+            for _mrt in [epw.dry_bulb_temperature, mrt_unshaded]:
+                utcis.append(
+                    UTCI(
+                        air_temperature=_dbt,
+                        rad_temperature=_mrt,
+                        rel_humidity=_rh,
+                        wind_speed=_ws,
+                    ).universal_thermal_climate_index,
+                )
     df = pd.concat([to_series(i) for i in utcis], axis=1)
     min_utci = from_series(df.min(axis=1).rename("Universal Thermal Climate Index (C)"))
     max_utci = from_series(df.max(axis=1).rename("Universal Thermal Climate Index (C)"))
@@ -1388,10 +1405,7 @@ def feasible_comfort_temporal(
         temp.columns = [ap_description]
         return temp.T
 
-    if (
-        seasonality
-        == seasonality_from_month  # pylint: disable=comparison-with-callable
-    ):
+    if seasonality == seasonality_from_month:
         seasons = seasonality_from_month(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -1408,10 +1422,7 @@ def feasible_comfort_temporal(
         ]
         return temp
 
-    if (
-        seasonality
-        == seasonality_from_day_length  # pylint: disable=comparison-with-callable
-    ):
+    if seasonality == seasonality_from_day_length:
         seasons = seasonality_from_day_length(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -1428,10 +1439,7 @@ def feasible_comfort_temporal(
         ]
         return temp
 
-    if (
-        seasonality
-        == seasonality_from_temperature  # pylint: disable=comparison-with-callable
-    ):
+    if seasonality == seasonality_from_temperature:
         seasons = seasonality_from_temperature(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
