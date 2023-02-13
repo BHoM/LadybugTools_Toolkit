@@ -254,7 +254,7 @@ def rolling_window(array: List[Any], window: int):
 
     a: np.ndarray = np.array(array)
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-    strides = a.strides + (a.strides[-1],)  # pylint: disable=[unsubscriptable-object]
+    strides = a.strides + (a.strides[-1],)
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
@@ -357,17 +357,17 @@ def figure_to_base64(figure: Figure, html: bool = False) -> str:
     return base64_string
 
 
-def timedelta_tostring(timedelta: timedelta) -> str:
+def timedelta_tostring(time_delta: timedelta) -> str:
     """timedelta objects don't have a nice string representation, so this function converts them.
 
     Args:
-        timedelta (datetime.timedelta):
+        time_delta (datetime.timedelta):
             The timedelta object to convert.
     Returns:
         str:
             A string representation of the timedelta object.
     """
-    s = timedelta.seconds
+    s = time_delta.seconds
     hours, remainder = divmod(s, 3600)
     minutes, _ = divmod(remainder, 60)
     return f"{hours:02d}:{minutes:02d}"
@@ -617,20 +617,19 @@ def stringify_df_header(columns: List[Any]) -> List[str]:
 
 def unstringify_df_header(columns: List[str]) -> List[Any]:
     """Convert a list of strings into a set of objecst capable of being used
-    as DataFrame columsn headers.
+    as DataFrame column headers.
     """
 
     evaled = []
     for i in columns:
         try:
-            evaled.append(eval(i))  # pylint: disable=[eval-used]
+            evaled.append(eval(i))
         except NameError:
             evaled.append(i)
 
     if all("(" in i for i in str(evaled)):
         return pd.MultiIndex.from_tuples(evaled)
-    else:
-        return evaled
+    return evaled
 
 
 def store_dataset(
@@ -702,6 +701,8 @@ def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
 
 
 class OpenMeteoVariable(Enum):
+    """An enumeration of the variables available from OpenMeteo."""
+
     TEMPERATURE_2M = "temperature_2m"
     DEWPOINT_2M = "dewpoint_2m"
     RELATIVEHUMIDITY_2M = "relativehumidity_2m"
@@ -870,7 +871,9 @@ def weibull_directional(
         pd.DataFrame:
             A DataFrame with (direction_bin_low, direction_bin_high) as index, and weibull coefficients as columns.
     """
-
+    warnings.warn(
+        "This method was written by someone who doesn't actually know what thesse values mean. PLease don't trust them!"
+    )
     d = {}
     for (low, high), speeds in tqdm(
         binned_data.items(), desc="Calculating Weibull shape parameters"

@@ -137,12 +137,9 @@ class SpatialComfort(BHoMObject):
         self._plot_directory.mkdir(exist_ok=True, parents=True)
 
         # create default triangulation
-        self._points_x: List[float] = self.points.x.values
-        self._points_y: List[float] = self.points.y.values
-        self._points_z: List[float] = self.points.z.values
         self._triangulation = create_triangulation(
-            self._points_x,
-            self._points_y,
+            self.points.x.values,
+            self.points.y.values,
             alpha=1.1,
             max_iterations=250,
             increment=0.01,
@@ -263,7 +260,8 @@ class SpatialComfort(BHoMObject):
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
             series = to_series(self.simulation_result.epw.dry_bulb_temperature)
             df = pd.DataFrame(
-                np.tile(series.values, (len(self._points_x), 1)).T, index=series.index
+                np.tile(series.values, (len(self.points.x.values), 1)).T,
+                index=series.index,
             ).round(2)
             df.columns = df.columns.astype(str)
             df.to_parquet(save_path)
@@ -287,7 +285,8 @@ class SpatialComfort(BHoMObject):
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
             series = to_series(self.simulation_result.epw.relative_humidity)
             df = pd.DataFrame(
-                np.tile(series.values, (len(self._points_x), 1)).T, index=series.index
+                np.tile(series.values, (len(self.points.x.values), 1)).T,
+                index=series.index,
             ).round(2)
             df.columns = df.columns.astype(str)
             df.to_parquet(save_path)
@@ -311,7 +310,8 @@ class SpatialComfort(BHoMObject):
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
             series = to_series(self.simulation_result.epw.wind_speed)
             df = pd.DataFrame(
-                np.tile(series.values, (len(self._points_x), 1)).T, index=series.index
+                np.tile(series.values, (len(self.points.x.values), 1)).T,
+                index=series.index,
             ).round(2)
             df.columns = df.columns.astype(str)
             df.to_parquet(save_path)
@@ -335,7 +335,8 @@ class SpatialComfort(BHoMObject):
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
             series = to_series(self.simulation_result.epw.wind_direction)
             df = pd.DataFrame(
-                np.tile(series.values, (len(self._points_x), 1)).T, index=series.index
+                np.tile(series.values, (len(self.points.x.values), 1)).T,
+                index=series.index,
             ).round(2)
             df.columns = df.columns.astype(str)
             df.to_parquet(save_path)
@@ -586,12 +587,14 @@ class SpatialComfort(BHoMObject):
     @property
     def points_xy(self) -> np.ndarray:
         """Get the points associated with this object as an array of [[x, y], [x, y], ...]"""
-        return np.stack([self._points_x, self._points_y], axis=1)
+        return np.stack([self.points.x.values, self.points.y.values], axis=1)
 
     @property
     def points_xyz(self) -> np.ndarray:
         """Get the points associated with this object as an array of [[x, y, z], [x, y, z], ...]"""
-        return np.stack([self._points_x, self._points_y, self._points_z], axis=1)
+        return np.stack(
+            [self.points.x.values, self.points.y.values, self.points_z], axis=1
+        )
 
     @property
     def coldest_day(self) -> datetime:
@@ -650,7 +653,7 @@ class SpatialComfort(BHoMObject):
         """
         return dsh(self.model, self.simulation_result.epw, analysis_period)
 
-    def _get_spatial_metric(self, metric: SpatialMetric) -> pd.DataFrame:
+    def get_spatial_metric(self, metric: SpatialMetric) -> pd.DataFrame:
         """Return the dataframe associated with the given metric."""
         if metric.value == SpatialMetric.POINTS.value:
             return self.points
@@ -702,7 +705,7 @@ class SpatialComfort(BHoMObject):
         if not hour in range(0, 24, 1):
             raise ValueError(f"Hour must be between 0 and 23 inclusive, got {hour}")
 
-        df = self._get_spatial_metric(metric)
+        df = self.get_spatial_metric(metric)
 
         CONSOLE_LOGGER.info(
             f"[{self}] - Plotting {metric.description()} for {calendar.month_abbr[month]} {hour:02d}:00"
@@ -729,8 +732,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # add contour-fill
         tcf = ax.tricontourf(self._triangulation, z, **tcf_properties)
@@ -775,8 +778,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # add contour-fill
         tcf = ax.tricontourf(self._triangulation, values, **tcf_properties)
@@ -848,8 +851,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # add contour-fill
         tcf = ax.tricontourf(self._triangulation, values, **tcf_properties)
@@ -861,7 +864,7 @@ class SpatialComfort(BHoMObject):
         cbar.outline.set_visible(False)
         cbar.set_label("London Thermal Comfort Category")
         cbar.set_ticks(list(mapper.values()))
-        cbar.set_ticklabels([i.replace(" ", "\n") for i in mapper.keys()])
+        cbar.set_ticklabels([i.replace(" ", "\n") for i in mapper])
 
         # add title
         ax.set_title(
@@ -883,7 +886,7 @@ class SpatialComfort(BHoMObject):
             f"[{self}] - Plotting {metric.description()} for {describe_analysis_period(analysis_period)}"
         )
         values = (
-            self._get_spatial_metric(metric)
+            self.get_spatial_metric(metric)
             .iloc[list(analysis_period.hoys_int)]
             .mean()
             .values
@@ -895,8 +898,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # add contour-fill
         tcf = ax.tricontourf(self._triangulation, values, **tcf_properties)
@@ -935,11 +938,11 @@ class SpatialComfort(BHoMObject):
         )
 
         # obtain levels
-        low = self._get_spatial_metric(metric).min().min()
-        high = self._get_spatial_metric(metric).max().max()
+        low = self.get_spatial_metric(metric).min().min()
+        high = self.get_spatial_metric(metric).max().max()
         levels = np.linspace(low, high, 51)
         values = (
-            self._get_spatial_metric(metric)
+            self.get_spatial_metric(metric)
             .iloc[list(analysis_period.hoys_int)]
             .mean()
             .values
@@ -951,8 +954,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # add contour-fill
         tcf = ax.tricontourf(
@@ -998,8 +1001,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # add contour-fill
         tcf = ax.tricontourf(self._triangulation, series.values, **tcf_properties)
@@ -1105,8 +1108,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # plot tricontour of z(comfortable hours) values
         tcf = ax.tricontourf(self._triangulation, z, **tcf_properties)
@@ -1197,8 +1200,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # plot tricontour of z(cold hours) values
         tcf = ax.tricontourf(self._triangulation, z, **tcf_properties)
@@ -1289,8 +1292,8 @@ class SpatialComfort(BHoMObject):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_xlim([min(self._points_x), max(self._points_x)])
-        ax.set_ylim([min(self._points_y), max(self._points_y)])
+        ax.set_xlim([min(self.points.x.values), max(self.points.x.values)])
+        ax.set_ylim([min(self.points.y.values), max(self.points.y.values)])
 
         # plot tricontour of z(cold hours) values
         tcf = ax.tricontourf(self._triangulation, z, **tcf_properties)
@@ -1384,12 +1387,12 @@ class SpatialComfort(BHoMObject):
     def plot_spatial_point_locations(self, n: int = 100) -> plt.Figure:
         """Return the spatial point locations figure."""
 
-        x = self._points_x
-        y = self._points_y
+        x = self.points.x.values
+        y = self.points.y.values
         fig, ax = plt.subplots(1, 1, figsize=(20, 20))
         ax.set_aspect("equal")
         ax.scatter(x, y, c="#555555", s=1)
-        for i in np.arange(0, len(self._points_x), n):
+        for i in np.arange(0, len(self.points.x.values), n):
             ax.scatter(x[i], y[i], c="red", s=2)
             ax.text(
                 x[i],
@@ -1411,10 +1414,25 @@ class SpatialComfort(BHoMObject):
         show_sunpath: bool = True,
         show_skymatrix: bool = True,
     ) -> Path:
-        """_"""
-        from honeybee_vtk.model import Model
+        """Generate a plot combining skymatrix, sunpath amnd contextual geometry for a given point.
 
+        Args:
+            point_index (int):
+                The index of the point to plot.
+            point_identifier (str):
+                The identifier of the point to plot.
+            analysis_period (AnalysisPeriod, optional):
+                The analysis period to use for the plot. Defaults to AnalysisPeriod().
+            show_sunpath (bool, optional):
+                Whether to show the sunpath. Defaults to True.
+            show_skymatrix (bool, optional):
+                Whether to show the skymatrix. Defaults to True.
+
+        Returns:
+            Path: The path to the generated plot.
+        """
         raise NotImplementedError("Not yet working!")
+
         img = sky_view_pov(
             model=Model.from_hbjson(
                 list(self.spatial_simulation_directory.glob("**/*.hbjson"))[0]
@@ -1464,8 +1482,8 @@ class SpatialComfort(BHoMObject):
         CONSOLE_LOGGER.info(
             f"[{self}] - Plotting point location for {point_identifier}"
         )
-        x = self._points_x
-        y = self._points_y
+        x = self.points.x.values
+        y = self.points.y.values
         xlims = [min(x), max(x)]
         fig, ax = plt.subplots(1, 1, figsize=(20, 20))
         ax.set_aspect("equal")

@@ -33,17 +33,23 @@ def load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
     return pd.concat([func(i) for i in files], axis=1).sort_index(axis=1)
 
 
-def load_ill_file(ill_file: Union[str, Path]) -> pd.DataFrame:
+def load_ill_file(
+    ill_file: Union[str, Path], sun_up_hours_file: Union[str, Path] = None
+) -> pd.DataFrame:
     """Load a Radiance .ill file and return a DataFrame with the data.
 
     Args:
         ill_file (Union[str, Path]): The path to the Radiance .ill file.
+        sun_up_hours_file (Union[str, Path], optional): The path to the sun-up-hours.txt file.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the .ill file.
     """
     ill_file = Path(ill_file)
-    sun_up_hours_file = ill_file.parent / "sun-up-hours.txt"
+
+    if sun_up_hours_file is None:
+        sun_up_hours_file = ill_file.parent / "sun-up-hours.txt"
+
     df = pd.read_csv(ill_file, sep=r"\s+", header=None, index_col=None).T
     df.columns = pd.MultiIndex.from_product([[ill_file.stem], df.columns])
     df.index = load_sun_up_hours(sun_up_hours_file)
@@ -279,5 +285,8 @@ def make_annual(df: pd.DataFrame) -> pd.DataFrame:
         )
     )
     df_reindexed = pd.concat([df2, df], axis=1)
-    df_reindexed.columns = pd.MultiIndex.from_tuples(df_reindexed.columns)
+    try:
+        df_reindexed.columns = pd.MultiIndex.from_tuples(df_reindexed.columns)
+    except ValueError:
+        pass
     return df_reindexed

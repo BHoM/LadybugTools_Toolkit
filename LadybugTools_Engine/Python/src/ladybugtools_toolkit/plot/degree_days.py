@@ -1,11 +1,6 @@
 import calendar
-from typing import List, Tuple, Union
 
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
-import pandas as pd
 from ladybug.epw import EPW
 from matplotlib.figure import Figure
 
@@ -41,7 +36,7 @@ def _add_value_labels(ax, spacing=5):
             va = "top"
 
         # Use Y value as label and format number with one decimal place
-        label = "{:.0f}".format(y_value)
+        label = f"{y_value:.0f}"
 
         # Create annotation
         ax.annotate(
@@ -109,7 +104,7 @@ def degree_days(
         ax.text(
             1,
             1,
-            f"Annual: {sum([rect.get_height() for rect in ax.patches]):0.0f}",
+            f"Annual: {sum(rect.get_height() for rect in ax.patches):0.0f}",
             transform=ax.transAxes,
             ha="right",
         )

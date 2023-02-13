@@ -21,7 +21,7 @@ def bhom_analytics(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        """_"""
+        """A wrapper around the function that captures the usage analytics."""
         _id = uuid.uuid4()
 
         d = {

@@ -26,7 +26,7 @@ def sky_view_pov(
     show_skymatrix: bool = True,
     title: str = None,
     translate_sensor: Vector3D = None,
-) -> Image:  # pylint: disable=too-many-locals
+) -> Image:
     """Create a sky view with overlaid sun location information
 
     Args:
@@ -119,7 +119,7 @@ def sky_view_pov(
                 (255, 255, 255),
                 font=font,
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             draw.text(
                 (5, 5),
                 title,
