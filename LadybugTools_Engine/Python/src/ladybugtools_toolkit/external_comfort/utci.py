@@ -261,20 +261,6 @@ def compare_utci_collections(
     cold_hours_difference = cold_hours_baseline - cold_hours_comparable
     cold_hours_worse = cold_hours_difference < 0
 
-    # print("total_number_of_hours", total_number_of_hours)
-    # print("comfortable_hours_baseline", comfortable_hours_baseline)
-    # print("hot_hours_baseline", hot_hours_baseline)
-    # print("cold_hours_baseline", cold_hours_baseline)
-    # print("comfortable_hours_comparable", comfortable_hours_comparable)
-    # print("hot_hours_comparable", hot_hours_comparable)
-    # print("cold_hours_comparable", cold_hours_comparable)
-    # print("comfortable_hours_difference", comfortable_hours_difference)
-    # print("comfortable_hours_worse", comfortable_hours_worse)
-    # print("hot_hours_difference", hot_hours_difference)
-    # print("hot_hours_worse", hot_hours_worse)
-    # print("cold_hours_difference", cold_hours_difference)
-    # print("cold_hours_worse", cold_hours_worse)
-
     statements = [
         f'For {ap_description}, "{identifiers[1]}" is generally {"less" if comfortable_hours_worse else "more"} thermally comfortable than "{identifiers[0]}" (with a {abs(comfortable_hours_difference / comfortable_hours_baseline):0.1%} {"reduction" if comfortable_hours_worse else "increase"} in number of hours experiencing "no thermal stress").',
         f'"{identifiers[1]}" demonstrates a {abs(hot_hours_difference / hot_hours_baseline):0.1%} {"increase" if hot_hours_worse else "decrease"} in number of hours experiencing some form of "heat stress" from "{identifiers[0]}"',
@@ -309,10 +295,10 @@ def describe_as_dataframe(
 
     index = [
         "Hours",
-        f"No Thermal Stress [{limit_low} <= x <= {limit_high}] (Hours)",
+        f"No Thermal Stress [{limit_low} ≤ x ≤ {limit_high}] (Hours)",
         f"Heat Stress [x > {limit_high}] (Hours)",
         f"Cold Stress [x < {limit_low}] (Hours)",
-        f"No Thermal Stress [{limit_low} <= x <= {limit_high}]",
+        f"No Thermal Stress [{limit_low} ≤ x ≤ {limit_high}]",
         f"Heat Stress [x > {limit_high}]",
         f"Cold Stress [x < {limit_low}]",
     ]

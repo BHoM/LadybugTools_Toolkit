@@ -4,13 +4,14 @@ from honeybee.model import Model
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW, AnalysisPeriod
 from ladybug_geometry.geometry3d import Point3D, Vector3D
-from ladybugtools_toolkit.plot.figure_to_image import figure_to_image
-from ladybugtools_toolkit.plot.fisheye_sky import fisheye_sky
-from ladybugtools_toolkit.plot.skymatrix import skymatrix
-from ladybugtools_toolkit.plot.sunpath import sunpath
 from matplotlib import pyplot as plt
 from matplotlib.colors import BoundaryNorm, Colormap
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+from ...helpers import figure_to_image
+from ...plot.fisheye_sky import fisheye_sky
+from ...plot.skymatrix import skymatrix
+from ...plot.sunpath import sunpath
 
 
 def sky_view_pov(

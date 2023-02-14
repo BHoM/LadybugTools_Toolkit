@@ -1431,28 +1431,29 @@ class SpatialComfort(BHoMObject):
         Returns:
             Path: The path to the generated plot.
         """
-        raise NotImplementedError("Not yet working!")
 
-        img = sky_view_pov(
-            model=Model.from_hbjson(
-                list(self.spatial_simulation_directory.glob("**/*.hbjson"))[0]
-            ),
-            sensor=Point3D.from_array(
-                self.points.iloc[point_index][["x", "y", "z"]].values
-            ),
-            epw=self.simulation_result.epw,
-            analysis_period=AnalysisPeriod(timestep=5),
-            cmap=None,
-            norm=None,
-            data_collection=None,
-            density=4,
-            show_sunpath=show_sunpath,
-            show_skymatrix=show_skymatrix,
-            title=f"{describe_loc(self.simulation_result.epw.location)}\n{self.spatial_simulation_directory.stem}\n{describe_analysis_period(analysis_period)}\n{point_identifier}",
-        )
-        save_path = self._plot_directory / f"point_{point_identifier}_skyview.png"
-        img.save(save_path, dpi=(500, 500))
-        return save_path
+        # img = sky_view_pov(
+        #     model=Model.from_hbjson(
+        #         list(self.spatial_simulation_directory.glob("**/*.hbjson"))[0]
+        #     ),
+        #     sensor=Point3D.from_array(
+        #         self.points.iloc[point_index][["x", "y", "z"]].values
+        #     ),
+        #     epw=self.simulation_result.epw,
+        #     analysis_period=AnalysisPeriod(timestep=5),
+        #     cmap=None,
+        #     norm=None,
+        #     data_collection=None,
+        #     density=4,
+        #     show_sunpath=show_sunpath,
+        #     show_skymatrix=show_skymatrix,
+        #     title=f"{describe_loc(self.simulation_result.epw.location)}\n{self.spatial_simulation_directory.stem}\n{describe_analysis_period(analysis_period)}\n{point_identifier}",
+        # )
+        # save_path = self._plot_directory / f"point_{point_identifier}_skyview.png"
+        # img.save(save_path, dpi=(500, 500))
+        # return save_path
+
+        raise NotImplementedError("Not yet working!")
 
     def summarise_point(
         self,
