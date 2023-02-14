@@ -9,6 +9,9 @@ from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegeta
 
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 
+# NOTE: This is the version of the Honeybee Material Standards that this module referneces. If these standards are updated, this version number should be updated as well.
+HONEYBEE_MATERIAL_STANDARDS_VERSION = "2.2.6"
+
 
 @dataclass(init=True, repr=True, eq=True)
 class OpaqueMaterial(BHoMObject):
@@ -245,38 +248,6 @@ class Materials(Enum):
         Chapter 30, Table 19 and Table 22)
     - https://github.com/ladybug-tools/honeybee-energy-standards
     """
-
-    # ASPHALT_PAVEMENT: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Asphalt Pavement")
-    # )
-    # CONCRETE_PAVEMENT: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Concrete Pavement")
-    # )
-    # DRY_DUST: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Dry Dust")
-    # )
-    # DRY_SAND: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Dry Sand")
-    # )
-    # GRASSY_LAWN: OpaqueVegetationMaterial = OpaqueVegetationMaterial.from_lbt(
-    #     opaque_material_by_identifier("Grassy Lawn")
-    # )
-    # METAL: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Metal Surface")
-    # )
-    # METAL_REFLECTIVE: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Metal Roof Surface - Highly Reflective")
-    # )
-    # MOIST_SOIL: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Moist Soil")
-    # )
-    # MUD: OpaqueMaterial = OpaqueMaterial.from_lbt(opaque_material_by_identifier("Mud"))
-    # SOLID_ROCK: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Solid Rock")
-    # )
-    # WOOD_SIDING: OpaqueMaterial = OpaqueMaterial.from_lbt(
-    #     opaque_material_by_identifier("Wood Siding")
-    # )
 
     # CUSTOM MATERIALS
 
@@ -1297,6 +1268,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.5,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_12InGypsum: OpaqueMaterial = create_material(
@@ -1311,6 +1283,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.4,
             "visible_absorptance": 0.4,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_100MmNormalweightConcreteFloor: OpaqueMaterial = create_material(
@@ -1325,6 +1298,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_12InNormalweightConcreteFloor: OpaqueMaterial = create_material(
@@ -1339,6 +1313,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_1InStucco: OpaqueMaterial = create_material(
@@ -1353,6 +1328,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.92,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_25MmStucco: OpaqueMaterial = create_material(
@@ -1367,6 +1343,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_4InNormalweightConcreteFloor: OpaqueMaterial = create_material(
@@ -1381,6 +1358,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_4InNormalweightConcreteWall: OpaqueMaterial = create_material(
@@ -1395,6 +1373,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_58InGypsumBoard: OpaqueMaterial = create_material(
@@ -1409,6 +1388,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_58InPlywood: OpaqueMaterial = create_material(
@@ -1423,6 +1403,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_6InHeavyweightConcreteRoof: OpaqueMaterial = create_material(
@@ -1437,6 +1418,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_6InNormalweightConcreteFloor: OpaqueMaterial = create_material(
@@ -1451,6 +1433,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_8InConcreteBlockBasementWall: OpaqueMaterial = create_material(
@@ -1465,6 +1448,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_8InConcreteBlockWall: OpaqueMaterial = create_material(
@@ -1479,6 +1463,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_8InNormalweightConcreteFloor: OpaqueMaterial = create_material(
@@ -1493,6 +1478,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_8InNormalweightConcreteWall: OpaqueMaterial = create_material(
@@ -1507,6 +1493,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_8InConcreteHwRefbldg: OpaqueMaterial = create_material(
@@ -1521,6 +1508,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_8InConcreteHw: OpaqueMaterial = create_material(
@@ -1535,6 +1523,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.65,
             "visible_absorptance": 0.65,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_AcousticCeiling: OpaqueMaterial = create_material(
@@ -1549,6 +1538,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.2,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_AsphaltShingles: OpaqueMaterial = create_material(
@@ -1563,6 +1553,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_AtticfloorInsulation: OpaqueMaterial = create_material(
@@ -1577,6 +1568,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_BuiltUpRoofing: OpaqueMaterial = create_material(
@@ -1591,6 +1583,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_BuiltUpRoofingHighlyReflective: OpaqueMaterial = create_material(
@@ -1605,6 +1598,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.75,
             "solar_absorptance": 0.45,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_BulkStorageProductsMaterial: OpaqueMaterial = create_material(
@@ -1619,6 +1613,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Carpet34InCbes: OpaqueMaterial = create_material(
@@ -1633,6 +1628,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_F08MetalSurface: OpaqueMaterial = create_material(
@@ -1647,6 +1643,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_F16AcousticTile: OpaqueMaterial = create_material(
@@ -1661,6 +1658,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.3,
             "visible_absorptance": 0.3,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_G0113MmGypsumBoard: OpaqueMaterial = create_material(
@@ -1675,6 +1673,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.5,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_G01A19MmGypsumBoard: OpaqueMaterial = create_material(
@@ -1689,6 +1688,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.4,
             "visible_absorptance": 0.4,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_G0525MmWood: OpaqueMaterial = create_material(
@@ -1703,6 +1703,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.5,
             "visible_absorptance": 0.5,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Ground_Floor_R11_T2013: OpaqueMaterial = create_material(
@@ -1717,6 +1718,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Ground_Floor_R17_T2013: OpaqueMaterial = create_material(
@@ -1731,6 +1733,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Ground_Floor_R22_T2013: OpaqueMaterial = create_material(
@@ -1745,6 +1748,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_GypsumBoard12InCbes: OpaqueMaterial = create_material(
@@ -1759,6 +1763,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_GypsumOrPlasterBoard38In: OpaqueMaterial = create_material(
@@ -1773,6 +1778,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_HwConcrete: OpaqueMaterial = create_material(
@@ -1787,6 +1793,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_HwConcrete8In: OpaqueMaterial = create_material(
@@ -1801,6 +1808,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_I0125MmInsulationBoard: OpaqueMaterial = create_material(
@@ -1815,6 +1823,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.6,
             "visible_absorptance": 0.6,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_I0250MmInsulationBoard: OpaqueMaterial = create_material(
@@ -1829,6 +1838,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.6,
             "visible_absorptance": 0.6,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_IeadNonresRoofInsulation176: OpaqueMaterial = create_material(
@@ -1843,6 +1853,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_IeadRoofInsulationR347Ip: OpaqueMaterial = create_material(
@@ -1857,6 +1868,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Insulation1M: OpaqueMaterial = create_material(
@@ -1871,6 +1883,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_M01100MmBrick: OpaqueMaterial = create_material(
@@ -1885,6 +1898,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_M11100MmLightweightConcrete: OpaqueMaterial = create_material(
@@ -1899,6 +1913,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.5,
             "visible_absorptance": 0.5,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_M15200MmHeavyweightConcrete: OpaqueMaterial = create_material(
@@ -1913,6 +1928,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.5,
             "visible_absorptance": 0.5,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MatCc054HwConcrete: OpaqueMaterial = create_material(
@@ -1927,6 +1943,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.85,
             "visible_absorptance": 0.85,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MatCc058HwConcrete: OpaqueMaterial = create_material(
@@ -1941,6 +1958,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.85,
             "visible_absorptance": 0.85,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MassNonresWallInsulation043: OpaqueMaterial = create_material(
@@ -1955,6 +1973,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MassWallInsulationR423Ip: OpaqueMaterial = create_material(
@@ -1969,6 +1988,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalBuildingSemiCondWallInsulation054: OpaqueMaterial = create_material(
@@ -1983,6 +2003,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalBuildingWallInsulationR414Ip: OpaqueMaterial = create_material(
@@ -1997,6 +2018,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalDecking: OpaqueMaterial = create_material(
@@ -2011,6 +2033,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.6,
             "visible_absorptance": 0.6,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalRoofInsulationR521Ip: OpaqueMaterial = create_material(
@@ -2025,6 +2048,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalRoofSurface: OpaqueMaterial = create_material(
@@ -2039,6 +2063,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalRoofSurfaceHighlyReflective: OpaqueMaterial = create_material(
@@ -2053,6 +2078,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.75,
             "solar_absorptance": 0.45,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalRoofing: OpaqueMaterial = create_material(
@@ -2067,6 +2093,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.6,
             "visible_absorptance": 0.6,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalRoofingHighlyReflective: OpaqueMaterial = create_material(
@@ -2081,6 +2108,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.75,
             "solar_absorptance": 0.45,
             "visible_absorptance": 0.6,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalSemiCondRoofInsulation105: OpaqueMaterial = create_material(
@@ -2095,6 +2123,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalSiding: OpaqueMaterial = create_material(
@@ -2109,6 +2138,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalStandingSeam116InCbes: OpaqueMaterial = create_material(
@@ -2123,6 +2153,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.85,
             "solar_absorptance": 0.37,
             "visible_absorptance": 0.85,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MetalSurface: OpaqueMaterial = create_material(
@@ -2137,6 +2168,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Nacm_Carpet34In: OpaqueMaterial = create_material(
@@ -2151,6 +2183,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.9,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Nacm_Concrete4In_140LbFt3: OpaqueMaterial = create_material(
@@ -2165,6 +2198,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.75,
             "solar_absorptance": 0.92,
             "visible_absorptance": 0.75,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Nacm_GypsumBoard58In: OpaqueMaterial = create_material(
@@ -2179,6 +2213,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.5,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Plywood58InCbes: OpaqueMaterial = create_material(
@@ -2193,6 +2228,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_R1_R1420: OpaqueMaterial = create_material(
@@ -2207,6 +2243,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_R2_R1290: OpaqueMaterial = create_material(
@@ -2221,6 +2258,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_R3_R1774: OpaqueMaterial = create_material(
@@ -2235,6 +2273,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_R4_R2028: OpaqueMaterial = create_material(
@@ -2249,6 +2288,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_R_R30: OpaqueMaterial = create_material(
@@ -2263,6 +2303,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_R_R38: OpaqueMaterial = create_material(
@@ -2277,6 +2318,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_R_T24_2013_2486: OpaqueMaterial = create_material(
@@ -2291,6 +2333,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_RoofInsulation18: OpaqueMaterial = create_material(
@@ -2305,6 +2348,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_RoofMembrane: OpaqueMaterial = create_material(
@@ -2319,6 +2363,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_RoofMembraneHighlyReflective: OpaqueMaterial = create_material(
@@ -2333,6 +2378,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.75,
             "solar_absorptance": 0.45,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_StdWood6In: OpaqueMaterial = create_material(
@@ -2347,6 +2393,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_StdWood6InchFurnishings: OpaqueMaterial = create_material(
@@ -2361,6 +2408,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_SteelFrameNonresWallInsulation073: OpaqueMaterial = create_material(
@@ -2375,6 +2423,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_SteelFrameWallInsulationR102Ip: OpaqueMaterial = create_material(
@@ -2389,6 +2438,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_SteelFrameCavity: OpaqueMaterial = create_material(
@@ -2403,6 +2453,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Stucco78InCbes: OpaqueMaterial = create_material(
@@ -2417,6 +2468,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W1_R860: OpaqueMaterial = create_material(
@@ -2431,6 +2483,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W2_R1113: OpaqueMaterial = create_material(
@@ -2445,6 +2498,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W3_R1136: OpaqueMaterial = create_material(
@@ -2459,6 +2513,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W4_R1262: OpaqueMaterial = create_material(
@@ -2473,6 +2528,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W_T24_2013_R1399: OpaqueMaterial = create_material(
@@ -2487,6 +2543,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W_M1_R15: OpaqueMaterial = create_material(
@@ -2501,6 +2558,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W_M2_R19: OpaqueMaterial = create_material(
@@ -2515,6 +2573,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_W_M3_R21: OpaqueMaterial = create_material(
@@ -2529,6 +2588,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_WallInsulation31: OpaqueMaterial = create_material(
@@ -2543,6 +2603,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.5,
             "visible_absorptance": 0.5,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_WoodFrameNonresWallInsulation073: OpaqueMaterial = create_material(
@@ -2557,6 +2618,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_WoodFrameWallInsulationR161Ip: OpaqueMaterial = create_material(
@@ -2571,6 +2633,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_WoodSiding: OpaqueMaterial = create_material(
@@ -2585,6 +2648,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.78,
             "visible_absorptance": 0.78,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Ceiling_2_Insulation: OpaqueMaterial = create_material(
@@ -2599,6 +2663,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_DrySand: OpaqueMaterial = create_material(
@@ -2613,6 +2678,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.85,
             "solar_absorptance": 0.65,
             "visible_absorptance": 0.65,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_DryDust: OpaqueMaterial = create_material(
@@ -2627,6 +2693,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.7,
             "visible_absorptance": 0.7,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_MoistSoil: OpaqueMaterial = create_material(
@@ -2641,6 +2708,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.92,
             "solar_absorptance": 0.75,
             "visible_absorptance": 0.75,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_Mud: OpaqueMaterial = create_material(
@@ -2655,6 +2723,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.95,
             "solar_absorptance": 0.8,
             "visible_absorptance": 0.8,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_ConcretePavement: OpaqueMaterial = create_material(
@@ -2669,6 +2738,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.9,
             "solar_absorptance": 0.65,
             "visible_absorptance": 0.65,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_AsphaltPavement: OpaqueMaterial = create_material(
@@ -2683,6 +2753,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.93,
             "solar_absorptance": 0.87,
             "visible_absorptance": 0.87,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_SolidRock: OpaqueMaterial = create_material(
@@ -2697,6 +2768,7 @@ class Materials(Enum):
             "thermal_absorptance": 0.96,
             "solar_absorptance": 0.55,
             "visible_absorptance": 0.55,
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
     LBT_GrassyLawn: OpaqueVegetationMaterial = create_material(
@@ -2720,5 +2792,6 @@ class Materials(Enum):
             "residual_vol_moist_cont": 0.01,
             "init_vol_moist_cont": 0.1,
             "moist_diff_model": "Simple",
+            "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )

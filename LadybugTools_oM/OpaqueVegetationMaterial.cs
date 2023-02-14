@@ -29,9 +29,10 @@ namespace BH.oM.LadybugTools
     public class OpaqueVegetationMaterial : ILBTMaterial
     {
         [Description("The name of this EnergyMaterialVegetation.")]
-        public override string Identifier { get; set; } = "Generic Opaque Vegetation Material";
+        public string Identifier { get; set; } = "Generic Opaque Vegetation Material";
+        
         [Description("The source for this object and it's properties.")]
-        public override string Source { get; set; } = string.Empty;
+        public string Source { get; set; } = string.Empty;
 
         [Description("The roughness of the material.")]
         public virtual Roughness Roughness { get; set; } = Roughness.MediumRough;

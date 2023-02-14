@@ -26,12 +26,12 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class ILBTMaterial : IObject
+    public interface ILBTMaterial : IObject
     {
         [Description("The identifier for this material object.")]
-        public virtual string Identifier { get; set; }
+        string Identifier { get; set; }
         [Description("The source for this material object.")]
-        public virtual string Source { get; set; }
+        string Source { get; set; }
     }
 }
 
