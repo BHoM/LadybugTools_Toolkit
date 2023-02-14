@@ -320,7 +320,7 @@ class Wind:
 
                 if arg_name == "wind_speeds":
                     if min(arg_value) < 0:
-                        raise ValueError(f"{arg_name} must be in m/s and >=0")
+                        raise ValueError(f"{arg_name} must be in m/s and ≥ 0")
                 if arg_name == "wind_directions":
                     if (min(arg_value) < 0) or (max(arg_value) > 360):
                         raise ValueError(
@@ -374,7 +374,7 @@ class Wind:
         return self.ws.median()
 
     def calm(self, threshold: float = 0.1) -> float:
-        """Return the proportion of timesteps "calm" (i.e. wind-speed <= 0.1)."""
+        """Return the proportion of timesteps "calm" (i.e. wind-speed ≤ 0.1)."""
         return (self.ws <= threshold).sum() / len(self.ws)
 
     def percentile(self, percentile: float) -> float:
@@ -972,9 +972,9 @@ class Wind:
         )
 
         if title is not None:
-            ti = f"{title}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
+            ti = f"{title}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
         else:
-            ti = f"{self}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
+            ti = f"{self}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
 
         return windrose(
             wind_direction=new_w.wd.tolist(),
@@ -1023,9 +1023,9 @@ class Wind:
             speed_bins = np.linspace(_low, _high, (_high - _low) + 1)
 
         if title is not None:
-            ti = f"{title}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
+            ti = f"{title}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
         else:
-            ti = f"{self}\n{calm_percentage:0.1%} calm (<= {calm_threshold}m/s)"
+            ti = f"{self}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
 
         frequency_table = new_w.frequency_table(
             speed_bins, direction_bins, density=density, include_counts=False

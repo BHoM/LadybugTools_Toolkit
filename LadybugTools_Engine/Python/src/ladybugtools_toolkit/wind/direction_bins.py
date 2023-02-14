@@ -85,7 +85,7 @@ class DirectionBins:
         """
 
         if directions < 2:
-            raise ValueError("n_directions must be >= 2.")
+            raise ValueError("n_directions must be ≥ 2.")
 
         # get angle for each bin
         bin_angle = 360 / directions
