@@ -28,17 +28,26 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Collections;
+using BH.oM.Python;
 
 namespace BH.Engine.LadybugTools
 {
     public static partial class Query
     {
-        [Description("Return list of materials from the Python Materials list.")]
-        [Input("filter", "Text to filter the resultant list by.")]
+        [Description("Returns a list of materials from the Python Materials list.")]
+        [Input("filter", "Text to filter the resultant list by. Filter applies to the material identifier. Leave blank to return all materials.")]
+        [Input("env", "Optional input to provide the Python environment. If no environment is provided, one will be created instead. However, this method will usually run much faster if the environment is provided to this input.")]
         [Output("materials", "A list of materials.")]
         public static List<ILBTMaterial> Materials(string filter = "")
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+
+            //env = new PythonEnvironment();
+            //env.Name = Query.ToolkitName();
+            //env.Executable = Python.Query.VirtualEnvPythonExePath(Query.ToolkitName());
+            BH.oM.Python.PythonEnvironment env = Python.Create.VirtualEnvironment(ToolkitName());
+
+                //env = Compute.InstallPythonEnv_LBT(true);
+
 
             string pythonScript = String.Join("\n", new List<string>()
             {
@@ -56,7 +65,7 @@ namespace BH.Engine.LadybugTools
 
             List<object> lbtMaterials = Serialiser.Convert.FromJsonArray(result).ToList();
 
-            return lbtMaterials.Where(m => m as ILBTMaterial != null).Select(m => (ILBTMaterial)m).ToList();
+            return lbtMaterials.Select(m => m as ILBTMaterial).Where(m => m != null).ToList();
         }
     }
 }
