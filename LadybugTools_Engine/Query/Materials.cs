@@ -54,16 +54,16 @@ namespace BH.Engine.LadybugTools
             
             string result = env.RunPythonString(pythonScript).Trim();
 
-            var lbtMaterials = Serialiser.Convert.FromJsonArray(result);
-            List<object> mats = ((IEnumerable)lbtMaterials).Cast<object>().ToList();
+            List<object> lbtMaterials = Serialiser.Convert.FromJsonArray(result).ToList();
+            //List<object> mats = ((IEnumerable)lbtMaterials).Cast<object>().ToList();
             
-            List<ILBTMaterial> materials = new List<ILBTMaterial>();
-            foreach (object mat in mats)
-            {
-                materials.Add(mat as ILBTMaterial);
-            }
+            //List<ILBTMaterial> materials = new List<ILBTMaterial>();
+            //foreach (object mat in mats)
+            //{
+            //    materials.Add(mat as ILBTMaterial);
+            //}
 
-            return materials;
+            return lbtMaterials.Select(a => (ILBTMaterial)a).ToList();
         }
     }
 }
