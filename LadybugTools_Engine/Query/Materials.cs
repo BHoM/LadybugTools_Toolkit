@@ -54,7 +54,7 @@ namespace BH.Engine.LadybugTools
             
             string result = env.RunPythonString(pythonScript).Trim();
 
-            var lbtMaterials = Serialiser.Convert.FromJson(result);
+            var lbtMaterials = Serialiser.Convert.FromJsonArray(result);
             List<object> mats = ((IEnumerable)lbtMaterials).Cast<object>().ToList();
             
             List<ILBTMaterial> materials = new List<ILBTMaterial>();
