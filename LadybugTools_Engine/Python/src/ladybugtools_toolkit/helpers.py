@@ -9,7 +9,7 @@ import warnings
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -23,9 +23,43 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
+from matplotlib.colors import colorConverter
 from matplotlib.figure import Figure
+from PIL import Image
 from scipy.stats import exponweib
 from tqdm import tqdm
+
+
+def relative_luminance(color: Any):
+    """Calculate the relative luminance of a color according to W3C standards
+
+    Args:
+
+    color : matplotlib color or sequence of matplotlib colors - Hex code,
+    rgb-tuple, or html color name.
+    Returns
+    -------
+    luminance : float(s) between 0 and 1
+    """
+    rgb = colorConverter.to_rgba_array(color)[:, :3]
+    rgb = np.where(rgb <= 0.03928, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    lum = rgb.dot([0.2126, 0.7152, 0.0722])
+    try:
+        return lum.item()
+    except ValueError:
+        return lum
+
+
+def contrasting_color(color: Any):
+    """Calculate the contrasting color for a given color.
+
+    Args:
+        color (Any): matplotlib color or sequence of matplotlib colors - Hex code,
+        rgb-tuple, or html color name.
+    Returns:
+        str: String code of the contrasting color.
+    """
+    return ".15" if relative_luminance(color) > 0.408 else "w"
 
 
 def default_analysis_periods() -> List[AnalysisPeriod]:
@@ -41,6 +75,46 @@ def default_analysis_periods() -> List[AnalysisPeriod]:
         ]
 
     return aps
+
+
+def animation(
+    image_files: List[Union[str, Path]],
+    output_gif: Union[str, Path],
+    ms_per_image: int = 333,
+) -> Path:
+    """Create an animated gif from a set of images.
+
+    Args:
+        image_files (List[Union[str, Path]]):
+            A list of image files.
+        ms_per_image (int, optional):
+            NUmber of milliseconds per image. Default is 333, for 3 images per second.
+
+    Returns:
+        Path:
+            The animated gif.
+
+    """
+
+    image_files = [Path(i) for i in image_files]
+
+    images = [Image.open(i) for i in image_files]
+
+    # create white background
+    background = Image.new("RGBA", images[0].size, (255, 255, 255))
+
+    images = [Image.alpha_composite(background, i) for i in images]
+
+    images[0].save(
+        output_gif,
+        save_all=True,
+        append_images=images[1:],
+        optimize=False,
+        duration=ms_per_image,
+        loop=0,
+    )
+
+    return output_gif
 
 
 def chunks(lst: List[Any], chunksize: int):
@@ -294,6 +368,30 @@ def proximity_decay(
     raise ValueError(f"Unknown curve type: {decay_method}")
 
 
+def base64_to_image(base64_string: str, image_path: Path) -> Path:
+    """Convert a base64 encoded image into a file on disk.
+
+    Arguments:
+        base64_string (str):
+            A base64 string encoding of an image file.
+        image_path (Path):
+            The location where the image should be stored.
+
+    Returns:
+        Path:
+            The path to the image file.
+    """
+
+    # remove html pre-amble, if necessary
+    if base64_string.startswith("data:image"):
+        base64_string = base64_string.split(";")[-1]
+
+    with open(Path(image_path), "wb") as fp:
+        fp.write(base64.decodebytes(base64_string))
+
+    return image_path
+
+
 def image_to_base64(image_path: Path, html: bool = False) -> str:
     """Load an image file from disk and convert to base64 string.
 
@@ -355,6 +453,30 @@ def figure_to_base64(figure: Figure, html: bool = False) -> str:
         return f"{content_type};charset={content_encoding};base64,{base64_string}"
 
     return base64_string
+
+
+def figure_to_image(fig: Figure) -> Image:
+    """Convert a matplotlib Figure object into a PIL Image.
+
+    Args:
+        fig (Figure):
+            A matplotlib Figure object.
+
+    Returns:
+        Image:
+            A PIL Image.
+    """
+
+    # draw the renderer
+    fig.canvas.draw()
+
+    # Get the RGBA buffer from the figure
+    w, h = fig.canvas.get_width_height()
+    buf = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
+    buf.shape = (w, h, 4)
+    buf = np.roll(buf, 3, axis=2)
+
+    return Image.fromarray(buf)
 
 
 def timedelta_tostring(time_delta: timedelta) -> str:
@@ -564,24 +686,6 @@ def angle_from_cardinal(cardinal_direction: str) -> float:
     lookup = dict(zip(cardinal_directions, angles))
 
     return lookup[cardinal_direction]
-
-
-def base64_to_image(base64_string: str, image_path: Path) -> None:
-    """Convert a base64 encoded image into a file on disk.
-
-    Arguments:
-        base64_string (str):
-            A base64 string encoding of an image file.
-        image_path (Path):
-            The location where the image should be stored.
-    """
-
-    # remove html pre-amble, if necessary
-    if base64_string.startswith("data:image"):
-        base64_string = base64_string.split(";")[-1]
-
-    with open(Path(image_path), "wb") as fp:
-        fp.write(base64.decodebytes(base64_string))
 
 
 def angle_from_north(vector: List[float]) -> float:
