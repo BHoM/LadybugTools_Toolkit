@@ -1,3 +1,5 @@
+import calendar
+import warnings
 from typing import Tuple, Union
 
 import matplotlib.dates as md
@@ -31,6 +33,13 @@ def week_profile(
 
     if not isinstance(series.index, pd.DatetimeIndex):
         raise ValueError("Series passed is not datetime indexed.")
+
+    days_included = series.index.day_of_week.unique()
+    for day_of_week in range(7):
+        if day_of_week not in days_included:
+            warnings.warn(
+                f"Series passed does not include any {calendar.day_name[day_of_week]}."
+            )
 
     minmax_range = [0.0001, 0.9999]
     q_range = [0.05, 0.95]

@@ -8,10 +8,9 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Colormap, Normalize
 from matplotlib.figure import Figure
 
-from ..helpers import wind_direction_average
+from ..helpers import contrasting_color, wind_direction_average
 from ..ladybug_extension.datacollection import to_series
 from ..ladybug_extension.epw import filename
-from .relative_luminance import contrasting_color
 
 
 def wind_matrix(
