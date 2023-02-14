@@ -33,12 +33,13 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Query
     {
-        [Description("Return list of typologies from the Python predefined Typologies list.")]
-        [Input("filter", "Text to filter the resultant list by.")]
-        [Output("typologies", "A list of typologies.")]
+        [Description("Returns a list of Typology objects from the Python predefined Typologies list.")]
+        [Input("filter", "Text to filter the resultant list by. Filter applies to the typology name. Leave blank to return all typologies.")]
+        [Input("env", "Optional input to provide the Python environment. If no environment is provided, one will be created instead. However, this method will usually run faster if the environment is provided to this input.")]
+        [Output("typologies", "A list of Typology objects.")]
         public static List<Typology> Typologies(string filter = "")
         {
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            BH.oM.Python.PythonEnvironment env = Python.Create.VirtualEnvironment(ToolkitName());
 
             string pythonScript = String.Join("\n", new List<string>()
             {
@@ -56,7 +57,7 @@ namespace BH.Engine.LadybugTools
 
             List<object> lbtTypologies = Serialiser.Convert.FromJsonArray(result).ToList();
 
-            return lbtTypologies.Where(t => t as Typology != null).Select(t => (Typology)t).ToList();
+            return lbtTypologies.Select(t => t as Typology).Where(t => t != null).ToList();
         }
     }
 }
