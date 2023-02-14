@@ -212,4 +212,4 @@ cython_debug/
 *.ipynb
 .dev/
 /prototypes
-build.bat
+build.ps1
