@@ -54,16 +54,9 @@ namespace BH.Engine.LadybugTools
 
             string result = env.RunPythonString(pythonScript).Trim();
 
-            var lbtTypologies = Serialiser.Convert.FromJson(result);
-            List<object> typs = ((IEnumerable)lbtTypologies).Cast<object>().ToList();
+            List<object> lbtTypologies = Serialiser.Convert.FromJsonArray(result).ToList();
 
-            List<Typology> resultTypologies = new List<Typology>();
-            foreach (object typ in typs)
-            {
-                resultTypologies.Add(typ as Typology);
-            }
-
-            return resultTypologies;
+            return lbtTypologies.Where(t => t as Typology != null).Select(t => (Typology)t).ToList();
         }
     }
 }
