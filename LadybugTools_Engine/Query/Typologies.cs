@@ -27,7 +27,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Collections;
+using BH.oM.Python;
 
 namespace BH.Engine.LadybugTools
 {
@@ -39,7 +39,7 @@ namespace BH.Engine.LadybugTools
         [Output("typologies", "A list of Typology objects.")]
         public static List<Typology> Typologies(string filter = "")
         {
-            BH.oM.Python.PythonEnvironment env = Python.Create.VirtualEnvironment(ToolkitName());
+            PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
 
             string pythonScript = String.Join("\n", new List<string>()
             {
