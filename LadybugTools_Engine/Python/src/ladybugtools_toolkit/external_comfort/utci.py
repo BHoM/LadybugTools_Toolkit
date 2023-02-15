@@ -1353,7 +1353,7 @@ def feasible_comfort_temporal(
     )
 
     utci_range = pd.concat([to_series(min_utci), to_series(max_utci)], axis=1).agg(
-        ["lowest", "highest"], axis=1
+        ["min", "max"], axis=1
     )
 
     analysis_period = AnalysisPeriod(st_hour=st_hour, end_hour=end_hour)
@@ -1397,7 +1397,7 @@ def feasible_comfort_temporal(
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
             seasons
         ).sum() / temp.groupby(seasons).count()
-        temp = temp.agg(["lowest", "highest"], axis=1)
+        temp = temp.agg(["min", "max"], axis=1)
         temp.columns = [
             "Minimum comfortable time [0-1]",
             "Maximum comfortable time [0-1]",
@@ -1414,7 +1414,7 @@ def feasible_comfort_temporal(
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
             seasons
         ).sum() / temp.groupby(seasons).count()
-        temp = temp.agg(["lowest", "highest"], axis=1)
+        temp = temp.agg(["min", "max"], axis=1)
         temp.columns = [
             "Minimum comfortable time [0-1]",
             "Maximum comfortable time [0-1]",
@@ -1431,7 +1431,7 @@ def feasible_comfort_temporal(
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
             seasons
         ).sum() / temp.groupby(seasons).count()
-        temp = temp.agg(["lowest", "highest"], axis=1)
+        temp = temp.agg(["min", "max"], axis=1)
         temp.columns = [
             "Minimum comfortable time [0-1]",
             "Maximum comfortable time [0-1]",
