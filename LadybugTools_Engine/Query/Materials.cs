@@ -40,14 +40,7 @@ namespace BH.Engine.LadybugTools
         [Output("materials", "A list of materials.")]
         public static List<ILBTMaterial> Materials(string filter = "")
         {
-
-            //env = new PythonEnvironment();
-            //env.Name = Query.ToolkitName();
-            //env.Executable = Python.Query.VirtualEnvPythonExePath(Query.ToolkitName());
-            BH.oM.Python.PythonEnvironment env = Python.Create.VirtualEnvironment(ToolkitName());
-
-                //env = Compute.InstallPythonEnv_LBT(true);
-
+            PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
 
             string pythonScript = String.Join("\n", new List<string>()
             {
