@@ -27,7 +27,7 @@ from ...honeybee_extension.results import load_ill, load_pts, load_res, make_ann
 from ...ladybug_extension.analysis_period import describe as describe_analysis_period
 from ...ladybug_extension.analysis_period import to_datetimes
 from ...ladybug_extension.datacollection import from_series, to_series
-from ...ladybug_extension.epw import sun_position_list
+from ...ladybug_extension.epw import seasonality_from_month, sun_position_list
 from ...ladybug_extension.location import to_string as describe_loc
 from ...plot.create_triangulation import create_triangulation
 from ...plot.sunpath import sunpath
@@ -547,7 +547,6 @@ class SpatialComfort(BHoMObject):
     def universal_thermal_climate_index_calculated(self) -> pd.DataFrame:
         """Obtain UTCI values (using a point-wise calculation method)."""
         if self._universal_thermal_climate_index_calculated is None:
-
             metric = SpatialMetric.UTCI_CALCULATED
             save_path = metric.filepath(self.spatial_simulation_directory)
 
@@ -598,9 +597,11 @@ class SpatialComfort(BHoMObject):
 
     @property
     def coldest_day(self) -> datetime:
-        """The coldest day in the year associated with this case (average for all hours in day)."""
+        """The coldest day in the year associated with this case (average for all hours in day), within the winter period."""
+        seasons = seasonality_from_month(self.simulation_result.epw)
         return (
             to_series(self.simulation_result.epw.dry_bulb_temperature)
+            .loc[seasons == "Winter"]
             .resample("D")
             .mean()
             .idxmin()
@@ -609,9 +610,11 @@ class SpatialComfort(BHoMObject):
 
     @property
     def hottest_day(self) -> datetime:
-        """The hottest day in the year associated with this case (average for all hours in day)."""
+        """The hottest day in the year associated with this case (average for all hours in day), within the summer period."""
+        seasons = seasonality_from_month(self.simulation_result.epw)
         return (
             to_series(self.simulation_result.epw.dry_bulb_temperature)
+            .loc[seasons == "Summer"]
             .resample("D")
             .mean()
             .idxmax()
@@ -1604,7 +1607,6 @@ class SpatialComfort(BHoMObject):
         ############
 
         for analysis_period in self.analysis_periods:
-
             if sunpaths:
                 # sunpaths
                 fig = self.plot_sunpath(analysis_period)
@@ -1658,7 +1660,6 @@ class SpatialComfort(BHoMObject):
             time_delta = datetimes.max() - datetimes.min()
 
             if time_delta <= pd.Timedelta(days=1) and analysis_period.timestep > 1:
-
                 if sunlight_hours:
                     # sunlight hours
                     fig = self.plot_direct_sun_hours(analysis_period)
