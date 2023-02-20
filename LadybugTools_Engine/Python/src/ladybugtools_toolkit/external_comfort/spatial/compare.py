@@ -227,11 +227,100 @@ def compare_mrt(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1.points_x), max(spatial_result_1.points_x)])
-    ax.set_ylim([min(spatial_result_1.points_y), max(spatial_result_1.points_y)])
+    ax.set_xlim(
+        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
+    )
+    ax.set_ylim(
+        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
+    )
 
     # add contour-fill
     tcf = ax.tricontourf(tri, mrt_diff.values, **tcf_properties)
+
+    # plot colorbar
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
+    cbar = plt.colorbar(tcf, cax=cax)
+    cbar.outline.set_visible(False)
+    cbar.set_label("Typical change in MRT (C)")
+
+    # add title
+    ax.set_title(
+        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
+        ha="left",
+        va="bottom",
+        x=0,
+    )
+
+    plt.tight_layout()
+
+    return fig
+
+
+def compare_sun_hours(
+    spatial_result_1: SpatialComfort,
+    spatial_result_2: SpatialComfort,
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
+    alpha: float = 1.9,
+) -> plt.Figure:
+    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory as it must load two sets of results to compare them.
+
+    Args:
+        spatial_result_1 (SpatialComfort):
+            The first SpatialComfort object.
+        spatial_result_2 (SpatialComfort):
+            The second SpatialComfort object.
+        analysis_period (AnalysisPeriod, optional):
+            The analysis period to use for the comparison. Defaults to AnalysisPeriod().
+        alpha (float, optional):
+            An alpha value to use for the triangulation. Defaults to 1.9.
+
+    Returns:
+        plt.Figure:
+            A matplotlib figure.
+    """
+
+    CONSOLE_LOGGER.info(
+        f"[SpatialComfort - Comparison] - Plotting SUn-Hours difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
+    )
+    # get point indices
+    indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
+
+    # create masks
+    col_mask_1 = [i in indices[0] for i in spatial_result_1.points.index]
+    col_mask_2 = [i in indices[1] for i in spatial_result_2.points.index]
+
+    metric = SpatialMetric.DIRECT_SUN_HOURS
+
+    # calculate typical sun-hours
+    sh_1 = spatial_result_1.direct_sun_hours(analysis_period).iloc[col_mask_1].values
+    sh_2 = spatial_result_2.direct_sun_hours(analysis_period).iloc[col_mask_2].values
+
+    # obtain difference
+    sh_diff = sh_2 - sh_1
+
+    # triangulate
+    tri = get_triangulation(spatial_result_1, spatial_result_2, alpha=alpha)
+
+    # plot heatmap
+    tcf_properties = {
+        "cmap": "YlOrBr_r",
+        "levels": np.linspace(-2, 2, 11),
+        "extend": "both",
+    }
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_xlim(
+        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
+    )
+    ax.set_ylim(
+        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
+    )
+
+    # add contour-fill
+    tcf = ax.tricontourf(tri, sh_diff, **tcf_properties)
 
     # plot colorbar
     divider = make_axes_locatable(ax)
@@ -326,8 +415,12 @@ def compare_ws(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1.points_x), max(spatial_result_1.points_x)])
-    ax.set_ylim([min(spatial_result_1.points_y), max(spatial_result_1.points_y)])
+    ax.set_xlim(
+        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
+    )
+    ax.set_ylim(
+        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
+    )
 
     # add contour-fill
     tcf = ax.tricontourf(tri, ws_diff.values, **tcf_properties)
@@ -435,8 +528,12 @@ def compare_distance_to_comfortable(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1.points_x), max(spatial_result_1.points_x)])
-    ax.set_ylim([min(spatial_result_1.points_y), max(spatial_result_1.points_y)])
+    ax.set_xlim(
+        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
+    )
+    ax.set_ylim(
+        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
+    )
 
     # add contour-fill
     tcf = ax.tricontourf(tri, -comfort_diff.mean(axis=0).values, **tcf_properties)

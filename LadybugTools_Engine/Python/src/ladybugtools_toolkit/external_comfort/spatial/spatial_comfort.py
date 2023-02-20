@@ -3,6 +3,7 @@ from __future__ import annotations
 import calendar
 import contextlib
 import io
+import shutil
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -13,9 +14,9 @@ import numpy as np
 import pandas as pd
 from honeybee.model import Model
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug_geometry.geometry3d import Point3D
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib.dates import DateFormatter
 from matplotlib.ticker import PercentFormatter, StrMethodFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from PIL import Image
@@ -36,6 +37,7 @@ from ...plot.utci_heatmap_difference import utci_heatmap_difference
 from ...plot.utci_heatmap_histogram import utci_heatmap_histogram
 from ..simulate import SimulationResult
 from ..simulate import direct_sun_hours as dsh
+from ..simulate import working_directory
 from ..utci import utci, utci_parallel
 from .calculate import (
     rwdi_london_thermal_comfort_category,
@@ -654,7 +656,26 @@ class SpatialComfort(BHoMObject):
             pd.Series:
                 A series containing results.
         """
-        return dsh(self.model, self.simulation_result.epw, analysis_period)
+        # move results files into spatial directory once completed
+        working_dir = working_directory(self.model, True)
+        res_dir = working_dir / "sunlight_hours"
+        res_dir.mkdir(parents=True, exist_ok=True)
+        results_file: Path = (
+            res_dir
+            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=True)}.res"
+        )
+        if results_file.exists():
+            return load_res(results_file).squeeze()
+
+        result = dsh(self.model, self.simulation_result.epw, analysis_period)
+
+        # make a directory in the current case to contain results files
+        target_dir = self.spatial_simulation_directory / "sunlight_hours"
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        shutil.copy2(results_file.as_posix(), target_dir.as_posix())
+
+        return result
 
     def get_spatial_metric(self, metric: SpatialMetric) -> pd.DataFrame:
         """Return the dataframe associated with the given metric."""
@@ -1390,6 +1411,10 @@ class SpatialComfort(BHoMObject):
     def plot_spatial_point_locations(self, n: int = 100) -> plt.Figure:
         """Return the spatial point locations figure."""
 
+        CONSOLE_LOGGER.info(
+            f"[{self}] - Plotting spatial point locations, every {n}th point."
+        )
+
         x = self.points.x.values
         y = self.points.y.values
         fig, ax = plt.subplots(1, 1, figsize=(20, 20))
@@ -1458,6 +1483,38 @@ class SpatialComfort(BHoMObject):
 
         raise NotImplementedError("Not yet working!")
 
+    def plot_hottest_coldest_days(self) -> plt.Figure:
+        """Return a figure showing the hottest and coldest days."""
+
+        date_form = DateFormatter("%b-%d")
+
+        fig, ax = plt.subplots(1, 1, figsize=(16, 2))
+        to_series(self.simulation_result.epw.dry_bulb_temperature).resample(
+            "D"
+        ).mean().plot(ax=ax, c="orange")
+        lims = ax.get_ylim()
+        ax.axvline(self.hottest_day, c="red")
+        ax.text(
+            self.hottest_day,
+            lims[1],
+            f"Hottest day ({self.hottest_day:%b %d})",
+            ha="left",
+            va="bottom",
+        )
+        ax.axvline(self.coldest_day, c="blue")
+        ax.text(
+            self.coldest_day,
+            lims[1],
+            f"Coldest day ({self.coldest_day:%b %d})",
+            ha="left",
+            va="bottom",
+        )
+        ax.set_ylabel("Daily mean\nDry bulb temperature (C)")
+        ax.xaxis.set_major_formatter(date_form)
+
+        plt.tight_layout()
+        return fig
+
     def summarise_point(
         self,
         point_index: int,
@@ -1483,35 +1540,36 @@ class SpatialComfort(BHoMObject):
         )
 
         # plot point location
-        CONSOLE_LOGGER.info(
-            f"[{self}] - Plotting point location for {point_identifier}"
-        )
-        x = self.points.x.values
-        y = self.points.y.values
-        xlims = [min(x), max(x)]
-        fig, ax = plt.subplots(1, 1, figsize=(20, 20))
-        ax.set_aspect("equal")
-        ax.axis("off")
-        ax.tricontourf(
-            self._triangulation,
-            self.irradiance_total.mean(axis=0),
-            levels=100,
-            cmap="bone",
-        )
-        # ax.scatter(x, y, c="#555555", s=0.1)
-        pt_size = (xlims[1] - xlims[0]) / 3
-        ax.scatter(x[point_index], y[point_index], s=pt_size, c="red")
-        ax.text(
-            x[point_index] + (pt_size / 10),
-            y[point_index],
-            point_identifier,
-            ha="left",
-            va="center",
-            fontsize="large",
-        )
-        plt.tight_layout()
         save_path = self._plot_directory / f"point_{point_identifier}_location.png"
-        fig.savefig(save_path, transparent=True)
+        if not save_path.exists():
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Plotting point location for {point_identifier}"
+            )
+            x = self.points.x.values
+            y = self.points.y.values
+            xlims = [min(x), max(x)]
+            fig, ax = plt.subplots(1, 1, figsize=(20, 20))
+            ax.set_aspect("equal")
+            ax.axis("off")
+            ax.tricontourf(
+                self._triangulation,
+                self.irradiance_total.mean(axis=0),
+                levels=100,
+                cmap="bone",
+            )
+            # ax.scatter(x, y, c="#555555", s=0.1)
+            pt_size = (xlims[1] - xlims[0]) / 3
+            ax.scatter(x[point_index], y[point_index], s=pt_size, c="red")
+            ax.text(
+                x[point_index] + (pt_size / 10),
+                y[point_index],
+                point_identifier,
+                ha="left",
+                va="center",
+                fontsize="large",
+            )
+            plt.tight_layout()
+            fig.savefig(save_path, transparent=True)
 
         # create openfield UTCI plot
         save_path = self._plot_directory / "point_Openfield_utci.png"
@@ -1530,43 +1588,64 @@ class SpatialComfort(BHoMObject):
             fig.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # create point location UTCI plot
-        CONSOLE_LOGGER.info(f"[{self}] - Plotting {point_identifier} UTCI")
-        f = utci_heatmap_histogram(point_utci, f"{self} - {point_identifier}")
         save_path = (
             self._plot_directory / f"point_{sanitise_string(point_identifier)}_utci.png"
         )
-        f.savefig(save_path, transparent=True, bbox_inches="tight")
+        if not save_path.exists():
+            CONSOLE_LOGGER.info(f"[{self}] - Plotting {point_identifier} UTCI")
+            f = utci_heatmap_histogram(point_utci, f"{self} - {point_identifier}")
+            f.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # create pt location UTCI distance to comfortable plot
-        CONSOLE_LOGGER.info(
-            f"[{self}] - Plotting {point_identifier} UTCI distance to comfortable"
-        )
-        f = utci_distance_to_comfortable(point_utci, f"{self} - {point_identifier}")
         save_path = (
             self._plot_directory
             / f"point_{sanitise_string(point_identifier)}_distance_to_comfortable.png"
         )
-        f.savefig(save_path, transparent=True, bbox_inches="tight")
+        if not save_path.exists():
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Plotting {point_identifier} UTCI distance to comfortable"
+            )
+            f = utci_distance_to_comfortable(point_utci, f"{self} - {point_identifier}")
+            f.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # create pt location UTCI difference
-        CONSOLE_LOGGER.info(
-            f"[{self}] - Plotting difference between Openfield and {point_identifier} UTCI"
-        )
-        f = utci_heatmap_difference(
-            self._unshaded_utci,
-            point_utci,
-            f"{self} - Difference between Openfield UTCI and {point_identifier} UTCI",
-        )
         save_path = (
             self._plot_directory
             / f"point_{sanitise_string(point_identifier)}_difference.png"
         )
-        f.savefig(save_path, transparent=True, bbox_inches="tight")
+        if not save_path.exists():
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Plotting difference between Openfield and {point_identifier} UTCI"
+            )
+            f = utci_heatmap_difference(
+                self._unshaded_utci,
+                point_utci,
+                f"{self} - Difference between Openfield UTCI and {point_identifier} UTCI",
+            )
+            f.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # create pt location sky view
         # self.plot_sky_view_pov(point_index, point_identifier, Vector3D(0, 0, 0.5))
 
         plt.close("all")
+
+        return None
+
+    def summarise_point_from_json(self, metric: SpatialMetric) -> None:
+        """For each point given in a JSON file, summarise the point."""
+
+        focus_pts_file = self.spatial_simulation_directory / "focus_points.json"
+        if not focus_pts_file.exists():
+            warnings.warn(
+                f"A focus_points.json file does not exist in {self.spatial_simulation_directory}."
+            )
+            return None
+
+        with open(focus_pts_file, "r", encoding="utf-8") as fp:
+            focus_pts = eval(fp.read())
+
+        for point_identifier, point_index in focus_pts.items():
+            self.summarise_point(point_index, point_identifier, metric)
 
         return None
 
@@ -1580,27 +1659,31 @@ class SpatialComfort(BHoMObject):
         comfort_percentages: bool = False,
         sunlight_hours: bool = False,
         london_comfort: bool = False,
+        overwrite: bool = False,
+        comfort_limits: Tuple[float] = (9, 26),
     ) -> None:
         """Run all plotting methods"""
+
+        cold_threshold = min(comfort_limits)
+        hot_threshold = max(comfort_limits)
 
         ################
         # Non-temporal #
         ################
 
         if pt_locations:
-            # pt locations
-            CONSOLE_LOGGER.info(f"[{self}] - Plotting point locations")
-            fig = self.plot_spatial_point_locations()
             save_path = self._plot_directory / "pt_locations.png"
-            fig.savefig(save_path, transparent=True, bbox_inches="tight")
-            plt.close(fig)
+            if not save_path.exists():
+                fig = self.plot_spatial_point_locations()
+                fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                plt.close(fig)
 
         if sky_view:
-            # sky view
-            fig = self.plot_sky_view()
             save_path = self._plot_directory / "sky_view.png"
-            fig.savefig(save_path, transparent=True, bbox_inches="tight")
-            plt.close(fig)
+            if not save_path.exists():
+                fig = self.plot_sky_view()
+                fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                plt.close(fig)
 
         ############
         # Temporal #
@@ -1608,50 +1691,77 @@ class SpatialComfort(BHoMObject):
 
         for analysis_period in self.analysis_periods:
             if sunpaths:
-                # sunpaths
-                fig = self.plot_sunpath(analysis_period)
                 save_path = (
                     self._plot_directory
                     / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=True)}_sunpath.png"
                 )
-                fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                plt.close(fig)
+                if not save_path.exists():
+                    fig = self.plot_sunpath(analysis_period)
+                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                    plt.close(fig)
 
             if typical_wind:
                 if analysis_period.timestep == 1:
-                    # cfd means in time periods
-                    fig = self.plot_wind_average(analysis_period)
                     save_path = (
                         self._plot_directory
                         / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_wind.png"
                     )
-                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                    plt.close(fig)
+                    if not save_path.exists():
+                        fig = self.plot_wind_average(analysis_period)
+                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                        plt.close(fig)
 
             if typical_mrt:
                 if analysis_period.timestep == 1:
-                    # mrt means in time periods
-                    fig = self.plot_mrt_average(analysis_period)
                     save_path = (
                         self._plot_directory
                         / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_mrt.png"
                     )
-                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                    plt.close(fig)
+                    if not save_path.exists():
+                        fig = self.plot_mrt_average(analysis_period)
+                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                        plt.close(fig)
 
             if comfort_percentages:
                 if analysis_period.timestep == 1:
-                    # comfort percentages
-                    for func in [
-                        self.plot_hours_cold,
-                        self.plot_hours_comfortable,
-                        self.plot_hours_hot,
-                    ]:
-                        method_name = func.__name__.replace("plot_", "")
-                        fig = func(analysis_period, SpatialMetric.UTCI_CALCULATED)
-                        save_path = (
-                            self._plot_directory
-                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_{method_name}.png"
+                    # time cold
+                    save_path = (
+                        self._plot_directory
+                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_cold.png"
+                    )
+                    if not save_path.exists():
+                        fig = self.plot_hours_cold(
+                            analysis_period,
+                            SpatialMetric.UTCI_CALCULATED,
+                            cold_threshold=cold_threshold,
+                        )
+                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                        plt.close(fig)
+
+                    # time comfortable
+                    save_path = (
+                        self._plot_directory
+                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_comfortable.png"
+                    )
+                    if not save_path.exists():
+                        fig = self.plot_hours_comfortable(
+                            analysis_period,
+                            SpatialMetric.UTCI_CALCULATED,
+                            comfort_thresholds=(cold_threshold, hot_threshold),
+                        )
+                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                        plt.close(fig)
+
+                    # time hot
+                    save_path = (
+                        self._plot_directory
+                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_hot.png"
+                    )
+                    if not save_path.exists():
+                        fig = self.plot_hours_hot(
+                            analysis_period,
+                            SpatialMetric.UTCI_CALCULATED,
+                            hot_threshold=hot_threshold,
                         )
                         fig.savefig(save_path, transparent=True, bbox_inches="tight")
                         plt.close(fig)
@@ -1661,23 +1771,23 @@ class SpatialComfort(BHoMObject):
 
             if time_delta <= pd.Timedelta(days=1) and analysis_period.timestep > 1:
                 if sunlight_hours:
-                    # sunlight hours
-                    fig = self.plot_direct_sun_hours(analysis_period)
                     save_path = (
                         self._plot_directory
                         / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=True)}_direct_sun_hours.png"
                     )
-                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                    plt.close(fig)
+                    if not save_path.exists():
+                        fig = self.plot_direct_sun_hours(analysis_period)
+                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                        plt.close(fig)
 
         if london_comfort:
-            # london thermal comfort
-            fig = self.plot_london_comfort_category(
-                metric=SpatialMetric.UTCI_CALCULATED
-            )
             save_path = self._plot_directory / "LondonThermalComfort.png"
-            fig.savefig(save_path, transparent=True, bbox_inches="tight")
-            plt.close(fig)
+            if not save_path.exists():
+                fig = self.plot_london_comfort_category(
+                    metric=SpatialMetric.UTCI_CALCULATED
+                )
+                fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                plt.close(fig)
 
 
 def spatial_comfort_possible(simulation_directory: Path) -> bool:
