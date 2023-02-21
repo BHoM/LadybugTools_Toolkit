@@ -211,5 +211,5 @@ cython_debug/
 # Testing files
 *.ipynb
 .dev/
-/prototypes
+prototypes/
 build.ps1
