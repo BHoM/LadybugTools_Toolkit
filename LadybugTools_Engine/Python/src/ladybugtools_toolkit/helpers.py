@@ -1085,3 +1085,88 @@ def wind_direction_average(angles: List[float]) -> float:
         average_angle = (np.pi * 2) - -average_angle
 
     return np.degrees(average_angle)
+
+
+def temperature_at_height(
+    reference_temperature: float,
+    target_height: float,
+    reference_height: float = 10,
+    lapse_rate: float = 0.0065,
+) -> float:
+    """Calculate the temperature at a given height, given a reference temperature and height.
+
+    Uses lapse rate suggested by
+    https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
+
+    Args:
+        reference_temperature (float):
+            The temperature at the reference height.
+        target_height (float):
+            The height at which the temperature is required, in m.
+        reference_height (float, optional):
+            The height at which the reference temperature was measured. Defaults to 10m.
+        lapse_rate (float, optional):
+            The lapse rate of the atmosphere. Defaults to 0.0065.
+
+    Returns:
+        float:
+            The temperature at the given height.
+    """
+    if target_height > 11000:
+        warnings.warn("Lapse rate is not valid above 11km.")
+
+    return reference_temperature - lapse_rate * (target_height - reference_height)
+
+
+def radiation_at_height(
+    reference_radiation: float,
+    target_height: float,
+    reference_height: float = 10,
+    lapse_rate: float = 0.08,
+) -> float:
+    """Calculate the radiation at a given height, given a reference radiation and height.
+
+    Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of solar irradiance for correcting
+    solar fluxes for changes in terrain elevation. Earth Observation and Water Cycle Science Conference,
+    Nov 2009, Frascati, Italy. pp.S05.
+
+    Args:
+        radiation (float):
+            The radiation at the reference height.
+        target_height (float):
+            The height at which the radiation is required, in m.
+        reference_height (float, optional):
+            The height at which the reference radiation was measured. Defaults to 10m.
+
+    Returns:
+        float:
+            The radiation at the given height.
+    """
+    lapse_rate_per_m = lapse_rate * reference_radiation / 1000
+    increase = lapse_rate_per_m * (target_height - reference_height)
+    return reference_radiation + increase
+
+
+def air_pressure_at_height(
+    reference_pressure: float,
+    target_height: float,
+    reference_height: float = 10,
+) -> float:
+    """Calculate the air pressure at a given height, given a reference pressure and height.
+
+    Args:
+        reference_pressure (float):
+            The pressure at the reference height, in Pa.
+        target_height (float):
+            The height at which the pressure is required, in m.
+        reference_height (float, optional):
+            The height at which the reference pressure was measured. Defaults to 10m.
+
+    Returns:
+        float:
+            The pressure at the given height.
+    """
+    return (
+        reference_pressure
+        * (1 - 0.0065 * (target_height - reference_height) / 288.15) ** 5.255
+    )

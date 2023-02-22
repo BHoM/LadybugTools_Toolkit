@@ -22,8 +22,10 @@ from ladybug.epw import EPW, EPWFields, MonthlyCollection
 from ladybug.header import Header
 from ladybug.location import Location
 from ladybug.psychrometrics import (
+    dew_point_from_db_wb,
     enthalpy_from_db_hr,
     humid_ratio_from_db_rh,
+    rel_humid_from_db_wb,
     wet_bulb_from_db_rh,
 )
 from ladybug.skymodel import clearness_index as lb_ci
@@ -31,7 +33,13 @@ from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
-from ..helpers import timedelta_tostring
+from ..external_comfort.wind import wind_speed_at_height
+from ..helpers import (
+    air_pressure_at_height,
+    radiation_at_height,
+    temperature_at_height,
+    timedelta_tostring,
+)
 from .analysis_period import to_datetimes
 from .datacollection import to_series
 from .header import to_string as header_to_string
@@ -1420,3 +1428,203 @@ def degree_time(
         .reorder_levels([1, 0], axis=1)
         .sort_index(axis=1)
     )
+
+
+def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> EPW:
+    """Translate an EPW to a different height above ground (assuming that the original height represented is at ground level, with wind measured at 10m).
+
+    Args:
+        epw (EPW): The EPW to translate.
+        target_height (float): The target height above ground, in m.
+        save (bool, optional): If True, save the translated EPW to disk. Defaults to False.
+
+    Returns:
+        EPW: The translated EPW.
+    """
+
+    new_epw = copy.deepcopy(epw)
+
+    original_height = epw.location.elevation
+    new_epw.location.elevation = target_height - 10
+
+    # modify header
+    new_epw.comments_1 = (
+        epw.comments_1
+        + f"Modified from {original_height}m elevation at 10m above ground (assumed for EPW data), to {target_height}m above ground."
+    )
+    new_epw.location.source = f"{epw.location.source}[@{target_height}M_ELEVATION]"
+
+    # modify TEMPERATURE
+    new_epw.dry_bulb_temperature.values = [
+        round(
+            temperature_at_height(
+                reference_temperature=i,
+                reference_height=original_height,
+                target_height=target_height,
+            ),
+            2,
+        )
+        for i in epw.dry_bulb_temperature
+    ]
+
+    # modify GROUND TEMPERATURE
+    for k, _ in epw.monthly_ground_temperature.items():
+        new_epw.monthly_ground_temperature[k].values = [
+            round(
+                temperature_at_height(
+                    reference_temperature=i,
+                    reference_height=original_height,
+                    target_height=target_height,
+                ),
+                2,
+            )
+            for i in epw.monthly_ground_temperature[k]
+        ]
+
+    # modify ATMOSPHERIC PRESSURE
+    new_epw.atmospheric_station_pressure.values = [
+        round(
+            air_pressure_at_height(
+                reference_pressure=i,
+                reference_height=original_height,
+                target_height=target_height,
+            ),
+            0,
+        )
+        for i in epw.atmospheric_station_pressure
+    ]
+
+    # modify IRRADIANCE & ILLUMINANCE
+    new_epw.direct_normal_radiation.values = [
+        round(
+            radiation_at_height(
+                target_height=target_height,
+                reference_height=original_height,
+                reference_radiation=i,
+            ),
+            0,
+        )
+        for i in epw.direct_normal_radiation
+    ]
+    new_epw.diffuse_horizontal_radiation.values = [
+        round(
+            radiation_at_height(
+                target_height=target_height,
+                reference_height=original_height,
+                reference_radiation=i,
+            ),
+            0,
+        )
+        for i in epw.diffuse_horizontal_radiation
+    ]
+    new_epw.global_horizontal_radiation.values = [
+        round(
+            radiation_at_height(
+                target_height=target_height,
+                reference_height=original_height,
+                reference_radiation=i,
+            ),
+            0,
+        )
+        for i in epw.global_horizontal_radiation
+    ]
+    new_epw.direct_normal_illuminance.values = [
+        round(
+            radiation_at_height(
+                target_height=target_height,
+                reference_height=original_height,
+                reference_radiation=i,
+            ),
+            0,
+        )
+        for i in epw.direct_normal_illuminance
+    ]
+    new_epw.diffuse_horizontal_illuminance.values = [
+        round(
+            radiation_at_height(
+                target_height=target_height,
+                reference_height=original_height,
+                reference_radiation=i,
+            ),
+            0,
+        )
+        for i in epw.diffuse_horizontal_illuminance
+    ]
+    new_epw.global_horizontal_illuminance.values = [
+        round(
+            radiation_at_height(
+                target_height=target_height,
+                reference_height=original_height,
+                reference_radiation=i,
+            ),
+            0,
+        )
+        for i in epw.global_horizontal_illuminance
+    ]
+
+    # modify WIND SPEED
+    new_epw.wind_speed.values = [
+        round(
+            wind_speed_at_height(
+                reference_wind_speed=i,
+                reference_height=10,
+                target_height=target_height,
+                terrain_roughness_length=0.03,
+            ),
+            2,
+        )
+        for i in epw.wind_speed
+    ]
+
+    # calculate WBT using same method as DBT
+    wbt = wet_bulb_temperature(epw)
+    wbt.values = [
+        round(
+            temperature_at_height(
+                reference_temperature=i,
+                reference_height=original_height,
+                target_height=target_height,
+            ),
+            2,
+        )
+        for i in wbt.values
+    ]
+
+    # Calculate RH from wetbulb
+    new_epw.relative_humidity.values = [
+        rel_humid_from_db_wb(db, wb, atm)
+        for db, wb, atm in list(
+            zip(
+                *[
+                    new_epw.dry_bulb_temperature.values,
+                    wbt.values,
+                    new_epw.atmospheric_station_pressure.values,
+                ]
+            )
+        )
+    ]
+
+    # Modify Dew-point temperature
+    new_epw.dew_point_temperature.values = [
+        dew_point_from_db_wb(db, wb, atm)
+        for db, wb, atm in list(
+            zip(
+                *[
+                    new_epw.dry_bulb_temperature.values,
+                    wbt.values,
+                    new_epw.atmospheric_station_pressure.values,
+                ]
+            )
+        )
+    ]
+
+    # set filepath variable
+    new_epw._file_path = (
+        Path(epw.file_path).parent
+        / f"{Path(epw.file_path).stem}_at{target_height}m.epw"
+    ).as_posix()
+
+    if save:
+        new_epw.save(Path(new_epw.file_path).absolute().as_posix())
+
+    return new_epw
