@@ -17,6 +17,7 @@ from mpl_toolkits import mplot3d
 
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..ladybug_extension.epw import sun_position_list
+from .wind import wind_speed_at_height
 
 _LINEAR_SHELTER_VERTICES_NORTH_SOUTH = [
     [2, -1000, 3.5],
@@ -108,7 +109,6 @@ class Shelter(BHoMObject):
     )
 
     def __post_init__(self) -> None:
-
         # handle nulls
         if self.vertices is None:
             raise ValueError("vertices cannot be None")
@@ -361,6 +361,9 @@ class Shelter(BHoMObject):
         epw: EPW,
         edge_acceleration_factor: float = 1.1,
         obstruction_band_width: float = 5,
+        height_above_ground: float = 10,
+        reference_height: float = 10,
+        terrain_roughness_length: float = 0.03,
     ) -> List[float]:
         """Determine the effective wind speed from a given direction based on shelter obstruction and edge acceleration effects.
 
@@ -377,12 +380,35 @@ class Shelter(BHoMObject):
                 The proportional increase in wind speed due to edge acceleration around a shelter edge. Defaults to 1.1.
             obstruction_band_width (float, optional):
                 The azimuthal range over which obstruction is checked. Defaults to 5.
+            height_above_ground (float, optional):
+                The height above ground in meters at which the wind speed is measured. Defaults to 10 which is typical for an EPW.
+            reference_height (float, optional):
+                The height above ground in meters at which the reference wind speed is measured. Defaults to 10 which is typical for an EPW.
+            terrain_roughness_length (float, optional):
+                The terrain roughness length in meters. Defaults to 0.03 which is typical open flat terrain with a few isolated obstacles.
 
         Returns:
             List[float]:
                 A resultant list of EPW aligned wind speeds subject to obstruction from the shelter.
         """
-        ws_wd = unique_wind_speed_direction(epw)
+        _ws_wd = unique_wind_speed_direction(epw)
+
+        # adjust for wind speed at height
+        ws_wd = []
+        for ws, wd in _ws_wd:
+            ws_wd.append(
+                (
+                    wind_speed_at_height(
+                        reference_wind_speed=ws,
+                        reference_height=reference_height,
+                        target_height=height_above_ground,
+                        terrain_roughness_length=terrain_roughness_length,
+                        log_function=True,
+                    ),
+                    wd,
+                )
+            )
+
         ws_effective = {}
         for ws, wd in ws_wd:
             ws_effective[(ws, wd)] = self.effective_wind_speed(
@@ -400,6 +426,7 @@ class Shelter(BHoMObject):
 
     def visualise(self) -> plt.Figure:
         """Visualise this shelter to check validity and that it exists where you think it should!"""
+
         fig = plt.figure(figsize=(5, 5))
         ax = mplot3d.Axes3D(fig, auto_add_to_figure=False)
         fig.add_axes(ax)
@@ -415,6 +442,10 @@ class Shelter(BHoMObject):
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel("z")
+        # set lims
+        ax.set_xlim(min(i[0] for i in vtx), max(i[0] for i in vtx))
+        ax.set_ylim(min(i[1] for i in vtx), max(i[1] for i in vtx))
+        ax.set_zlim(min(i[2] for i in vtx), max(i[2] for i in vtx))
         return fig
 
 
