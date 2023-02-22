@@ -290,6 +290,14 @@ def describe_as_dataframe(
             A table containing % comfort for given analysis periods.
     """
 
+    # check analysis periods are iterable
+    try:
+        iter(analysis_periods)
+        if not all(isinstance(ap, AnalysisPeriod) for ap in analysis_periods):
+            raise TypeError("analysis_periods must be a list of AnalysisPeriods")
+    except TypeError:
+        print("analysis_periods is not iterable")
+
     limit_low = min(comfort_limits)
     limit_high = max(comfort_limits)
 
@@ -1123,7 +1131,7 @@ def categorise(
 
 def feasible_utci_limits(
     epw: EPW, include_additional_moisture: bool = True, as_dataframe: bool = False
-) -> List[HourlyContinuousCollection]:
+) -> Union[List[HourlyContinuousCollection], pd.DataFrame]:
     """Calculate the absolute min/max collections of UTCI based on possible shade, wind and moisture conditions.
 
     Args:
