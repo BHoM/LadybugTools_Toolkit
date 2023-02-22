@@ -64,7 +64,6 @@ class Typology(BHoMObject):
     )
 
     def __post_init__(self):
-
         if self.wind_speed_adjustment < 0:
             raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
         if isinstance(self.evaporative_cooling_effectiveness, (float, int)):
