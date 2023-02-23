@@ -1446,6 +1446,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
 
     original_height = epw.location.elevation
     new_epw.location.elevation = target_height - 10
+    new_epw.location.city = f"{epw.location.city}[@{target_height}M_ELEVATION]"
 
     # modify header
     new_epw.comments_1 = (
