@@ -32,6 +32,7 @@ from .plot import (
     timeseries,
     windhist,
     windrose,
+    windrose_matrix,
 )
 
 
@@ -294,7 +295,6 @@ class Wind:
         """
 
         for arg_name, arg_value in locals().items():
-
             if arg_name == "height_above_ground":
                 continue
 
@@ -1124,3 +1124,24 @@ class Wind:
             percentiles=percentiles,
             title=title,
         )
+
+    def plot_windrose_matrix(
+        self,
+        month_bins: Tuple[List[int]],
+        hour_bins: Tuple[List[int]],
+        direction_bins: DirectionBins = DirectionBins(),
+        data_bins: List[float] = None,
+        title: str = None,
+    ) -> plt.Figure:
+        """Create a plot showing the annual wind direction in a matrix of month and hour bins."""
+        fig = windrose_matrix(
+            wind_direction=self.wd,
+            data=self.ws,
+            month_bins=month_bins,
+            hour_bins=hour_bins,
+            data_bins=data_bins,
+            direction_bins=direction_bins,
+            cmap="YlGnBu",
+            title=title if title is not None else str(self),
+        )
+        return fig

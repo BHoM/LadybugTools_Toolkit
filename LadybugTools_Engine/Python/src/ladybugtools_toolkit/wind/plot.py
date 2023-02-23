@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from calendar import month_abbr
 from typing import List, Tuple, Union
 
 import matplotlib.patches as mpatches
@@ -549,3 +550,161 @@ def windhist(
         ax.set_title(title, x=0, ha="left", va="bottom")
 
     plt.tight_layout()
+
+
+def windrose_matrix(
+    wind_direction: pd.Series,
+    data: pd.Series = None,
+    month_bins: Tuple[List[int]] = ([12, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]),
+    hour_bins: Tuple[List[int]] = (
+        [0, 1, 2, 3, 4, 5],
+        [6, 7, 8, 9, 10, 11],
+        [12, 13, 14, 15, 16, 17],
+        [18, 19, 20, 21, 22, 23],
+    ),
+    direction_bins: DirectionBins = DirectionBins(),
+    data_bins: Union[int, List[float]] = None,
+    cmap: Union[Colormap, str] = None,
+    title: str = None,
+) -> plt.Figure:
+    if len(wind_direction) != len(data):
+        raise ValueError("Input directions and data are not the same length.")
+
+    # set data binning defaults (beaufort bins)
+    if data_bins is None:
+        data_bins = [
+            0,
+            0.3,
+            1.5,
+            3.3,
+            5.5,
+            7.9,
+            10.7,
+            13.8,
+            17.1,
+            20.7,
+            24.4,
+            28.4,
+            32.6,
+        ]
+    if isinstance(data_bins, int):
+        data_bins = np.linspace(min(data), max(data), data_bins + 1).round(1)
+
+    # set cmap defaults
+    if isinstance(cmap, str):
+        cmap = plt.get_cmap(cmap)
+
+    if cmap is None:
+        cmap = ListedColormap(
+            colors=[
+                "#FFFFFF",
+                "#CCFFFF",
+                "#99FFCC",
+                "#99FF99",
+                "#99FF66",
+                "#99FF00",
+                "#CCFF00",
+                "#FFFF00",
+                "#FFCC00",
+                "#FF9900",
+                "#FF6600",
+                "#FF3300",
+                "#FF0000",
+            ]
+        )
+
+    # determine how many rows and columns
+    n_rows = len(month_bins)
+    n_cols = len(hour_bins)
+
+    # create col/row labels
+    col_labels = [", ".join([month_abbr[j] for j in i]) for i in month_bins]
+    row_labels = [f"{i[0]:02d}:00 to {i[-1]:02d}:00" for i in hour_bins]
+
+    # create colors to apply to each bin
+    colors = [cmap(i) for i in np.linspace(0, 1, len(data_bins) - 1)]
+
+    # get bin sizes
+    thetas = np.deg2rad(direction_bins.midpoints)
+    width = np.deg2rad(direction_bins.bin_width)
+
+    # create plot opbject to populate
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(2 * n_rows, 2 * n_cols),
+        subplot_kw={"projection": "polar"},
+    )
+    [ax.set_theta_zero_location("N") for ax in axes.flatten()]
+    [ax.set_theta_direction(-1) for ax in axes.flatten()]
+
+    # for each row and column, filter the input data by hours/months and generate windrose
+    for n, month_bin in enumerate(month_bins):
+        # add column labels here
+        for m, hour_bin in enumerate(hour_bins):
+            # add row labels here (if it's the first one)
+            # if m == 0:
+            #     axes[n][m].text(0, 0.5, row_labels[n], transform=axes[n][m].transaxes())
+            mask = wind_direction.index.month.isin(
+                month_bin
+            ) & wind_direction.index.hour.isin(hour_bin)
+            # bin input data
+            binned_data = direction_bins.bin_data(wind_direction[mask], data[mask])
+            radiis = np.array(
+                [
+                    np.histogram(a=values, bins=data_bins, density=False)[0]
+                    for _, values in binned_data.items()
+                ]
+            )
+            bottoms = np.vstack(
+                [[0] * len(direction_bins.midpoints), radiis.cumsum(axis=1).T]
+            )[:-1].T
+
+            # plot binned data
+            for theta, radii, bottom in zip(*[thetas, radiis, bottoms]):
+                _ = axes[n][m].bar(
+                    theta, radii, width=width, bottom=bottom, color=colors, zorder=2
+                )
+            axes[n][m].set_title(
+                f"{col_labels[n]}\n{row_labels[m]}",
+                fontsize="xx-small",
+                ha="left",
+                va="bottom",
+            )
+
+    # format plot area
+    for ax in axes.flatten():
+        ax.spines["polar"].set_visible(False)
+        ax.grid(True, which="both", ls="--", zorder=0, alpha=0.5)
+        ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+        plt.setp(ax.get_yticklabels(), fontsize="xx-small")
+        ax.set_xticks(np.radians((0, 90, 180, 270)), minor=False)
+        ax.set_xticklabels(
+            ("N", "E", "S", "W"), minor=False, **{"fontsize": "xx-small"}
+        )
+
+    # -- Creating a new axes at the right side
+    cbax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
+    cbax.set_aspect("equal")
+    cbax.axis("off")
+    # -- Plotting the colormap in the created axes
+    handles = [
+        mpatches.Patch(color=colors[n], label=f"{i} to {j}")
+        for n, (i, j) in enumerate(rolling_window(data_bins, 2))
+    ]
+    _ = cbax.legend(
+        handles=handles,
+        bbox_to_anchor=(1.1, 0.5),
+        loc="center left",
+        ncol=1,
+        borderaxespad=0,
+        frameon=False,
+        fontsize="xx-small",
+        title="m/s",
+    )
+    fig.subplots_adjust(left=0.05, right=0.85)
+
+    if title is not None:
+        plt.suptitle(title, x=0, ha="left", va="bottom")
+
+    return fig
