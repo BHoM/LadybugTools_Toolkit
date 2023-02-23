@@ -294,7 +294,7 @@ def describe_as_dataframe(
     try:
         iter(analysis_periods)
         if not all(isinstance(ap, AnalysisPeriod) for ap in analysis_periods):
-            raise TypeError("analysis_periods must be a list of AnalysisPeriods")
+            raise TypeError("analysis_periods must be an iterable of AnalysisPeriods")
     except TypeError:
         print("analysis_periods is not iterable")
 
@@ -1248,8 +1248,13 @@ def feasible_comfort_category(
 
     # TODO - simplify this method to make use of the parts already completed in "describe_monthly"
 
-    if isinstance(analysis_periods, AnalysisPeriod):
-        analysis_periods = [analysis_periods]
+    # check analysis periods are iterable
+    try:
+        iter(analysis_periods)
+        if not all(isinstance(ap, AnalysisPeriod) for ap in analysis_periods):
+            raise TypeError("analysis_periods must be an iterable of AnalysisPeriods")
+    except TypeError:
+        print("analysis_periods is not iterable")
 
     hours = to_boolean(analysis_periods)
 
@@ -1501,3 +1506,103 @@ def utci_comfort_categories(
         labels,
         bounds,
     )
+
+
+def month_time_binned_table(
+    utci_data: Union[pd.Series, HourlyContinuousCollection],
+    month_bins: Tuple[List[int]],
+    hour_bins: Tuple[List[int]],
+    simplified: bool = False,
+    comfort_limits: Tuple[float] = (9, 26),
+    color_result: bool = False,
+    time_labels: List[str] = None,
+    month_labels: List[str] = None,
+) -> pd.DataFrame:
+    """Create a table with monthly time binned UTCI data.
+
+    Args:
+        utci_data (Union[pd.Series, HourlyContinuousCollection]):
+            A collection of UTCI values.
+        month_bins (Tuple[List[int]]):
+            A list of lists of months to group data into.
+        hour_bins (Tuple[List[int]]):
+            A list of lists of hours to group data into.
+        comfort_limits (Tuple[float], optional):
+            The comfortable limits within which "comfort" is achieved. Defaults to (9, 26).
+        simplified (bool, optional):
+            Return simplified categories. Defaults to False.
+        color_result (bool, optional):
+            Return a color-coded table. Defaults to False.
+        time_labels (List[str], optional):
+            A list of labels for the time bins. Defaults to None.
+        month_labels (List[str], optional):
+            A list of labels for the month bins. Defaults to None.
+
+    Returns:
+        pd.DataFrame:
+            A table with monthly time binned UTCI data.
+    """
+
+    # check the utci_data is either a pd.Series or a HourlyContinuousCollection
+    if not isinstance(utci_data, (pd.Series, HourlyContinuousCollection)):
+        raise TypeError(
+            "utci_data must be either a pandas.Series or a ladybug.datacollection.HourlyContinuousCollection"
+        )
+
+    if isinstance(utci_data, HourlyContinuousCollection):
+        utci_data = to_series(utci_data)
+
+    # check for continuity of time periods, and overlaps overnight/year
+    flat_hours = [item for sublist in hour_bins for item in sublist]
+    flat_months = [item for sublist in month_bins for item in sublist]
+
+    if (max(flat_hours) != 23) or min(flat_hours) != 0:
+        raise ValueError("hour_bins hours must be in the range 0-23")
+    if (max(flat_months) != 12) or min(flat_months) != 1:
+        raise ValueError("month_bins hours must be in the range 1-12")
+    if (set(flat_hours) != set(list(range(24)))) or (len(set(flat_hours)) != 24):
+        raise ValueError("Input hour_bins does not contain all hours of the day")
+    if (set(flat_months) != set(list(range(1, 13, 1)))) or (
+        len(set(flat_months)) != 12
+    ):
+        raise ValueError("Input month_bins does not contain all months of the year")
+
+    # create index/column labels
+    if month_labels:
+        if len(month_labels) != len(month_bins):
+            raise ValueError("month_labels must be the same length as month_bins")
+        row_labels = month_labels
+    else:
+        row_labels = [
+            f"{calendar.month_abbr[i[0]]} to {calendar.month_abbr[i[-1]]}"
+            for i in month_bins
+        ]
+    if time_labels:
+        if len(time_labels) != len(hour_bins):
+            raise ValueError("time_labels must be the same length as hour_bins")
+        col_labels = time_labels
+    else:
+        col_labels = [f"{i[0]:02d}:00 ≤ x < {i[-1] + 1:02d}:00" for i in hour_bins]
+
+    # create indexing bins
+    values = []
+    for months in month_bins:
+        month_mask = utci_data.index.month.isin(months)
+        inner_values = []
+        for hours in hour_bins:
+            mask = utci_data.index.hour.isin(hours) & month_mask
+            avg = utci_data.loc[mask].mean()
+            inner_values.append(avg)
+        values.append(inner_values)
+    df = pd.DataFrame(values, index=row_labels, columns=col_labels).T
+    if color_result:
+        warnings.warn(
+            'The value returned by this method when "color_result" is applied is not a pd.Dataframe object. To get the dataframe use ".data".'
+        )
+
+        def _highlight(val):
+            return f'color:black;background-color:{categorise(val, comfort_limits=comfort_limits, simplified=simplified, fmt="color")}'
+
+        return df.style.applymap(_highlight)
+
+    return df
