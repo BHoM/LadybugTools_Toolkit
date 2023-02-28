@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Python;
+using BH.oM.Python;
 using BH.oM.Base.Attributes;
 
 using System;
@@ -48,9 +49,9 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
 
-            string pythonScript = String.Join("\n", new List<string>()
+            string pythonScript = string.Join("\n", new List<string>()
             {
                 "from pathlib import Path",
                 "from ladybug.epw import EPW",

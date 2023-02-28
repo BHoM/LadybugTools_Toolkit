@@ -22,24 +22,22 @@
 
 
 using BH.oM.Base;
-using BH.oM.Base.Attributes;
+using BH.oM.Geometry;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    [NoAutoConstructor]
-    public class Typology : BHoMObject
+    public class Shelter : BHoMObject
     {
-        [Description("The name of this Typology.")]
-        public override string Name { get; set; } = "Openfield";
-        [Description("The shelters for this ExternalComfortTypology.")]
-        public virtual List<Shelter> Shelters { get; set; } = new List<Shelter>();
-        [Description("The proportion of evaporative cooling to add to this ExternalComfortTypology.")]
-        public virtual double EvaporativeCoolingEffectiveness { get; set; } = 0;
-        [Description("A factor to apply to the wind speed component of this ExternalComfortTypology.")]
-        public virtual double WindSpeedAdjustment { get; set; } = 0;
+        [Description("Wind porosity (0-1).")]
+        public virtual double WindPorosity { get; set; } = 0.0;
+
+        [Description("Radiation porosity (0-1).")]
+        public virtual double RadiationPorosity { get; set; } = 0.0;
+
+        [Description("The vertices of this shelter object.")]
+        public virtual List<List<double>> Vertices { get; set; } = new List<List<double>>();
     }
 }
-
 

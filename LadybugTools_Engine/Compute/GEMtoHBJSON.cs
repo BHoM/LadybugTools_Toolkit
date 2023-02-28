@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Python;
+using BH.oM.Python;
 using BH.oM.Base.Attributes;
 
 using System;
@@ -48,7 +49,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            BH.oM.Python.PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
 
             string gemFile = System.IO.Path.GetFullPath(gem);
             string outputDirectory = System.IO.Path.GetDirectoryName(gem);

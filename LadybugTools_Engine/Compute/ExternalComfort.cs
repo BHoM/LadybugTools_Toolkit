@@ -40,7 +40,7 @@ namespace BH.Engine.LadybugTools
         [Description("Run an External Comfort simulation and return results.")]
         [Input("simulationResult", "A simulation result object.")]
         [Input("typology", "An ExternalComfortTypology.")]
-        [Output("externalComfortResult", "An external comfort result object containing simulation results.")]
+        [Output("externalComfort", "An external comfort result object containing simulation results.")]
         public static ExternalComfort ExternalComfort(SimulationResult simulationResult, Typology typology)
         {
             if (simulationResult == null)
