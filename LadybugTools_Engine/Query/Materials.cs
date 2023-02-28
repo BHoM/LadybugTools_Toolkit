@@ -36,13 +36,12 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Returns a list of materials from the Python Materials list.")]
         [Input("filter", "Text to filter the resultant list by. Filter applies to the material identifier. Leave blank to return all materials.")]
-        [Input("env", "Optional input to provide the Python environment. If no environment is provided, one will be created instead. However, this method will usually run much faster if the environment is provided to this input.")]
         [Output("materials", "A list of materials.")]
         public static List<ILBTMaterial> Materials(string filter = "")
         {
             PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
 
-            string pythonScript = String.Join("\n", new List<string>()
+            string pythonScript = string.Join("\n", new List<string>()
             {
                 "from ladybugtools_toolkit.external_comfort.material import Materials",
                 "",
