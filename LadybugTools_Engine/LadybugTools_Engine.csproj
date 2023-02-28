@@ -137,7 +137,7 @@
     <Compile Include="Create\Typology.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Query\Materials.cs" />
-    <Compile Include="Query\Typologies.cs" />
+    <Compile Include="Query\GetTypology.cs" />
     <Compile Include="Query\ToolkitName.cs" />
   </ItemGroup>
   <ItemGroup>
