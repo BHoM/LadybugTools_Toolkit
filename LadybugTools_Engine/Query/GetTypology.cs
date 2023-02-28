@@ -36,7 +36,7 @@ namespace BH.Engine.LadybugTools
         [Description("Returns a list of Typology objects from the Python predefined Typologies list.")]
         [Input("filter", "Text to filter the resultant list by. Filter applies to the typology name. Leave blank to return all typologies.")]
         [Output("typologies", "A list of Typology objects.")]
-        public static List<Typology> Typologies(string filter = "")
+        public static List<Typology> GetTypology(string filter = "")
         {
             PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
 
