@@ -29,7 +29,7 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Convert
     {
-        [Description("Sanitise a string.")]
+        [Description("Sanitise a string by removing all characters except a-z, 0-9, and ._-() .")]
         [Input("text", "The text to sanitise.")]
         [Output("text", "Sanitised text.")]
         public static string SanitiseString(this string text)
@@ -37,7 +37,7 @@ namespace BH.Engine.LadybugTools
             List<char> keepCharacters = new List<char>() { '.', '_', '-', '(', ')' };
 
             char[] arr = text.ToCharArray();
-            arr = Array.FindAll<char>(arr, (c => (char.IsLetterOrDigit(c) || keepCharacters.Contains(c))));
+            arr = Array.FindAll(arr, c => char.IsLetterOrDigit(c) || keepCharacters.Contains(c));
             return new string(arr);
         }
     }
