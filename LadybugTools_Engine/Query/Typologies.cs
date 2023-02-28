@@ -35,13 +35,12 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Returns a list of Typology objects from the Python predefined Typologies list.")]
         [Input("filter", "Text to filter the resultant list by. Filter applies to the typology name. Leave blank to return all typologies.")]
-        [Input("env", "Optional input to provide the Python environment. If no environment is provided, one will be created instead. However, this method will usually run faster if the environment is provided to this input.")]
         [Output("typologies", "A list of Typology objects.")]
         public static List<Typology> Typologies(string filter = "")
         {
             PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
 
-            string pythonScript = String.Join("\n", new List<string>()
+            string pythonScript = string.Join("\n", new List<string>()
             {
                 "from ladybugtools_toolkit.external_comfort.typology import Typologies",
                 "",
