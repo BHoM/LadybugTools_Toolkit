@@ -29,10 +29,10 @@ namespace BH.oM.LadybugTools
     public class OpaqueMaterial : ILBTMaterial
     {
         [Description("The name of this EnergyMaterial.")]
-        public string Identifier { get; set; } = "Generic Opaque Material";
+        public virtual string Identifier { get; set; } = "Generic Opaque Material";
         
         [Description("The source for this object and it's properties.")]
-        public string Source { get; set; } = string.Empty;
+        public virtual string Source { get; set; } = string.Empty;
 
         [Description("The roughness of the material.")]
         public virtual Roughness Roughness { get; set; } = Roughness.MediumRough;
