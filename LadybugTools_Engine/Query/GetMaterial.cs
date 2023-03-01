@@ -46,7 +46,7 @@ namespace BH.Engine.LadybugTools
                 "from ladybugtools_toolkit.external_comfort.material import Materials",
                 "",
                 "try:",
-                $"    materials = [material.value.to_json() for material in Materials if \"{filter}\".lower() in material.value.identifier.lower()]",
+                $"    materials = [material.value.to_json() for material in Materials if \"{filter ?? ""}\".lower() in material.value.identifier.lower()]",
                 "    materials = f\"[{', '.join(materials)}]\"",
                 "    print(materials)",
                 "except Exception as exc:",
