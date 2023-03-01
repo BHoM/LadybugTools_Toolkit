@@ -38,6 +38,9 @@ namespace BH.Engine.LadybugTools
         [Output("typologies", "A list of Typology objects.")]
         public static List<Typology> GetTypology(string filter = "")
         {
+            if (filter == null)
+                filter = "";
+
             PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
 
             string pythonScript = string.Join("\n", new List<string>()
@@ -45,7 +48,7 @@ namespace BH.Engine.LadybugTools
                 "from ladybugtools_toolkit.external_comfort.typology import Typologies",
                 "",
                 "try:",
-                $"    typologies = [typology.value.to_json() for typology in Typologies if \"{filter ?? ""}\".lower() in typology.value.name.lower()]",
+                $"    typologies = [typology.value.to_json() for typology in Typologies if \"{filter}\".lower() in typology.value.name.lower()]",
                 "    typologies = f\"[{', '.join(typologies)}]\"",
                 "    print(typologies)",
                 "except Exception as exc:",
