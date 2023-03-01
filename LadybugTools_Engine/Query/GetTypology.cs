@@ -45,7 +45,7 @@ namespace BH.Engine.LadybugTools
                 "from ladybugtools_toolkit.external_comfort.typology import Typologies",
                 "",
                 "try:",
-                $"    typologies = [typology.value.to_json() for typology in Typologies if \"{filter}\".lower() in typology.value.name.lower()]",
+                $"    typologies = [typology.value.to_json() for typology in Typologies if \"{filter ?? ""}\".lower() in typology.value.name.lower()]",
                 "    typologies = f\"[{', '.join(typologies)}]\"",
                 "    print(typologies)",
                 "except Exception as exc:",
