@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Collections;
 using BH.oM.Python;
+using BH.Engine.Base;
 
 namespace BH.Engine.LadybugTools
 {
@@ -39,7 +40,7 @@ namespace BH.Engine.LadybugTools
         [Output("materials", "A list of materials.")]
         public static List<ILBTMaterial> GetMaterial(string filter = "")
         {
-            if (filter == null)
+            if (filter.IsNullOrEmpty())
                 filter = "";
 
             PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
