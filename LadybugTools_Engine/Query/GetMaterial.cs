@@ -40,7 +40,7 @@ namespace BH.Engine.LadybugTools
         [Output("materials", "A list of materials.")]
         public static List<ILBTMaterial> GetMaterial(string filter = "")
         {
-            if (filter.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(filter))
                 filter = "";
 
             PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());

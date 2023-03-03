@@ -39,7 +39,7 @@ namespace BH.Engine.LadybugTools
         [Output("typologies", "A list of Typology objects.")]
         public static List<Typology> GetTypology(string filter = "")
         {
-            if (filter.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(filter))
                 filter = "";
 
             PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
