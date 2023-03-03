@@ -38,6 +38,7 @@ namespace BH.Engine.LadybugTools
         [Description("Returns a list of materials from the Python Materials list.")]
         [Input("filter", "Text to filter the resultant list by. Filter applies to the material identifier. Leave blank to return all materials.")]
         [Output("materials", "A list of materials.")]
+        [PreviousVersion("6.1", "BH.Engine.LadybugTools.Query.GetMaterial(BH.oM.LadybugTools.Materials)")]
         public static List<ILBTMaterial> GetMaterial(string filter = "")
         {
             if (string.IsNullOrEmpty(filter))
