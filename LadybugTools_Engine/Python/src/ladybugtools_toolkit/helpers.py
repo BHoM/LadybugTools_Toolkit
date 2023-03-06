@@ -1170,3 +1170,47 @@ def air_pressure_at_height(
         reference_pressure
         * (1 - 0.0065 * (target_height - reference_height) / 288.15) ** 5.255
     )
+
+
+def tile_images(
+    imgs: Union[List[Path], List[Image.Image]], rows: int, cols: int
+) -> Image.Image:
+    """Tile a set of images into a grid.
+
+    Args:
+        imgs (Union[List[Path], List[Image.Image]]):
+            A list of images to tile.
+        rows (int):
+            The number of rows in the grid.
+        cols (int):
+            The number of columns in the grid.
+
+    Returns:
+        Image.Image:
+            A PIL image of the tiled images.
+    """
+
+    imgs = np.array([Path(i) for i in np.array(imgs).flatten()])
+
+    # open images if paths passed
+    imgs = [Image.open(img) if isinstance(img, Path) else img for img in imgs]
+
+    if len(imgs) != rows * cols:
+        raise ValueError(
+            f"The number of images given ({len(imgs)}) does not equal ({rows}*{cols})"
+        )
+
+    # ensure each image has the same dimensions
+    w, h = imgs[0].size
+    for img in imgs:
+        if img.size != (w, h):
+            raise ValueError("All images must have the same dimensions")
+
+    w, h = imgs[0].size
+    grid = Image.new("RGBA", size=(cols * w, rows * h))
+
+    for i, img in enumerate(imgs):
+        grid.paste(img, box=(i % cols * w, i // cols * h))
+        img.close()
+
+    return grid

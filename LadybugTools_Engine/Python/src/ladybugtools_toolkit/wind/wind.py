@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import calendar
+import concurrent.futures
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +15,7 @@ from ladybugtools_toolkit.plot.wind_matrix import wind_matrix
 from matplotlib.colors import Colormap, ListedColormap
 from tqdm import tqdm
 
+from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..external_comfort.wind import wind_speed_at_height
 from ..helpers import (
     OpenMeteoVariable,
@@ -24,6 +26,7 @@ from ..helpers import (
     weibull_pdf,
     wind_direction_average,
 )
+from ..ladybug_extension.analysis_period import describe as describe_ap
 from ..ladybug_extension.analysis_period import to_datetimes
 from .direction_bins import DirectionBins
 from .plot import (
@@ -986,6 +989,78 @@ class Wind:
             include_legend=include_legend,
             include_percentages=include_percentages,
         )
+
+    def plot_windroses_parallel(
+        self,
+        analysis_periods: List[AnalysisPeriod],
+        save_directory: Path,
+        prepend_file: str = "parallel",
+        direction_bins: DirectionBins = DirectionBins(),
+        bins: List[float] = None,
+        include_legend: bool = True,
+        include_percentages: bool = False,
+        cmap: Union[Colormap, str] = "YlGnBu",
+        calm_threshold: float = 0.1,
+    ) -> None:
+        """Generate a series of windroses in parallel for a set of analysis periods. This is useful for comparing windroses for different periods of time.
+
+        Args:
+            analysis_periods (List[AnalysisPeriod]):
+                A list of AnalysisPeriod objects.
+            save_directory (Path):
+                The directory to save the windroses to.
+            prepend_file (str, optional):
+                An identifier to prepedn the resultant images with. Defaults to "parallel".
+            direction_bins (DirectionBins, optional):
+                A DirectionBins object.
+            bins (List[float], optional):
+                Bins to sort data into.
+            include_legend (bool, optional):
+                Set to True to include the legend. Defaults to True.
+            include_percentages (bool, optional):
+                Add bin totals as % to rose. Defaults to False.
+            title (str, optional):
+                Add a custom title to this plot.
+            cmap (Union[Colormap, str], optional):
+                Use a custom colormap. Defaults to "YlGnBu".
+
+        """
+        save_directory = Path(save_directory)
+        if not save_directory.is_dir():
+            raise ValueError(f"{save_directory} is not a directory.")
+        if not save_directory.exists():
+            raise ValueError(f"{save_directory} does not exist.")
+
+        def _savefig(obj: Wind, ap: AnalysisPeriod):
+            sp = (
+                save_directory / f"{prepend_file}_{describe_ap(ap, save_path=True)}.png"
+            )
+            f = obj.filter_by_analysis_period(ap).plot_windrose(
+                direction_bins,
+                bins,
+                include_legend,
+                include_percentages,
+                describe_ap(ap),
+                cmap,
+                calm_threshold,
+            )
+            f.savefig(
+                sp,
+                dpi=300,
+                transparent=True,
+            )
+            plt.close(f)
+            if not sp.exists():
+                raise RuntimeError(f"Failed to save {sp}")
+            return sp
+
+        results = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for ap in analysis_periods:
+                results.append(executor.submit(_savefig, self, ap))
+
+        for result in results:
+            print(result.result())
 
     def plot_windhist(
         self,
