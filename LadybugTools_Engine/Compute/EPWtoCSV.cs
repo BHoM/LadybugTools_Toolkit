@@ -49,7 +49,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
+            PythonEnvironment env = Python.Query.ExistingEnvironment(Query.ToolkitName());
 
             string pythonScript = string.Join("\n", new List<string>()
             {
