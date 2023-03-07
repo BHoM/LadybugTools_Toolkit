@@ -50,6 +50,7 @@ def create_ground_zone(
     ground_top_construction = OpaqueConstruction(
         identifier="GROUND_CONSTRUCTION_TOP", materials=[material]
     )
+    ground_top_modifier = ground_top_construction.to_radiance_solar_exterior()
     ground_interface_construction = OpaqueConstruction(
         identifier="GROUND_CONSTRUCTION_INTERFACE",
         materials=[
@@ -74,6 +75,7 @@ def create_ground_zone(
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.roof_ceiling
             face.properties.energy.construction = ground_top_construction
+            face.properties.radiance.modifier = ground_top_modifier
         elif face.normal.z == -1:
             face.identifier = f"GROUND_ZONE_DOWN_{shade_id}"
             face.boundary_condition = boundary_conditions.ground

@@ -44,7 +44,7 @@ def create_shade_zone(
         height=shade_thickness,
         origin=Point3D(-width / 2, -depth / 2, shade_height),
     )
-
+    shade_modifier = ground_top_construction.to_radiance_solar_exterior()
     shade_construction = OpaqueConstruction(
         identifier="SHADE_CONSTRUCTION", materials=[material]
     )
@@ -56,15 +56,18 @@ def create_shade_zone(
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.roof_ceiling
             face.properties.energy.construction = shade_construction
+            face.properties.radiance.modifier = shade_modifier
         elif face.normal.z == -1:
             face.identifier = "SHADE_ZONE_DOWN"
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.floor
             face.properties.energy.construction = shade_construction
+            face.properties.radiance.modifier = shade_modifier
         else:
             face.identifier = f"SHADE_ZONE_{face.cardinal_direction().upper()}"
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.wall
             face.properties.energy.construction = shade_construction
+            face.properties.radiance.modifier = shade_modifier
 
     return shade_zone
