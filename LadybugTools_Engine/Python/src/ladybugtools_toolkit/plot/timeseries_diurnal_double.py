@@ -17,6 +17,8 @@ def timeseries_diurnal_double(
     series2: pd.Series,
     color1: Union[str, Tuple] = "r",
     color2: Union[str, Tuple] = "k",
+    s1name: str = 'Series 1',
+    s2name: str = 'Series 2',
     ylabel: str = None,
     title: str = None,
     ylims: List[float] = None,
@@ -32,6 +34,10 @@ def timeseries_diurnal_double(
             The color to use for series1 diurnal plot.
         color2 (Union[str, Tuple], optional):
             The color to use for series2 diurnal plot.
+        s1name (str, optional):
+            Series 1 legend label. Defaults to 'Series 1'
+        s2name (str, optional):
+            Series 2 legend label. Defaults to 'Series 2'
         ylabel (str, optional):
             A label to be placed on the y-axis.
         title (str, optional):
@@ -158,8 +164,8 @@ def timeseries_diurnal_double(
     ax.grid(visible=True, which="minor", axis="both", c="k", ls=":", lw=1, alpha=0.1)
 
     handles = [
-        mlines.Line2D([0], [0], label="Canyon Average", color=color1, lw=2),
-        mlines.Line2D([0], [0], label="EPW Average", color=color2, lw=2),
+        mlines.Line2D([0], [0], label=s1name + " Average", color=color1, lw=2),
+        mlines.Line2D([0], [0], label=s2name + " Average", color=color2, lw=2),
         mlines.Line2D([0], [0], label="5-95%ile", color=color1, lw=1, ls=":"),
         mpatches.Patch(color=color1, label="Range", alpha=0.3),
     ]
