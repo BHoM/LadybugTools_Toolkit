@@ -21,7 +21,6 @@ def utci_comparison_diurnal_day(
     agg: str = "mean",
     title: str = None,
     colors: List[Any] = None,
-    **kwargs,
 ) -> Figure:
     """Plot a set of UTCI collections on a single figure for monthly diurnal periods.
 
@@ -77,7 +76,12 @@ def utci_comparison_diurnal_day(
     fig, ax = plt.subplots(1, 1)
 
     for col in df_agg.columns:
-        ax.plot(df_agg[col].index, df_agg[col].values, label=col, zorder=3, **kwargs)
+        ax.plot(
+            df_agg[col].index,
+            df_agg[col].values,
+            lw=1,
+            label=col,
+        )
 
     for spine in ["top", "right"]:
         ax.spines[spine].set_visible(False)
@@ -100,10 +104,13 @@ def utci_comparison_diurnal_day(
         )
     ):
         cc = lighten_color(color, 0.2)
-        ax.axhspan(low, high, color=cc, zorder=2)
+        ax.axhspan(low, high, color=cc)
         # Get fille color attributes
         utci_labels.append(category)
         utci_handles.append(mpatches.Patch(color=cc, label=category))
+
+    ax.grid(visible=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.1)
+    ax.grid(visible=True, which="minor", axis="x", c="k", ls=":", lw=1, alpha=0.1)
 
     # get handles
     mitigation_handles, mitigation_labels = ax.get_legend_handles_labels()
@@ -113,30 +120,8 @@ def utci_comparison_diurnal_day(
     ax.set_ylim(ylims)
     ax.xaxis.set_major_locator(plt.FixedLocator([0, 6, 12, 18]))
     ax.xaxis.set_minor_locator(plt.FixedLocator([3, 9, 15, 21]))
-    ax.yaxis.set_major_locator(plt.MaxNLocator(8))
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
     ax.set_xticklabels(["00:00", "06:00", "12:00", "18:00"], minor=False, ha="left")
-    ax.set_ylabel("Universal Thermal Climate Index (°C)")
-    ax.set_xlabel("Time of day")
-
-    # add grid using a hacky fix
-    [
-        ax.axvline(i, color="k", ls=":", lw=0.5, alpha=0.1, zorder=5)
-        for i in ax.get_xticks()
-    ]
-    [
-        ax.axhline(i, color="k", ls=":", lw=0.5, alpha=0.1, zorder=5)
-        for i in ax.get_yticks()
-    ]
-    # ax.grid(
-    #     visible=True,
-    #     which="both",
-    #     axis="both",
-    #     c="k",
-    #     ls=":",
-    #     lw=1,
-    #     alpha=0.1,
-    #     zorder=5,
-    # )
 
     # Construct legend
     handles = utci_handles + mitigation_handles

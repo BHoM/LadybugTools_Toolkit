@@ -37,29 +37,22 @@ namespace BH.Engine.LadybugTools
     public static partial class Create
     {
         [Description("Create a Typology object for external comfort simulations.")]
-        [Input("shelters", "A list of shelters modifying exposure to the elements.")]
+        [Input("shelters", "Shelter objects that provide shading from the sun and wind.")]
         [Input("name", "Optional name of this typology.")]
-        [Input("evaporativeCoolingEffect", "An amount of evaporative cooling to add to results calculated by this typology. Defaults to 0, corresponding to no additional water added to the air. A value of 0.1 might represent a nearby body of water, and a value of 0.3 might represent a nearby misting device.")]
-        [Input("windSpeedMultiplier", "A factor to multiply wind speed by. Defaults to 1. Can be used to account for wind speed reduction due to sheltering not accounted for by shelter objects, or to approximate effects of acceleration. Default = 1. Set to 0 for still air conditions.")]
-        [Input("radiantTemperatureAdjustment", "A change in MRT to be applied. Defaults to 0. A positive value will increase the MRT and a negative value will decrease it.")]
+        [Input("evaporativeCoolingEffectiveness", "The proportion of evaporative cooling to add to this ExternalComfortTypology. Must be between 0 and 1. Default = 0, corresponding to no additional water added to the air. A value of 0.1 might represent a nearby body of water, and a value of 0.3 might represent a nearby misting device.")]
+        [Input("windSpeedAdjustment", "Multiply weatherfile wind speed by this value. Default = 1. Set to 0 to set wind to still.")]
         [Output("typology", "Typology object.")]
-        public static Typology Typology(List<Shelter> shelters = null, string name = "", double evaporativeCoolingEffect = 0, double windSpeedMultiplier = 1, double radiantTemperatureAdjustment = 0)
+        public static Typology Typology(List<Shelter> shelters = null, string name = "", double evaporativeCoolingEffectiveness = 0, double windSpeedAdjustment = 1)
         {
-            if (!evaporativeCoolingEffect.IsBetween(0, 1))
+            if (!evaporativeCoolingEffectiveness.IsBetween(0, 1))
             {
-                Base.Compute.RecordError($"{nameof(evaporativeCoolingEffect)} must be between 0 and 1, but is currently {evaporativeCoolingEffect}.");
+                Base.Compute.RecordError($"{nameof(evaporativeCoolingEffectiveness)} must be between 0 and 1, but is actually {evaporativeCoolingEffectiveness}.");
                 return null;
             }
 
-            if (windSpeedMultiplier < 0)
+            if (windSpeedAdjustment < 0)
             {
-                Base.Compute.RecordError($"{nameof(windSpeedMultiplier)} must be greater than or equal to 0, but is currently {windSpeedMultiplier}.");
-                return null;
-            }
-            
-            if (!radiantTemperatureAdjustment.IsBetween(-10, 10))
-            {
-                Base.Compute.RecordError($"{nameof(radiantTemperatureAdjustment)} must be between -10 and 10, but is currently {radiantTemperatureAdjustment}.");
+                Base.Compute.RecordError($"{nameof(windSpeedAdjustment)} must be greater than or equal to 0, but is actually {windSpeedAdjustment}.");
                 return null;
             }
 
@@ -72,12 +65,12 @@ namespace BH.Engine.LadybugTools
             int shelterCount = shelters.Count(s => s != null);
             if (rtnName == "" && shelterCount == 0)
             {
-                rtnName = $"ec{evaporativeCoolingEffect}_ws{windSpeedMultiplier}_mrt{radiantTemperatureAdjustment}";
+                rtnName = $"Openfield_ec{evaporativeCoolingEffectiveness}_ws{windSpeedAdjustment}";
                 Base.Compute.RecordNote($"This typology has been automatically named {rtnName}. This can be overriden with the 'name' parameter.");
             }
             else if (rtnName == "")
             {
-                rtnName = $"shelters{shelterCount}_ec{evaporativeCoolingEffect}_ws{windSpeedMultiplier}_mrt{radiantTemperatureAdjustment}";
+                rtnName = $"Shelters{shelterCount}_ec{evaporativeCoolingEffectiveness}_ws{windSpeedAdjustment}";
                 Base.Compute.RecordNote($"This typology has been automatically named {rtnName}. This can be overriden with the 'name' parameter.");
             }
 
@@ -85,9 +78,8 @@ namespace BH.Engine.LadybugTools
             {
                 Name = name,
                 Shelters = shelters.Where(s => s != null).ToList(),
-                EvaporativeCoolingEffect = evaporativeCoolingEffect,
-                WindSpeedMultiplier = windSpeedMultiplier,
-                RadiantTemperatureAdjustment = radiantTemperatureAdjustment,
+                EvaporativeCoolingEffectiveness = evaporativeCoolingEffectiveness,
+                WindSpeedAdjustment = windSpeedAdjustment
             };
         }
 

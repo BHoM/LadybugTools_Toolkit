@@ -31,7 +31,8 @@ from .simulate import SimulationResult
 
 @dataclass(init=True, repr=True, eq=True)
 class Typology(BHoMObject):
-    """An external comfort typology, describing the context in which thermal comfort will be calculated.
+    """An external comfort typology, described by shelters and a proportion
+        of evaporative cooling.
 
     Args:
         name (str):
@@ -39,73 +40,48 @@ class Typology(BHoMObject):
         shelters (List[Shelter], optional):
             A list of shelters modifying exposure to the elements.
             Defaults to None.
-        evaporative_cooling_effect (Union[float, List[float]), optional):
+        evaporative_cooling_effectiveness (Union[float, List[float]), optional):
             An amount of evaporative cooling to add to results calculated by
             this typology. Defaults to 0. Can also be a list of 8760 values.
-        wind_speed_multiplier (float, optional):
-            A factor to multiply wind speed by. Defaults to 1. Can be used to
-            account for wind speed reduction due to sheltering not accounted
-            for by shelter objects, or to approximate effects of acceleration.
-        radiant_temperature_adjustment (Union[float, List[float]], optional):
-            A change in MRT to be applied. Defaults to 0. Can also be a
-            list of 8760 values. A positive value will increase the
-            MRT and a negative value will decrease it.
+        wind_speed_adjustment (float, optional):
+            A factor to multiply wind speed by. Defaults to 1.
 
     Returns:
         Typology: An external comfort typology.
     """
 
-    # TODO - wind speed ajd make List[float] also
-
     name: str = field(init=True, compare=True, repr=True)
     shelters: List[Shelter] = field(
         init=True, compare=True, repr=False, default_factory=list
     )
-    evaporative_cooling_effect: Union[float, List[float]] = field(
+    evaporative_cooling_effectiveness: Union[float, List[float]] = field(
         init=True, compare=True, repr=False, default=0
     )
-    wind_speed_multiplier: Union[float, List[float]] = field(
-        init=True, compare=True, repr=False, default=1
-    )
-    radiant_temperature_adjustment: Union[float, List[float]] = field(
-        init=True, compare=True, repr=False, default=0
-    )
+    wind_speed_adjustment: float = field(init=True, compare=True, repr=False, default=1)
 
     _t: str = field(
         init=False, compare=True, repr=False, default="BH.oM.LadybugTools.Typology"
     )
 
     def __post_init__(self):
-        if not isinstance(self.wind_speed_multiplier, (float, int)):
-            if len(self.wind_speed_multiplier) != 8760:
-                raise ValueError(
-                    "Wind speed multiplier can only currently be either a single value applied across the entire year, or a list of 8760 values."
-                )
-        elif self.wind_speed_multiplier < 0:
+        if self.wind_speed_adjustment < 0:
             raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
-
-        if isinstance(self.evaporative_cooling_effect, (float, int)):
+        if isinstance(self.evaporative_cooling_effectiveness, (float, int)):
             if (
-                self.evaporative_cooling_effect < 0
-                or self.evaporative_cooling_effect > 1
+                self.evaporative_cooling_effectiveness < 0
+                or self.evaporative_cooling_effectiveness > 1
             ):
                 raise ValueError("Evaporative cooling effect must be between 0 and 1.")
         else:
-            if len(self.evaporative_cooling_effect) != 8760:
+            if len(self.evaporative_cooling_effectiveness) != 8760:
                 raise ValueError(
                     "Evaporative cooling effect can only currently be either a single value applied across the entire year, or a list of 8760 values."
                 )
             if (
-                min(self.evaporative_cooling_effect) < 0
-                or max(self.evaporative_cooling_effect) > 1
+                min(self.evaporative_cooling_effectiveness) < 0
+                or max(self.evaporative_cooling_effectiveness) > 1
             ):
                 raise ValueError("Evaporative cooling effect must be between 0 and 1.")
-
-        if not isinstance(self.radiant_temperature_adjustment, (float, int)):
-            if len(self.radiant_temperature_adjustment) != 8760:
-                raise ValueError(
-                    "Radiant temperature adjustment can only currently be either a single value applied across the entire year, or a list of 8760 values."
-                )
 
         # wrap methods within this class
         super().__post_init__()
@@ -135,11 +111,10 @@ class Typology(BHoMObject):
         return cls(
             name=sanitised_dict["name"],
             shelters=sanitised_dict["shelters"],
-            evaporative_cooling_effect=sanitised_dict["evaporative_cooling_effect"],
-            wind_speed_multiplier=sanitised_dict["wind_speed_multiplier"],
-            radiant_temperature_adjustment=sanitised_dict[
-                "radiant_temperature_adjustment"
+            evaporative_cooling_effectiveness=sanitised_dict[
+                "evaporative_cooling_effectiveness"
             ],
+            wind_speed_adjustment=sanitised_dict["wind_speed_adjustment"],
         )
 
     @classmethod
@@ -169,9 +144,9 @@ class Typology(BHoMObject):
             HourlyContinuousCollection: The effective DBT following application of any evaporative
                 cooling effects.
         """
-        if isinstance(self.evaporative_cooling_effect, (float, int)):
+        if isinstance(self.evaporative_cooling_effectiveness, (float, int)):
             return evaporative_cooling_effect_collection(
-                epw, self.evaporative_cooling_effect
+                epw, self.evaporative_cooling_effectiveness
             )[0]
         dbt_evap, _ = np.array(
             [
@@ -181,7 +156,7 @@ class Typology(BHoMObject):
                         *[
                             epw.dry_bulb_temperature,
                             epw.relative_humidity,
-                            self.evaporative_cooling_effect,
+                            self.evaporative_cooling_effectiveness,
                             epw.atmospheric_station_pressure,
                         ]
                     )
@@ -201,9 +176,9 @@ class Typology(BHoMObject):
             HourlyContinuousCollection: The effective RH following application of any evaporative
                 cooling effects.
         """
-        if isinstance(self.evaporative_cooling_effect, (float, int)):
+        if isinstance(self.evaporative_cooling_effectiveness, (float, int)):
             return evaporative_cooling_effect_collection(
-                epw, self.evaporative_cooling_effect
+                epw, self.evaporative_cooling_effectiveness
             )[1]
         _, rh_evap = np.array(
             [
@@ -213,7 +188,7 @@ class Typology(BHoMObject):
                         *[
                             epw.dry_bulb_temperature,
                             epw.relative_humidity,
-                            self.evaporative_cooling_effect,
+                            self.evaporative_cooling_effectiveness,
                             epw.atmospheric_station_pressure,
                         ]
                     )
@@ -234,35 +209,13 @@ class Typology(BHoMObject):
         """
 
         if len(self.shelters) == 0:
-            return epw.wind_speed * self.wind_speed_multiplier
+            return epw.wind_speed * self.wind_speed_adjustment
 
-        # get wind speed from epw
-        ws = epw.wind_speed
+        if self.wind_speed_adjustment == 0:
+            epw.wind_speed.get_aligned_collection(0)
 
-        # adjust to 0 if multiplier is 0
-        if (
-            isinstance(self.wind_speed_multiplier, (float, int))
-            and self.wind_speed_multiplier == 0
-        ):
-            return epw.wind_speed.get_aligned_collection(0)
-
-        # adjust ws based on shelter configuration
-        wind_speed_pre_multiplier = epw.wind_speed.get_aligned_collection(
+        return (epw.wind_speed * self.wind_speed_adjustment).get_aligned_collection(
             annual_effective_wind_speed(self.shelters, epw)
-        )
-
-        # adjust ws based on multiplier (single value)
-        if isinstance(self.wind_speed_multiplier, (float, int)):
-            return wind_speed_pre_multiplier * self.wind_speed_multiplier
-
-        # adjust ws based on multiplier (collection)
-        return wind_speed_pre_multiplier.get_aligned_collection(
-            [
-                ws * mult
-                for ws, mult in list(
-                    zip(*[wind_speed_pre_multiplier, self.wind_speed_multiplier])
-                )
-            ]
         )
 
     def mean_radiant_temperature(
@@ -303,15 +256,12 @@ class Typology(BHoMObject):
             mrts, index=shaded_mrt.index, name=shaded_mrt.name
         ).interpolate()
 
-        # apply an exponentially weighted moving average to account for
-        # transition between shaded/unshaded periods on surrounding surface
-        # temperatures
+        # apply an exponentially weighted moving average to account for transition between shaded/unshaded periods on surrounding surface temperatures
         mrt_series = decay_rate_smoother(
             mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25
         )
 
-        # apply radiant temperature adjustment if given
-        return from_series(mrt_series + self.radiant_temperature_adjustment)
+        return from_series(mrt_series)
 
     def universal_thermal_climate_index(
         self, simulation_result: SimulationResult, return_comfort_obj: bool = False
@@ -396,7 +346,7 @@ class Typology(BHoMObject):
     def plot_utci_hist(self, res: SimulationResult) -> None:
         """Convenience method to plot UTCI histogram directly from a typology."""
         warnings.warn(
-            "While it is possible to call from a Typology object, the recommended method of calling the UTCI histogram is from an ExternalComfort object."
+            "While it is possible to call from a Typology object, the recommended method of calling the UTCI historgam is from an ExternalComfort object."
         )
         return utci_heatmap_histogram(
             self.universal_thermal_climate_index(res), self.name
@@ -443,15 +393,15 @@ class Typologies(Enum):
     )
     NEAR_WATER = Typology(
         name="Near water",
-        evaporative_cooling_effect=0.15,
+        evaporative_cooling_effectiveness=0.15,
     )
     MISTING = Typology(
         name="Misting",
-        evaporative_cooling_effect=0.3,
+        evaporative_cooling_effectiveness=0.3,
     )
     PDEC = Typology(
         name="PDEC",
-        evaporative_cooling_effect=0.7,
+        evaporative_cooling_effectiveness=0.7,
     )
     NORTH_SHELTER = Typology(
         name="North shelter",

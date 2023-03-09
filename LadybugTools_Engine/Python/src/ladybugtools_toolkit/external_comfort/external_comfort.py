@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import calendar
 import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Tuple, Union
@@ -13,8 +12,6 @@ from matplotlib.figure import Figure
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
-from ..external_comfort.utci import categorise, utci_comfort_categories
-from ..ladybug_extension.analysis_period import AnalysisPeriod, to_boolean
 from ..ladybug_extension.datacollection import from_series, to_series
 from ..ladybug_extension.epw import to_dataframe
 from ..ladybug_extension.location import to_string as location_to_string
@@ -27,7 +24,6 @@ from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
 from .moisture import evaporative_cooling_effect
 from .simulate import SimulationResult
 from .typology import Typology
-from .shelter import Shelter
 from .utci import utci
 
 
@@ -74,6 +70,7 @@ class ExternalComfort(BHoMObject):
     )
 
     def __post_init__(self):
+
         if not self.simulation_result.is_run():
             self.simulation_result = self.simulation_result.run()
 
@@ -347,207 +344,6 @@ class ExternalComfort(BHoMObject):
             )
 
         return min_utci, max_utci
-
-    def feasible_comfort_category(
-        self,
-        include_additional_moisture: bool = True,
-        analysis_periods: List[AnalysisPeriod] = [AnalysisPeriod()],
-        simplified: bool = False,
-        comfort_limits: Tuple = (9, 26),
-        density: bool = True,
-    ) -> pd.DataFrame:
-        try:
-            iter(analysis_periods)
-            if not all(isinstance(ap, AnalysisPeriod) for ap in analysis_periods):
-                raise TypeError(
-                    "analysis_periods must be an iterable of AnalysisPeriods"
-                )
-        except TypeError as exc:
-            raise TypeError("analysis_periods must be an iterable of AnalysisPeriods")
-
-        for ap in analysis_periods:
-            if (ap.st_month != 1) or (ap.end_month != 12):
-                raise ValueError("Analysis periods must be for the whole year.")
-
-        _df = self.feasible_utci_limits(
-            as_dataframe=True, include_additional_moisture=include_additional_moisture
-        )
-
-        # filter by hours
-        hours = to_boolean(analysis_periods)
-        _df_filtered = _df.loc[hours]
-
-        cats, _ = utci_comfort_categories(
-            simplified=simplified,
-            comfort_limits=comfort_limits,
-        )
-
-        # categorise
-        _df_cat = categorise(
-            _df_filtered, simplified=simplified, comfort_limits=comfort_limits
-        )
-
-        # join categories and get low/high lims
-        temp = pd.concat(
-            [
-                _df_cat.groupby(_df_cat.index.month)
-                .lowest.value_counts(normalize=density)
-                .unstack()
-                .reindex(cats, axis=1)
-                .fillna(0),
-                _df_cat.groupby(_df_cat.index.month)
-                .highest.value_counts(normalize=density)
-                .unstack()
-                .reindex(cats, axis=1)
-                .fillna(0),
-            ],
-            axis=1,
-        )
-        columns = pd.MultiIndex.from_product([cats, ["lowest", "highest"]])
-        temp = pd.concat(
-            [
-                temp.groupby(temp.columns, axis=1).min(),
-                temp.groupby(temp.columns, axis=1).max(),
-            ],
-            axis=1,
-            keys=["lowest", "highest"],
-        ).reorder_levels(order=[1, 0], axis=1)[columns]
-        temp.index = [calendar.month_abbr[i] for i in temp.index]
-
-        return temp
-
-    def insitu_comfort_addmeasures_hotclimate(
-        self,
-        add_overhead_shelter: bool = True,
-        add_additional_air_movement: bool = True,
-        add_misting: bool = True,
-        add_radiant_cooling: bool = True,
-        evaporative_cooling_effect: float = 0.7,
-        wind_speed_multiplier: float = 1.5,
-        increase_shelter_porosity: bool = True,
-        adjusted_shelter_wind_porosity: float = 0.75,
-        radiant_temperature_adjustment: float = -5,
-    ) -> ExternalComfort:
-        if not any(
-            [
-                add_overhead_shelter,
-                add_additional_air_movement,
-                add_misting,
-                add_radiant_cooling,
-            ]
-        ):
-            return self
-
-        # create title to give the adjusted EC typology
-        new_typology_name = f"{self.typology.name}"
-
-        # OVERHEAD SHELTER
-        if add_overhead_shelter:
-            new_typology_name += " + overhead shelter"
-            # TODO - check that overhead is not already sheltered and raise error if it is
-            overhead_shelter_obj = Shelter(
-                vertices=[[-3, -3, 3], [-3, 3, 3], [3, 3, 3], [3, -3, 3]],
-                wind_porosity=0,
-                radiation_porosity=0,
-            )
-            shelters = self.typology.shelters + [overhead_shelter_obj]
-        else:
-            shelters = self.typology.shelters
-
-        # AIR MOVEMENT
-        if add_additional_air_movement:
-            if self.typology.wind_speed_multiplier >= wind_speed_multiplier:
-                raise ValueError(
-                    'The original typology used has an elevated wind speed greater than that of the proposed "increase".'
-                )
-            new_typology_name += " + additional air movement"
-            wind_speed_adjustment = wind_speed_multiplier
-            if increase_shelter_porosity:
-                CONSOLE_LOGGER.warning(
-                    f"[{self.typology.name}] - Adjustments being made to {len(shelters) - 1 if add_overhead_shelter else len(shelters)} in-situ shelters to enable additional air movement."
-                )
-                if any(
-                    shelter.wind_porosity >= adjusted_shelter_wind_porosity
-                    for shelter in shelters
-                ):
-                    raise ValueError(
-                        'Shelters already on the original typology are more porous than the "shelter_wind_porosity_amount" value proposed.'
-                    )
-                if add_overhead_shelter:
-                    shelters = [
-                        Shelter(
-                            vertices=shelter.vertices,
-                            radiation_porosity=shelter.radiation_porosity,
-                            wind_porosity=adjusted_shelter_wind_porosity,
-                        )
-                        for shelter in shelters[:-1]
-                    ] + [shelters[-1]]
-                else:
-                    shelters = [
-                        Shelter(
-                            vertices=shelter.vertices,
-                            radiation_porosity=shelter.radiation_porosity,
-                            wind_porosity=adjusted_shelter_wind_porosity,
-                        )
-                        for shelter in shelters
-                    ]
-        else:
-            wind_speed_adjustment = self.typology.wind_speed_multiplier
-
-        # MISTING
-        if add_misting:
-            if not isinstance(
-                self.typology.evaporative_cooling_effect,
-                (float, int),
-            ):
-                raise ValueError(
-                    'This method only works for typologies with a single "evaporative_cooling_effectiveness" value applied to all hours of the year.'
-                )
-            if self.typology.evaporative_cooling_effect >= evaporative_cooling_effect:
-                raise ValueError(
-                    'The misting effect being applied is less effective than in the "baseline" it is being applied to.'
-                )
-            new_typology_name += " + misting"
-            evaporative_cooling_effectiveness = evaporative_cooling_effect
-        else:
-            evaporative_cooling_effectiveness = self.typology.evaporative_cooling_effect
-
-        # RADIANT COOLING
-        if add_radiant_cooling:
-            if not isinstance(
-                self.typology.radiant_temperature_adjustment,
-                (float, int),
-            ):
-                raise ValueError(
-                    'This method only works for typologies with a single "radiant_temperature_adjustment" value applied to all hours of the year.'
-                )
-            if (
-                self.typology.radiant_temperature_adjustment
-                <= radiant_temperature_adjustment
-            ):
-                raise ValueError(
-                    'The radiant_temperature_adjustment being applied is less effective than in the "baseline" it is being applied to.'
-                )
-            if radiant_temperature_adjustment > 0:
-                raise ValueError("radiant_cooling_amount must be a negative value.")
-            new_typology_name += " + radiant cooling"
-            radiant_temperature_adjustment = radiant_temperature_adjustment
-        else:
-            radiant_temperature_adjustment = self.typology.evaporative_cooling_effect
-
-        # create new typology
-        new_typology = Typology(
-            name=new_typology_name,
-            shelters=shelters,
-            wind_speed_multiplier=wind_speed_adjustment,
-            evaporative_cooling_effect=evaporative_cooling_effectiveness,
-            radiant_temperature_adjustment=radiant_temperature_adjustment,
-        )
-
-        return ExternalComfort(
-            simulation_result=self.simulation_result,
-            typology=new_typology,
-        )
 
     @property
     def plot_title_string(self) -> str:

@@ -68,8 +68,7 @@ def timeseries_heatmap(
     )
 
     ax.xaxis_date()
-    # date_formatter = mdates.DateFormatter("%b %Y")
-    date_formatter = mdates.DateFormatter("%b")
+    date_formatter = mdates.DateFormatter("%b %Y")
     ax.xaxis.set_major_formatter(date_formatter)
     ax.yaxis_date()
     ax.yaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))

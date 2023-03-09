@@ -32,15 +32,13 @@ namespace BH.oM.LadybugTools
     public class Typology : BHoMObject
     {
         [Description("The name of this Typology.")]
-        public override string Name { get; set; } = "GenericTypology";
-        [Description("The shelters for this Typology.")]
+        public override string Name { get; set; } = "Openfield";
+        [Description("The shelters for this ExternalComfortTypology.")]
         public virtual List<Shelter> Shelters { get; set; } = new List<Shelter>();
-        [Description("The proportion of evaporative cooling to add to this Typology.")]
-        public virtual double EvaporativeCoolingEffect { get; set; } = 0;
-        [Description("A multiplier to apply to the wind speed component of this Typology.")]
-        public virtual double WindSpeedMultiplier { get; set; } = 0;
-        [Description("A reduction or increase in MRT to be applied to results generated using this Typology.")]
-        public virtual double RadiantTemperatureAdjustment { get; set; } = 0;
+        [Description("The proportion of evaporative cooling to add to this ExternalComfortTypology.")]
+        public virtual double EvaporativeCoolingEffectiveness { get; set; } = 0;
+        [Description("A factor to apply to the wind speed component of this ExternalComfortTypology.")]
+        public virtual double WindSpeedAdjustment { get; set; } = 0;
     }
 }
 

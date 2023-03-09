@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import pytest
 from ladybugtools_toolkit.external_comfort.external_comfort import (
@@ -7,14 +6,11 @@ from ladybugtools_toolkit.external_comfort.external_comfort import (
     SimulationResult,
 )
 from ladybugtools_toolkit.external_comfort.material import Materials
-from ladybugtools_toolkit.external_comfort.shelter import Shelters
-from ladybugtools_toolkit.external_comfort.typology import Typologies, Typology
+from ladybugtools_toolkit.external_comfort.typology import Typologies
 
 from ...tests import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
-
 GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
 SHADE_MATERIAL = Materials.FABRIC.value
-
 
 def test_external_comfort():
     """_"""
@@ -28,32 +24,6 @@ def test_external_comfort():
     ext_comf = ExternalComfort(sim_res, typ)
 
     assert isinstance(ext_comf, ExternalComfort)
-
-
-def test_external_comfort_array():
-    """_"""
-    sim_res = SimulationResult(
-        EPW_FILE,
-        GROUND_MATERIAL,
-        SHADE_MATERIAL,
-        EXTERNAL_COMFORT_IDENTIFIER,
-    ).run()
-    typ = Typology(
-        name="example",
-        shelters=[Shelters.EAST.value],
-        evaporative_cooling_effect=np.where(
-            np.array(range(8760)) % 8 == 0, np.ones(8760) * 0.85, np.zeros(8760)
-        ),
-        wind_speed_multiplier=np.where(
-            np.array(range(8760)) % 2 == 0, np.ones(8760) - 0.5, np.zeros(8760) + 1.5
-        ),
-        radiant_temperature_adjustment=np.where(
-            np.array(range(8760)) % 3 == 0, np.zeros(8760) - 1.2, np.zeros(8760)
-        ),
-    )
-    ext_comf = ExternalComfort(simulation_result=sim_res, typology=typ)
-
-    assert pytest.approx(ext_comf.average, rel=0.1) == 7.331275990178459
 
 
 def test_to_dataframe():
