@@ -24,7 +24,7 @@ from matplotlib.colors import BoundaryNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from typing import List
 
-def utci_stacked_bars(
+def utci_stacked_bar(
     collections: HourlyContinuousCollection, collectionNames: str=None, title: str = None, show_legend: bool = True, IP: bool = True, masked: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod(st_hour=0,end_hour=23)
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
