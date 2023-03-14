@@ -25,7 +25,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from typing import List
 
 def utci_stacked_bar(
-    collections: HourlyContinuousCollection, collectionNames: str=None, title: str = None, show_legend: bool = True, IP: bool = True, masked: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod(st_hour=0,end_hour=23)
+    collections: HourlyContinuousCollection, collectionNames: str=None, title: str = None, show_legend: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod(), rotation: bool = False
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
@@ -38,12 +38,10 @@ def utci_stacked_bar(
             A title to add to the resulting figure. Default is None.
         show_legend (bool, optional):
             Set to True to plot the legend. Default is True.
-        IP (bool, optional):
-            Convert data to IP unit. Default is True.
-        masekd (bool, optional):
-            Set to True to mask UTCI with ananlysis period. Default is True.
         analysis_period (AnalysisPeriod, optional):
             A ladybug analysis period.
+        rotation (bool, optional):
+            Set to True to rotate the x label text. Default is False.
 
     Returns:
         Figure:
@@ -55,8 +53,6 @@ def utci_stacked_bar(
             "Collection data type is not UTCI and cannot be used in this plot."
         )
     # Convert data to IP unit
-    if IP:
-        collections = [x.to_ip() for x in collections]
     if collectionNames is None:
         collectionNames = map(str, np.arange(len(collections))) 
 
@@ -74,7 +70,7 @@ def utci_stacked_bar(
     # Construct DF series
     for i in range(len(df_cols)):
         series_adjust = to_series(collections[i].filter_by_analysis_period(analysis_period))
-        series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_LOCAL_LEVELS_IP + [200], labels=UTCI_LOCAL_LABELS)
+        series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_LOCAL_LEVELS + [200], labels=UTCI_LOCAL_LABELS)
         sizes = (series_cut.value_counts() / len(series_adjust))[UTCI_LOCAL_LABELS]
         colors = (
             [UTCI_LOCAL_COLORMAP.get_under()] + UTCI_LOCAL_COLORMAP.colors + [UTCI_LOCAL_COLORMAP.get_over()]
@@ -105,7 +101,13 @@ def utci_stacked_bar(
     bar_ax.spines['right'].set_visible(False)
     # bar_ax.spines['bottom'].set_visible(False)
     # bar_ax.spines['left'].set_visible(False)
-
+    if rotation:
+        bar_ax.set_xticklabels(df_cols, rotation=45, ha='right', fontsize=24)
+    else:
+        bar_ax.set_xticklabels(df_cols, fontsize=24)
+    
+    ylabel = np.arange(0,101,20)
+    bar_ax.set_yticklabels(ylabel, fontsize=24)
     
     for i in range(len(bar_ax.patches)):
         # if round(df[df.columns[i+1]]*100,0) > 1:
@@ -114,11 +116,29 @@ def utci_stacked_bar(
             bar_ax.text(bar_ax.patches[i].get_x() + bar_ax.patches[i].get_width() / 2,
             bar_ax.patches[i].get_height() / 2 + bar_ax.patches[i].get_y(),
                 str(int(round(bar_ax.patches[i].get_height(), 0))) + "%", ha = 'center',
-                color = 'k', size = 12)
+                color = 'k', size = 24)
     
-    if title is None:
-        bar_ax.set_title("Design focus period: full day", color="k", size="small")
+    # Add title to the pie
+    st_hour = analysis_period.st_hour
+    end_hour = analysis_period.end_hour
+    st_day = analysis_period.doys_int[0] - 1
+    end_day = analysis_period.doys_int[-1] - 1
+    end_count = 23 - end_hour - 1
+    start_count = 23 - st_hour
+    if st_hour < 12:
+        st_hour_title = str(st_hour) + " am"
     else:
-        bar_ax.set_title(title, color="k", size="small", y=1.05)
-        
+        st_hour_title = str(st_hour - 12) + " pm"
+
+    if end_hour < 12:
+        end_hour_title = str(end_hour) + "am"
+    else:
+        end_hour_title = str(end_hour - 12 + 1) + " pm"
+    pie_title = "Design focus period:" + st_hour_title + " to " + end_hour_title
+
+    if title is None:
+        bar_ax.set_title(pie_title, color="k", size=24, y=1.03)
+    else:
+        bar_ax.set_title(title, color="k", size=24, y=1.03)
+
     return fig
