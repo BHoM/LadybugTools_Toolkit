@@ -482,18 +482,17 @@ class ExternalComfort(BHoMObject):
 
         # AIR MOVEMENT
         if add_additional_air_movement:
-            if self.typology.wind_speed_multiplier >= wind_speed_multiplier:
+            if self.typology.wind_speed_multiplier > wind_speed_multiplier:
                 raise ValueError(
                     'The original typology used has an elevated wind speed greater than that of the proposed "increase".'
                 )
             new_typology_name += " + additional air movement"
-            wind_speed_adjustment = wind_speed_multiplier
             if increase_shelter_wind_porosity:
                 CONSOLE_LOGGER.warning(
-                    f"[{self.typology.name}] - Adjustments being made to {len(shelters) - 1 if add_overhead_shelter else len(shelters)} in-situ shelters to enable additional air movement."
+                    f"Adjustments being made to {len(shelters) - 1 if add_overhead_shelter else len(shelters)} in-situ shelters to enable additional air movement."
                 )
                 if any(
-                    shelter.wind_porosity >= adjusted_shelter_wind_porosity
+                    shelter.wind_porosity > adjusted_shelter_wind_porosity
                     for shelter in shelters
                 ):
                     raise ValueError(
@@ -534,9 +533,9 @@ class ExternalComfort(BHoMObject):
                     'The misting effect being applied is less effective than in the "baseline" it is being applied to.'
                 )
             new_typology_name += " + misting"
-            evaporative_cooling_effectiveness = evaporative_cooling_effect
+            evaporative_cooling_effect = evaporative_cooling_effect
         else:
-            evaporative_cooling_effectiveness = self.typology.evaporative_cooling_effect
+            evaporative_cooling_effect = self.typology.evaporative_cooling_effect
 
         # RADIANT COOLING
         if add_radiant_cooling:
@@ -568,8 +567,8 @@ class ExternalComfort(BHoMObject):
         new_typology = Typology(
             name=new_typology_name,
             shelters=shelters,
-            wind_speed_multiplier=wind_speed_adjustment,
-            evaporative_cooling_effect=evaporative_cooling_effectiveness,
+            wind_speed_multiplier=wind_speed_multiplier,
+            evaporative_cooling_effect=evaporative_cooling_effect,
             radiant_temperature_adjustment=radiant_temperature_adjustment,
         )
 
