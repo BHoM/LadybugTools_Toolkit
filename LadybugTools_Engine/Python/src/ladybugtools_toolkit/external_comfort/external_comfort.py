@@ -25,9 +25,9 @@ from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
 from ..plot.utci_heatmap import utci_heatmap
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
 from .moisture import evaporative_cooling_effect
+from .shelter import Shelter
 from .simulate import SimulationResult
 from .typology import Typology
-from .shelter import Shelter
 from .utci import utci
 
 
@@ -423,11 +423,37 @@ class ExternalComfort(BHoMObject):
         add_misting: bool = True,
         add_radiant_cooling: bool = True,
         evaporative_cooling_effect: float = 0.7,
-        wind_speed_multiplier: float = 1.5,
-        increase_shelter_porosity: bool = True,
+        wind_speed_multiplier: float = 1,
+        increase_shelter_wind_porosity: bool = True,
         adjusted_shelter_wind_porosity: float = 0.75,
         radiant_temperature_adjustment: float = -5,
     ) -> ExternalComfort:
+        """Apply varying levels of additional measures to the insitu comfort model, taking into account any existing measures that are in place already.
+
+        Args:
+            add_overhead_shelter (bool, optional):
+                Add an overhead shelter to this object. Defaults to True.
+            add_additional_air_movement (bool, optional):
+                Add additional air movement. Vary the amount using the wind_speed_multiplier and adjusted_shelter_wind_porosity inputs. Defaults to True.
+            add_misting (bool, optional):
+                Add moisture to the air. Defaults to True.
+            add_radiant_cooling (bool, optional):
+                Include some adjustment to the MRT. Defaults to True.
+            evaporative_cooling_effect (float, optional):
+                Set the effectivess of the evaporative cooling. Defaults to 0.7.
+            wind_speed_multiplier (float, optional):
+                Increase wind speed. Defaults to 1.
+            increase_shelter_wind_porosity (bool, optional):
+                Reduce opacity of shelters . Defaults to True.
+            adjusted_shelter_wind_porosity (float, optional):
+                Modity existing shelter porosity to help increase air movement from wind. Defaults to 0.75.
+            radiant_temperature_adjustment (float, optional):
+                The amount of radiant cooling to apply to the MRT. Defaults to -5.
+
+        Returns:
+            ExternalComfort:
+                A modified object!
+        """
         if not any(
             [
                 add_overhead_shelter,
@@ -462,7 +488,7 @@ class ExternalComfort(BHoMObject):
                 )
             new_typology_name += " + additional air movement"
             wind_speed_adjustment = wind_speed_multiplier
-            if increase_shelter_porosity:
+            if increase_shelter_wind_porosity:
                 CONSOLE_LOGGER.warning(
                     f"[{self.typology.name}] - Adjustments being made to {len(shelters) - 1 if add_overhead_shelter else len(shelters)} in-situ shelters to enable additional air movement."
                 )
@@ -521,17 +547,20 @@ class ExternalComfort(BHoMObject):
                 raise ValueError(
                     'This method only works for typologies with a single "radiant_temperature_adjustment" value applied to all hours of the year.'
                 )
+            if radiant_temperature_adjustment == 0:
+                CONSOLE_LOGGER.warning(
+                    "Radiant temperature adjustment has been requested - but is set to 0."
+                )
             if (
                 self.typology.radiant_temperature_adjustment
                 <= radiant_temperature_adjustment
             ):
                 raise ValueError(
-                    'The radiant_temperature_adjustment being applied is less effective than in the "baseline" it is being applied to.'
+                    'The radiant_temperature_adjustment being applied is less than in the original "baseline" it is being applied to.'
                 )
             if radiant_temperature_adjustment > 0:
                 raise ValueError("radiant_cooling_amount must be a negative value.")
             new_typology_name += " + radiant cooling"
-            radiant_temperature_adjustment = radiant_temperature_adjustment
         else:
             radiant_temperature_adjustment = self.typology.evaporative_cooling_effect
 
