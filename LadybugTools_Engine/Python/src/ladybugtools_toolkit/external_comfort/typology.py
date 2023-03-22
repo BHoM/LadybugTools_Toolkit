@@ -55,8 +55,6 @@ class Typology(BHoMObject):
         Typology: An external comfort typology.
     """
 
-    # TODO - wind speed ajd make List[float] also
-
     name: str = field(init=True, compare=True, repr=True)
     shelters: List[Shelter] = field(
         init=True, compare=True, repr=False, default_factory=list
