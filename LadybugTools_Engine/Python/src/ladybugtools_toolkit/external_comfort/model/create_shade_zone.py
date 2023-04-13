@@ -44,10 +44,11 @@ def create_shade_zone(
         height=shade_thickness,
         origin=Point3D(-width / 2, -depth / 2, shade_height),
     )
-    shade_modifier = ground_top_construction.to_radiance_solar_exterior()
+    
     shade_construction = OpaqueConstruction(
         identifier="SHADE_CONSTRUCTION", materials=[material]
     )
+    shade_modifier = shade_construction.to_radiance_solar_exterior()
 
     for face in shade_zone.faces:
         face: Face
