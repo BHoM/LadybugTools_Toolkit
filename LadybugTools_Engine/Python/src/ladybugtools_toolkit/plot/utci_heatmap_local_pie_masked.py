@@ -216,16 +216,20 @@ def utci_heatmap_local_pie_masked(
             )
 
     # Add title to the pie
-    if st_hour < 12:
+    if st_hour == 23:
+        st_hour_title = str(st_hour - 12) + " am"
+    elif st_hour < 12:
         st_hour_title = str(st_hour) + " am"
     else:
         st_hour_title = str(st_hour - 12) + " pm"
 
-    if end_hour < 12:
-        end_hour_title = str(end_hour) + "am"
+    if end_hour == 23:
+        end_hour_title = str(end_hour - 12 + 1) + "am"
+    elif end_hour < 12:
+        end_hour_title = str(end_hour + 1) + "am"
     else:
         end_hour_title = str(end_hour - 12 + 1) + " pm"
-    pie_title = "Occupied hours:" + st_hour_title + " to " + end_hour_title
+    bar_title = "Occupied hours:" + st_hour_title + " to " + end_hour_title
 
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)

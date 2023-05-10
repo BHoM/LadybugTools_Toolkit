@@ -59,7 +59,7 @@ def utci_heatmap_local_masked_stacked(
     # Instantiate figure
     fig = plt.figure(figsize=(15, 4), constrained_layout=True)
     spec = fig.add_gridspec(
-        ncols=2, nrows=2, width_ratios=[5,1], height_ratios=[1,0.03], hspace=0.0
+        ncols=2, nrows=2, width_ratios=[5, 0.75], height_ratios=[1, 0.03], hspace=0.0
     )
     heatmap_ax = fig.add_subplot(spec[0, 0])
     bar_ax = fig.add_subplot(spec[0, 1])
@@ -148,8 +148,8 @@ def utci_heatmap_local_masked_stacked(
     heatmap_ax.grid(visible=True, which="major", color="k", linestyle=":", alpha=0.5)
 
     # Add stacked bar chart
-    series_adjust = to_series(collection.filter_by_analysis_period(AnalysisPeriod(st_hour=8,end_hour=21)))
-    series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_LOCAL_LEVELS_IP + [200], labels=UTCI_LOCAL_LABELS)
+    series_adjust = to_series(collection.filter_by_analysis_period(analysis_period))
+    series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_LOCAL_LEVELS_IP + [200] if IP else [-100] + UTCI_LOCAL_LEVELS + [200], labels=UTCI_LOCAL_LABELS)
     sizes = (series_cut.value_counts() / len(series_adjust))[UTCI_LOCAL_LABELS]
     colors = (
         [UTCI_LOCAL_COLORMAP.get_under()] + UTCI_LOCAL_COLORMAP.colors + [UTCI_LOCAL_COLORMAP.get_over()]
@@ -170,10 +170,10 @@ def utci_heatmap_local_masked_stacked(
     # Add text to each bar patch
     for i in range(len(bar_ax.patches)):
         if round(sizes[i]*100,0) > 1:
-            print(round(sizes[i]*100,0))
+            # print(round(sizes[i]*100,0))
             bar_ax.text(bar_ax.patches[i].get_x() + bar_ax.patches[i].get_width() / 2,
             bar_ax.patches[i].get_height() / 2 + bar_ax.patches[i].get_y(),
-            str(round(sizes[i]*100,0)) + "%", ha = 'center',
+            str(int(round(sizes[i]*100,0))) + "%", ha = 'center',
             color = 'k', size = 8)
 
     if show_legend:
@@ -213,13 +213,17 @@ def utci_heatmap_local_masked_stacked(
                 # transform=colorbar_ax.transAxes,
             )
     # Add title to the pie
-    if st_hour < 12:
+    if st_hour == 23:
+        st_hour_title = str(st_hour - 12) + " am"
+    elif st_hour < 12:
         st_hour_title = str(st_hour) + " am"
     else:
         st_hour_title = str(st_hour - 12) + " pm"
 
-    if end_hour < 12:
-        end_hour_title = str(end_hour) + "am"
+    if end_hour == 23:
+        end_hour_title = str(end_hour - 12 + 1) + "am"
+    elif end_hour < 12:
+        end_hour_title = str(end_hour + 1) + "am"
     else:
         end_hour_title = str(end_hour - 12 + 1) + " pm"
     bar_title = "Occupied hours:" + st_hour_title + " to " + end_hour_title
@@ -237,5 +241,5 @@ def utci_heatmap_local_masked_stacked(
             va="bottom",
             x=0,
         )
-        bar_ax.set_title(bar_title, color="k", size="small", y=1.05)
+        bar_ax.set_title(bar_title, color="k", size="small")
     return fig
