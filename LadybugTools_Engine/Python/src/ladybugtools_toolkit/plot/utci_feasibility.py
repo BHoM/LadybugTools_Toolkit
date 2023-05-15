@@ -13,8 +13,8 @@ from ..external_comfort.utci import (
     feasible_comfort_category,
     utci_comfort_categories,
 )
-from ..ladybug_extension.analysis_period import describe as describe_ap
-from ..ladybug_extension.location import to_string
+from ..ladybug_extension.analysis_period import describe_analysis_period as describe_ap
+from ..ladybug_extension.location import location_to_string
 
 
 def utci_feasibility(
@@ -36,6 +36,13 @@ def utci_feasibility(
             Default is (9, 26). Only used if simplified is True.
         included_additional_moisture (bool, optional):
             Default is False. If True, then include evap cooling in this analysis.
+        analysis_periods (Union[AnalysisPeriod, Tuple[AnalysisPeriod]], optional):
+            An AnalysisPeriod or a tuple of AnalysisPeriods to be used for the analysis.
+            Defaults to (AnalysisPeriod(),).
+        met_rate_adjustment (float, optional):
+            A value to be added to the metabolic rate of the UTCI model. This can be used
+            to account for changes in metabolic rate due to clothing, exercise, etc.
+            Defaults to None.
     Returns:
         Figure:
             A matplotlib Figure object.
@@ -65,7 +72,6 @@ def utci_feasibility(
 
     ypos = range(len(df))
     for n, ax in enumerate(axes):
-
         # get values
         low = df.iloc[n].filter(regex="lowest")
         high = df.iloc[n].filter(regex="highest")
@@ -159,7 +165,7 @@ def utci_feasibility(
                 frameon=False,
             )
 
-        ti = f"{to_string(epw.location)}\nFeasible ranges of UTCI temperatures ({describe_ap(analysis_periods)})"
+        ti = f"{location_to_string(epw.location)}\nFeasible ranges of UTCI temperatures ({describe_ap(analysis_periods)})"
         if met_rate_adjustment:
             ti += f" with MET rate adjustment to {met_rate_adjustment} MET"
         plt.suptitle(

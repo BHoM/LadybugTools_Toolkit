@@ -11,20 +11,21 @@ from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ..ladybug_extension.datacollection import to_series
-from .colormaps import UTCI_BOUNDARYNORM, UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
+from ..ladybug_extension.datacollection import collection_to_series
+from . import UTCI_BOUNDARYNORM, UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
 
 def utci_heatmap_histogram(
-    collection: HourlyContinuousCollection, title: str = None
+    collection: HourlyContinuousCollection,
+    **kwargs,
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
     Args:
         collection (HourlyContinuousCollection):
             A ladybug HourlyContinuousCollection object.
-        title (str, optional):
-            A title to add to the resulting figure. Default is None.
+        **kwargs:
+            Additional keyword arguments to pass to the heatmap function.
 
     Returns:
         Figure:
@@ -35,6 +36,8 @@ def utci_heatmap_histogram(
         raise ValueError(
             "Collection data type is not UTCI and cannot be used in this plot."
         )
+
+    title = kwargs.get("title", None)
 
     # Instantiate figure
     fig = plt.figure(figsize=(15, 5), constrained_layout=True)
@@ -47,7 +50,7 @@ def utci_heatmap_histogram(
     colorbar_ax = divider.append_axes("bottom", size="20%", pad=0.75)
 
     # Construct series
-    series = to_series(collection)
+    series = collection_to_series(collection)
 
     # Add heatmap
     heatmap = heatmap_ax.imshow(

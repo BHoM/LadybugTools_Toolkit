@@ -10,9 +10,9 @@ from typing import Any, List, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ladybug.epw import EPW, AnalysisPeriod
-from ladybugtools_toolkit.plot.wind_matrix import wind_matrix
-from matplotlib.colors import Colormap, ListedColormap
+from ladybug.dt import DateTime
+from ladybug.epw import EPW
+from matplotlib.colors import Colormap
 from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
@@ -26,17 +26,21 @@ from ..helpers import (
     weibull_pdf,
     wind_direction_average,
 )
-from ..ladybug_extension.analysis_period import describe as describe_ap
-from ..ladybug_extension.analysis_period import to_datetimes
-from .direction_bins import DirectionBins
-from .plot import (
-    cumulative_probability,
-    speed_frequency,
-    timeseries,
-    windhist,
-    windrose,
-    windrose_matrix,
+from ..ladybug_extension.analysis_period import (
+    AnalysisPeriod,
+    analysis_period_to_boolean,
+    analysis_period_to_datetimes,
+    describe_analysis_period,
 )
+from ..plot import (
+    radial_histogram,
+    wind_cumulative_probability,
+    wind_matrix,
+    wind_speed_frequency,
+    wind_timeseries,
+    wind_windrose,
+)
+from .direction_bins import DirectionBins
 
 
 class Wind:
@@ -206,7 +210,7 @@ class Wind:
         return Wind(
             wind_speeds=epw.wind_speed.values,
             wind_directions=epw.wind_direction.values,
-            datetimes=to_datetimes(AnalysisPeriod()),
+            datetimes=analysis_period_to_datetimes(AnalysisPeriod()),
             height_above_ground=10,
         )
 
@@ -506,7 +510,7 @@ class Wind:
 
     def filter_by_analysis_period(
         self,
-        analysis_period: AnalysisPeriod,
+        analysis_period: Union[AnalysisPeriod, Tuple[AnalysisPeriod]],
     ) -> Wind:
         """Filter the current object by a ladybug AnalysisPeriod object.
 
@@ -519,27 +523,51 @@ class Wind:
                 A dataset describing historic wind speed and direction relationship.
         """
 
-        # get the datetimes for the current object
-        all_month_day_hour_combos = [
-            (dt.month, dt.day, dt.hour) for dt in self.datetimes
-        ]
+        if isinstance(analysis_period, AnalysisPeriod):
+            analysis_period = (analysis_period,)
 
-        # get the months, day, hour combos within the analysis period
-        target_datetimes = to_datetimes(analysis_period)
-        target_month_day_hour_combos = [
-            (dt.month, dt.day, dt.hour) for dt in target_datetimes
-        ]
+        for ap in analysis_period:
+            if ap.timestep != 1:
+                raise ValueError("The timestep of the analysis period must be 1 hour.")
 
-        # create indices
-        indices = []
-        for idx, i in enumerate(all_month_day_hour_combos):
-            if i in target_month_day_hour_combos:
-                indices.append(idx)
+        # remove 29th Feb dates where present
+        df = self.df
+        df = df[~((df.index.month == 2) & (df.index.day == 29))]
+
+        # filter available data
+        possible_datetimes = [
+            DateTime(dt.month, dt.day, dt.hour, dt.minute) for dt in df.index
+        ]
+        lookup = dict(
+            zip(AnalysisPeriod().datetimes, analysis_period_to_boolean(analysis_period))
+        )
+        mask = [lookup[i] for i in possible_datetimes]
+        df = df[mask]
+
+        return Wind.from_dataframe(
+            df,
+            wind_speed_column="speed",
+            wind_direction_column="direction",
+            height_above_ground=self.height_above_ground,
+        )
+
+    def filter_by_boolean_mask(self, mask: Tuple[bool]) -> Wind:
+        """Filter the current object by a boolean mask.
+
+        Returns:
+            Wind:
+                A dataset describing historic wind speed and direction relationship.
+        """
+
+        if len(mask) != len(self.ws):
+            raise ValueError(
+                "The length of the boolean mask must match the length of the current object."
+            )
 
         return Wind(
-            self.ws.iloc[indices].tolist(),
-            self.wd.iloc[indices].tolist(),
-            self.datetimes[indices],
+            self.ws[mask].tolist(),
+            self.wd[mask].tolist(),
+            self.datetimes[mask],
             self.height_above_ground,
         )
 
@@ -946,6 +974,7 @@ class Wind:
         title: str = None,
         cmap: Union[Colormap, str] = "YlGnBu",
         calm_threshold: float = 0.1,
+        include_calm_threshold: bool = True,
     ) -> plt.Figure:  # type: ignore
         """Create a windrose.
 
@@ -975,11 +1004,17 @@ class Wind:
         )
 
         if title is not None:
-            ti = f"{title}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
+            if include_calm_threshold:
+                ti = f"{title}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
+            else:
+                ti = f"{title}"
         else:
-            ti = f"{self}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
+            if include_calm_threshold:
+                ti = f"{self}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
+            else:
+                ti = f"{self}"
 
-        return windrose(
+        return wind_windrose(
             wind_direction=new_w.wd.tolist(),
             data=new_w.ws.tolist(),
             direction_bins=direction_bins,
@@ -1033,14 +1068,15 @@ class Wind:
 
         def _savefig(obj: Wind, ap: AnalysisPeriod):
             sp = (
-                save_directory / f"{prepend_file}_{describe_ap(ap, save_path=True)}.png"
+                save_directory
+                / f"{prepend_file}_{describe_analysis_period(ap, save_path=True)}.png"
             )
             f = obj.filter_by_analysis_period(ap).plot_windrose(
                 direction_bins,
                 bins,
                 include_legend,
                 include_percentages,
-                describe_ap(ap),
+                describe_analysis_period(ap),
                 cmap,
                 calm_threshold,
             )
@@ -1116,7 +1152,7 @@ class Wind:
             cmap_label = "n-occurences"
             cbar_freq = False
 
-        fig = windhist(
+        fig = radial_histogram(
             direction_angles,
             radial_bins,
             frequency_table.values,
@@ -1130,7 +1166,7 @@ class Wind:
 
         return fig
 
-    def plot_wind_matrix(self, title: str = None, cmap: Union[Colormap, str] = "YlGnBu", show_values: bool = False) -> plt.Figure:  # type: ignore
+    def plot_wind_matrix(self, title: str = None, cmap: Union[Colormap, str] = "YlGnBu", show_values: bool = False, speed_lims: Tuple[float] = None) -> plt.Figure:  # type: ignore
         """Create a plot showing the annual wind speed and direction bins using the month_time_average method."""
         df = self.wind_matrix()
 
@@ -1148,6 +1184,7 @@ class Wind:
             cmap=cmap,
             title=title,
             show_values=show_values,
+            speed_lims=speed_lims,
         )
 
     def plot_timeseries(self, color: str = "grey") -> plt.Figure:  # type: ignore
@@ -1162,7 +1199,7 @@ class Wind:
                 A Figure object.
 
         """
-        return timeseries(self.ws, color=color, title=str(self))
+        return wind_timeseries(self.ws, color=color, title=str(self))
 
     def plot_speed_frequency(self, title: str = None) -> plt.Figure:  # type: ignore
         """Create a histogram showing wind speed frequency"""
@@ -1175,7 +1212,7 @@ class Wind:
         speed_bins = np.linspace(min(self.ws), np.quantile(self.ws, 0.999), 16)
         percentiles = (0.5, 0.95)
 
-        return speed_frequency(
+        return wind_speed_frequency(
             self.ws.tolist(),
             speed_bins=speed_bins,
             weibull=self.weibull_pdf(),
@@ -1193,30 +1230,30 @@ class Wind:
         else:
             title = f"{self}\n{title}"
 
-        return cumulative_probability(
+        return wind_cumulative_probability(
             self.ws.tolist(),
-            bins=np.linspace(0, 25, 50).tolist(),
+            speed_bins=np.linspace(0, 25, 50).tolist(),
             percentiles=percentiles,
             title=title,
         )
 
-    def plot_windrose_matrix(
-        self,
-        month_bins: Tuple[List[int]],
-        hour_bins: Tuple[List[int]],
-        direction_bins: DirectionBins = DirectionBins(),
-        data_bins: List[float] = None,
-        title: str = None,
-    ) -> plt.Figure:
-        """Create a plot showing the annual wind direction in a matrix of month and hour bins."""
-        fig = windrose_matrix(
-            wind_direction=self.wd,
-            data=self.ws,
-            month_bins=month_bins,
-            hour_bins=hour_bins,
-            data_bins=data_bins,
-            direction_bins=direction_bins,
-            cmap="YlGnBu",
-            title=title if title is not None else str(self),
-        )
-        return fig
+    # def plot_windrose_matrix(
+    #     self,
+    #     month_bins: Tuple[List[int]],
+    #     hour_bins: Tuple[List[int]],
+    #     direction_bins: DirectionBins = DirectionBins(),
+    #     data_bins: List[float] = None,
+    #     title: str = None,
+    # ) -> plt.Figure:
+    #     """Create a plot showing the annual wind direction in a matrix of month and hour bins."""
+    #     fig = windrose_matrix(
+    #         wind_direction=self.wd,
+    #         data=self.ws,
+    #         month_bins=month_bins,
+    #         hour_bins=hour_bins,
+    #         data_bins=data_bins,
+    #         direction_bins=direction_bins,
+    #         cmap="YlGnBu",
+    #         title=title if title is not None else str(self),
+    #     )
+    #     return fig

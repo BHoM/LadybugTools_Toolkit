@@ -11,12 +11,12 @@ from scipy.spatial.distance import cdist
 
 from ...bhomutil.analytics import CONSOLE_LOGGER
 from ...helpers import angle_from_north, proximity_decay
-from ...ladybug_extension.datacollection import to_series
+from ...ladybug_extension.datacollection import collection_to_series
 from ...ladybug_extension.epw import unique_wind_speed_direction
 
 
 class MoistureSource:
-    # TODO - convert this object into a BHoMObject
+    # TODO - convert this object into a BHoMObject  # pylint: disable=fixme
     """An object defining where moisture is present in a spatial thermal comfort simulation
 
     Args:
@@ -74,7 +74,7 @@ class MoistureSource:
         """Create a MoistureSource object from a dict.
 
         Args:
-            dict (Dict[str, Any]): _description_
+            dictionary (Dict[str, Any]): _description_
 
         Returns:
             MoistureSource: _description_
@@ -228,7 +228,7 @@ class MoistureSource:
                 moisture_matrix.append(d[(ws, wd)])
 
         moisture_df = pd.DataFrame(
-            moisture_matrix, index=to_series(epw.dry_bulb_temperature).index
+            moisture_matrix, index=collection_to_series(epw.dry_bulb_temperature).index
         )
 
         if simulation_directory is not None:

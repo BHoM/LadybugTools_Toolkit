@@ -12,11 +12,10 @@ from ladybug.epw import EPW
 from ladybug.sunpath import Sun
 from ladybug.viewsphere import ViewSphere
 from ladybug_geometry.geometry3d import Face3D, Point3D, Ray3D, Vector3D
-from ladybugtools_toolkit.ladybug_extension.epw import unique_wind_speed_direction
 from mpl_toolkits import mplot3d
 
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
-from ..ladybug_extension.epw import sun_position_list
+from ..ladybug_extension.epw import sun_position_list, unique_wind_speed_direction
 from .wind import wind_speed_at_height
 
 _LINEAR_SHELTER_VERTICES_NORTH_SOUTH = [
@@ -445,7 +444,9 @@ class Shelter(BHoMObject):
         # set lims
         ax.set_xlim(min(i[0] for i in vtx), max(i[0] for i in vtx))
         ax.set_ylim(min(i[1] for i in vtx), max(i[1] for i in vtx))
+        # pylint: disable=no-member
         ax.set_zlim(min(i[2] for i in vtx), max(i[2] for i in vtx))
+        # pylint: enable=no-member
         return fig
 
 

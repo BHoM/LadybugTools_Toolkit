@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Tuple, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.epw import HourlyContinuousCollection
@@ -14,15 +15,26 @@ from matplotlib.figure import Figure
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
 from ..external_comfort.utci import categorise, utci_comfort_categories
-from ..ladybug_extension.analysis_period import AnalysisPeriod, to_boolean
-from ..ladybug_extension.datacollection import from_series, to_series
-from ..ladybug_extension.epw import to_dataframe
-from ..ladybug_extension.location import to_string as location_to_string
-from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMAP
-from ..plot.timeseries_heatmap import timeseries_heatmap
+from ..ladybug_extension.analysis_period import (
+    AnalysisPeriod,
+    analysis_period_to_boolean,
+)
+from ..ladybug_extension.datacollection import (
+    collection_from_series,
+    collection_to_series,
+)
+from ..ladybug_extension.epw import epw_to_dataframe
+from ..ladybug_extension.location import location_to_string
+from ..plot import (
+    DBT_COLORMAP,
+    MRT_COLORMAP,
+    RH_COLORMAP,
+    WS_COLORMAP,
+    heatmap,
+    utci_heatmap,
+)
 from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
 from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
-from ..plot.utci_heatmap import utci_heatmap
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
 from .moisture import evaporative_cooling_effect
 from .shelter import Shelter
@@ -236,7 +248,9 @@ class ExternalComfort(BHoMObject):
         dfs = []
 
         if include_epw:
-            dfs.append(to_dataframe(self.simulation_result.epw, include_epw_additional))
+            dfs.append(
+                epw_to_dataframe(self.simulation_result.epw, include_epw_additional)
+            )
 
         if include_simulation_results:
             dfs.append(self.simulation_result.to_dataframe())
@@ -249,7 +263,7 @@ class ExternalComfort(BHoMObject):
             "wind_speed",
         ]
         for var in variables:
-            s = to_series(getattr(self, var))
+            s = collection_to_series(getattr(self, var))
             s.rename(
                 (
                     f"{self.simulation_result.identifier} - {self.typology.name}",
@@ -328,19 +342,19 @@ class ExternalComfort(BHoMObject):
                             wind_speed=_ws,
                         ).universal_thermal_climate_index,
                     )
-        df = pd.concat([to_series(i) for i in utcis], axis=1)
-        min_utci = from_series(
+        df = pd.concat([collection_to_series(i) for i in utcis], axis=1)
+        min_utci = collection_from_series(
             df.min(axis=1).rename("Universal Thermal Climate Index (C)")
         )
-        max_utci = from_series(
+        max_utci = collection_from_series(
             df.max(axis=1).rename("Universal Thermal Climate Index (C)")
         )
 
         if as_dataframe:
             return pd.concat(
                 [
-                    to_series(min_utci),
-                    to_series(max_utci),
+                    collection_to_series(min_utci),
+                    collection_to_series(max_utci),
                 ],
                 axis=1,
                 keys=["lowest", "highest"],
@@ -351,11 +365,29 @@ class ExternalComfort(BHoMObject):
     def feasible_comfort_category(
         self,
         include_additional_moisture: bool = True,
-        analysis_periods: List[AnalysisPeriod] = [AnalysisPeriod()],
+        analysis_periods: Tuple[AnalysisPeriod] = (AnalysisPeriod()),
         simplified: bool = False,
         comfort_limits: Tuple = (9, 26),
         density: bool = True,
     ) -> pd.DataFrame:
+        """Calculate the feasible comfort categories for each hour of the year.
+
+        Args:
+            include_additional_moisture (bool):
+                Include the effect of evaporative cooling on the UTCI limits.
+            analysis_periods (Tuple[AnalysisPeriod]):
+                A tuple of analysis periods to filter the results by.
+            simplified (bool):
+                Set to True to use the simplified comfort categories.
+            comfort_limits (Tuple):
+                A tuple of the lower and upper comfort limits.
+            density (bool):
+                Set to True to return the density of the comfort category.
+
+        Returns:
+            pd.DataFrame: A dataframe with the comfort categories for each hour of the year.
+        """
+
         try:
             iter(analysis_periods)
             if not all(isinstance(ap, AnalysisPeriod) for ap in analysis_periods):
@@ -363,7 +395,9 @@ class ExternalComfort(BHoMObject):
                     "analysis_periods must be an iterable of AnalysisPeriods"
                 )
         except TypeError as exc:
-            raise TypeError("analysis_periods must be an iterable of AnalysisPeriods")
+            raise TypeError(
+                "analysis_periods must be an iterable of AnalysisPeriods"
+            ) from exc
 
         for ap in analysis_periods:
             if (ap.st_month != 1) or (ap.end_month != 12):
@@ -374,7 +408,7 @@ class ExternalComfort(BHoMObject):
         )
 
         # filter by hours
-        hours = to_boolean(analysis_periods)
+        hours = analysis_period_to_boolean(analysis_periods)
         _df_filtered = _df.loc[hours]
 
         cats, _ = utci_comfort_categories(
@@ -422,7 +456,7 @@ class ExternalComfort(BHoMObject):
         add_additional_air_movement: bool = True,
         add_misting: bool = True,
         add_radiant_cooling: bool = True,
-        evaporative_cooling_effect: float = 0.7,
+        evaporative_cooling_effectiveness: float = 0.7,
         wind_speed_multiplier: float = 1,
         increase_shelter_wind_porosity: bool = True,
         adjusted_shelter_wind_porosity: float = 0.75,
@@ -439,7 +473,7 @@ class ExternalComfort(BHoMObject):
                 Add moisture to the air. Defaults to True.
             add_radiant_cooling (bool, optional):
                 Include some adjustment to the MRT. Defaults to True.
-            evaporative_cooling_effect (float, optional):
+            evaporative_cooling_effectiveness (float, optional):
                 Set the effectivess of the evaporative cooling. Defaults to 0.7.
             wind_speed_multiplier (float, optional):
                 Increase wind speed. Defaults to 1.
@@ -488,9 +522,9 @@ class ExternalComfort(BHoMObject):
                 )
             new_typology_name += " + additional air movement"
             if increase_shelter_wind_porosity:
-                CONSOLE_LOGGER.warning(
-                    f"Adjustments being made to {len(shelters) - 1 if add_overhead_shelter else len(shelters)} in-situ shelters to enable additional air movement."
-                )
+                # CONSOLE_LOGGER.warning(
+                #     f"Adjustments being made to {len(shelters) - 1 if add_overhead_shelter else len(shelters)} in-situ shelters to enable additional air movement."
+                # )
                 if any(
                     shelter.wind_porosity > adjusted_shelter_wind_porosity
                     for shelter in shelters
@@ -516,8 +550,6 @@ class ExternalComfort(BHoMObject):
                         )
                         for shelter in shelters
                     ]
-        else:
-            wind_speed_adjustment = self.typology.wind_speed_multiplier
 
         # MISTING
         if add_misting:
@@ -528,14 +560,16 @@ class ExternalComfort(BHoMObject):
                 raise ValueError(
                     'This method only works for typologies with a single "evaporative_cooling_effectiveness" value applied to all hours of the year.'
                 )
-            if self.typology.evaporative_cooling_effect >= evaporative_cooling_effect:
+            if (
+                self.typology.evaporative_cooling_effect
+                >= evaporative_cooling_effectiveness
+            ):
                 raise ValueError(
                     'The misting effect being applied is less effective than in the "baseline" it is being applied to.'
                 )
             new_typology_name += " + misting"
-            evaporative_cooling_effect = evaporative_cooling_effect
         else:
-            evaporative_cooling_effect = self.typology.evaporative_cooling_effect
+            evaporative_cooling_effectiveness = self.typology.evaporative_cooling_effect
 
         # RADIANT COOLING
         if add_radiant_cooling:
@@ -546,10 +580,10 @@ class ExternalComfort(BHoMObject):
                 raise ValueError(
                     'This method only works for typologies with a single "radiant_temperature_adjustment" value applied to all hours of the year.'
                 )
-            if radiant_temperature_adjustment == 0:
-                CONSOLE_LOGGER.warning(
-                    "Radiant temperature adjustment has been requested - but is set to 0."
-                )
+            # if radiant_temperature_adjustment == 0:
+            #     CONSOLE_LOGGER.warning(
+            #         "Radiant temperature adjustment has been requested - but is set to 0."
+            #     )
             if (
                 self.typology.radiant_temperature_adjustment
                 <= radiant_temperature_adjustment
@@ -568,7 +602,7 @@ class ExternalComfort(BHoMObject):
             name=new_typology_name,
             shelters=shelters,
             wind_speed_multiplier=wind_speed_multiplier,
-            evaporative_cooling_effect=evaporative_cooling_effect,
+            evaporative_cooling_effect=evaporative_cooling_effectiveness,
             radiant_temperature_adjustment=radiant_temperature_adjustment,
         )
 
@@ -596,17 +630,17 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_day_comfort_metrics(
-            to_series(self.universal_thermal_climate_index),
-            to_series(self.dry_bulb_temperature),
-            to_series(self.mean_radiant_temperature),
-            to_series(self.relative_humidity),
-            to_series(self.wind_speed),
+            collection_to_series(self.universal_thermal_climate_index),
+            collection_to_series(self.dry_bulb_temperature),
+            collection_to_series(self.mean_radiant_temperature),
+            collection_to_series(self.relative_humidity),
+            collection_to_series(self.wind_speed),
             month,
             day,
             self.plot_title_string,
         )
 
-    def plot_utci_heatmap(self) -> Figure:
+    def plot_utci_heatmap(self) -> plt.Axes:
         """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
         Returns:
@@ -614,8 +648,9 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_heatmap(
-            self.universal_thermal_climate_index,
-            self.plot_title_string,
+            utci_collection=self.universal_thermal_climate_index,
+            ax=None,
+            title=self.plot_title_string,
         )
 
     def plot_utci_heatmap_histogram(self) -> Figure:
@@ -626,8 +661,8 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_heatmap_histogram(
-            self.universal_thermal_climate_index,
-            self.plot_title_string,
+            collection=self.universal_thermal_climate_index,
+            title=self.plot_title_string,
         )
 
     def plot_utci_distance_to_comfortable(
@@ -659,78 +694,74 @@ class ExternalComfort(BHoMObject):
             high_limit=high_limit,
         )
 
-    def plot_dbt_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+    def plot_dbt_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly DBT values associated with this Typology.
 
         Args:
-            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
 
         Returns:
             Figure: A matplotlib Figure object.
         """
 
-        fig = timeseries_heatmap(
-            series=to_series(self.dry_bulb_temperature),
+        return heatmap(
+            series=collection_to_series(self.dry_bulb_temperature),
             cmap=DBT_COLORMAP,
             title=self.plot_title_string,
-            vlims=vlims,
+            **kwargs,
         )
 
-        return fig
-
-    def plot_rh_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+    def plot_rh_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly RH values associated with this Typology.
 
         Args:
-            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
 
         Returns:
             Figure: A matplotlib Figure object.
         """
 
-        fig = timeseries_heatmap(
-            series=to_series(self.relative_humidity),
+        return heatmap(
+            series=collection_to_series(self.relative_humidity),
             cmap=RH_COLORMAP,
             title=self.plot_title_string,
-            vlims=vlims,
+            **kwargs,
         )
 
-        return fig
-
-    def plot_ws_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+    def plot_ws_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly WS values associated with this Typology.
 
         Args:
-            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
 
         Returns:
             Figure: A matplotlib Figure object.
         """
 
-        fig = timeseries_heatmap(
-            series=to_series(self.wind_speed),
+        return heatmap(
+            series=collection_to_series(self.wind_speed),
             cmap=WS_COLORMAP,
             title=self.plot_title_string,
-            vlims=vlims,
+            **kwargs,
         )
 
-        return fig
-
-    def plot_mrt_heatmap(self, vlims: Tuple[float] = None) -> Figure:
+    def plot_mrt_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly MRT values associated with this Typology.
 
         Args:
-            vlims (Tuple[float], optional): A list of two values to set the lower and upper limits of the colorbar. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
 
         Returns:
             Figure: A matplotlib Figure object.
         """
 
-        fig = timeseries_heatmap(
-            series=to_series(self.mean_radiant_temperature),
+        return heatmap(
+            series=collection_to_series(self.mean_radiant_temperature),
             cmap=MRT_COLORMAP,
             title=self.plot_title_string,
-            vlims=vlims,
+            **kwargs,
         )
-
-        return fig

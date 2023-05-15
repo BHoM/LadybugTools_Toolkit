@@ -1,2 +1,2 @@
-C:\ProgramData\BHoM\Extensions\PythonEnvironments\LadybugTools_Toolkit\Scripts\python.exe -m pytest --cov ladybugtools_toolkit C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\tests
+C:\ProgramData\BHoM\Extensions\PythonEnvironments\LadybugTools_Toolkit\Scripts\python.exe -m pytest --cov ladybugtools_toolkit C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\tests
 cmd /k

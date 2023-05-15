@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from types import FunctionType, MethodType
 from typing import Any, Dict
 
+import numpy as np
 from caseconverter import pascalcase, snakecase
 
 from .analytics import bhom_analytics
@@ -21,7 +22,6 @@ class BHoMObject:
     def __post_init__(self):
         """Replace each method in class with a decorated version of that method."""
         if "SpatialComfort" not in str(self):
-
             for key in dir(self):
                 if key.startswith("_"):
                     continue
@@ -77,6 +77,8 @@ def inf_dtype_to_inf_str(dictionary: Dict[str, Any]) -> Dict[str, Any]:
     def to_inf_str(v: Any):
         if isinstance(v, dict):
             return inf_dtype_to_inf_str(v)
+        if isinstance(v, (list, tuple, np.ndarray)):
+            return [to_inf_str(item) for item in v]
         if v in (math.inf, -math.inf):
             return json.dumps(v)
         return v
@@ -93,6 +95,8 @@ def inf_str_to_inf_dtype(dictionary: Dict[str, Any]) -> Dict[str, Any]:
     def to_inf_dtype(v: Any):
         if isinstance(v, dict):
             return inf_str_to_inf_dtype(v)
+        if isinstance(v, (list, tuple, np.ndarray)):
+            return [to_inf_dtype(item) for item in v]
         if v in ("inf", "-inf"):
             return json.loads(v)
         return v
