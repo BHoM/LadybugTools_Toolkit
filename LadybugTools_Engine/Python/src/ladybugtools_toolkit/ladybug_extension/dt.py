@@ -3,14 +3,16 @@ from datetime import datetime
 from ladybug.dt import DateTime
 
 
-def to_datetime(lb_datetime: DateTime) -> datetime:
+def lb_datetime_to_datetime(lb_datetime: DateTime) -> datetime:
     """Convert a Ladybug DateTime object into a Python datetime object.
 
     Args:
-        datetime (DateTime): A Ladybug DateTime object.
+        lb_datetime (DateTime):
+            A Ladybug DateTime object.
 
     Returns:
-        datetime: A Python datetime object.
+        datetime:
+            A Python datetime object.
     """
     return datetime(
         year=lb_datetime.year,
@@ -22,14 +24,16 @@ def to_datetime(lb_datetime: DateTime) -> datetime:
     )
 
 
-def from_datetime(date_time: datetime) -> DateTime:
+def lb_datetime_from_datetime(date_time: datetime) -> DateTime:
     """Convert a Python datetime object into a Ladybug DateTime object.
 
     Args:
-        date_time (datetime): A Python datetime object.
+        date_time (datetime):
+            A Python datetime object.
 
     Returns:
-        DateTime: A Ladybug DateTime object.
+        DateTime:
+            A Ladybug DateTime object.
     """
 
     leap_year = (date_time.year % 4 == 0 and date_time.year % 100 != 0) or (

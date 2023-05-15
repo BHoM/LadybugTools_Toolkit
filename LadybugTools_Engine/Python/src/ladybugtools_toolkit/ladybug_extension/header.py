@@ -5,7 +5,7 @@ from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
 
 
-def to_string(header: Header) -> str:
+def header_to_string(header: Header) -> str:
     """Convert a Ladybug header object into a string.
 
     Args:
@@ -19,7 +19,7 @@ def to_string(header: Header) -> str:
     return f"{header.data_type} ({header.unit})"
 
 
-def to_multiindex(header: Header) -> pd.MultiIndex:
+def header_to_multiindex(header: Header) -> pd.MultiIndex:
     """Convert a Ladybug header object into a Pandas MultiIndex. Used for creating CSV headers for
         reloading by Ladybug.
 
@@ -42,7 +42,7 @@ def to_multiindex(header: Header) -> pd.MultiIndex:
     return pd.MultiIndex.from_arrays([[i] for i in values], names=names)
 
 
-def from_string(string: str, is_leap_year: bool = False) -> Header:
+def header_from_string(string: str, is_leap_year: bool = False) -> Header:
     """Convert a string into a Ladybug header object.
 
     Args:
@@ -78,7 +78,7 @@ def from_string(string: str, is_leap_year: bool = False) -> Header:
     )
 
 
-def from_multiindex(multiindex: pd.MultiIndex) -> Header:
+def header_from_multiindex(multiindex: pd.MultiIndex) -> Header:
     """Convert a Pandas MultiIndex into a Ladybug header object.
 
     Args:

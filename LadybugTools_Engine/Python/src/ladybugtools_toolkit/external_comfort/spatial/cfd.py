@@ -9,7 +9,7 @@ from ladybug.epw import EPW
 from scipy.interpolate import interp1d
 from tqdm import tqdm
 
-from ...ladybug_extension.datacollection import to_series
+from ...ladybug_extension.datacollection import collection_to_series
 from ...ladybug_extension.epw import unique_wind_speed_direction
 
 EXAMPLE_CFD_CONFIG_JSON = """
@@ -93,7 +93,7 @@ def spatial_wind_speed(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     vals = []
     for ws, wd in list(zip(*[epw.wind_speed, epw.wind_direction])):
         vals.append(d[(ws, wd)])
-    idx = to_series(epw.wind_direction).index
+    idx = collection_to_series(epw.wind_direction).index
     vel_df = pd.DataFrame(np.array(vals), index=idx)
 
     return vel_df
@@ -148,7 +148,7 @@ def load_cfd_extract(file: Path, velocity_col: str = "VELOCITY") -> pd.DataFrame
     Args:
         file (Path):
             The path to the CFX-Post extract file.
-        value_renamer (str, optional):
+        velocity_col (str, optional):
             A string to rename the last column by.
 
     Returns:

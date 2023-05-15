@@ -7,14 +7,17 @@ import numpy as np
 import pandas as pd
 from ladybug.sql import SQLiteResult
 
-from ..ladybug_extension.datacollection import to_series
+from ..ladybug_extension.datacollection import collection_to_series
 
 
 def load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
     """Load a set of input files and combine into a DataFrame with filename as header.
 
     Args:
-        input_files (List[Union[str, Path]]): A list of paths to the input files.
+        func (Callable):
+            The function to use to load each of the files.
+        files (List[Union[str, Path]]):
+            A list of paths to the input files.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input files.
@@ -72,10 +75,12 @@ def load_npy_file(npy_file: Union[str, Path]) -> pd.DataFrame:
     """Load a Honeybee-Radiance .npy file and return a DataFrame with the data.
 
     Args:
-        ill_file (Union[str, Path]): The path to the Radiance .ill file.
+        npy_file (Union[str, Path]):
+            The path to the Radiance/Honeybee .npy file.
 
     Returns:
-        pd.DataFrame: A DataFrame containing the data from the .ill file.
+        pd.DataFrame:
+            A DataFrame containing the data from the .npy file.
     """
     npy_file = Path(npy_file)
 
@@ -197,7 +202,7 @@ def load_sql_file(sql_file: Union[str, Path]) -> pd.DataFrame:
     serieses = []
     headers = []
     for collection in collections:
-        serieses.append(to_series(collection))
+        serieses.append(collection_to_series(collection))
         variable = collection.header.metadata["type"]
         unit = collection.header.unit
 

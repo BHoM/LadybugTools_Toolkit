@@ -7,8 +7,8 @@ from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 
-from .colormaps import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
-from .lighten_color import lighten_color
+from ..helpers import lighten_color
+from . import UTCI_COLORMAP, UTCI_LABELS, UTCI_LEVELS
 
 
 def utci_comparison_diurnal(

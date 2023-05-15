@@ -49,11 +49,11 @@ def dry_bulb_temperature_at_height(
     """Translate DBT values from an EPW into
 
     Args:
-        dry_bulb_temperature_collection (HourlyContinuousCollection): _description_
-        target_height (float): _description_
+        epw (EPW): A Ladybug EPW object.
+        target_height (float): The height to translate the reference temperature towards.
 
     Returns:
-        HourlyContinuousCollection: _description_
+        HourlyContinuousCollection: A resulting dry-bulb temperature collection.
     """
     dbt_collection = copy.copy(epw.dry_bulb_temperature)
     dbt_collection.values = [

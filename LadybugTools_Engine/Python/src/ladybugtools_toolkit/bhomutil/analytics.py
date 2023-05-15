@@ -8,7 +8,7 @@ from functools import wraps
 from typing import Callable
 
 from .encoder import BHoMEncoder
-from .log import _bhom_version, _console_logger, _file_logger, _ticks
+from .log import _bhom_version, _console_logger, _file_logger
 
 BHOM_VERSION = _bhom_version()  # defined here to save calling method multiple times
 

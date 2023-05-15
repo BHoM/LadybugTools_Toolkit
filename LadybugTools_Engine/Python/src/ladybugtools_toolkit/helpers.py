@@ -1,5 +1,7 @@
 import base64
+import colorsys
 import contextlib
+import copy
 import io
 import json
 import math
@@ -11,20 +13,18 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.epw import AnalysisPeriod, Location
-from ladybug.skymodel import (
-    calc_horizontal_infrared,
-    calc_sky_temperature,
-    estimate_illuminance_from_irradiance,
-    get_extra_radiation,
-    zhang_huang_solar,
-    zhang_huang_solar_split,
-)
+from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
+                              estimate_illuminance_from_irradiance,
+                              get_extra_radiation, zhang_huang_solar,
+                              zhang_huang_solar_split)
 from ladybug.sunpath import Sunpath
-from matplotlib.colors import colorConverter
+from matplotlib.colors import cnames, colorConverter, to_rgb
 from matplotlib.figure import Figure
+from matplotlib.tri.triangulation import Triangulation
 from PIL import Image
 from scipy.stats import exponweib
 from tqdm import tqdm
@@ -87,6 +87,8 @@ def animation(
     Args:
         image_files (List[Union[str, Path]]):
             A list of image files.
+        output_gif (Union[str, Path]):
+            The output gif file to be created.
         ms_per_image (int, optional):
             NUmber of milliseconds per image. Default is 333, for 3 images per second.
 
@@ -328,7 +330,7 @@ def rolling_window(array: List[Any], window: int):
 
     a: np.ndarray = np.array(array)
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-    strides = a.strides + (a.strides[-1],)
+    strides = a.strides + (a.strides[-1],)  # pylint: disable=unsubscriptable-object
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
@@ -549,7 +551,7 @@ def cardinality(direction_angle: float, directions: int = 16):
     """Returns the cardinal orientation of a given angle, where that angle is related to north at
         0 degrees.
     Args:
-        angle_from_north (float):
+        direction_angle (float):
             The angle to north in degrees (+Ve is interpreted as clockwise from north at 0.0
             degrees).
         directions (int):
@@ -727,7 +729,7 @@ def unstringify_df_header(columns: List[str]) -> List[Any]:
     evaled = []
     for i in columns:
         try:
-            evaled.append(eval(i))
+            evaled.append(eval(i))  # pylint: disable=eval-used
         except NameError:
             evaled.append(i)
 
@@ -746,7 +748,7 @@ def store_dataset(
             The dataframe to be serialised
         target_path (Path):
             The target file for storage.
-        downcast_data (bool, optional):
+        downcast (bool, optional):
             Optinal downcasting to reduce dataframe dtype complexity. Defaults to True.
 
     Returns:
@@ -1015,6 +1017,8 @@ def circular_weighted_mean(angles: List[float], weights: List[float]):
     Args:
         angles (List[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
+        weights (List[float]):
+            A collection of weights, which must sum to 1.
 
     Returns:
         float:
@@ -1055,12 +1059,10 @@ def wind_direction_average(angles: List[float]) -> float:
     Args:
         angles (List[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
-        weights (List[float]):
-            A collection of weights between 0-1, summing to 1.
 
     Returns:
         float:
-            An average weighted angle.
+            An average angle.
     """
 
     angles = np.array(angles)  # type: ignore
@@ -1131,12 +1133,14 @@ def radiation_at_height(
     Nov 2009, Frascati, Italy. pp.S05.
 
     Args:
-        radiation (float):
+        reference_radiation (float):
             The radiation at the reference height.
         target_height (float):
             The height at which the radiation is required, in m.
         reference_height (float, optional):
             The height at which the reference radiation was measured. Defaults to 10m.
+        lapse_rate (float, optional):
+            The lapse rate of the atmosphere (rate at which it changes per step change in height). Defaults to 0.08.
 
     Returns:
         float:
@@ -1214,3 +1218,172 @@ def tile_images(
         img.close()
 
     return grid
+
+
+def validate_timeseries(
+    obj: Any,
+    is_annual: bool = False,
+    is_hourly: bool = False,
+    is_contiguous: bool = False,
+) -> None:
+    """Check if the input object is a pandas Series, and has a datetime index.
+
+    Args:
+        obj (Any):
+            The object to check.
+        is_annual (bool, optional):
+            If True, check that the series is annual. Defaults to False.
+        is_hourly (bool, optional):
+            If True, check that the series is hourly. Defaults to False.
+        is_contiguous (bool, optional):
+            If True, check that the series is contiguous. Defaults to False.
+
+    Raises:
+        TypeError: If the object is not a pandas Series.
+        TypeError: If the series does not have a datetime index.
+        ValueError: If the series is not annual.
+        ValueError: If the series is not hourly.
+        ValueError: If the series is not contiguous.
+    """
+    if not isinstance(obj, pd.Series):
+        raise TypeError("series must be a pandas Series")
+    if not isinstance(obj.index, pd.DatetimeIndex):
+        raise TypeError("series must have a datetime index")
+    if is_annual:
+        if (obj.index.day_of_year.nunique() != 365) or (
+            obj.index.day_of_year.nunique() != 366
+        ):
+            raise ValueError("series is not annual")
+    if is_hourly:
+        if obj.index.hour.nunique() != 24:
+            raise ValueError("series is not hourly")
+    if is_contiguous:
+        if not obj.index.is_monotonic_increasing:
+            raise ValueError("series is not contiguous")
+
+
+def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]:
+    """
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+
+    Args:
+        color (str):
+            A color-like string.
+        amount (float):
+            The amount of lightening to apply.
+
+    Returns:
+        Tuple[float]:
+            An RGB value.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    try:
+        c = cnames[color]
+    except KeyError:
+        c = color
+    c = colorsys.rgb_to_hls(*to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
+
+
+def triangulation_area(triang: Triangulation) -> float:
+    """Calculate the area of a matplotlib Triangulation.
+
+    Args:
+        triang (Triangulation):
+            A matplotlib Triangulation object.
+
+    Returns:
+        float:
+            The area of the Triangulation in the units given.
+    """
+
+    triangles = triang.triangles
+    x, y = triang.x, triang.y
+    a, _ = triangles.shape
+    i = np.arange(a)
+    area = np.sum(
+        np.abs(
+            0.5
+            * (
+                (x[triangles[i, 1]] - x[triangles[i, 0]])
+                * (y[triangles[i, 2]] - y[triangles[i, 0]])
+                - (x[triangles[i, 2]] - x[triangles[i, 0]])
+                * (y[triangles[i, 1]] - y[triangles[i, 0]])
+            )
+        )
+    )
+
+    return area
+
+
+def create_triangulation(
+    x: List[float],
+    y: List[float],
+    alpha: float = None,
+    max_iterations: int = 250,
+    increment: float = 0.01,
+) -> Triangulation:
+    """Create a matplotlib Triangulation from a list of x and y coordinates, including a mask to
+        remove elements with edges larger than alpha.
+
+    Args:
+        x (List[float]):
+            A list of x coordinates.
+        y (List[float]):
+            A list of y coordinates.
+        alpha (float, optional):
+            A value to start alpha at.
+            Defaults to None, with an estimate made for a suitable starting point.
+        max_iterations (int, optional):
+            The number of iterations to run to check against triangulation validity.
+            Defaults to 250.
+        increment (int, optional):
+            The value by which to increment alpha by when searching for a valid triangulation.
+            Defaults to 0.01.
+
+    Returns:
+        Triangulation:
+            A matplotlib Triangulation object.
+    """
+
+    if alpha is None:
+        # TODO - add method here to automatically determine appropriate alpha value
+        alpha = 1.1
+
+    if len(x) != len(y):
+        raise ValueError("x and y must be the same length")
+
+    # Triangulate X, Y locations
+    triang = Triangulation(x, y)
+
+    xtri = x[triang.triangles] - np.roll(x[triang.triangles], 1, axis=1)
+    ytri = y[triang.triangles] - np.roll(y[triang.triangles], 1, axis=1)
+    maxi = np.max(np.sqrt(xtri**2 + ytri**2), axis=1)
+
+    # Iterate triangulation masking until a possible mask is found
+    count = 0
+    fig, ax = plt.subplots(1, 1)
+    synthetic_values = range(len(x))
+    success = False
+    while not success:
+        count += 1
+        try:
+            tr = copy.deepcopy(triang)
+            tr.set_mask(maxi > alpha)
+            ax.tricontour(tr, synthetic_values)
+            success = True
+        except ValueError:
+            alpha += increment
+        else:
+            break
+        if count > max_iterations:
+            raise ValueError(
+                f"Could not create a valid triangulation mask within {max_iterations}"
+            )
+    plt.close(fig)
+    triang.set_mask(maxi > alpha)
+    return triang

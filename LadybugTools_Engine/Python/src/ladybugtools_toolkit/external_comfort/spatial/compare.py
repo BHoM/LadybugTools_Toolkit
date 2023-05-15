@@ -8,8 +8,8 @@ from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ...bhomutil.analytics import CONSOLE_LOGGER
-from ...ladybug_extension.analysis_period import describe as describe_analysis_period
-from ...plot.create_triangulation import create_triangulation
+from ...helpers import create_triangulation
+from ...ladybug_extension.analysis_period import describe_analysis_period
 from .spatial_comfort import SpatialComfort, SpatialMetric
 
 
@@ -219,7 +219,7 @@ def compare_mrt(
 
     # plot heatmap
     tcf_properties = {
-        "cmap": "PiYG_r",
+        "cmap": "PuOr_r",
         "levels": np.linspace(-10, 10, 11),
         "extend": "both",
     }
@@ -281,7 +281,7 @@ def compare_sun_hours(
     """
 
     CONSOLE_LOGGER.info(
-        f"[SpatialComfort - Comparison] - Plotting SUn-Hours difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        f"[SpatialComfort - Comparison] - Plotting Sun-Hours difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
     )
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
@@ -304,7 +304,7 @@ def compare_sun_hours(
 
     # plot heatmap
     tcf_properties = {
-        "cmap": "YlOrBr_r",
+        "cmap": "RdGy_r",
         "levels": np.linspace(-2, 2, 11),
         "extend": "both",
     }
@@ -327,7 +327,7 @@ def compare_sun_hours(
     cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
     cbar = plt.colorbar(tcf, cax=cax)
     cbar.outline.set_visible(False)
-    cbar.set_label("Typical change in MRT (C)")
+    cbar.set_label("Typical change in Direct Sun Hours (hours)")
 
     # add title
     ax.set_title(
@@ -356,6 +356,8 @@ def compare_ws(
             The first SpatialComfort object.
         spatial_result_2 (SpatialComfort):
             The second SpatialComfort object.
+        metric (SpatialMetric):
+            The metric to compare.
         analysis_period (AnalysisPeriod, optional):
             The analysis period to use for the comparison. Defaults to AnalysisPeriod().
         alpha (float, optional):

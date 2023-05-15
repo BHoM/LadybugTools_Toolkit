@@ -4,7 +4,7 @@ load-plugins=pylint.extensions.docparams
 [BASIC]
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names=a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, df, ws, wd, rh, fp, id, dt, fph, ch, ax, gs, xx, yy, pt, im, ms, ls, ta, tr, tk, zs, sd, es, ap, ha, ci, hr, cf, cl, cb, kw, wr, sm, ti, nn, cc
+good-names=a, ap, ax, b, c, cb, cc, cf, ch, ci, cl, d, df, dt, e, es, f, fp, fph, g, gs, h, ha, ha, hr, i, id, im, j, k, kw, kw, l, ls, m, ms, n, nn, o, p, pc, pt, q, r, rh, s, sd, sm, t, ta, ti, tk, tr, u, v, va, w, wd, wr, ws, x, xs, xx, xy, y, ys, yy, z, zs
 ignored-modules=win32api,cv2
 
 [FORMAT]
@@ -15,26 +15,26 @@ max-line-length=120
 
 
 disable=
-    R0904, # too-many-public-methods
-    C0103, # invalid-name
-    C0114, # missing-module-docstring
-    C0115, # missing-class-docstring
-    C0301, # line-too-long
-    C0302, # too-many-lines
-    E1101, # no-member
-    R0801, # duplicate-code
     R0902, # too-many-instance-attributes
+    R0904, # too-many-public-methods
     R0912, # too-many-branches
     R0913, # too-many-arguments
     R0914, # too-many-locals
     R0915, # too-many-statements
+    ; C0103, # invalid-name
+    C0114, # missing-module-docstring
+    ; C0115, # missing-class-docstring
+    C0301, # line-too-long
+    C0302, # too-many-lines
+    ; E1101, # no-member
+    ; R0801, # duplicate-code
     W0212, # protected-access
     W0511, # fixme
     W0702, # bare-except
     W0703, # broad-except
     W1203, # logging-fstring-interpolation
-    W9006, # raise-missing-from
-    W9015, # raise-missing-from
-    W9017, # differing-param-doc
-    W9018, # differing-type-doc
+    ; W9006, # raise-missing-from
+    ; W9015, # raise-missing-from
+    ; W9017, # differing-param-doc
+    ; W9018, # differing-type-doc
 
