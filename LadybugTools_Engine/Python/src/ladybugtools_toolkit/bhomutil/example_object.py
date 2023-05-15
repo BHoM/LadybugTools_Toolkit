@@ -1,3 +1,5 @@
+# pylint: disable=no-member
+
 from .bhom_object import BHoMObject
 from .example_function import example_function
 
@@ -5,6 +7,7 @@ from .example_function import example_function
 class ExampleObject(BHoMObject):
     """An example object inheriting from BHoMObject."""
 
+    # pylint disable=no-member
     def __init__(self, a: int):
         self.a = a
         super().__init__()
@@ -33,3 +36,5 @@ class ExampleObject(BHoMObject):
     def from_int(cls, num: int):
         """An example class method."""
         return cls(num)
+
+    # pylint enable=no-member

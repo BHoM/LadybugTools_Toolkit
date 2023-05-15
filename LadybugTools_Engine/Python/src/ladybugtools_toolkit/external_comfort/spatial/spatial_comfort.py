@@ -1,3 +1,4 @@
+# pylint: disable=broad-exception-caught
 from __future__ import annotations
 
 import calendar
@@ -23,21 +24,24 @@ from PIL import Image
 
 from ...bhomutil.analytics import CONSOLE_LOGGER
 from ...bhomutil.bhom_object import BHoMObject
-from ...helpers import sanitise_string
+from ...helpers import create_triangulation, sanitise_string
 from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
-from ...ladybug_extension.analysis_period import describe as describe_analysis_period
-from ...ladybug_extension.analysis_period import to_datetimes
-from ...ladybug_extension.datacollection import from_series, to_series
+from ...ladybug_extension.analysis_period import (
+    analysis_period_to_datetimes,
+    describe_analysis_period,
+)
+from ...ladybug_extension.datacollection import (
+    collection_from_series,
+    collection_to_series,
+)
 from ...ladybug_extension.epw import seasonality_from_month, sun_position_list
-from ...ladybug_extension.location import to_string as describe_loc
-from ...plot.create_triangulation import create_triangulation
-from ...plot.sunpath import sunpath
+from ...plot import sunpath, utci_heatmap_difference
 from ...plot.utci_distance_to_comfortable import utci_distance_to_comfortable
-from ...plot.utci_heatmap_difference import utci_heatmap_difference
 from ...plot.utci_heatmap_histogram import utci_heatmap_histogram
 from ..simulate import SimulationResult
 from ..simulate import direct_sun_hours as dsh
 from ..simulate import working_directory
+from ..utci import describe_monthly as describe_utci_monthly
 from ..utci import utci, utci_parallel
 from .calculate import (
     rwdi_london_thermal_comfort_category,
@@ -45,7 +49,6 @@ from .calculate import (
 )
 from .cfd import spatial_wind_speed
 from .metric import SpatialMetric
-from .sky_view_pov import sky_view_pov
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -260,7 +263,9 @@ class SpatialComfort(BHoMObject):
                 return self._dry_bulb_temperature_epw
 
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            series = to_series(self.simulation_result.epw.dry_bulb_temperature)
+            series = collection_to_series(
+                self.simulation_result.epw.dry_bulb_temperature
+            )
             df = pd.DataFrame(
                 np.tile(series.values, (len(self.points.x.values), 1)).T,
                 index=series.index,
@@ -285,7 +290,7 @@ class SpatialComfort(BHoMObject):
                 return self._relative_humidity_epw
 
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            series = to_series(self.simulation_result.epw.relative_humidity)
+            series = collection_to_series(self.simulation_result.epw.relative_humidity)
             df = pd.DataFrame(
                 np.tile(series.values, (len(self.points.x.values), 1)).T,
                 index=series.index,
@@ -310,7 +315,7 @@ class SpatialComfort(BHoMObject):
                 return self._wind_speed_epw
 
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            series = to_series(self.simulation_result.epw.wind_speed)
+            series = collection_to_series(self.simulation_result.epw.wind_speed)
             df = pd.DataFrame(
                 np.tile(series.values, (len(self.points.x.values), 1)).T,
                 index=series.index,
@@ -335,7 +340,7 @@ class SpatialComfort(BHoMObject):
                 return self._wind_direction_epw
 
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            series = to_series(self.simulation_result.epw.wind_direction)
+            series = collection_to_series(self.simulation_result.epw.wind_direction)
             df = pd.DataFrame(
                 np.tile(series.values, (len(self.points.x.values), 1)).T,
                 index=series.index,
@@ -452,12 +457,24 @@ class SpatialComfort(BHoMObject):
                 return self._sky_view
 
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            files = list(
-                (self.spatial_simulation_directory / "sky_view" / "results").glob(
-                    "*.res"
+            try:
+                files = list(
+                    (
+                        self.spatial_simulation_directory
+                        / "sky_view"
+                        / "results"
+                        / "sky_view"
+                    ).glob("*.res")
                 )
-            )
-            df = load_res(files).clip(lower=0, upper=100).round(2)
+                df = load_res(files).clip(lower=0, upper=100).round(2)
+            except Exception as _:
+                files = list(
+                    (self.spatial_simulation_directory / "sky_view" / "results").glob(
+                        "*.res"
+                    )
+                )
+                df = load_res(files).clip(lower=0, upper=100).round(2)
+
             df.to_parquet(save_path)
             self._sky_view = df
         return self._sky_view
@@ -568,8 +585,8 @@ class SpatialComfort(BHoMObject):
             except Exception as exc:
                 try:
                     ws = self.wind_speed_epw
-                except Exception as exc:
-                    raise exc
+                except Exception as exc_inner:
+                    raise exc_inner
 
             df = pd.DataFrame(
                 utci_parallel(
@@ -594,7 +611,7 @@ class SpatialComfort(BHoMObject):
     def points_xyz(self) -> np.ndarray:
         """Get the points associated with this object as an array of [[x, y, z], [x, y, z], ...]"""
         return np.stack(
-            [self.points.x.values, self.points.y.values, self.points_z], axis=1
+            [self.points.x.values, self.points.y.values, self.points.z.values], axis=1
         )
 
     @property
@@ -602,7 +619,7 @@ class SpatialComfort(BHoMObject):
         """The coldest day in the year associated with this case (average for all hours in day), within the winter period."""
         seasons = seasonality_from_month(self.simulation_result.epw)
         return (
-            to_series(self.simulation_result.epw.dry_bulb_temperature)
+            collection_to_series(self.simulation_result.epw.dry_bulb_temperature)
             .loc[seasons == "Winter"]
             .resample("D")
             .mean()
@@ -615,7 +632,7 @@ class SpatialComfort(BHoMObject):
         """The hottest day in the year associated with this case (average for all hours in day), within the summer period."""
         seasons = seasonality_from_month(self.simulation_result.epw)
         return (
-            to_series(self.simulation_result.epw.dry_bulb_temperature)
+            collection_to_series(self.simulation_result.epw.dry_bulb_temperature)
             .loc[seasons == "Summer"]
             .resample("D")
             .mean()
@@ -1046,7 +1063,7 @@ class SpatialComfort(BHoMObject):
 
         # add title
         ax.set_title(
-            f"{describe_analysis_period(analysis_period, include_timestep=False)}\n{metric.description()}\nAverage: {np.mean(series.values):0.1f}hours",
+            f"{describe_analysis_period(analysis_period, include_timestep=False)}\n{metric.description()}\nAverage: {np.mean(series.values):0.1f} hours",
             ha="left",
             va="bottom",
             x=0,
@@ -1361,52 +1378,52 @@ class SpatialComfort(BHoMObject):
     ) -> plt.Figure:
         """Return an Image object containing a combination of "hours cold/hot/comfortable"."""
 
+        # # create figures
+        # cold_fig = self.plot_hours_cold(
+        #     analysis_period, metric, cold_threshold=min(comfort_thresholds)
+        # )
+        # comfortable_fig = self.plot_hours_comfortable(
+        #     analysis_period, metric, comfort_thresholds=comfort_thresholds
+        # )
+        # hot_fig = self.plot_hours_hot(
+        #     analysis_period, metric, hot_threshold=max(comfort_thresholds)
+        # )
+
+        # # convert to image objects
+        # cold_im = Image.frombytes(
+        #     "RGBA", cold_fig.canvas.get_width_height(), cold_fig.canvas.tostring_argb()
+        # )
+        # comfortable_im = Image.frombytes(
+        #     "RGBA",
+        #     comfortable_fig.canvas.get_width_height(),
+        #     comfortable_fig.canvas.tostring_argb(),
+        # )
+        # hot_im = Image.frombytes(
+        #     "RGBA", hot_fig.canvas.get_width_height(), hot_fig.canvas.tostring_argb()
+        # )
+
+        # # combine images in single image object
+        # images = [
+        #     cold_im,
+        #     comfortable_im,
+        #     hot_im,
+        # ]
+        # widths, heights = zip(*(i.size for i in images))
+        # total_width = sum(widths)
+        # max_height = max(heights)
+        # new_im = Image.new("RGBA", (total_width, max_height))
+        # x_offset = 0
+        # for im in images:
+        #     new_im.paste(im, (x_offset, 0))
+        #     x_offset += im.size[0]
+
+        # plt.close(cold_fig)
+        # plt.close(comfortable_fig)
+        # plt.close(hot_fig)
+
+        # return new_im
+
         raise NotImplementedError("Not yet working!")
-
-        # create figures
-        cold_fig = self.plot_hours_cold(
-            analysis_period, metric, cold_threshold=min(comfort_thresholds)
-        )
-        comfortable_fig = self.plot_hours_comfortable(
-            analysis_period, metric, comfort_thresholds=comfort_thresholds
-        )
-        hot_fig = self.plot_hours_hot(
-            analysis_period, metric, hot_threshold=max(comfort_thresholds)
-        )
-
-        # convert to image objects
-        cold_im = Image.frombytes(
-            "RGBA", cold_fig.canvas.get_width_height(), cold_fig.canvas.tostring_argb()
-        )
-        comfortable_im = Image.frombytes(
-            "RGBA",
-            comfortable_fig.canvas.get_width_height(),
-            comfortable_fig.canvas.tostring_argb(),
-        )
-        hot_im = Image.frombytes(
-            "RGBA", hot_fig.canvas.get_width_height(), hot_fig.canvas.tostring_argb()
-        )
-
-        # combine images in single image object
-        images = [
-            cold_im,
-            comfortable_im,
-            hot_im,
-        ]
-        widths, heights = zip(*(i.size for i in images))
-        total_width = sum(widths)
-        max_height = max(heights)
-        new_im = Image.new("RGBA", (total_width, max_height))
-        x_offset = 0
-        for im in images:
-            new_im.paste(im, (x_offset, 0))
-            x_offset += im.size[0]
-
-        plt.close(cold_fig)
-        plt.close(comfortable_fig)
-        plt.close(hot_fig)
-
-        return new_im
 
     def plot_spatial_point_locations(self, n: int = 100) -> plt.Figure:
         """Return the spatial point locations figure."""
@@ -1489,7 +1506,7 @@ class SpatialComfort(BHoMObject):
         date_form = DateFormatter("%b-%d")
 
         fig, ax = plt.subplots(1, 1, figsize=(16, 2))
-        to_series(self.simulation_result.epw.dry_bulb_temperature).resample(
+        collection_to_series(self.simulation_result.epw.dry_bulb_temperature).resample(
             "D"
         ).mean().plot(ax=ax, c="orange")
         lims = ax.get_ylim()
@@ -1520,6 +1537,8 @@ class SpatialComfort(BHoMObject):
         point_index: int,
         point_identifier: str,
         metric: SpatialMetric,
+        comfort_limits: Tuple = (9, 26),
+        analysis_period: AnalysisPeriod = AnalysisPeriod(),
     ) -> None:
         """Return the figure object showing the location of a specific point."""
 
@@ -1533,7 +1552,7 @@ class SpatialComfort(BHoMObject):
             )
 
         # create the datacollection for the given point index
-        point_utci = from_series(
+        point_utci = collection_from_series(
             metric_values.iloc[:, point_index].rename(
                 "Universal Thermal Climate Index (C)"
             )
@@ -1624,14 +1643,32 @@ class SpatialComfort(BHoMObject):
             )
             f.savefig(save_path, transparent=True, bbox_inches="tight")
 
+        # create pt location CSV UTCI simplified
+        save_path = (
+            self._plot_directory
+            / f"point_{sanitise_string(point_identifier)}_monthlysummary.png"
+        )
+        if not save_path.exists():
+            pt_monthly_utci = describe_utci_monthly(
+                utci_collection=point_utci,
+                density=True,
+                simplified=True,
+                comfort_limits=comfort_limits,
+                analysis_periods=analysis_period,
+            )
+            pt_monthly_utci.to_csv(save_path)
+
         # create pt location sky view
         # self.plot_sky_view_pov(point_index, point_identifier, Vector3D(0, 0, 0.5))
 
         plt.close("all")
 
-        return None
-
-    def summarise_point_from_json(self, metric: SpatialMetric) -> None:
+    def summarise_point_from_json(
+        self,
+        metric: SpatialMetric,
+        comfort_limits: Tuple = (9, 26),
+        analysis_period: AnalysisPeriod = AnalysisPeriod(),
+    ) -> None:
         """For each point given in a JSON file, summarise the point."""
 
         focus_pts_file = self.spatial_simulation_directory / "focus_points.json"
@@ -1642,10 +1679,12 @@ class SpatialComfort(BHoMObject):
             return None
 
         with open(focus_pts_file, "r", encoding="utf-8") as fp:
-            focus_pts = eval(fp.read())
+            focus_pts = eval(fp.read())  # pylint: disable=eval-used
 
         for point_identifier, point_index in focus_pts.items():
-            self.summarise_point(point_index, point_identifier, metric)
+            self.summarise_point(
+                point_index, point_identifier, metric, comfort_limits, analysis_period
+            )
 
         return None
 
@@ -1659,10 +1698,32 @@ class SpatialComfort(BHoMObject):
         comfort_percentages: bool = False,
         sunlight_hours: bool = False,
         london_comfort: bool = False,
-        overwrite: bool = False,
         comfort_limits: Tuple[float] = (9, 26),
     ) -> None:
-        """Run all plotting methods"""
+        """
+        Run all plotting methods
+
+        Args:
+            pt_locations (bool, optional):
+                Plot point locations. Defaults to False.
+            sky_view (bool, optional):
+                Plot sky view. Defaults to False.
+            sunpaths (bool, optional):
+                Plot sunpaths. Defaults to False.
+            typical_wind (bool, optional):
+                Plot typical wind. Defaults to False.
+            typical_mrt (bool, optional):
+                Plot typical MRT. Defaults to False.
+            comfort_percentages (bool, optional):
+                Plot comfort percentages. Defaults to False.
+            sunlight_hours (bool, optional):
+                Plot sunlight hours. Defaults to False.
+            london_comfort (bool, optional):
+                Plot London comfort. Defaults to False.
+            comfort_limits (Tuple[float], optional):
+                Comfort limits. Defaults to (9, 26).
+
+        """
 
         cold_threshold = min(comfort_limits)
         hot_threshold = max(comfort_limits)
@@ -1700,17 +1761,6 @@ class SpatialComfort(BHoMObject):
                     fig.savefig(save_path, transparent=True, bbox_inches="tight")
                     plt.close(fig)
 
-            if typical_wind:
-                if analysis_period.timestep == 1:
-                    save_path = (
-                        self._plot_directory
-                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_wind.png"
-                    )
-                    if not save_path.exists():
-                        fig = self.plot_wind_average(analysis_period)
-                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                        plt.close(fig)
-
             if typical_mrt:
                 if analysis_period.timestep == 1:
                     save_path = (
@@ -1722,51 +1772,78 @@ class SpatialComfort(BHoMObject):
                         fig.savefig(save_path, transparent=True, bbox_inches="tight")
                         plt.close(fig)
 
+            if typical_wind:
+                # pylint disable=broad-exception-caught
+                try:
+                    if analysis_period.timestep == 1:
+                        save_path = (
+                            self._plot_directory
+                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_wind.png"
+                        )
+                        if not save_path.exists():
+                            fig = self.plot_wind_average(analysis_period)
+                            fig.savefig(
+                                save_path, transparent=True, bbox_inches="tight"
+                            )
+                            plt.close(fig)
+                except Exception:
+                    pass
+                # pylint enable=broad-exception-caught
+
             if comfort_percentages:
-                if analysis_period.timestep == 1:
-                    # time cold
-                    save_path = (
-                        self._plot_directory
-                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_cold.png"
-                    )
-                    if not save_path.exists():
-                        fig = self.plot_hours_cold(
-                            analysis_period,
-                            SpatialMetric.UTCI_CALCULATED,
-                            cold_threshold=cold_threshold,
+                try:
+                    if analysis_period.timestep == 1:
+                        # time cold
+                        save_path = (
+                            self._plot_directory
+                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_cold.png"
                         )
-                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                        plt.close(fig)
+                        if not save_path.exists():
+                            fig = self.plot_hours_cold(
+                                analysis_period,
+                                SpatialMetric.UTCI_CALCULATED,
+                                cold_threshold=cold_threshold,
+                            )
+                            fig.savefig(
+                                save_path, transparent=True, bbox_inches="tight"
+                            )
+                            plt.close(fig)
 
-                    # time comfortable
-                    save_path = (
-                        self._plot_directory
-                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_comfortable.png"
-                    )
-                    if not save_path.exists():
-                        fig = self.plot_hours_comfortable(
-                            analysis_period,
-                            SpatialMetric.UTCI_CALCULATED,
-                            comfort_thresholds=(cold_threshold, hot_threshold),
+                        # time comfortable
+                        save_path = (
+                            self._plot_directory
+                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_comfortable.png"
                         )
-                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                        plt.close(fig)
+                        if not save_path.exists():
+                            fig = self.plot_hours_comfortable(
+                                analysis_period,
+                                SpatialMetric.UTCI_CALCULATED,
+                                comfort_thresholds=(cold_threshold, hot_threshold),
+                            )
+                            fig.savefig(
+                                save_path, transparent=True, bbox_inches="tight"
+                            )
+                            plt.close(fig)
 
-                    # time hot
-                    save_path = (
-                        self._plot_directory
-                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_hot.png"
-                    )
-                    if not save_path.exists():
-                        fig = self.plot_hours_hot(
-                            analysis_period,
-                            SpatialMetric.UTCI_CALCULATED,
-                            hot_threshold=hot_threshold,
+                        # time hot
+                        save_path = (
+                            self._plot_directory
+                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_hot.png"
                         )
-                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                        plt.close(fig)
+                        if not save_path.exists():
+                            fig = self.plot_hours_hot(
+                                analysis_period,
+                                SpatialMetric.UTCI_CALCULATED,
+                                hot_threshold=hot_threshold,
+                            )
+                            fig.savefig(
+                                save_path, transparent=True, bbox_inches="tight"
+                            )
+                            plt.close(fig)
+                except Exception:
+                    pass
 
-            datetimes = to_datetimes(analysis_period)
+            datetimes = analysis_period_to_datetimes(analysis_period)
             time_delta = datetimes.max() - datetimes.min()
 
             if time_delta <= pd.Timedelta(days=1) and analysis_period.timestep > 1:
@@ -1781,13 +1858,16 @@ class SpatialComfort(BHoMObject):
                         plt.close(fig)
 
         if london_comfort:
-            save_path = self._plot_directory / "LondonThermalComfort.png"
-            if not save_path.exists():
-                fig = self.plot_london_comfort_category(
-                    metric=SpatialMetric.UTCI_CALCULATED
-                )
-                fig.savefig(save_path, transparent=True, bbox_inches="tight")
-                plt.close(fig)
+            try:
+                save_path = self._plot_directory / "LondonThermalComfort.png"
+                if not save_path.exists():
+                    fig = self.plot_london_comfort_category(
+                        metric=SpatialMetric.UTCI_CALCULATED
+                    )
+                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                    plt.close(fig)
+            except Exception:
+                pass
 
 
 def spatial_comfort_possible(simulation_directory: Path) -> bool:
@@ -1825,15 +1905,17 @@ def spatial_comfort_possible(simulation_directory: Path) -> bool:
 
     # Check for sky-view data
     sky_view_directory = simulation_directory / "sky_view"
-    if (
-        not (sky_view_directory).exists()
-        or len(list((sky_view_directory / "results").glob("**/*.res"))) == 0
-    ):
+    if not (sky_view_directory).exists():
         raise FileNotFoundError(
             f"Sky-view data is not available in {sky_view_directory}."
         )
-
-    res_files = list((sky_view_directory / "results").glob("*.res"))
+    res_files = list((sky_view_directory / "results" / "sky_view").glob("**/*.res"))
+    if len(res_files) == 0:
+        res_files += list((sky_view_directory / "results").glob("**/*.res"))
+    if len(res_files) == 0:
+        raise FileNotFoundError(
+            f"Sky-view data is not available in {sky_view_directory}."
+        )
     if len(res_files) != 1:
         raise ValueError(
             "This process is currently only possible for a single Analysis Grid - multiple files found."

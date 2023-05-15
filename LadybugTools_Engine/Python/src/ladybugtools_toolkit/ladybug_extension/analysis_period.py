@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 
-from .dt import from_datetime
+from .dt import lb_datetime_from_datetime
 
 
-def to_datetimes(
+def analysis_period_to_datetimes(
     analysis_period: AnalysisPeriod,
 ) -> pd.DatetimeIndex:
     """Convert an AnalysisPeriod object into a Pandas DatetimeIndex.
@@ -26,7 +26,7 @@ def to_datetimes(
     return datetimes
 
 
-def to_boolean(
+def analysis_period_to_boolean(
     analysis_periods: Union[List[AnalysisPeriod], AnalysisPeriod],
 ) -> List[bool]:
     """Convert an AnalysisPeriod object into a list of booleans where values within the Period are also within a default whole analysis period of the same interval.
@@ -49,19 +49,19 @@ def to_boolean(
     analysis_periods = list(set(analysis_periods))
 
     # create a generic set of datetimes for the same timestep
-    generic_datetimes = to_datetimes(
+    generic_datetimes = analysis_period_to_datetimes(
         AnalysisPeriod(timestep=analysis_periods[0].timestep)
     )
 
     # for each analysis period in analysis_periods, create a list of booleans where values within the Period are also within a default whole analysis period of the same interval
     bools = []
     for ap in analysis_periods:
-        bools.append(generic_datetimes.isin(to_datetimes(ap)))
+        bools.append(generic_datetimes.isin(analysis_period_to_datetimes(ap)))
 
     return np.any(bools, axis=0)
 
 
-def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
+def analysis_period_from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
     """Convert a list of datetimes (in order from earliest to latest) into an AnalysisPeriod object.
 
     Args:
@@ -74,8 +74,8 @@ def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
     inferred_timestep = (60 * 60) / (datetimes[1] - datetimes[0]).seconds
 
     analysis_period = AnalysisPeriod.from_start_end_datetime(
-        from_datetime(min(datetimes)),
-        from_datetime(max(datetimes)),
+        lb_datetime_from_datetime(min(datetimes)),
+        lb_datetime_from_datetime(max(datetimes)),
         inferred_timestep,
     )
 
@@ -88,7 +88,7 @@ def from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
     return analysis_period
 
 
-def describe(
+def describe_analysis_period(
     analysis_period: List[AnalysisPeriod],
     save_path: bool = False,
     include_timestep: bool = False,
@@ -148,3 +148,63 @@ def describe(
         return f"{base_str}, every {timestep[analysis_period[0].timestep]}"
 
     return base_str
+
+
+def do_analysis_periods_represent_entire_year(
+    analysis_periods: List[AnalysisPeriod],
+) -> bool:
+    """Check a list of analysis periods to see if they represent an entire year.
+
+    Args:
+        analysis_periods (List[AnalysisPeriod]):
+            A list of analysis periods.
+
+    Returns:
+        bool:
+            True if the analysis periods represent an entire year, errors are
+            raised otherwise.
+
+    """
+    if any(ap.end_hour < ap.st_hour for ap in analysis_periods):
+        raise ValueError(
+            "To combine time periods crossing midnight, AnalysisPeriod should be split into two parts - one for either side of midnight."
+        )
+
+    # Validation
+    if any(ap.timestep != 1 for ap in analysis_periods):
+        raise ValueError("All input analysis period timesteps must be hourly.")
+
+    if any(
+        ap.is_leap_year != analysis_periods[0].is_leap_year for ap in analysis_periods
+    ):
+        raise ValueError(
+            "All input analysis periods must be either leap year, or not leap year. Mixed leapedness is not allowed."
+        )
+
+    target_datetimes = analysis_period_to_datetimes(AnalysisPeriod())
+    actual_datetimes = (
+        pd.concat(
+            [analysis_period_to_datetimes(ap).to_series() for ap in analysis_periods]
+        )
+        .sort_index()
+        .index
+    )
+    target_timesteps = 8784 if analysis_periods[0].is_leap_year else 8760
+    actual_timesteps = sum(len(ap) for ap in analysis_periods)
+    if actual_timesteps > target_timesteps:
+        duplicates = actual_datetimes[actual_datetimes.duplicated()]
+        raise ValueError(
+            f"The number of timesteps contained within the input analysis periods is greater than {target_timesteps}. Duplicate timesteps are {duplicates}"
+        )
+    if actual_timesteps < target_timesteps:
+        missing = (
+            pd.DatetimeIndex(list(set(target_datetimes) - set(actual_datetimes)))
+            .to_series()
+            .sort_index()
+            .index
+        )
+        raise ValueError(
+            f"The number of timesteps contained within the input analysis periods is less than {target_timesteps}. Missing timesteps are {missing}"
+        )
+
+    return True

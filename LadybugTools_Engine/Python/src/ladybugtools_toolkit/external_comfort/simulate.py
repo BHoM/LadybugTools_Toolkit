@@ -31,7 +31,6 @@ from ladybug_comfort.collection.solarcal import (
     OutdoorSolarCal,
 )
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
-from ladybugtools_toolkit.ladybug_extension.datacollection import average
 from lbt_recipes.recipe import Recipe, RecipeSettings
 from tqdm import tqdm
 
@@ -39,10 +38,17 @@ from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..helpers import sanitise_string
 from ..honeybee_extension.results import load_ill, load_res, load_sql, make_annual
-from ..ladybug_extension.analysis_period import describe as describe_analysis_period
-from ..ladybug_extension.datacollection import from_series, to_series
+from ..ladybug_extension.analysis_period import (
+    describe_analysis_period as describe_analysis_period,
+)
+from ..ladybug_extension.datacollection import (
+    average,
+    collection_from_series,
+    collection_to_series,
+)
+from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.epw import equality as epw_eq
-from ..ladybug_extension.epw import filename, to_dataframe
+from ..ladybug_extension.epw import get_filename
 from . import QUEENBEE_PATH
 from .ground_temperature import eplus_otherside_coefficient
 from .material import OpaqueMaterial, OpaqueVegetationMaterial, material_from_dict
@@ -127,7 +133,7 @@ def surface_temperature(
         CONSOLE_LOGGER.info(f"[{model.identifier}] - Loading surface temperature")
         return surface_temperature_results_load(sql_path, epw)
 
-    epw.save((wd / filename(epw, True)).as_posix())
+    epw.save((wd / get_filename(epw, True)).as_posix())
 
     CONSOLE_LOGGER.info(f"[{model.identifier}] - Simulating surface temperature")
 
@@ -225,19 +231,19 @@ def surface_temperature_results_load(
     df = load_sql(sql_path)
 
     return {
-        "shaded_down_temperature": from_series(
+        "shaded_down_temperature": collection_from_series(
             df.filter(regex="GROUND_ZONE_UP_SHADED")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
             .rename("Ground Temperature (C)")
         ),
-        "unshaded_down_temperature": from_series(
+        "unshaded_down_temperature": collection_from_series(
             df.filter(regex="GROUND_ZONE_UP_UNSHADED")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
             .rename("Ground Temperature (C)")
         ),
-        "shaded_up_temperature": from_series(
+        "shaded_up_temperature": collection_from_series(
             df.filter(regex="SHADE_ZONE_DOWN")
             .droplevel([0, 1, 2], axis=1)
             .squeeze()
@@ -271,7 +277,7 @@ def surface_temperature_results_exist(model: Model, epw: EPW = None) -> bool:
 
     # Try to load existing EPW file and check that it matches
     try:
-        existing_epw = EPW((wd / filename(epw, True)).as_posix())
+        existing_epw = EPW((wd / get_filename(epw, True)).as_posix())
         if not epw_eq(epw, existing_epw, include_header=True):
             return False
     except (FileNotFoundError, AssertionError):
@@ -302,7 +308,7 @@ def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollect
         CONSOLE_LOGGER.info(f"[{model.identifier}] - Loading annual irradiance")
         return solar_radiation_results_load(model)
 
-    epw.save((wd / filename(epw, True)).as_posix())
+    epw.save((wd / get_filename(epw, True)).as_posix())
 
     CONSOLE_LOGGER.info(f"[{model.identifier}] - Simulating annual irradiance")
     wea = Wea.from_epw_file(epw.file_path)
@@ -336,49 +342,49 @@ def solar_radiation_results_load(model: Model) -> Dict[str, HourlyContinuousColl
 
     wd = working_directory(model, False)
 
-    shaded_down_direct_irradiance = from_series(
+    shaded_down_direct_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/direct/SHADED_DOWN.ill"))
         .squeeze()
         .fillna(0)
         .rename("Irradiance (W/m2)")
     )
-    shaded_up_direct_irradiance = from_series(
+    shaded_up_direct_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/direct/SHADED_UP.ill"))
         .squeeze()
         .fillna(0)
         .rename("Irradiance (W/m2)")
     )
-    unshaded_down_direct_irradiance = from_series(
+    unshaded_down_direct_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/direct/UNSHADED_DOWN.ill"))
         .squeeze()
         .fillna(0)
         .rename("Irradiance (W/m2)")
     )
-    unshaded_up_direct_irradiance = from_series(
+    unshaded_up_direct_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/direct/UNSHADED_UP.ill"))
         .squeeze()
         .fillna(0)
         .rename("Irradiance (W/m2)")
     )
-    shaded_down_total_irradiance = from_series(
+    shaded_down_total_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/total/SHADED_DOWN.ill"))
         .squeeze()
         .fillna(0)
         .rename("Irradiance (W/m2)")
     )
-    shaded_up_total_irradiance = from_series(
+    shaded_up_total_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/total/SHADED_UP.ill"))
         .squeeze()
         .fillna(0)
         .rename("Irradiance (W/m2)")
     )
-    unshaded_down_total_irradiance = from_series(
+    unshaded_down_total_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/total/UNSHADED_DOWN.ill"))
         .squeeze()
         .fillna(0)
         .rename("Irradiance (W/m2)")
     )
-    unshaded_up_total_irradiance = from_series(
+    unshaded_up_total_irradiance = collection_from_series(
         make_annual(load_ill(wd / "annual_irradiance/results/total/UNSHADED_UP.ill"))
         .squeeze()
         .fillna(0)
@@ -438,7 +444,7 @@ def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
 
     # Try to load existing EPW file and check that it matches
     try:
-        existing_epw = EPW((wd / filename(epw, True)).as_posix())
+        existing_epw = EPW((wd / get_filename(epw, True)).as_posix())
         if not epw_eq(epw, existing_epw, include_header=True):
             return False
     except (FileNotFoundError, AssertionError):
@@ -488,7 +494,8 @@ def longwave_radiant_temperature(
         np.power(
             (
                 np.power(
-                    pd.concat([to_series(i) for i in collections], axis=1) + 273.15,
+                    pd.concat([collection_to_series(i) for i in collections], axis=1)
+                    + 273.15,
                     4,
                 )
                 * view_factors
@@ -498,7 +505,7 @@ def longwave_radiant_temperature(
         - 273.15
     )
     mrt_series.name = "Radiant Temperature (C)"
-    return from_series(mrt_series)
+    return collection_from_series(mrt_series)
 
 
 def mean_radiant_temperature_osc_ensemble(
@@ -569,6 +576,7 @@ def mean_radiant_temperature_hscr(
         diffuse_horizontal_solar (HourlyContinuousCollection): Upwards facing diffuse component from Radiance sim.
         reflected_horizontal_solar (HourlyContinuousCollection): Downwards facing diffuse component from Radiance sim.
         longwave_mrt (HourlyContinuousCollection): Surrounding surface temperature.
+        solar_cal_params (SolarCalParameter, optional): SolarCalParameter object. Defaults to SolarCalParameter().
 
     Returns:
         Dict[str, HourlyContinuousCollection]: A collection of results.
@@ -598,7 +606,9 @@ def mean_radiant_temperature_osc(
     Args:
         model (Model): The model to check for.
         epw (EPW): An EPW object.
-        longwave_mrt (HourlyContinuousCollection): Surrounding surface tempertaure.
+        longwave_mrt (HourlyContinuousCollection): Surrounding surface temperature.
+        sky_exposure (float): A number between 0 and 1 for the fraction of the sky dome that is exposed.
+        solar_cal_params (SolarCalParameter, optional): SolarCalParameter object. Defaults to SolarCalParameter().
 
     Returns:
         Dict[str, HourlyContinuousCollection]: A collection of results.
@@ -847,7 +857,6 @@ class SimulationResult(BHoMObject):
     )
 
     def __post_init__(self):
-
         self.epw_file = Path(self.epw_file).absolute()
 
         if self.identifier is None:
@@ -1149,7 +1158,7 @@ class SimulationResult(BHoMObject):
         obj_series = []
         for k, v in self.to_dict().items():
             if isinstance(v, HourlyContinuousCollection):
-                series = to_series(v)
+                series = collection_to_series(v)
                 category = "Shaded" if k.lower().startswith("shaded") else "Unshaded"
                 obj_series.append(
                     series.rename((self.identifier, category, f"{series.name} ({k})"))
@@ -1159,7 +1168,7 @@ class SimulationResult(BHoMObject):
         if include_epw:
             return pd.concat(
                 [
-                    to_dataframe(self.epw, include_epw_additional),
+                    epw_to_dataframe(self.epw, include_epw_additional),
                     obj_df,
                 ],
                 axis=1,
@@ -1200,14 +1209,14 @@ class SimulationResult(BHoMObject):
 
         # construct dataframe containing inputs to this process
         epw = self.epw
-        atm = to_series(epw.atmospheric_station_pressure).rename("atm")
-        dbt = to_series(epw.dry_bulb_temperature).rename("dbt")
-        rh = to_series(epw.relative_humidity).rename("rh")
-        ws = to_series(epw.wind_speed).rename("ws")
-        mrt_unshaded = to_series(self.unshaded_mean_radiant_temperature).rename(
-            "mrt_unshaded"
-        )
-        mrt_shaded = to_series(self.shaded_mean_radiant_temperature).rename(
+        atm = collection_to_series(epw.atmospheric_station_pressure).rename("atm")
+        dbt = collection_to_series(epw.dry_bulb_temperature).rename("dbt")
+        rh = collection_to_series(epw.relative_humidity).rename("rh")
+        ws = collection_to_series(epw.wind_speed).rename("ws")
+        mrt_unshaded = collection_to_series(
+            self.unshaded_mean_radiant_temperature
+        ).rename("mrt_unshaded")
+        mrt_shaded = collection_to_series(self.shaded_mean_radiant_temperature).rename(
             "mrt_shaded"
         )
         utci_unshaded = utci(dbt, rh, mrt_unshaded, ws).rename("utci_unshaded")
@@ -1248,7 +1257,6 @@ class SimulationResult(BHoMObject):
             utci_unshaded_distance_from_comfortable_midpoint,
             name,
         ):
-
             # create feasible ranges of values
             dbts, rhs = np.array(
                 [
@@ -1334,6 +1342,7 @@ class SimulationResult(BHoMObject):
             ranks.name = name
 
             # TODO - include "do nothing" as an option for ranking!
+
             return ranks
 
         tqdm.pandas(

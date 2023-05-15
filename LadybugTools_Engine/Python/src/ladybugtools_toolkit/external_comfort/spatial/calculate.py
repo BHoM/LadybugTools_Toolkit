@@ -1,32 +1,35 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from ...ladybug_extension.analysis_period import AnalysisPeriod, to_datetimes
+from ...ladybug_extension.analysis_period import (
+    AnalysisPeriod,
+    analysis_period_to_datetimes,
+)
 
 
 def shaded_unshaded_interpolation(
-    unshaded_value: List[float],
-    shaded_value: List[float],
-    total_irradiance: List[List[float]],
-    sky_view: List[float],
-    sun_up: List[bool],
+    unshaded_value: Tuple[float],
+    shaded_value: Tuple[float],
+    total_irradiance: Tuple[Tuple[float]],
+    sky_view: Tuple[float],
+    sun_up: Tuple[bool],
 ) -> pd.DataFrame:
     """Interpolate between the unshaded and shaded input values, using the total irradiance and sky
         view as proportional values for each point.
 
     Args:
-        unshaded (List[float]):
+        unshaded_value (Tuple[float]):
             A list of hourly values for the unshaded case.
-        shaded (List[float]):
+        shaded_value (Tuple[float]):
             A collection of hourly values for the shaded case.
-        total_irradiance (List[List[float]]):
+        total_irradiance (Tuple[Tuple[float]]):
             An array with the total irradiance for each point for each hour.
-        sky_view (List[float]):
+        sky_view (Tuple[float]):
             A list with the sky view for each point.
-        sun_up_bool (List[bool]):
+        sun_up (Tuple[bool]):
             A list of booleans stating whether the sun is up.
 
     Returns:
@@ -92,7 +95,7 @@ def shaded_unshaded_interpolation(
         nighttime_values = interp1d([0, 100], target_range[~sun_up])(sky_view)
 
     # create datetime index for resultant dataframe
-    index = to_datetimes(AnalysisPeriod())
+    index = analysis_period_to_datetimes(AnalysisPeriod())
 
     return (
         pd.concat(
@@ -103,7 +106,7 @@ def shaded_unshaded_interpolation(
             axis=0,
         )
         .sort_index()
-        .set_index(to_datetimes(AnalysisPeriod()))
+        .set_index(analysis_period_to_datetimes(AnalysisPeriod()))
         .interpolate()
         .ewm(span=1.5)
         .mean()
@@ -178,10 +181,10 @@ def rwdi_london_thermal_comfort_category(
     transient = (winter_comfort < 0.25) | (
         (spring_comfort < 0.5) | (summer_comfort < 0.5) | (fall_comfort < 0.5)
     )
-    st_seasonal = (winter_comfort >= 0.25) & (
+    short_term_seasonal = (winter_comfort >= 0.25) & (
         (spring_comfort >= 0.5) & (summer_comfort >= 0.5) & (fall_comfort >= 0.5)
     )
-    st = (
+    short_term = (
         (winter_comfort >= 0.5)
         & (spring_comfort >= 0.5)
         & (summer_comfort >= 0.5)
@@ -206,10 +209,10 @@ def rwdi_london_thermal_comfort_category(
                 seasonal,
                 "Seasonal",
                 np.where(
-                    st,
+                    short_term,
                     "Short-term",
                     np.where(
-                        st_seasonal,
+                        short_term_seasonal,
                         "Short-term Seasonal",
                         np.where(transient, "Transient", "Undefined"),
                     ),

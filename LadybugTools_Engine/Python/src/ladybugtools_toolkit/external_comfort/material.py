@@ -201,10 +201,12 @@ def material_from_dict(
     dictionary: Dict[str, Any]
 ) -> Union[OpaqueMaterial, OpaqueVegetationMaterial]:
     """Attempt to convert a dictionary into a material object."""
+    # pylint disable=broad-except
     try:
         return OpaqueMaterial.from_dict(dictionary)
     except Exception:
         return OpaqueVegetationMaterial.from_dict(dictionary)
+    # pylint enable=broad-except
 
 
 def create_material(
@@ -212,6 +214,7 @@ def create_material(
 ) -> Union[Dict[str, Any], EnergyMaterial, EnergyMaterialVegetation]:
     """Attempt to convert an object into a material object suitable for LBT_Tk External Comfort workflows."""
     if isinstance(obj, dict):
+        # pylint disable=broad-except
         try:
             return OpaqueMaterial.from_lbt(EnergyMaterial.from_dict(obj))
         except:
@@ -224,6 +227,7 @@ def create_material(
                     return OpaqueMaterial.from_dict(obj)
                 except:
                     return OpaqueVegetationMaterial.from_dict(obj)
+        # pylint enable=broad-except
 
     if isinstance(obj, EnergyMaterial):
         return OpaqueMaterial.from_lbt(obj)
@@ -233,6 +237,7 @@ def create_material(
     raise ValueError("input not of known type")
 
 
+# pylint: disable=C0103
 class Materials(Enum):
     """
     Enum of predefined materials for use in External Comfort simulation
@@ -2795,3 +2800,6 @@ class Materials(Enum):
             "source": f"LadybugTools honeybee_energy_standards v{HONEYBEE_MATERIAL_STANDARDS_VERSION}",
         }
     )
+
+
+# pylint: enable=C0103

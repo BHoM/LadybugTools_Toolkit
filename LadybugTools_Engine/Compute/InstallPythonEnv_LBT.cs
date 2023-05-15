@@ -45,7 +45,7 @@ namespace BH.Engine.LadybugTools
             );
 
             // reload environment to establish the new executable path
-            PythonEnvironment localEnvironment = Python.Query.ExistingEnvironment(Query.ToolkitName());
+            PythonEnvironment localEnvironment = Python.Query.VirtualEnv(Query.ToolkitName());
 
             // check here to ensure that referenced executable is using same version as local BHoM environment executable
             List<string> packagesToCheck = new List<string>() { "lbt-ladybug", "lbt-dragonfly", "lbt-honeybee", "lbt-recipes" };
@@ -57,7 +57,7 @@ namespace BH.Engine.LadybugTools
                 {
                     Base.Compute.RecordWarning($"BHoM environment {package} does not match referenced package version ({installed} != {referenced}). " +
                         $"This can be caused by the BHoM version and installed version becoming out of sync. " +
-                        $"Try deleting the {Path.Combine(Python.Query.EnvironmentDirectory(), Query.ToolkitName())} directory and re-running the " +
+                        $"Try deleting the {Python.Query.VirtualEnvDirectory("LadybugTools_Toolkit")} directory and re-running the " +
                         $"{System.Reflection.MethodBase.GetCurrentMethod().Name} method again to fix this.");
                 }
             }

@@ -5,6 +5,7 @@ import itertools
 import json
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import field
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -40,13 +41,13 @@ from ..helpers import (
     temperature_at_height,
     timedelta_tostring,
 )
-from .analysis_period import to_datetimes
-from .datacollection import to_series
-from .header import to_string as header_to_string
-from .location import to_string as location_to_string
+from .analysis_period import analysis_period_to_datetimes
+from .datacollection import collection_to_series
+from .header import header_to_string as header_to_string
+from .location import location_to_string as location_to_string
 
 
-def to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
+def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
     """Create a Pandas DataFrame from an EPW object, with option for including additional metrics.
 
     Args:
@@ -96,7 +97,7 @@ def to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
     all_series = []
     for prop in properties:
         try:
-            s = to_series(getattr(epw, prop))
+            s = collection_to_series(getattr(epw, prop))
             s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
             all_series.append(s)
         except (ValueError, TypeError):
@@ -139,14 +140,14 @@ def to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
         ent,
         wbt,
     ]:
-        s = to_series(collection)
+        s = collection_to_series(collection)
         s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
         all_series.append(s)
 
     return pd.concat(all_series, axis=1).sort_index(axis=1)
 
 
-def from_dataframe(
+def epw_from_dataframe(
     dataframe: pd.DataFrame,
     location: Location = None,
     monthly_ground_temperature: Dict[float, MonthlyCollection] = None,
@@ -306,7 +307,13 @@ def unique_wind_speed_direction(
         List[List[float, float]]: A list of unique (wind_speed, wind_direction).
     """
 
-    df = pd.concat([to_series(epw.wind_speed), to_series(epw.wind_direction)], axis=1)
+    df = pd.concat(
+        [
+            collection_to_series(epw.wind_speed),
+            collection_to_series(epw.wind_direction),
+        ],
+        axis=1,
+    )
 
     if schedule is not None:
         df = df.iloc[schedule]
@@ -314,7 +321,7 @@ def unique_wind_speed_direction(
     return df.drop_duplicates().values
 
 
-def to_dict(epw: EPW) -> Dict[str, Any]:
+def epw_to_dict(epw: EPW) -> Dict[str, Any]:
     """Convert a ladybug EPW object into a JSON-able compliant dictionary.
 
     Args:
@@ -420,14 +427,14 @@ def solar_time_hour(
 
 
 def solar_time_datetime(
-    epw: EPW, sth: HourlyContinuousCollection = None
+    epw: EPW, solar_time_hourly: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
     """Calculate solar time (as datetime) for each hour of the year.
 
     Args:
         epw (EPW):
             An EPW object.
-        solar_time_hour (HourlyContinuousCollection, optional):
+        solar_time_hourly (HourlyContinuousCollection, optional):
             A pre-calculated solar time (hour) HourlyContinuousCollection. Defaults to None.
 
     Returns:
@@ -435,14 +442,16 @@ def solar_time_datetime(
             An HourlyContinuousCollection of solar times as datetime objects.
     """
 
-    if sth is None:
-        sth = solar_time_hour(epw)
+    if solar_time_hourly is None:
+        solar_time_hourly = solar_time_hour(epw)
 
     timestamp_str = [
         f"{int(i):02d}:{int(np.floor((i*60) % 60)):02d}:{(i*3600) % 60:0.8f}"
-        for i in sth
+        for i in solar_time_hourly
     ]
-    date_str = to_datetimes(epw.dry_bulb_temperature).strftime("%Y-%m-%d")
+    date_str = analysis_period_to_datetimes(epw.dry_bulb_temperature).strftime(
+        "%Y-%m-%d"
+    )
     _datetimes = pd.to_datetime(
         [f"{ds} {ts}" for ds, ts in list(zip(*[date_str, timestamp_str]))]
     )
@@ -461,7 +470,7 @@ def solar_time_datetime(
             ),
             unit="datetime",
             analysis_period=AnalysisPeriod(),
-            metadata=sth.header.metadata,
+            metadata=solar_time_hourly.header.metadata,
         ),
         _datetimes,
     )
@@ -480,6 +489,7 @@ def solar_declination(epw: EPW) -> HourlyContinuousCollection:
     """
     sunpath = Sunpath.from_location(epw.location)
 
+    # pylint: disable=protected-access
     solar_declination_values, _ = list(
         zip(
             *[
@@ -488,6 +498,7 @@ def solar_declination(epw: EPW) -> HourlyContinuousCollection:
             ]
         )
     )
+    # pylint: enable=protected-access
 
     return HourlyContinuousCollection(
         Header(
@@ -608,50 +619,6 @@ def solar_altitude_radians(
     return collection
 
 
-def radiation_tilt_orientation_matrix(
-    epw: EPW, n_altitudes: int = 10, n_azimuths: int = 19
-) -> pd.DataFrame:
-    """Compute the annual cumulative radiation matrix per surface tilt and orientation, for a
-        given EPW object.
-    Args:
-        epw (EPW):
-            The EPW object for which this calculation is made.
-        n_altitudes (int, optional):
-            The number of altitudes between 0 and 90 to calculate. Default is 10.
-        n_azimuths (int, optional):
-            The number of azimuths between 0 and 360 to calculate. Default is 19.
-    Returns:
-        pd.DataFrame:
-            A table of insolation values for each simulated azimuth and tilt combo.
-    """
-    wea = Wea.from_annual_values(
-        epw.location,
-        epw.direct_normal_radiation.values,
-        epw.diffuse_horizontal_radiation.values,
-        is_leap_year=epw.is_leap_year,
-    )
-    # I do a bit of a hack here, to calculate only the Eastern insolation - then mirror it about
-    # the North-South axis to get the whole matrix
-    altitudes = np.linspace(0, 90, n_altitudes)
-    azimuths = np.linspace(0, 180, n_azimuths)
-    combinations = np.array(list(itertools.product(altitudes, azimuths)))
-
-    def f(alt_az):
-        return copy.copy(wea).directional_irradiance(alt_az[0], alt_az[1])[0].total
-
-    with ThreadPoolExecutor() as executor:
-        results = np.array(list(executor.map(f, combinations[0:]))).reshape(
-            len(altitudes), len(azimuths)
-        )
-    temp = pd.DataFrame(results, index=altitudes, columns=azimuths)
-    new_cols = (360 - temp.columns)[::-1][1:]
-    new_vals = temp.values[::-1, ::-1][
-        ::-1, 1:
-    ]  # some weird array transformation stuff here
-    mirrored = pd.DataFrame(new_vals, columns=new_cols, index=temp.index)
-    return pd.concat([temp, mirrored], axis=1)
-
-
 def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly humidity ratio for a given EPW.
 
@@ -675,7 +642,7 @@ def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-def from_dict(dictionary: Dict[str, Any]) -> EPW:
+def epw_from_dict(dictionary: Dict[str, Any]) -> EPW:
     """Convert a JSON compliant dictionary object into a ladybug EPW.
 
     Args:
@@ -701,7 +668,7 @@ def from_dict(dictionary: Dict[str, Any]) -> EPW:
     return EPW.from_dict(json.loads(json_str))
 
 
-def filename(epw: EPW, include_extension: bool = False) -> str:
+def get_filename(epw: EPW, include_extension: bool = False) -> str:
     """Get the filename of the given EPW.
 
     Args:
@@ -776,7 +743,7 @@ def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
             An HourlyContinuousCollection of equation of times.
     """
     sunpath = Sunpath.from_location(epw.location)
-
+    # pylint: disable=protected-access
     _, eot = list(
         zip(
             *[
@@ -785,6 +752,7 @@ def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
             ]
         )
     )
+    # pylint: enable=protected-access
 
     return HourlyContinuousCollection(
         Header(
@@ -855,23 +823,25 @@ def epw_content_check(epw: EPW, fields: List[str] = None) -> bool:
         epw_field = epw_fields.field_by_number(field_no)
         if str(epw_field.name) not in fields:
             continue
+        # pylint: disable=protected-access
         if all(i == epw_field.missing for i in epw._get_data_by_field(field_no)):
             warnings.warn(
                 f"{epw} - {epw_field.name} contains only missing values.", stacklevel=2
             )
             valid = False
+        # pylint: enable=protected-access
     return valid
 
 
 def enthalpy(
-    epw: EPW, hr: HourlyContinuousCollection = None
+    epw: EPW, hum_ratio: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
     """Calculate an annual hourly enthalpy for a given EPW.
 
     Args:
         epw (EPW):
             An EPW object.
-        humidity_ratio (HourlyContinuousCollection, optional):
+        hum_ratio (HourlyContinuousCollection, optional):
             A pre-calculated HourlyContinuousCollection of humidity ratios. Defaults to None.
 
     Returns:
@@ -879,14 +849,14 @@ def enthalpy(
             An HourlyContinuousCollection of enthalpies.
     """
 
-    if not hr:
-        hr = humidity_ratio(epw)
+    if not hum_ratio:
+        hum_ratio = humidity_ratio(epw)
 
     return HourlyContinuousCollection.compute_function_aligned(
         enthalpy_from_db_hr,
         [
             epw.dry_bulb_temperature,
-            hr,
+            hum_ratio,
         ],
         Enthalpy(),
         "kJ/kg",
@@ -954,7 +924,7 @@ def seasonality_from_day_length_location(
     """
 
     # get datetimes to query sun
-    idx = to_datetimes(AnalysisPeriod())
+    idx = analysis_period_to_datetimes(AnalysisPeriod())
     df = pd.Series([0] * len(idx), index=idx).resample("1D").mean()
 
     sun_times = pd.DataFrame.from_dict(
@@ -1283,7 +1253,7 @@ def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
             List of seasons per timestep.
     """
 
-    idx = to_datetimes(AnalysisPeriod())
+    idx = analysis_period_to_datetimes(AnalysisPeriod())
     if epw.location.latitude >= 0:
         # northern hemisphere
         spring_months = [3, 4, 5]
@@ -1341,7 +1311,7 @@ def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
     """
 
     return seasonality_from_temperature_timeseries(
-        to_series(epw.dry_bulb_temperature), annotate
+        collection_to_series(epw.dry_bulb_temperature), annotate
     )
 
 
@@ -1389,7 +1359,9 @@ def degree_time(
         names = [str(i) for i in names]
 
     df = pd.concat(
-        [to_series(epw.dry_bulb_temperature) for epw in epws], axis=1, keys=names
+        [collection_to_series(epw.dry_bulb_temperature) for epw in epws],
+        axis=1,
+        keys=names,
     )
 
     cdh = pd.DataFrame(
@@ -1620,12 +1592,26 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
     ]
 
     # set filepath variable
+    # pylint disable=protected-access
     new_epw._file_path = (
         Path(epw.file_path).parent
         / f"{Path(epw.file_path).stem}_at{target_height}m.epw"
     ).as_posix()
+    # pylint enable=protected-access
 
     if save:
         new_epw.save(Path(new_epw.file_path).absolute().as_posix())
 
     return new_epw
+
+
+def _representative_day() -> pd.DataFrame:
+    """Create a table contiing hourly values for the "typical" day the given month."""
+
+    #! - TODO - add weighting of variables
+    #! - TODO - add option to use median or mean values
+    #! - TODO - add option to use specific time period (perhpas based on AnalysisPeriod, or more generic)
+    #! - TODO - return whole table (all collections? and otehr days), or just specific day
+    #! TODO - ensure that wind direction is being accounted for correctly - aliginign with the peak weighted variable/s
+
+    raise NotImplementedError

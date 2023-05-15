@@ -8,7 +8,11 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybug.epw import EPW
 
-from ..ladybug_extension.datacollection import from_series, to_hourly, to_series
+from ..ladybug_extension.datacollection import (
+    collection_from_series,
+    collection_to_series,
+    to_hourly,
+)
 
 
 def energyplus_strings(epw: EPW) -> str:
@@ -143,7 +147,7 @@ def ground_temperature_at_depth(
     try:
         return to_hourly(epw.monthly_ground_temperature[depth])
     except (KeyError, ValueError):
-        dbt = to_series(epw.dry_bulb_temperature)
+        dbt = collection_to_series(epw.dry_bulb_temperature)
 
         dbt_range = dbt.max() - dbt.min()
         dbt_mean = dbt.mean()
@@ -180,7 +184,7 @@ def ground_temperature_at_depth(
             gnd_temp_hourly, index=dbt.index, name="Ground Temperature (C)"
         )
 
-        return from_series(gnd_temp_hourly)
+        return collection_from_series(gnd_temp_hourly)
 
 
 def hourly_ground_temperature(

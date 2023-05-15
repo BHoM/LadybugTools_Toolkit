@@ -11,15 +11,16 @@ from ladybug.datacollection import BaseCollection
 from ladybug.psychchart import PsychrometricChart
 from ladybug_comfort.chart.polygonpmv import PMVParameter, PolygonPMV
 from ladybug_geometry.geometry2d import LineSegment2D, Mesh2D, Polyline2D
-from ladybugtools_toolkit.ladybug_extension.analysis_period import (
-    describe,
-    to_datetimes,
-)
-from ladybugtools_toolkit.ladybug_extension.epw import EPW, to_dataframe
-from ladybugtools_toolkit.ladybug_extension.location import to_string
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import Colormap
 from matplotlib.patches import Polygon
+
+from ..ladybug_extension.analysis_period import (
+    analysis_period_to_datetimes,
+    describe_analysis_period,
+)
+from ..ladybug_extension.epw import EPW, epw_to_dataframe
+from ..ladybug_extension.location import location_to_string
 
 
 def strategy_warning(polygon_name):
@@ -152,6 +153,8 @@ def psychrometric(
             An analysis period to filter values by. Default is whole year.
         wet_bulb (bool, optional):
             Plot wet-bulb temperature constant lines instead of enthalpy. Default is False.
+        psychro_polygons (PsychrometricPolygons, optional):
+            A PsychrometricPolygons object to use for plotting comfort polygons.
 
     Returns:
         plt.Figure:
@@ -162,9 +165,9 @@ def psychrometric(
         analysis_period = AnalysisPeriod()
 
     df = (
-        to_dataframe(epw, include_additional=True)
+        epw_to_dataframe(epw, include_additional=True)
         .droplevel([0, 1], axis=1)
-        .loc[to_datetimes(analysis_period)]
+        .loc[analysis_period_to_datetimes(analysis_period)]
     )
 
     # create mesh for rendering on chart
@@ -181,6 +184,7 @@ def psychrometric(
     def lb_mesh_to_patch_collection(
         lb_mesh: Mesh2D, values: List[float] = None, cmap=cmap
     ) -> PatchCollection:
+        """Convert a Ladybug Mesh2D to a matplotlib PatchCollection."""
         patch_collection = PatchCollection(
             [Polygon([i.to_array() for i in j]) for j in lb_mesh.face_vertices],
             cmap=cmap,
@@ -191,7 +195,7 @@ def psychrometric(
 
     p = lb_mesh_to_patch_collection(psychart.colored_mesh, psychart.hour_values)
     fig, ax = plt.subplots(1, 1, figsize=(10, 7))
-    ll = ax.add_collection(p)
+    collections = ax.add_collection(p)
 
     if wet_bulb:
         # add wet-bulb lines
@@ -259,7 +263,9 @@ def psychrometric(
 
     ax.axis("off")
 
-    ax.set_title(f"{to_string(epw.location)}\n{describe(analysis_period)}")
+    ax.set_title(
+        f"{location_to_string(epw.location)}\n{describe_analysis_period(analysis_period)}"
+    )
 
     # Generate peak cooling summary
     clg_vals = df.loc[df.idxmax()["Dry Bulb Temperature (C)"]]
@@ -340,20 +346,18 @@ def psychrometric(
         **{"fontname": "monospace"},
     )
 
-    cbar = plt.colorbar(ll)
+    cbar = plt.colorbar(collections)
     cbar.outline.set_visible(False)
     cbar.set_label("Hours")
 
     # add polygon if polgyon passed
     if psychro_polygons is not None:
-
         polygon_data = []
         polygon_names = []
 
         def line_objs_to_vertices(
             lines: List[Union[Polyline2D, LineSegment2D]]
         ) -> List[List[float]]:
-
             # ensure input list is flat
             lines = [
                 v
@@ -395,12 +399,12 @@ def psychrometric(
 
             return polygon_name, strategy_poly, dat
 
-        def polygon_area(xs, ys):
+        def polygon_area(xs: List[float], ys: List[float]) -> List[float]:
             """https://en.wikipedia.org/wiki/Centroid#Of_a_polygon"""
             # https://stackoverflow.com/a/30408825/7128154
             return 0.5 * (np.dot(xs, np.roll(ys, 1)) - np.dot(ys, np.roll(xs, 1)))
 
-        def polygon_centroid(xs, ys):
+        def polygon_centroid(xs: List[float], ys: List[float]) -> List[float]:
             """https://en.wikipedia.org/wiki/Centroid#Of_a_polygon"""
             xy = np.array([xs, ys])
             c = np.dot(

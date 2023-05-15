@@ -336,6 +336,6 @@ def create_model(
     )
 
     # assign grids
-    model.properties.radiance.sensor_grids = sensor_grids
+    model.properties.radiance.sensor_grids = sensor_grids  # pylint: disable=no-member
 
     return model
