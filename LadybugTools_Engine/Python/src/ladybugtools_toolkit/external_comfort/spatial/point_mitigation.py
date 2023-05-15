@@ -6,7 +6,7 @@ from typing import Union
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 
-from ...ladybug_extension.datacollection import from_series
+from ...ladybug_extension.datacollection import collection_from_series
 from ..external_comfort import ExternalComfort, SimulationResult, Typology
 
 
@@ -38,26 +38,25 @@ class PointMitigation:
         point_rh: Union[pd.Series, HourlyContinuousCollection],
         point_ws: Union[pd.Series, HourlyContinuousCollection],
     ) -> PointMitigation:
-
         self._point_dbt = (
             point_dbt
             if isinstance(point_dbt, HourlyContinuousCollection)
-            else from_series(point_dbt)
+            else collection_from_series(point_dbt)
         )
         self._point_mrt = (
             point_mrt
             if isinstance(point_mrt, HourlyContinuousCollection)
-            else from_series(point_mrt)
+            else collection_from_series(point_mrt)
         )
         self._point_rh = (
             point_rh
             if isinstance(point_rh, HourlyContinuousCollection)
-            else from_series(point_rh)
+            else collection_from_series(point_rh)
         )
         self._point_ws = (
             point_ws
             if isinstance(point_ws, HourlyContinuousCollection)
-            else from_series(point_ws)
+            else collection_from_series(point_ws)
         )
 
         # adjust values in sim res to contain values from point location

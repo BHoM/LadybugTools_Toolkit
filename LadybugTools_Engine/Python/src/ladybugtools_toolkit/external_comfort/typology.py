@@ -4,7 +4,7 @@ import json
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,10 @@ from ladybug_comfort.collection.utci import UTCI
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..helpers import decay_rate_smoother
-from ..ladybug_extension.datacollection import from_series, to_series
+from ..ladybug_extension.datacollection import (
+    collection_from_series,
+    collection_to_series,
+)
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
 from .moisture import evaporative_cooling_effect, evaporative_cooling_effect_collection
 from .shelter import (
@@ -74,36 +77,45 @@ class Typology(BHoMObject):
     )
 
     def __post_init__(self):
-        if not isinstance(self.wind_speed_multiplier, (float, int)):
-            if len(self.wind_speed_multiplier) != 8760:
-                raise ValueError(
-                    "Wind speed multiplier can only currently be either a single value applied across the entire year, or a list of 8760 values."
-                )
-        elif self.wind_speed_multiplier < 0:
+        if isinstance(self.wind_speed_multiplier, (float, int)):
+            self.wind_speed_multiplier = np.ones(8760) * self.wind_speed_multiplier
+        else:
+            self.wind_speed_multiplier = np.array(self.wind_speed_multiplier)
+        if min(self.wind_speed_multiplier) < 0:
             raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
+        if len(self.wind_speed_multiplier) != 8760:
+            raise ValueError(
+                "Wind speed multiplier can only currently be either a single value applied across the entire year, or a list of 8760 values."
+            )
 
         if isinstance(self.evaporative_cooling_effect, (float, int)):
-            if (
-                self.evaporative_cooling_effect < 0
-                or self.evaporative_cooling_effect > 1
-            ):
-                raise ValueError("Evaporative cooling effect must be between 0 and 1.")
+            self.evaporative_cooling_effect = (
+                np.ones(8760) * self.evaporative_cooling_effect
+            )
         else:
-            if len(self.evaporative_cooling_effect) != 8760:
-                raise ValueError(
-                    "Evaporative cooling effect can only currently be either a single value applied across the entire year, or a list of 8760 values."
-                )
-            if (
-                min(self.evaporative_cooling_effect) < 0
-                or max(self.evaporative_cooling_effect) > 1
-            ):
-                raise ValueError("Evaporative cooling effect must be between 0 and 1.")
+            self.evaporative_cooling_effect = np.array(self.evaporative_cooling_effect)
+        if (
+            min(self.evaporative_cooling_effect) < 0
+            or max(self.evaporative_cooling_effect) > 1
+        ):
+            raise ValueError("Evaporative cooling effect must be between 0 and 1.")
+        if len(self.evaporative_cooling_effect) != 8760:
+            raise ValueError(
+                "Evaporative cooling effect can only currently be either a single value applied across the entire year, or a list of 8760 values."
+            )
 
-        if not isinstance(self.radiant_temperature_adjustment, (float, int)):
-            if len(self.radiant_temperature_adjustment) != 8760:
-                raise ValueError(
-                    "Radiant temperature adjustment can only currently be either a single value applied across the entire year, or a list of 8760 values."
-                )
+        if isinstance(self.radiant_temperature_adjustment, (float, int)):
+            self.radiant_temperature_adjustment = (
+                np.ones(8760) * self.radiant_temperature_adjustment
+            )
+        else:
+            self.radiant_temperature_adjustment = np.array(
+                self.radiant_temperature_adjustment
+            )
+        if len(self.radiant_temperature_adjustment) != 8760:
+            raise ValueError(
+                "Radiant temperature adjustment can only currently be either a single value applied across the entire year, or a list of 8760 values."
+            )
 
         # wrap methods within this class
         super().__post_init__()
@@ -160,107 +172,104 @@ class Typology(BHoMObject):
         """Get the effective DBT for the given EPW file for this Typology.
 
         Args:
-            typology (Typology): A Typology object.
             epw (EPW): A ladybug EPW object.
 
         Returns:
             HourlyContinuousCollection: The effective DBT following application of any evaporative
                 cooling effects.
         """
-        if isinstance(self.evaporative_cooling_effect, (float, int)):
-            return evaporative_cooling_effect_collection(
-                epw, self.evaporative_cooling_effect
-            )[0]
-        dbt_evap, _ = np.array(
-            [
-                evaporative_cooling_effect(dbt, rh, evap_clg, ap)
-                for dbt, rh, evap_clg, ap in list(
-                    zip(
-                        *[
-                            epw.dry_bulb_temperature,
-                            epw.relative_humidity,
-                            self.evaporative_cooling_effect,
-                            epw.atmospheric_station_pressure,
-                        ]
-                    )
-                )
-            ]
-        ).T
+        # if there is no evaporative cooling effect, return the original DBT
+        if sum(self.evaporative_cooling_effect) == 0:
+            return epw.dry_bulb_temperature
+
+        # if there is evaporative cooling effect, return the adjusted DBT
+        dbt_evap = []
+        for dbt, rh, ece, atm in list(
+            zip(
+                *[
+                    epw.dry_bulb_temperature,
+                    epw.relative_humidity,
+                    self.evaporative_cooling_effect,
+                    epw.atmospheric_station_pressure,
+                ]
+            )
+        ):
+            _dbt, _ = evaporative_cooling_effect(
+                dry_bulb_temperature=dbt,
+                relative_humidity=rh,
+                evaporative_cooling_effectiveness=ece,
+                atmospheric_pressure=atm,
+            )
+            dbt_evap.append(_dbt)
+
         return epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
 
     def relative_humidity(self, epw: EPW) -> HourlyContinuousCollection:
         """Get the effective RH for the given EPW file for this Typology.
 
         Args:
-            typology (Typology): A Typology object.
             epw (EPW): A ladybug EPW object.
 
         Returns:
             HourlyContinuousCollection: The effective RH following application of any evaporative
                 cooling effects.
         """
-        if isinstance(self.evaporative_cooling_effect, (float, int)):
-            return evaporative_cooling_effect_collection(
-                epw, self.evaporative_cooling_effect
-            )[1]
-        _, rh_evap = np.array(
-            [
-                evaporative_cooling_effect(dbt, rh, evap_clg, ap)
-                for dbt, rh, evap_clg, ap in list(
-                    zip(
-                        *[
-                            epw.dry_bulb_temperature,
-                            epw.relative_humidity,
-                            self.evaporative_cooling_effect,
-                            epw.atmospheric_station_pressure,
-                        ]
-                    )
-                )
-            ]
-        ).T
+
+        # if there is no evaporative cooling effect, return the original RH
+        if sum(self.evaporative_cooling_effect) == 0:
+            return epw.relative_humidity
+
+        # if there is evaporative cooling effect, return the adjusted RH
+        rh_evap = []
+        for dbt, rh, ece, atm in list(
+            zip(
+                *[
+                    epw.dry_bulb_temperature,
+                    epw.relative_humidity,
+                    self.evaporative_cooling_effect,
+                    epw.atmospheric_station_pressure,
+                ]
+            )
+        ):
+            _, _rh = evaporative_cooling_effect(
+                dry_bulb_temperature=dbt,
+                relative_humidity=rh,
+                evaporative_cooling_effectiveness=ece,
+                atmospheric_pressure=atm,
+            )
+            rh_evap.append(_rh)
+
         return epw.relative_humidity.get_aligned_collection(rh_evap)
 
     def wind_speed(self, epw: EPW) -> HourlyContinuousCollection:
         """Calculate wind speed when subjected to a set of shelters.
 
         Args:
-            typology (Typology): A Typology object.
             epw (EPW): The input EPW.
 
         Returns:
             HourlyContinuousCollection: The resultant wind-speed.
         """
 
-        if len(self.shelters) == 0:
-            return epw.wind_speed * self.wind_speed_multiplier
-
-        # get wind speed from epw
         ws = epw.wind_speed
 
+        if len(self.shelters) == 0:
+            return ws.get_aligned_collection(
+                np.array(ws.values) * self.wind_speed_multiplier
+            )
+
         # adjust to 0 if multiplier is 0
-        if (
-            isinstance(self.wind_speed_multiplier, (float, int))
-            and self.wind_speed_multiplier == 0
-        ):
-            return epw.wind_speed.get_aligned_collection(0)
+        if sum(self.wind_speed_multiplier) == 0:
+            return ws.get_aligned_collection(0)
 
         # adjust ws based on shelter configuration
         wind_speed_pre_multiplier = epw.wind_speed.get_aligned_collection(
             annual_effective_wind_speed(self.shelters, epw)
         )
 
-        # adjust ws based on multiplier (single value)
-        if isinstance(self.wind_speed_multiplier, (float, int)):
-            return wind_speed_pre_multiplier * self.wind_speed_multiplier
-
         # adjust ws based on multiplier (collection)
-        return wind_speed_pre_multiplier.get_aligned_collection(
-            [
-                ws * mult
-                for ws, mult in list(
-                    zip(*[wind_speed_pre_multiplier, self.wind_speed_multiplier])
-                )
-            ]
+        return ws.get_aligned_collection(
+            np.array(wind_speed_pre_multiplier.values) * self.wind_speed_multiplier
         )
 
     def mean_radiant_temperature(
@@ -279,8 +288,12 @@ class Typology(BHoMObject):
                 configuration for the given typology.
         """
 
-        shaded_mrt = to_series(simulation_result.shaded_mean_radiant_temperature)
-        unshaded_mrt = to_series(simulation_result.unshaded_mean_radiant_temperature)
+        shaded_mrt = collection_to_series(
+            simulation_result.shaded_mean_radiant_temperature
+        )
+        unshaded_mrt = collection_to_series(
+            simulation_result.unshaded_mean_radiant_temperature
+        )
 
         daytime = np.array(
             [i > 0 for i in simulation_result.epw.global_horizontal_radiation]
@@ -309,7 +322,7 @@ class Typology(BHoMObject):
         )
 
         # apply radiant temperature adjustment if given
-        return from_series(mrt_series + self.radiant_temperature_adjustment)
+        return collection_from_series(mrt_series + self.radiant_temperature_adjustment)
 
     def universal_thermal_climate_index(
         self, simulation_result: SimulationResult, return_comfort_obj: bool = False
@@ -399,6 +412,85 @@ class Typology(BHoMObject):
         return utci_heatmap_histogram(
             self.universal_thermal_climate_index(res), self.name
         )
+
+
+def combine_typologies(
+    typologies: Tuple[Typology],
+    evaporative_cooling_effect_weights: Tuple[float] = None,
+    wind_speed_multiplier_weights: Tuple[float] = None,
+    radiant_temperature_adjustment_weights: Tuple[float] = None,
+) -> Typology:
+    """Combine multiple typologies into a single typology.
+
+    Args:
+        typologies (Tuple[Typology]):
+            A tuple of typologies to combine.
+        evaporative_cooling_effect_weights (Tuple[float], optional):
+            A tuple of weights to apply to the evaporative cooling effect
+            of each typology. Defaults to None.
+        wind_speed_multiplier_weights (Tuple[float], optional):
+            A tuple of weights to apply to the wind speed multiplier
+            of each typology. Defaults to None.
+        radiant_temperature_adjustment_weights (Tuple[float], optional):
+            A tuple of weights to apply to the radiant temperature adjustment
+            of each typology. Defaults to None.
+
+    Raises:
+        ValueError: If the weights do not sum to 1.
+
+    Returns:
+        Typology: A combined typology.
+    """
+
+    if evaporative_cooling_effect_weights is None:
+        evaporative_cooling_effect_weights = np.ones_like(typologies) * (
+            1 / len(typologies)
+        )
+    else:
+        if sum(evaporative_cooling_effect_weights) != 1:
+            raise ValueError("evaporative_cooling_effect_weights must sum to 1.")
+
+    if wind_speed_multiplier_weights is None:
+        wind_speed_multiplier_weights = np.ones_like(typologies) * (1 / len(typologies))
+    else:
+        if sum(wind_speed_multiplier_weights) != 1:
+            raise ValueError("wind_speed_multiplier_weights must sum to 1.")
+
+    if radiant_temperature_adjustment_weights is None:
+        radiant_temperature_adjustment_weights = np.ones_like(typologies) * (
+            1 / len(typologies)
+        )
+    else:
+        if sum(radiant_temperature_adjustment_weights) != 1:
+            raise ValueError("radiant_temperature_adjustment_weights must sum to 1.")
+
+    all_shelters = []
+    for typ in typologies:
+        all_shelters.extend(typ.shelters)
+
+    ec_effect = np.average(
+        [i.evaporative_cooling_effect for i in typologies],
+        weights=evaporative_cooling_effect_weights,
+        axis=0,
+    )
+    ws_multiplier = np.average(
+        [i.wind_speed_multiplier for i in typologies],
+        weights=wind_speed_multiplier_weights,
+        axis=0,
+    )
+    tr_adjustment = np.average(
+        [i.radiant_temperature_adjustment for i in typologies],
+        weights=radiant_temperature_adjustment_weights,
+        axis=0,
+    )
+
+    return Typology(
+        name=" + ".join([i.name for i in typologies]),
+        shelters=all_shelters,
+        evaporative_cooling_effect=ec_effect,
+        wind_speed_multiplier=ws_multiplier,
+        radiant_temperature_adjustment=tr_adjustment,
+    )
 
 
 class Typologies(Enum):

@@ -49,7 +49,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            PythonEnvironment env = Python.Query.ExistingEnvironment(Query.ToolkitName());
+            PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
 
             string gemFile = System.IO.Path.GetFullPath(gem);
             string outputDirectory = System.IO.Path.GetDirectoryName(gem);

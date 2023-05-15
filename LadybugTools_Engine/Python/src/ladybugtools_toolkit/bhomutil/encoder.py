@@ -17,8 +17,8 @@ class BHoMEncoder(json.JSONEncoder):
             The object for conversion.
     """
 
+    # pylint : disable=super-with-arguments;too-many-return-statements
     def default(self, o):
-
         # Path encoding
         if isinstance(o, Path):
             return o.as_posix()
@@ -55,7 +55,9 @@ class BHoMEncoder(json.JSONEncoder):
         except AttributeError:
             try:
                 return str(o)
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
         return super(BHoMEncoder, self).default(o)
+
+    # pylint : enable=super-with-arguments;too-many-return-statements

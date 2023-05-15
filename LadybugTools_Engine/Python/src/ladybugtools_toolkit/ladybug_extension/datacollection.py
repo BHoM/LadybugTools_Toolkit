@@ -19,23 +19,25 @@ from ladybug.datautil import (
 )
 
 from ..helpers import wind_direction_average
-from .analysis_period import describe as describe_analysis_period
-from .analysis_period import to_datetimes
-from .header import from_string as header_from_string
-from .header import to_string as header_to_string
+from .analysis_period import analysis_period_to_datetimes
+from .analysis_period import describe_analysis_period as describe_analysis_period
+from .header import header_from_string as header_from_string
+from .header import header_to_string as header_to_string
 
 
-def to_series(collection: BaseCollection) -> pd.Series:
+def collection_to_series(collection: BaseCollection) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
 
     Args:
-        collection: Ladybug data collection object.
+        collection (BaseCollection):
+            Ladybug data collection object.
 
     Returns:
-        pd.Series: A Pandas Series object.
+        pd.Series:
+            A Pandas Series object.
     """
 
-    index = to_datetimes(collection.header.analysis_period)
+    index = analysis_period_to_datetimes(collection.header.analysis_period)
     if len(collection.values) == 12:
         index = pd.date_range(f"{index[0].year}-01-01", periods=12, freq="MS")
 
@@ -46,18 +48,22 @@ def to_series(collection: BaseCollection) -> pd.Series:
     )
 
 
-def to_json(
+def collection_to_json(
     collections: List[BaseCollection], json_path: Union[Path, str], indent: int = None
 ) -> Path:
     """Save Ladybug BaseCollection-like objects into a JSON file.
 
     Args:
-        collection (BaseCollection): A Ladybug BaseCollection-like object.
-        json_path (Union[Path, str]): The path to the JSON file.
-        indent (str, optional): The indentation to use in the resulting JSON file. Defaults to None.
+        collections (BaseCollection):
+            A Ladybug BaseCollection-like object.
+        json_path (Union[Path, str]):
+            The path to the JSON file.
+        indent (str, optional):
+            The indentation to use in the resulting JSON file. Defaults to None.
 
     Returns:
-        Path: The path to the JSON file.
+        Path:
+            The path to the JSON file.
 
     """
 
@@ -81,15 +87,20 @@ def to_json(
     )
 
 
-def to_csv(collections: List[BaseCollection], csv_path: Union[Path, str]) -> Path:
+def collection_to_csv(
+    collections: List[BaseCollection], csv_path: Union[Path, str]
+) -> Path:
     """Save Ladybug BaseCollection-like objects into a CSV file.
 
     Args:
-        collection (BaseCollection): A Ladybug BaseCollection-like object.
-        csv_path (Union[Path, str]): The path to the CSV file.
+        collections (BaseCollection):
+            A Ladybug BaseCollection-like object.
+        csv_path (Union[Path, str]):
+            The path to the CSV file.
 
     Returns:
-        Path: The path to the CSV file.
+        Path:
+            The path to the CSV file.
 
     """
 
@@ -109,7 +120,7 @@ def to_csv(collections: List[BaseCollection], csv_path: Union[Path, str]) -> Pat
     )
 
 
-def to_array(collection: BaseCollection) -> np.ndarray:
+def collection_to_array(collection: BaseCollection) -> np.ndarray:
     """Convert a Ladybug BaseCollection-like object into a numpy array.
 
     Args:
@@ -130,7 +141,7 @@ def percentile(
     Args:
         collections (List[BaseCollection]):
             A list of collections.
-        percentile (float):
+        nth_percentile (float):
             A percentile, between 0 and 1.
 
     Returns:
@@ -139,7 +150,7 @@ def percentile(
     """
 
     # check all input collections are of the same underlying datatype
-    df = pd.concat([to_series(i) for i in collections], axis=1)
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
@@ -151,7 +162,9 @@ def percentile(
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
 
-    return from_series(df.quantile(nth_percentile, axis=1).rename(series_name))
+    return collection_from_series(
+        df.quantile(nth_percentile, axis=1).rename(series_name)
+    )
 
 
 def minimum(collections: List[BaseCollection]) -> BaseCollection:
@@ -167,7 +180,7 @@ def minimum(collections: List[BaseCollection]) -> BaseCollection:
     """
 
     # check all input collections are of the same underlying datatype
-    df = pd.concat([to_series(i) for i in collections], axis=1)
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
@@ -176,7 +189,7 @@ def minimum(collections: List[BaseCollection]) -> BaseCollection:
     # check if any collections input are angular, in which case, fail
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
-    return from_series(df.min(axis=1).rename(series_name))
+    return collection_from_series(df.min(axis=1).rename(series_name))
 
 
 def maximum(collections: List[BaseCollection]) -> BaseCollection:
@@ -192,7 +205,7 @@ def maximum(collections: List[BaseCollection]) -> BaseCollection:
     """
 
     # check all input collections are of the same underlying datatype
-    df = pd.concat([to_series(i) for i in collections], axis=1)
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
@@ -201,10 +214,10 @@ def maximum(collections: List[BaseCollection]) -> BaseCollection:
     # check if any collections input are angular, in which case, fail
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
-    return from_series(df.max(axis=1).rename(series_name))
+    return collection_from_series(df.max(axis=1).rename(series_name))
 
 
-def from_series(series: pd.Series) -> BaseCollection:
+def collection_from_series(series: pd.Series) -> BaseCollection:
     """Convert a Pandas Series object into a Ladybug BaseCollection-like object.
 
     Args:
@@ -248,7 +261,7 @@ def from_series(series: pd.Series) -> BaseCollection:
     raise ValueError("The series must be hourly or monthly.")
 
 
-def from_json(json_path: Union[Path, str]) -> List[BaseCollection]:
+def collection_from_json(json_path: Union[Path, str]) -> List[BaseCollection]:
     """Load a JSON containing serialised Ladybug BaseCollection-like objects.
 
     Args:
@@ -267,7 +280,7 @@ def from_json(json_path: Union[Path, str]) -> List[BaseCollection]:
     return collections_from_json(json_path.as_posix())
 
 
-def from_dict(dictionary: Dict[str, Any]) -> BaseCollection:
+def collection_from_dict(dictionary: Dict[str, Any]) -> BaseCollection:
     """Convert a JSON compliant dictionary object into a ladybug EPW.
 
     Args:
@@ -285,13 +298,15 @@ def from_dict(dictionary: Dict[str, Any]) -> BaseCollection:
     json_str = json_str.replace('"min": "-inf"', '"min": -Infinity')
     json_str = json_str.replace('"max": "inf"', '"max": Infinity')
 
+    # pylint: disable=broad-exception-caught
     try:
         return HourlyContinuousCollection.from_dict(json.loads(json_str))
     except Exception:
         return MonthlyCollection.from_dict(json.loads(json_str))
+    # pylint: enable=broad-exception-caught
 
 
-def from_csv(csv_path: Union[Path, str]) -> List[BaseCollection]:
+def collection_from_csv(csv_path: Union[Path, str]) -> List[BaseCollection]:
     """Load a CSV containing serialised Ladybug BaseCollection-like objects.
 
     Args:
@@ -310,7 +325,7 @@ def from_csv(csv_path: Union[Path, str]) -> List[BaseCollection]:
     return collections_from_csv(csv_path.as_posix())
 
 
-def describe_collection(
+def summarise_collection(
     collection: BaseCollection,
     _n_common: int = 3,
 ) -> List[str]:
@@ -326,7 +341,7 @@ def describe_collection(
 
     descriptions = []
 
-    series = to_series(collection)
+    series = collection_to_series(collection)
 
     name = " ".join(series.name.split(" ")[:-1])
     unit = series.name.split(" ")[-1].replace("(", "").replace(")", "")
@@ -358,7 +373,6 @@ def describe_collection(
         pass
 
     if not isinstance(collection.header.data_type, Angle):
-
         # minimum value (number of times it occurs, and when)
         _min = series.min()
         _n_min = len(series[series == _min])
@@ -429,7 +443,6 @@ def describe_collection(
     )
 
     if not isinstance(collection.header.data_type, Angle):
-
         # cumulative values
         if rate_of_change:
             descriptions.append(
@@ -482,7 +495,7 @@ def average(collections: List[BaseCollection]) -> BaseCollection:
     """
 
     # check all input collections are of the same underlying datatype
-    df = pd.concat([to_series(i) for i in collections], axis=1)
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
@@ -515,19 +528,25 @@ def average(collections: List[BaseCollection]) -> BaseCollection:
     else:
         series = df.mean(axis=1).rename(series_name)
 
-    return from_series(series)
+    return collection_from_series(series)
 
 
 def to_hourly(
     collection: MonthlyCollection, method: str = None
 ) -> HourlyContinuousCollection:
-    """Resample a Ladybug MonthlyContinuousCollection object into a Ladybug HourlyContinuousCollection object.
+    """
+    Resample a Ladybug MonthlyContinuousCollection object into a Ladybug
+    HourlyContinuousCollection object.
 
     Args:
-        method (str): The method to use for annualizing the monthly values.
+        collection (MonthlyCollection):
+            A Ladybug MonthlyContinuousCollection object.
+        method (str):
+            The method to use for annualizing the monthly values.
 
     Returns:
-        HourlyContinuousCollection: A Ladybug HourlyContinuousCollection object.
+        HourlyContinuousCollection:
+            A Ladybug HourlyContinuousCollection object.
     """
 
     if method is None:
@@ -544,7 +563,7 @@ def to_hourly(
             f"The up-sampling method must be one of {list(interpolation_methods.keys())}"
         )
 
-    series = to_series(collection)
+    series = collection_to_series(collection)
     annual_hourly_index = pd.date_range(
         f"{series.index[0].year}-01-01", periods=8760, freq="H"
     )

@@ -107,10 +107,10 @@ def plot_shade_benefit(
 
     # add sun up indicator lines
     if epw is not None:
-        sp = Sunpath.from_location(epw.location)
+        sunpath = Sunpath.from_location(epw.location)
         sun_up_down = pd.DataFrame(
             [
-                sp.calculate_sunrise_sunset_from_datetime(i)
+                sunpath.calculate_sunrise_sunset_from_datetime(i)
                 for i in shade_benefit_categories.resample("D").count().index
             ]
         ).reset_index(drop=True)

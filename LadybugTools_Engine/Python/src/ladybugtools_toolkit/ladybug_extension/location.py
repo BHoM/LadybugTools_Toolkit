@@ -1,7 +1,7 @@
 from ladybug.location import Location
 
 
-def to_string(location: Location) -> str:
+def location_to_string(location: Location) -> str:
     """Return a simple string representation of the Location object.
 
     Args:

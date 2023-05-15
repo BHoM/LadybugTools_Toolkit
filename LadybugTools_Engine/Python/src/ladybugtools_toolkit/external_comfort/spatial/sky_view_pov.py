@@ -9,9 +9,8 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from ...helpers import figure_to_image
+from ...plot import skymatrix, sunpath
 from ...plot.fisheye_sky import fisheye_sky
-from ...plot.skymatrix import skymatrix
-from ...plot.sunpath import sunpath
 
 
 def sky_view_pov(
@@ -112,6 +111,7 @@ def sky_view_pov(
 
     if title is not None:
         draw = ImageDraw.Draw(combined_img)
+        # pylint disable=too-broad-exception
         try:
             font = ImageFont.truetype("C:/Windows/fonts/segoeuil.ttf", 14)
             draw.text(
@@ -126,5 +126,6 @@ def sky_view_pov(
                 title,
                 (255, 255, 255),
             )
+        # pylint enable=too-broad-exception
 
     return combined_img

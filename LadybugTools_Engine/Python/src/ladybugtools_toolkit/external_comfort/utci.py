@@ -16,9 +16,14 @@ from numpy.typing import NDArray
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
-from ..ladybug_extension.analysis_period import describe as describe_analysis_period
-from ..ladybug_extension.analysis_period import to_boolean
-from ..ladybug_extension.datacollection import from_series, to_series
+from ..ladybug_extension.analysis_period import analysis_period_to_boolean
+from ..ladybug_extension.analysis_period import (
+    describe_analysis_period as describe_analysis_period,
+)
+from ..ladybug_extension.datacollection import (
+    collection_from_series,
+    collection_to_series,
+)
 from ..ladybug_extension.epw import (
     seasonality_from_day_length,
     seasonality_from_month,
@@ -218,8 +223,19 @@ def compare_utci_collections(
 ) -> str:
     """Create a summary of a comparison between a "baseline" UTCI collection, and another.
 
+    Args:
+        baseline (HourlyContinuousCollection):
+            The baseline UTCI collection to compare against.
+        comparable (HourlyContinuousCollection):
+            The comparable UTCI collection to compare against the baseline.
+        analysis_period (AnalysisPeriod):
+            An optional analysis period to filter the data by. If None, then use AnalysisPeriod().
+        identifiers (Tuple[str]):
+            A tuple of identifiers for the baseline and comparable collections.
+
     Returns:
-        str: A text summary of the differences between the given UTCI data collection.
+        str:
+            A text summary of the differences between the given UTCI data collection.
     """
     if analysis_period is None:
         analysis_period = AnalysisPeriod()
@@ -235,9 +251,9 @@ def compare_utci_collections(
     ap_description = describe_analysis_period(analysis_period)
 
     col_baseline = baseline.filter_by_analysis_period(analysis_period)
-    series_baseline = to_series(col_baseline)
+    series_baseline = collection_to_series(col_baseline)
     col_comparable = comparable.filter_by_analysis_period(analysis_period)
-    series_comparable = to_series(col_comparable)
+    series_comparable = collection_to_series(col_comparable)
 
     # total_number_of_hours = len(col_baseline)
     comfortable_hours_baseline = (
@@ -314,7 +330,7 @@ def describe_as_dataframe(
     dfs = []
     for analysis_period in analysis_periods:
         col = universal_thermal_climate_index.filter_by_analysis_period(analysis_period)
-        series = to_series(col)
+        series = collection_to_series(col)
 
         total_number_of_hours = len(series)
         comfortable_hours = ((series >= limit_low) & (series <= limit_high)).sum()
@@ -344,7 +360,7 @@ def describe_as_dataframe(
     return df.T
 
 
-def describe(
+def summarise_utci(
     universal_thermal_climate_index: HourlyContinuousCollection,
     analysis_period: AnalysisPeriod = None,
     comfort_limits: Tuple[float] = (9, 26),
@@ -372,7 +388,7 @@ def describe(
     ap_description = describe_analysis_period(analysis_period, include_timestep=False)
 
     col = universal_thermal_climate_index.filter_by_analysis_period(analysis_period)
-    series = to_series(col)
+    series = collection_to_series(col)
 
     limit_low = min(comfort_limits)
     limit_high = max(comfort_limits)
@@ -423,10 +439,10 @@ def describe_monthly(
     # create mask if necessary
     if isinstance(analysis_periods, AnalysisPeriod):
         analysis_periods = [analysis_periods]
-    annual_mask = to_boolean(analysis_periods)
+    annual_mask = analysis_period_to_boolean(analysis_periods)
 
     # convert
-    utci_series = to_series(utci_collection)[annual_mask]
+    utci_series = collection_to_series(utci_collection)[annual_mask]
 
     # categorise
     utci_categories = categorise(
@@ -652,10 +668,10 @@ def met_rate_adjustment(
         forecaster = interp2d(met_rate, utci_val, utci_delta)
 
     # Calculate ΔUTCI
-    original_utci = to_series(utci_collection)
+    original_utci = collection_to_series(utci_collection)
     utci_delta = [forecaster(met, i)[0] for i in original_utci.values]
 
-    return from_series(original_utci + utci_delta)
+    return collection_from_series(original_utci + utci_delta)
 
 
 def utci_parallel(
@@ -1194,15 +1210,19 @@ def feasible_utci_limits(
                         wind_speed=_ws,
                     ).universal_thermal_climate_index,
                 )
-    df = pd.concat([to_series(i) for i in utcis], axis=1)
-    min_utci = from_series(df.min(axis=1).rename("Universal Thermal Climate Index (C)"))
-    max_utci = from_series(df.max(axis=1).rename("Universal Thermal Climate Index (C)"))
+    df = pd.concat([collection_to_series(i) for i in utcis], axis=1)
+    min_utci = collection_from_series(
+        df.min(axis=1).rename("Universal Thermal Climate Index (C)")
+    )
+    max_utci = collection_from_series(
+        df.max(axis=1).rename("Universal Thermal Climate Index (C)")
+    )
 
     if as_dataframe:
         return pd.concat(
             [
-                to_series(min_utci),
-                to_series(max_utci),
+                collection_to_series(min_utci),
+                collection_to_series(max_utci),
             ],
             axis=1,
             keys=["lowest", "highest"],
@@ -1256,7 +1276,7 @@ def feasible_comfort_category(
     except TypeError:
         print("analysis_periods is not iterable")
 
-    hours = to_boolean(analysis_periods)
+    hours = analysis_period_to_boolean(analysis_periods)
 
     for ap in analysis_periods:
         if (ap.st_month != 1) or (ap.end_month != 12):
@@ -1272,11 +1292,15 @@ def feasible_comfort_category(
     )
     if met_rate_adjustment_value is not None:
         df["lowest"] = met_rate_adjustment(
-            from_series(df["lowest"].rename("Universal Thermal Climate Index (C)")),
+            collection_from_series(
+                df["lowest"].rename("Universal Thermal Climate Index (C)")
+            ),
             met_rate_adjustment_value,
         ).values
         df["highest"] = met_rate_adjustment(
-            from_series(df["highest"].rename("Universal Thermal Climate Index (C)")),
+            collection_from_series(
+                df["highest"].rename("Universal Thermal Climate Index (C)")
+            ),
             met_rate_adjustment_value,
         ).values
 
@@ -1351,26 +1375,26 @@ def feasible_comfort_temporal(
             A summary table.
     """
 
-    sx = [
+    seasonality_methods = [
         None,
         seasonality_from_day_length,
         seasonality_from_month,
         seasonality_from_temperature,
         "monthly",
     ]
-    if seasonality not in sx:
-        raise ValueError(f"seasonality must be one of {sx}")
+    if seasonality not in seasonality_methods:
+        raise ValueError(f"seasonality must be one of {seasonality_methods}")
 
     min_utci, max_utci = feasible_utci_limits(
         epw, include_additional_moisture=include_additional_moisture
     )
 
-    utci_range = pd.concat([to_series(min_utci), to_series(max_utci)], axis=1).agg(
-        ["min", "max"], axis=1
-    )
+    utci_range = pd.concat(
+        [collection_to_series(min_utci), collection_to_series(max_utci)], axis=1
+    ).agg(["min", "max"], axis=1)
 
     analysis_period = AnalysisPeriod(st_hour=st_hour, end_hour=end_hour)
-    ap_bool = to_boolean(analysis_period)
+    ap_bool = analysis_period_to_boolean(analysis_period)
     ap_description = describe_analysis_period(analysis_period)
 
     low_limit = min(comfort_limits)
@@ -1404,6 +1428,7 @@ def feasible_comfort_temporal(
         temp.columns = [ap_description]
         return temp.T
 
+    # pylint disable=comparison-with-callable
     if seasonality == seasonality_from_month:
         seasons = seasonality_from_month(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
@@ -1454,6 +1479,7 @@ def feasible_comfort_temporal(
             f"{i} between {st_hour:02d}:00 and {end_hour:02d}:00" for i in temp.index
         ]
         return temp
+    # pylint enable=comparison-with-callable
 
     raise ValueError("How did you get here?")
 
@@ -1550,7 +1576,7 @@ def month_time_binned_table(
         )
 
     if isinstance(utci_data, HourlyContinuousCollection):
-        utci_data = to_series(utci_data)
+        utci_data = collection_to_series(utci_data)
 
     # check for continuity of time periods, and overlaps overnight/year
     flat_hours = [item for sublist in hour_bins for item in sublist]

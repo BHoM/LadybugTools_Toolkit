@@ -49,7 +49,7 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            PythonEnvironment env = Python.Query.ExistingEnvironment(Query.ToolkitName());
+            PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
 
             string hbjsonFile = System.IO.Path.GetFullPath(hbjson);
             string outputDirectory = System.IO.Path.GetDirectoryName(hbjsonFile);
