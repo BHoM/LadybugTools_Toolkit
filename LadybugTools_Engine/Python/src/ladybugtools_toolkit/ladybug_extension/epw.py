@@ -34,12 +34,12 @@ from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
-from ..external_comfort.wind import wind_speed_at_height
 from ..helpers import (
     air_pressure_at_height,
     radiation_at_height,
     temperature_at_height,
     timedelta_tostring,
+    wind_speed_at_height,
 )
 from .analysis_period import analysis_period_to_datetimes
 from .datacollection import collection_to_series
@@ -1428,10 +1428,11 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
     new_epw.location.source = f"{epw.location.source}[@{target_height}M_ELEVATION]"
 
     # modify TEMPERATURE
+    # determine
     new_epw.dry_bulb_temperature.values = [
         round(
             temperature_at_height(
-                reference_temperature=i,
+                reference_value=i,
                 reference_height=original_height,
                 target_height=target_height,
             ),
@@ -1445,7 +1446,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
         new_epw.monthly_ground_temperature[k].values = [
             round(
                 temperature_at_height(
-                    reference_temperature=i,
+                    reference_value=i,
                     reference_height=original_height,
                     target_height=target_height,
                 ),
@@ -1458,7 +1459,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
     new_epw.atmospheric_station_pressure.values = [
         round(
             air_pressure_at_height(
-                reference_pressure=i,
+                reference_value=i,
                 reference_height=original_height,
                 target_height=target_height,
             ),
@@ -1471,9 +1472,9 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
     new_epw.direct_normal_radiation.values = [
         round(
             radiation_at_height(
+                reference_value=i,
                 target_height=target_height,
                 reference_height=original_height,
-                reference_radiation=i,
             ),
             0,
         )
@@ -1484,7 +1485,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
             radiation_at_height(
                 target_height=target_height,
                 reference_height=original_height,
-                reference_radiation=i,
+                reference_value=i,
             ),
             0,
         )
@@ -1495,7 +1496,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
             radiation_at_height(
                 target_height=target_height,
                 reference_height=original_height,
-                reference_radiation=i,
+                reference_value=i,
             ),
             0,
         )
@@ -1506,7 +1507,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
             radiation_at_height(
                 target_height=target_height,
                 reference_height=original_height,
-                reference_radiation=i,
+                reference_value=i,
             ),
             0,
         )
@@ -1517,7 +1518,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
             radiation_at_height(
                 target_height=target_height,
                 reference_height=original_height,
-                reference_radiation=i,
+                reference_value=i,
             ),
             0,
         )
@@ -1528,7 +1529,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
             radiation_at_height(
                 target_height=target_height,
                 reference_height=original_height,
-                reference_radiation=i,
+                reference_value=i,
             ),
             0,
         )
@@ -1539,7 +1540,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
     new_epw.wind_speed.values = [
         round(
             wind_speed_at_height(
-                reference_wind_speed=i,
+                reference_value=i,
                 reference_height=10,
                 target_height=target_height,
                 terrain_roughness_length=0.03,
@@ -1554,7 +1555,7 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
     wbt.values = [
         round(
             temperature_at_height(
-                reference_temperature=i,
+                reference_value=i,
                 reference_height=original_height,
                 target_height=target_height,
             ),

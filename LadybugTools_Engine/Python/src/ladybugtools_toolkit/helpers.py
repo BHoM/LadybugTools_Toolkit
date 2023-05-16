@@ -16,11 +16,17 @@ from typing import Any, Dict, List, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ladybug.epw import AnalysisPeriod, Location
-from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
-                              estimate_illuminance_from_irradiance,
-                              get_extra_radiation, zhang_huang_solar,
-                              zhang_huang_solar_split)
+from ladybug.datatype.temperature import WetBulbTemperature
+from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
+from ladybug.psychrometrics import wet_bulb_from_db_rh
+from ladybug.skymodel import (
+    calc_horizontal_infrared,
+    calc_sky_temperature,
+    estimate_illuminance_from_irradiance,
+    get_extra_radiation,
+    zhang_huang_solar,
+    zhang_huang_solar_split,
+)
 from ladybug.sunpath import Sunpath
 from matplotlib.colors import cnames, colorConverter, to_rgb
 from matplotlib.figure import Figure
@@ -1089,48 +1095,126 @@ def wind_direction_average(angles: List[float]) -> float:
     return np.degrees(average_angle)
 
 
-def temperature_at_height(
-    reference_temperature: float,
+def wind_speed_at_height(
+    reference_value: float,
+    reference_height: float,
     target_height: float,
-    reference_height: float = 10,
-    lapse_rate: float = 0.0065,
+    **kwargs,
 ) -> float:
-    """Calculate the temperature at a given height, given a reference temperature and height.
-
-    Uses lapse rate suggested by
-    https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
+    """Calculate the wind speed at a given height from the 10m default height
+        as stated in an EPW file.
 
     Args:
-        reference_temperature (float):
-            The temperature at the reference height.
+        reference_wind_speed (float):
+            The speed to be translated.
+        reference_height (float):
+            The original height of the wind speed being translated.
         target_height (float):
-            The height at which the temperature is required, in m.
-        reference_height (float, optional):
-            The height at which the reference temperature was measured. Defaults to 10m.
-        lapse_rate (float, optional):
-            The lapse rate of the atmosphere. Defaults to 0.0065.
+            The target height of the wind speed being translated.
+        **kwargs:
+            Additional keyword arguments to be passed to the
+            wind_speed_at_height function. This includes:
+                terrain_roughness_length (float):
+                    A value describing how rough the ground is. Default is
+                    0.03 for Open flat terrain; grass, few isolated obstacles.
+                log_function (bool, optional):
+                    Set to True to used the log transformation method, or
+                    False for the exponent method. Defaults to True.
+
+    Notes:
+        Terrain roughness lengths can be found in the following table:
+            | Terrain description                               |  z0 (m)   |
+            ----------------------------------------------------|-----------|
+            | Open sea, Fetch at least 5 km                     |    0.0002 |
+            | Mud flats, snow; no vegetation, no obstacles      |    0.005  |
+            | Open flat terrain; grass, few isolated obstacle   |    0.03   |
+            | Low crops; occasional large obstacles, x/H > 20   |    0.10   |
+            | High crops; scattered obstacles, 15 < x/H < 20    |    0.25   |
+            | parkland, bushes; numerous obstacles, x/H ≈ 10    |    0.5    |
+            | Regular large obstacle coverage (suburb, forest)  |    1.0    |
+            | City centre with high- and low-rise buildings     |  ≥ 2      |
+            ----------------------------------------------------------------|
 
     Returns:
         float:
-            The temperature at the given height.
+            The translated wind speed at the target height.
     """
-    if target_height > 11000:
-        warnings.warn("Lapse rate is not valid above 11km.")
 
-    return reference_temperature - lapse_rate * (target_height - reference_height)
+    terrain_roughness_length = kwargs.get("terrain_roughness_length", 0.03)
+    log_function = kwargs.get("log_function", True)
+    kwargs = {}  # reset kwargs to remove invalid arguments
+
+    if log_function:
+        return reference_value * (
+            np.log(target_height / terrain_roughness_length)
+            / np.log(reference_height / terrain_roughness_length)
+        )
+    wind_shear_exponent = 1 / 7
+    return reference_value * (
+        np.power((target_height / reference_height), wind_shear_exponent)
+    )
+
+
+def temperature_at_height(
+    reference_value: float,
+    reference_height: float,
+    target_height: float,
+    **kwargs,
+) -> float:
+    """Estimate the dry-bulb temperature at a given height from a referenced
+        dry-bulb temperature at another height.
+
+    Args:
+        reference_temperature (float):
+            The temperature to translate.
+        reference_height (float):
+            The height of the reference temperature.
+        target_height (float):
+            The height to translate the reference temperature towards.
+        **kwargs:
+            Additional keyword arguments to be passed to the
+            temperature_at_height function. This includes:
+                reduction_per_km_altitude_gain (float, optional):
+                    The lapse rate of the atmosphere. Defaults to 0.0065 based
+                    on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
+
+        lapse_rate (float, optional):
+            The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
+            conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
+
+    Returns:
+        float:
+            A translated air temperature.
+    """
+
+    if (target_height > 8000) or (reference_height > 8000):
+        warnings.warn(
+            "The heights input into this calculation exist partially above the egde of the troposphere. This method is only valid below 8000m."
+        )
+
+    lapse_rate = kwargs.get("lapse_rate", 0.0065)
+    kwargs = {}  # reset kwargs to remove invalid arguments
+
+    height_difference = target_height - reference_height
+
+    return reference_value - (height_difference * lapse_rate)
 
 
 def radiation_at_height(
-    reference_radiation: float,
+    reference_value: float,
     target_height: float,
-    reference_height: float = 10,
+    reference_height: float,
     lapse_rate: float = 0.08,
+    **kwargs,
 ) -> float:
-    """Calculate the radiation at a given height, given a reference radiation and height.
+    """Calculate the radiation at a given height, given a reference radiation
+        and height.
 
-    Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of solar irradiance for correcting
-    solar fluxes for changes in terrain elevation. Earth Observation and Water Cycle Science Conference,
-    Nov 2009, Frascati, Italy. pp.S05.
+    References:
+        Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of
+        solar irradiance for correcting solar fluxes for changes in terrain
+        elevation. Earth Observation and Water Cycle Science Conference,
+        Nov 2009, Frascati, Italy. pp.S05.
 
     Args:
         reference_radiation (float):
@@ -1138,23 +1222,29 @@ def radiation_at_height(
         target_height (float):
             The height at which the radiation is required, in m.
         reference_height (float, optional):
-            The height at which the reference radiation was measured. Defaults to 10m.
-        lapse_rate (float, optional):
-            The lapse rate of the atmosphere (rate at which it changes per step change in height). Defaults to 0.08.
+            The height at which the reference radiation was measured.
+        **kwargs:
+            Additional keyword arguments to be passed to the
+            radiation_at_height function. This includes:
+                lapse_rate (float, optional):
+                    The lapse rate of the atmosphere. Defaults to 0.08.
 
     Returns:
         float:
             The radiation at the given height.
     """
-    lapse_rate_per_m = lapse_rate * reference_radiation / 1000
+    lapse_rate = kwargs.get("lapse_rate", 0.08)
+    kwargs = {}  # reset kwargs to remove invalid arguments
+
+    lapse_rate_per_m = lapse_rate * reference_value / 1000
     increase = lapse_rate_per_m * (target_height - reference_height)
-    return reference_radiation + increase
+    return reference_value + increase
 
 
 def air_pressure_at_height(
-    reference_pressure: float,
+    reference_value: float,
     target_height: float,
-    reference_height: float = 10,
+    reference_height: float,
 ) -> float:
     """Calculate the air pressure at a given height, given a reference pressure and height.
 
@@ -1171,9 +1261,64 @@ def air_pressure_at_height(
             The pressure at the given height.
     """
     return (
-        reference_pressure
+        reference_value
         * (1 - 0.0065 * (target_height - reference_height) / 288.15) ** 5.255
     )
+
+
+def target_wind_speed_collection(
+    epw: EPW, target_average_wind_speed: float, target_height: float
+) -> HourlyContinuousCollection:
+    """Create an annual hourly collection of wind-speeds whose average equals the target value,
+        translated to 10m height, using the source EPW to provide a wind-speed profile.
+
+    Args:
+        epw (EPW):
+            The source EPW from which the wind speed profile is used to distribute wind speeds.
+        target_average_wind_speed (float):
+            The value to be translated to 10m and set as the average for the target wind-speed
+            collection.
+        target_height (float):
+            The height at which the wind speed is translated to (this will assume the original wind
+            speed is at 10m per EPW conventions.
+
+    Returns:
+        HourlyContinuousCollection:
+            A ladybug annual hourly data wind speed collection.
+    """
+
+    # Translate target wind speed at ground level to wind speed at 10m, assuming an open terrain per airport conditions
+    target_average_wind_speed_at_10m = wind_speed_at_height(
+        reference_value=target_average_wind_speed,
+        reference_height=target_height,
+        target_height=10,
+        terrain_roughness_length=0.03,
+    )
+
+    # Adjust hourly values in wind_speed to give a new overall average equal to that of the target wind-speed
+    adjustment_factor = target_average_wind_speed_at_10m / epw.wind_speed.average
+
+    return epw.wind_speed * adjustment_factor
+
+
+def dry_bulb_temperature_at_height(
+    epw: EPW, target_height: float
+) -> HourlyContinuousCollection:
+    """Translate DBT values from an EPW into
+
+    Args:
+        epw (EPW): A Ladybug EPW object.
+        target_height (float): The height to translate the reference temperature towards.
+
+    Returns:
+        HourlyContinuousCollection: A resulting dry-bulb temperature collection.
+    """
+    dbt_collection = copy.copy(epw.dry_bulb_temperature)
+    dbt_collection.values = [
+        temperature_at_height(i, 10, target_height)
+        for i in epw.dry_bulb_temperature.values
+    ]
+    return dbt_collection
 
 
 def tile_images(
@@ -1387,3 +1532,101 @@ def create_triangulation(
     plt.close(fig)
     triang.set_mask(maxi > alpha)
     return triang
+
+
+def evaporative_cooling_effect(
+    dry_bulb_temperature: float,
+    relative_humidity: float,
+    evaporative_cooling_effectiveness: float,
+    atmospheric_pressure: float = None,
+) -> List[float]:
+    """
+    For the inputs, calculate the effective DBT and RH values for the evaporative cooling
+    effectiveness given.
+
+    Args:
+        dry_bulb_temperature (float):
+            A dry bulb temperature in degrees Celsius.
+        relative_humidity (float):
+            A relative humidity in percent (0-100).
+        evaporative_cooling_effectiveness (float):
+            The evaporative cooling effectiveness. This should be a value between 0 (no effect)
+            and 1 (saturated air).
+        atmospheric_pressure (float, optional):
+            A pressure in Pa. Default is pressure at sea level (101325 Pa).
+
+    Returns:
+        effective_dry_bulb_temperature, effective_relative_humidity (List[float]):
+            A list of two values for the effective dry bulb temperature and relative humidity.
+    """
+
+    if atmospheric_pressure is None:
+        atmospheric_pressure = 101325
+
+    wet_bulb_temperature = wet_bulb_from_db_rh(
+        dry_bulb_temperature, relative_humidity, atmospheric_pressure
+    )
+
+    new_dbt = dry_bulb_temperature - (
+        (dry_bulb_temperature - wet_bulb_temperature)
+        * evaporative_cooling_effectiveness
+    )
+    new_rh = (
+        relative_humidity * (1 - evaporative_cooling_effectiveness)
+    ) + evaporative_cooling_effectiveness * 100
+
+    if new_rh > 100:
+        new_rh = 100
+        new_dbt = wet_bulb_temperature
+
+    return [new_dbt, new_rh]
+
+
+def evaporative_cooling_effect_collection(
+    epw: EPW, evaporative_cooling_effectiveness: float = 0.3
+) -> List[HourlyContinuousCollection]:
+    """Calculate the effective DBT and RH considering effects of evaporative cooling.
+
+    Args:
+        epw (EPW): A ladybug EPW object.
+        evaporative_cooling_effectiveness (float, optional):
+            The proportion of difference between DBT and WBT by which to adjust DBT.
+            Defaults to 0.3 which equates to 30% effective evaporative cooling, roughly that
+            of Misting.
+
+    Returns:
+        List[HourlyContinuousCollection]:
+            Adjusted dry-bulb temperature and relative humidity collections incorporating
+            evaporative cooling effect.
+    """
+
+    if (evaporative_cooling_effectiveness > 1) or (
+        evaporative_cooling_effectiveness < 0
+    ):
+        raise ValueError("evaporative_cooling_effectiveness must be between 0 and 1.")
+
+    wbt = HourlyContinuousCollection.compute_function_aligned(
+        wet_bulb_from_db_rh,
+        [
+            epw.dry_bulb_temperature,
+            epw.relative_humidity,
+            epw.atmospheric_station_pressure,
+        ],
+        WetBulbTemperature(),
+        "C",
+    )
+    dbt = epw.dry_bulb_temperature.duplicate()
+    dbt = dbt - ((dbt - wbt) * evaporative_cooling_effectiveness)
+    dbt.header.metadata[
+        "evaporative_cooling"
+    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+
+    rh = epw.relative_humidity.duplicate()
+    rh = (rh * (1 - evaporative_cooling_effectiveness)) + (
+        evaporative_cooling_effectiveness * 100
+    )
+    rh.header.metadata[
+        "evaporative_cooling"
+    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+
+    return [dbt, rh]

@@ -9,7 +9,7 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from ...helpers import figure_to_image
-from ...plot import skymatrix, sunpath
+from ...plot import skymatrix, sp
 from ...plot.fisheye_sky import fisheye_sky
 
 
@@ -68,7 +68,7 @@ def sky_view_pov(
     if show_sunpath:
         sunpath_img = ImageOps.mirror(
             figure_to_image(
-                sunpath(
+                sp(
                     epw=epw,
                     analysis_period=analysis_period,
                     data_collection=data_collection,
