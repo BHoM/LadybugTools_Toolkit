@@ -36,7 +36,7 @@ from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
-from ..helpers import sanitise_string
+from ..helpers import evaporative_cooling_effect, sanitise_string
 from ..honeybee_extension.results import load_ill, load_res, load_sql, make_annual
 from ..ladybug_extension.analysis_period import (
     describe_analysis_period as describe_analysis_period,
@@ -54,7 +54,6 @@ from .ground_temperature import eplus_otherside_coefficient
 from .material import OpaqueMaterial, OpaqueVegetationMaterial, material_from_dict
 from .model import create_model
 from .model import equality as model_eq
-from .moisture import evaporative_cooling_effect
 from .utci import utci
 
 

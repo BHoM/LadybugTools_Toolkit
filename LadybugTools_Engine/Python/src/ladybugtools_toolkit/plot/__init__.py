@@ -18,9 +18,8 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.color import Colorset
 from ladybug.compass import Compass
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import (
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
-)
+from ladybug.datatype.temperature import \
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
 from ladybug.epw import EPW
 from ladybug.sunpath import Sunpath
 from ladybug.viewsphere import ViewSphere
@@ -28,15 +27,9 @@ from ladybug.wea import Wea
 from ladybug.windrose import WindRose
 from matplotlib.cm import ScalarMappable
 from matplotlib.collections import LineCollection, PatchCollection
-from matplotlib.colors import (
-    BoundaryNorm,
-    Colormap,
-    LinearSegmentedColormap,
-    ListedColormap,
-    Normalize,
-    is_color_like,
-    rgb2hex,
-)
+from matplotlib.colors import (BoundaryNorm, Colormap, LinearSegmentedColormap,
+                               ListedColormap, Normalize, is_color_like,
+                               rgb2hex)
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -45,27 +38,18 @@ from scipy.interpolate import make_interp_spline
 from scipy.stats import exponweib
 
 from ..external_comfort import HBR_FOLDERS
-from ..external_comfort.utci import (
-    UniversalThermalClimateIndex,
-    categorise,
-    utci_comfort_categories,
-)
-from ..helpers import (
-    cardinality,
-    contrasting_color,
-    lighten_color,
-    rolling_window,
-    validate_timeseries,
-    weibull_pdf,
-    wind_direction_average,
-)
-from ..ladybug_extension.analysis_period import (
-    analysis_period_to_boolean,
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
-from ..ladybug_extension.datacollection import collection_to_array, collection_to_series
-from ..ladybug_extension.epw import EPW, epw_to_dataframe, get_filename
+from ..external_comfort.utci import (UniversalThermalClimateIndex, categorise,
+                                     utci_comfort_categories)
+from ..helpers import (cardinality, contrasting_color, lighten_color,
+                       rolling_window, validate_timeseries, weibull_pdf,
+                       wind_direction_average)
+from ..ladybug_extension.analysis_period import (analysis_period_to_boolean,
+                                                 analysis_period_to_datetimes,
+                                                 describe_analysis_period)
+from ..ladybug_extension.datacollection import (collection_to_array,
+                                                collection_to_series)
+from ..ladybug_extension.epw import (EPW, degree_time, epw_to_dataframe,
+                                     get_filename)
 from ..ladybug_extension.location import location_to_string
 from ..wind.direction_bins import DirectionBins
 
@@ -309,8 +293,8 @@ def heatmap(
             pad=0.075,
         )
 
-    plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
-    cb.outline.set_visible(False)
+        plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
+        cb.outline.set_visible(False)
 
     ax.xaxis_date()
     if len(set(series.index.year)) > 1:
@@ -2782,3 +2766,367 @@ def windrose(
     plt.tight_layout()
 
     return ax
+
+
+def _add_value_labels(ax: plt.Axes, spacing: float = 5) -> None:
+    """Add labels to the end of each bar in a bar chart.
+
+    Arguments:
+        ax (matplotlib.axes.Axes):
+            The matplotlib object containing the axes of the plot to annotate.
+        spacing (float, optional):
+            The distance between the labels and the bars.
+    """
+
+    # For each bar: Place a label
+    for rect in ax.patches:
+        # Get X and Y placement of label from rect.
+        y_value = rect.get_height()
+        x_value = rect.get_x() + rect.get_width() / 2
+
+        # Number of points between bar and label. Change to your liking.
+        space = spacing
+
+        # Vertical alignment for positive values
+        va = "bottom"
+
+        # If value of bar is negative: Place label below bar
+        if y_value < 0:
+            # Invert space to place label below
+            space *= -1
+            # Vertically align label at top
+            va = "top"
+
+        # Use Y value as label and format number with one decimal place
+        label = f"{y_value:.0f}"
+
+        # Create annotation
+        ax.annotate(
+            label,  # Use `label` as label
+            (x_value, y_value),  # Place label at end of the bar
+            xytext=(0, space),  # Vertically shift label by `space`
+            textcoords="offset points",  # Interpret `xytext` as offset in points
+            ha="center",  # Horizontally center label
+            va=va,
+        )  # Vertically align label differently for
+        # positive and negative values.
+
+
+def cooling_degree_days(
+    epw: EPW, ax: plt.Axes = None, cool_base: float = 23, **kwargs
+) -> plt.Axes:
+    """Plot the cooling degree days from a given EPW
+    object.
+
+    Args:
+        epw (EPW):
+            An EPW object.
+        ax (plt.Axes, optional):
+            A matplotlib Axes object. Defaults to None.
+        cool_base (float, optional):
+            The temperature at which cooling kicks in. Defaults to 23.
+        **kwargs:
+            Additional keyword arguments to pass to the matplotlib
+            bar plot.
+
+    Returns:
+        Figure:
+            A matplotlib Figure object.
+    """
+
+    if not isinstance(epw, EPW):
+        raise ValueError("epw is not an EPW object.")
+
+    if ax is None:
+        ax = plt.gca()
+
+    temp = degree_time([epw], return_type="days", cool_base=cool_base)
+
+    location_name = temp.columns.get_level_values(0).unique()[0]
+    temp = temp.droplevel(0, axis=1).resample("MS").sum()
+    temp.index = [calendar.month_abbr[i] for i in temp.index.month]
+    clg = temp.filter(regex="Cooling")
+
+    title = kwargs.pop("title", f"{location_name}\nCooling degree days")
+    color = kwargs.pop("color", "blue")
+
+    clg.plot(ax=ax, kind="bar", color=color, **kwargs)
+    ax.set_ylabel(clg.columns[0])
+    plt.setp(ax.get_xticklabels(), rotation=0, ha="center")
+    ax.grid(visible=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.2)
+    _add_value_labels(ax)
+
+    ax.text(
+        1,
+        1,
+        f"Annual: {sum(rect.get_height() for rect in ax.patches):0.0f}",
+        transform=ax.transAxes,
+        ha="right",
+    )
+    ax.set_title(title, x=0, ha="left")
+    plt.tight_layout()
+    return ax
+
+
+def heating_degree_days(
+    epw: EPW, ax: plt.Axes = None, heat_base: float = 18, **kwargs
+) -> plt.Axes:
+    """Plot the heating/cooling degree days from a given EPW
+    object.
+
+    Args:
+        epw (EPW):
+            An EPW object.
+        ax (plt.Axes, optional):
+            A matplotlib Axes object. Defaults to None.
+        heat_base (float, optional):
+            The temperature at which heating kicks in. Defaults to 18.
+        **kwargs:
+            Additional keyword arguments to pass to the matplotlib
+            bar plot.
+
+    Returns:
+        Figure:
+            A matplotlib Figure object.
+    """
+
+    if not isinstance(epw, EPW):
+        raise ValueError("epw is not an EPW object.")
+
+    if ax is None:
+        ax = plt.gca()
+
+    temp = degree_time([epw], return_type="days", heat_base=heat_base)
+
+    location_name = temp.columns.get_level_values(0).unique()[0]
+    temp = temp.droplevel(0, axis=1).resample("MS").sum()
+    temp.index = [calendar.month_abbr[i] for i in temp.index.month]
+    data = temp.filter(regex="Heating")
+
+    title = kwargs.pop("title", f"{location_name}\nHeating degree days")
+    color = kwargs.pop("color", "orange")
+
+    data.plot(ax=ax, kind="bar", color=color, **kwargs)
+    ax.set_ylabel(data.columns[0])
+    plt.setp(ax.get_xticklabels(), rotation=0, ha="center")
+    ax.grid(visible=True, which="major", axis="both", c="k", ls="--", lw=1, alpha=0.2)
+    _add_value_labels(ax)
+
+    ax.text(
+        1,
+        1,
+        f"Annual: {sum(rect.get_height() for rect in ax.patches):0.0f}",
+        transform=ax.transAxes,
+        ha="right",
+    )
+    ax.set_title(title, x=0, ha="left")
+    plt.tight_layout()
+    return ax
+
+
+def utci_shade_benefit(
+    utci_shade_benefit_categories: pd.Series, **kwargs
+) -> plt.Figure:
+    """Plot the shade benefit category.
+
+    Args:
+        utci_shade_benefit_categories (pd.Series):
+            A series containing shade benefit categories.
+        **kwargs:
+            Optional arguments to pass to the plot. These can include:
+                - title (str, optional):
+                    A title to add to the plot. Defaults to None.
+                - epw (EPW, optional):
+                    If included, plot the sun up hours. Defaults to None.
+
+    Returns:
+        plt.Figure:
+            A figure object.
+    """
+
+    warnings.warn(
+        "This method is mostly broken, though it *nearly* works. Included here just to inspire someone to fix it! Please."
+    )
+
+    if not isinstance(utci_shade_benefit_categories, pd.Series):
+        raise ValueError(
+            f"shade_benefit_categories must be of type pd.Series, it is currently {type(utci_shade_benefit_categories)}"
+        )
+
+    epw = kwargs.get("epw", None)
+    title = kwargs.get("title", None)
+
+    if epw is not None:
+        if not isinstance(epw, EPW):
+            raise ValueError(
+                f"include_sun must be of type EPW, it is currently {type(epw)}"
+            )
+        if len(epw.dry_bulb_temperature) != len(utci_shade_benefit_categories):
+            raise ValueError(
+                f"Input sizes do not match ({len(utci_shade_benefit_categories)} != {len(epw.dry_bulb_temperature)})"
+            )
+
+    # convert values into categories
+    cat = pd.Categorical(utci_shade_benefit_categories)
+
+    # get numeric values
+    numeric = pd.Series(cat.codes, index=utci_shade_benefit_categories.index)
+
+    # create colormap
+    colors = ["#00A499", "#5D822D", "#EE7837", "#585253"]
+    if len(colors) != len(cat.categories):
+        raise ValueError(
+            f"The number of categories does not match the number of colours in the colormap ({len(colors)} != {len(cat.categories)})."
+        )
+    cmap = ListedColormap(colors)
+
+    # create tcf_properties
+    imshow_properties = {
+        "cmap": cmap,
+    }
+
+    # create canvas
+    fig = plt.figure(constrained_layout=True)
+    spec = fig.add_gridspec(
+        ncols=1, nrows=3, width_ratios=[1], height_ratios=[4, 2, 0.5], hspace=0.0
+    )
+    heatmap_ax = fig.add_subplot(spec[0, 0])
+    histogram_ax = fig.add_subplot(spec[1, 0])
+    cb_ax = fig.add_subplot(spec[2, 0])
+
+    # Add heatmap
+    hmap = heatmap(numeric, ax=heatmap_ax, show_colorbar=False, **imshow_properties)
+
+    # add sun up indicator lines
+    if epw is not None:
+        sp = Sunpath.from_location(epw.location)
+        sun_up_down = pd.DataFrame(
+            [
+                sp.calculate_sunrise_sunset_from_datetime(i)
+                for i in utci_shade_benefit_categories.resample("D").count().index
+            ]
+        ).reset_index(drop=True)
+        sun_up_down.index = sun_up_down.index + mdates.date2num(numeric.index.min())
+        sunrise = pd.Series(
+            data=[
+                726449
+                + timedelta(hours=i.hour, minutes=i.minute, seconds=i.second).seconds
+                / 86400
+                for i in sun_up_down.sunrise
+            ],
+            index=sun_up_down.index,
+        )
+        sunrise = sunrise.reindex(
+            sunrise.index.tolist() + [sunrise.index[-1] + 1]
+        ).ffill()
+        sunset = pd.Series(
+            data=[
+                726449
+                + timedelta(hours=i.hour, minutes=i.minute, seconds=i.second).seconds
+                / 86400
+                for i in sun_up_down.sunset
+            ],
+            index=sun_up_down.index,
+        )
+        sunset = sunset.reindex(sunset.index.tolist() + [sunset.index[-1] + 1]).ffill()
+        for s in [sunrise, sunset]:
+            heatmap_ax.plot(s.index, s.values, zorder=9, c="#F0AC1B", lw=1)
+
+    # Add colorbar legend and text descriptors for comfort bands
+    ticks = np.linspace(0, len(cat.categories), (len(cat.categories) * 2) + 1)[1::2]
+    # cb = fig.colorbar(
+    #     hmap,
+    #     ax=heatmap_ax,
+    #     cax=cb_ax,
+    #     orientation="horizontal",
+    #     ticks=ticks,
+    #     drawedges=False,
+    # )
+    # cb.outline.set_visible(False)
+    # plt.setp(plt.getp(cb_ax, "xticklabels"), color="none")
+    # cb.set_ticks([])
+
+    # Add labels to the colorbar
+    tick_locs = np.linspace(0, len(cat.categories) - 1, len(cat.categories) + 1)
+    tick_locs = (tick_locs[1:] + tick_locs[:-1]) / 2
+    category_percentages = (
+        utci_shade_benefit_categories.value_counts()
+        / utci_shade_benefit_categories.count()
+    )
+    for n, (tick_loc, category) in enumerate(zip(*[tick_locs, cat.categories])):
+        cb_ax.text(
+            tick_loc,
+            1.05,
+            textwrap.fill(category, 15) + f"\n{category_percentages[n]:0.0%}",
+            ha="center",
+            va="bottom",
+            size="small",
+        )
+
+    # Add stacked plot
+    t = utci_shade_benefit_categories
+    t = t.groupby([t.index.month, t]).count().unstack().T
+    t = t / t.sum()
+    months = [calendar.month_abbr[i] for i in range(1, 13, 1)]
+    t.T.plot.bar(
+        ax=histogram_ax,
+        stacked=True,
+        color=colors,
+        legend=False,
+        width=1,
+    )
+    histogram_ax.set_xlabel(None)
+    histogram_ax.set_xlim(-0.5, 11.5)
+    histogram_ax.set_ylim(0, 1)
+    histogram_ax.set_xticklabels(months, ha="center", rotation=0, color="k")
+    plt.setp(histogram_ax.get_yticklabels(), color="k")
+    for spine in ["top", "right"]:
+        histogram_ax.spines[spine].set_visible(False)
+    for spine in ["bottom", "left"]:
+        histogram_ax.spines[spine].set_color("k")
+    histogram_ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
+
+    # # Add header percentages for bar plot
+    for month, row in (
+        (
+            utci_shade_benefit_categories.groupby(
+                utci_shade_benefit_categories.index.month
+            )
+            .value_counts()
+            .unstack()
+            .T
+            / utci_shade_benefit_categories.groupby(
+                utci_shade_benefit_categories.index.month
+            ).count()
+        )
+        .T.fillna(0)
+        .iterrows()
+    ):
+        txt = ""
+        for n, val in enumerate(row.values[::-1]):
+            txtx = f"{val:0.0%}{txt}"
+            histogram_ax.text(
+                month - 1,
+                1.02,
+                txtx,
+                va="bottom",
+                ha="center",
+                color=colors[::-1][n],
+                fontsize="small",
+            )
+            txt += "\n"
+
+    title_base = "Shade benefit"
+    if title is None:
+        heatmap_ax.set_title(title_base, color="k", y=1, ha="left", va="bottom", x=0)
+    else:
+        heatmap_ax.set_title(
+            f"{title_base}\n{title}",
+            color="k",
+            y=1,
+            ha="left",
+            va="bottom",
+            x=0,
+        )
+
+    return fig
