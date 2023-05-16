@@ -313,6 +313,7 @@ class Wind:
             if arg_name == "height_above_ground":
                 if arg_value <= 0:
                     raise ValueError(f"{arg_name} must be greater than 0")
+            continue
 
             # check that arg is iterable, and not a string
             try:

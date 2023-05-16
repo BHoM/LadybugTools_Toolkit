@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from ladybug.epw import EPW
+from ladybug.epw import EPW, AnalysisPeriod
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.wind.wind import DirectionBins, Wind
 
@@ -105,4 +105,37 @@ def test_wind_from_openmeteo():
             end_date="2020-01-02",
         ),
         Wind,
+    )
+
+
+def test_wind_functions():
+    """."""
+    w = Wind.from_epw(EPW_OBJ)
+
+    assert (
+        len(w.filter_by_analysis_period(AnalysisPeriod(st_month=3, end_month=5)))
+        == 2208
+    )
+    assert w.calm(threshold=1) == pytest.approx(0.19988584474885845, rel=0.01)
+    assert w.exceedance(limit_value=3.5).values.sum() == pytest.approx(
+        51.16172035633674, rel=0.01
+    )
+    assert len(w.filter_by_direction(left_angle=350, right_angle=94)) == 3185
+    assert len(w.filter_by_speed(min_speed=0.5, max_speed=4.5)) == 5806
+    assert w.frequency_table().values.sum() == 8162
+    assert w.max() == 17.5
+    assert w.min() == 0
+    assert w.mean() == pytest.approx(3.2418835616438364, rel=0.01)
+    assert w.median() == 3.1
+    assert w.percentile(0.25) == 1.5
+    assert w.prevailing()[0] == "SW"
+    assert w.wind_matrix().shape == (24, 24)
+    assert w.to_height(target_height=52).ws.sum() == pytest.approx(
+        48732.60735555029, rel=0.01
+    )
+
+    db = DirectionBins(directions=4)
+    assert (
+        w.apply_directional_factors(direction_bins=db, factors=[0, 1, 20, 0]).ws.sum()
+        == 201354.6
     )
