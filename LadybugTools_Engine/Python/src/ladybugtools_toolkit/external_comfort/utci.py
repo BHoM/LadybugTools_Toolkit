@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
+from ..helpers import evaporative_cooling_effect
 from ..ladybug_extension.analysis_period import analysis_period_to_boolean
 from ..ladybug_extension.analysis_period import (
     describe_analysis_period as describe_analysis_period,
@@ -29,7 +30,6 @@ from ..ladybug_extension.epw import (
     seasonality_from_month,
     seasonality_from_temperature,
 )
-from .moisture import evaporative_cooling_effect
 
 
 class UniversalThermalClimateIndex(Enum):
@@ -969,8 +969,7 @@ def utci_vectorised(
     return utci_approx
 
 
-def categorise_shade_benefit(
-    *,
+def utci_shade_benefit_categories(
     unshaded_utci: pd.Series,
     shaded_utci: pd.Series,
     comfort_limits: Tuple[float] = (9, 26),
