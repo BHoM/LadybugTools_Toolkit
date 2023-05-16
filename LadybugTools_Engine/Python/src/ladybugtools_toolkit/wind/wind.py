@@ -216,7 +216,11 @@ class Wind:
 
     @classmethod
     def from_openmeteo(
-        cls, latitude: float, longitude: float, start_date: datetime, end_date: datetime
+        cls,
+        latitude: float,
+        longitude: float,
+        start_date: Union[datetime, str],
+        end_date: Union[datetime, str],
     ) -> Wind:
         """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
 
@@ -225,11 +229,15 @@ class Wind:
                 The latitude of the target site, in degrees.
             longitude (float):
                 The longitude of the target site, in degrees.
-            start_date (datetime):
+            start_date (Union[datetime, str]):
                 The start-date from which records will be obtained.
-            end_date (datetime):
+            end_date (Union[datetime, str]):
                 The end-date beyond which records will be ignored.
         """
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
         df = scrape_openmeteo(
             latitude,
             longitude,
@@ -303,7 +311,8 @@ class Wind:
 
         for arg_name, arg_value in locals().items():
             if arg_name == "height_above_ground":
-                continue
+                if arg_value <= 0:
+                    raise ValueError(f"{arg_name} must be greater than 0")
 
             # check that arg is iterable, and not a string
             try:
