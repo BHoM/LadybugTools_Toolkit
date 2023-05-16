@@ -15,8 +15,8 @@ from ladybug_geometry.geometry3d import Face3D, Point3D, Ray3D, Vector3D
 from mpl_toolkits import mplot3d
 
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
+from ..helpers import wind_speed_at_height
 from ..ladybug_extension.epw import sun_position_list, unique_wind_speed_direction
-from .wind import wind_speed_at_height
 
 _LINEAR_SHELTER_VERTICES_NORTH_SOUTH = [
     [2, -1000, 3.5],
@@ -398,7 +398,7 @@ class Shelter(BHoMObject):
             ws_wd.append(
                 (
                     wind_speed_at_height(
-                        reference_wind_speed=ws,
+                        reference_value=ws,
                         reference_height=reference_height,
                         target_height=height_above_ground,
                         terrain_roughness_length=terrain_roughness_length,

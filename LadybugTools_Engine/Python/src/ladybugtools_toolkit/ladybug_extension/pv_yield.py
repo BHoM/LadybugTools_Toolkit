@@ -1,16 +1,66 @@
+from __future__ import annotations
+
 import copy
 import itertools
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from typing import Tuple
 
+import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from ladybug.wea import EPW, AnalysisPeriod, Wea
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from .analysis_period import analysis_period_to_boolean
+from .analysis_period import (
+    analysis_period_to_boolean,
+    analysis_period_to_datetimes,
+    describe_analysis_period,
+)
+from .location import location_to_string
+
+
+class IrradianceType(Enum):
+    """Irradiance types."""
+
+    TOTAL = auto()
+    DIRECT = auto()
+    DIFFUSE = auto()
+    REFLECTED = auto()
+
+    def to_string(self) -> str:
+        """Get the string representation of the IrradianceType."""
+        return self.name.title()
+
+
+class IrradianceUnit(Enum):
+    """Irradiance units."""
+
+    WH_M2 = auto()
+    KWH_M2 = auto()
+    MWH_M2 = auto()
+
+    def to_string(self) -> str:
+        """Get the string representation of the IrradianceUnit."""
+        d = {
+            self.WH_M2.value: "Wh/m$^{2}$",
+            self.KWH_M2.value: "kWh/m$^{2}$",
+            self.MWH_M2.value: "MWh/m$^{2}$",
+        }
+        return d[self.value]
+
+    @property
+    def multiplier(self) -> float:
+        """The multiplier for the unit."""
+        d = {
+            self.WH_M2.value: 1,
+            self.KWH_M2.value: 0.001,
+            self.MWH_M2.value: 0.000001,
+        }
+        return d[self.value]
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -38,21 +88,30 @@ class PVYieldMatrix:
     ground_reflectance: float = field(init=True, repr=True, default=0.2)
     isotropic: bool = field(init=True, repr=True, default=False)
     ###########
-    irradiance: Tuple[Tuple[Tuple[float]]] = field(init=False, repr=False, default=None)
-    total: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
-    direct: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
-    diffuse: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
-    reflected: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
+    _calculated_irradiance: Tuple[Tuple[Tuple[float]]] = field(
+        init=False, repr=False, default=None
+    )
+    _total: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
+    _direct: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
+    _diffuse: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
+    _reflected: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
 
     def __post_init__(self):
-        self.irradiance = (
-            self._calculate_irradiance() if self.irradiance is None else self.irradiance
+        if self.n_altitudes <= 2:
+            raise ValueError("n_altitudes must be greater than 2.")
+        if self.n_azimuths <= 2:
+            raise ValueError("n_azimuths must be greater than 2.")
+
+        self._calculated_irradiance = (
+            self._calculate_irradiance()
+            if self._calculated_irradiance is None
+            else self._calculated_irradiance
         )
         #####
-        self.total = tuple([i[0] for i in self.irradiance])
-        self.direct = tuple([i[1] for i in self.irradiance])
-        self.diffuse = tuple([i[2] for i in self.irradiance])
-        self.reflected = tuple([i[3] for i in self.irradiance])
+        self._total = tuple([i[0] for i in self._calculated_irradiance])
+        self._direct = tuple([i[1] for i in self._calculated_irradiance])
+        self._diffuse = tuple([i[2] for i in self._calculated_irradiance])
+        self._reflected = tuple([i[3] for i in self._calculated_irradiance])
 
     @property
     def altitudes(self) -> Tuple[float]:
@@ -65,107 +124,328 @@ class PVYieldMatrix:
         return np.linspace(0, 360, self.n_azimuths)
 
     @property
-    def combinations(self) -> Tuple[Tuple[float]]:
+    def _alt_az_combinations(self) -> Tuple[Tuple[float]]:
         """The combinations of azimuths and altitudes to calculate."""
         return np.array(list(itertools.product(self.altitudes, self.azimuths)))
 
-    def total_irradiance(
-        self, analysis_period: AnalysisPeriod = AnalysisPeriod()
+    def get_irradiance(
+        self,
+        irradiance_type: IrradianceType = IrradianceType.TOTAL,
+        analysis_period: AnalysisPeriod = AnalysisPeriod(),
+        agg: str = "sum",
     ) -> pd.DataFrame:
-        """The total irradiance for each combination of tilt and orientation, within the given analysis period."""
-        mask = analysis_period_to_boolean(analysis_period)
+        """Get the irradiance for the given irradiance type.
 
-        return (
-            pd.DataFrame(
-                np.array(self.total).T[mask].sum(axis=0),
-                index=pd.MultiIndex.from_arrays(
-                    self.combinations.T, names=["altitude", "azimuth"]
-                ),
-            )
-            .unstack()
-            .droplevel(0, axis=1)
+        Args:
+            irradiance_type (IrradianceType, optional):
+                The irradiance type to get. Default is IrradianceType.TOTAL.
+            analysis_period (AnalysisPeriod, optional):
+                The analysis period for which to calculate the irradiance. Default is AnalysisPeriod().
+            agg (str, optional):
+                The aggregation method to use for the calculation. Default is "sum".
+
+        Returns:
+            pd.DataFrame: A table of irradiance values for each simulated azimuth and tilt combo.
+        """
+        if irradiance_type.value == IrradianceType.TOTAL.value:
+            return self.total_irradiance(analysis_period=analysis_period, agg=agg)
+        if irradiance_type.value == IrradianceType.DIRECT.value:
+            return self.direct_irradiance(analysis_period=analysis_period, agg=agg)
+        if irradiance_type.value == IrradianceType.DIFFUSE.value:
+            return self.diffuse_irradiance(analysis_period=analysis_period, agg=agg)
+        if irradiance_type.value == IrradianceType.REFLECTED.value:
+            return self.reflected_irradiance(analysis_period=analysis_period, agg=agg)
+
+        raise ValueError("irradiance_type must be a IrradianceType.")
+
+    def total_irradiance(
+        self, analysis_period: AnalysisPeriod = AnalysisPeriod(), agg: str = "sum"
+    ) -> pd.DataFrame:
+        """The total irradiance for each combination of tilt and orientation, within the given analysis period.
+
+        Args:
+            analysis_period (AnalysisPeriod, optional):
+                The analysis period for which to calculate the total irradiance. Default is AnalysisPeriod().
+            agg (str, optional):
+                The aggregation method to use for the calculation. Default is "sum".
+        Returns:
+            pd.DataFrame:
+                A table of total irradiance values for each simulated azimuth and tilt combo.
+        """
+        mask = analysis_period_to_boolean(analysis_period)
+        dts = analysis_period_to_datetimes(analysis_period)
+
+        temp = pd.DataFrame(
+            np.array(self._total).T[mask].T,
+            columns=dts,
+            index=pd.MultiIndex.from_arrays(
+                self._alt_az_combinations.T, names=["altitude", "azimuth"]
+            ),
         )
+        temp = temp.agg(agg, axis=1)
+        temp = temp.unstack()
+
+        return temp
 
     def diffuse_irradiance(
-        self, analysis_period: AnalysisPeriod = AnalysisPeriod()
+        self, analysis_period: AnalysisPeriod = AnalysisPeriod(), agg: str = "sum"
     ) -> pd.DataFrame:
-        """The diffuse irradiance for each combination of tilt and orientation, within the given analysis period."""
-        mask = analysis_period_to_boolean(analysis_period)
+        """The diffuse irradiance for each combination of tilt and orientation, within the given analysis period.
 
-        return (
-            pd.DataFrame(
-                np.array(self.diffuse).T[mask].sum(axis=0),
-                index=pd.MultiIndex.from_arrays(
-                    self.combinations.T, names=["altitude", "azimuth"]
-                ),
-            )
-            .unstack()
-            .droplevel(0, axis=1)
+        Args:
+            analysis_period (AnalysisPeriod, optional):
+                The analysis period for which to calculate the total irradiance. Default is AnalysisPeriod().
+            agg (str, optional):
+                The aggregation method to use for the calculation. Default is "sum".
+        Returns:
+            pd.DataFrame:
+                A table of diffuse irradiance values for each simulated azimuth and tilt combo.
+        """
+        mask = analysis_period_to_boolean(analysis_period)
+        dts = analysis_period_to_datetimes(analysis_period)
+
+        temp = pd.DataFrame(
+            np.array(self._diffuse).T[mask].T,
+            columns=dts,
+            index=pd.MultiIndex.from_arrays(
+                self._alt_az_combinations.T, names=["altitude", "azimuth"]
+            ),
         )
+        temp = temp.agg(agg, axis=1)
+        temp = temp.unstack()
+
+        return temp
 
     def direct_irradiance(
-        self, analysis_period: AnalysisPeriod = AnalysisPeriod()
+        self, analysis_period: AnalysisPeriod = AnalysisPeriod(), agg: str = "sum"
     ) -> pd.DataFrame:
-        """The direct irradiance for each combination of tilt and orientation, within the given analysis period."""
-        mask = analysis_period_to_boolean(analysis_period)
+        """The direct irradiance for each combination of tilt and orientation, within the given analysis period.
 
-        return (
-            pd.DataFrame(
-                np.array(self.direct).T[mask].sum(axis=0),
-                index=pd.MultiIndex.from_arrays(
-                    self.combinations.T, names=["altitude", "azimuth"]
-                ),
-            )
-            .unstack()
-            .droplevel(0, axis=1)
+        Args:
+            analysis_period (AnalysisPeriod, optional):
+                The analysis period for which to calculate the total irradiance. Default is AnalysisPeriod().
+            agg (str, optional):
+                The aggregation method to use for the calculation. Default is "sum".
+        Returns:
+            pd.DataFrame:
+                A table of direct irradiance values for each simulated azimuth and tilt combo.
+        """
+        mask = analysis_period_to_boolean(analysis_period)
+        dts = analysis_period_to_datetimes(analysis_period)
+
+        temp = pd.DataFrame(
+            np.array(self._direct).T[mask].T,
+            columns=dts,
+            index=pd.MultiIndex.from_arrays(
+                self._alt_az_combinations.T, names=["altitude", "azimuth"]
+            ),
         )
+        temp = temp.agg(agg, axis=1)
+        temp = temp.unstack()
+
+        return temp
 
     def reflected_irradiance(
-        self, analysis_period: AnalysisPeriod = AnalysisPeriod()
+        self, analysis_period: AnalysisPeriod = AnalysisPeriod(), agg: str = "sum"
     ) -> pd.DataFrame:
-        """The reflected irradiance for each combination of tilt and orientation, within the given analysis period."""
-        mask = analysis_period_to_boolean(analysis_period)
+        """The reflected irradiance for each combination of tilt and orientation, within the given analysis period.
 
-        return (
-            pd.DataFrame(
-                np.array(self.reflected).T[mask].sum(axis=0),
-                index=pd.MultiIndex.from_arrays(
-                    self.combinations.T, names=["altitude", "azimuth"]
-                ),
-            )
-            .unstack()
-            .droplevel(0, axis=1)
+        Args:
+            analysis_period (AnalysisPeriod, optional):
+                The analysis period for which to calculate the total irradiance. Default is AnalysisPeriod().
+            agg (str, optional):
+                The aggregation method to use for the calculation. Default is "sum".
+        Returns:
+            pd.DataFrame:
+                A table of reflected irradiance values for each simulated azimuth and tilt combo.
+        """
+        mask = analysis_period_to_boolean(analysis_period)
+        dts = analysis_period_to_datetimes(analysis_period)
+
+        temp = pd.DataFrame(
+            np.array(self._reflected).T[mask].T,
+            columns=dts,
+            index=pd.MultiIndex.from_arrays(
+                self._alt_az_combinations.T, names=["altitude", "azimuth"]
+            ),
         )
+        temp = temp.agg(agg, axis=1)
+        temp = temp.unstack()
+
+        return temp
 
     def _calculate_irradiance(self) -> Tuple[Tuple[Tuple[float]]]:
+        """Calculate the irradiance in W/m2 for each combination of tilt and orientation."""
         results = []
-        for alt, az in tqdm(self.combinations):
+        pbar = tqdm(self._alt_az_combinations)
+        for _alt, _az in pbar:
+            pbar.set_description(
+                f"Calculating irradiance for (Altitude: {_alt:0.1f}°, Azimuth: {_az:0.1f}°)"
+            )
             result = self.wea.directional_irradiance(
-                alt, az, self.ground_reflectance, self.isotropic
+                _alt, _az, self.ground_reflectance, self.isotropic
             )
             results.append([i.values for i in result])
 
         return results
 
+    def _calculate_irradiance_threaded(self) -> Tuple[Tuple[Tuple[float]]]:
+        def task(alt_az):
+            _alt, _az = alt_az
+            result = self.wea.directional_irradiance(
+                _alt, _az, self.ground_reflectance, self.isotropic
+            )
+            return [i.values for i in result]
+
+        results = []
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(task, i) for i in self._alt_az_combinations]
+            for future in futures:
+                # retrieve the result
+                results.append(future.result())
+        return results
+
     def plot_tof(
         self,
         ax: plt.Axes = None,
-        rtype: str = "total",
+        irradiance_type: IrradianceType = IrradianceType.TOTAL,
+        agg: str = "sum",
         analysis_period: AnalysisPeriod = AnalysisPeriod(),
+        irradiance_unit: IrradianceUnit = IrradianceUnit.WH_M2,
         **kwargs,
-    ):
+    ) -> plt.Axes:
         """Plot the total, direct, diffuse and reflected irradiance for each combination of tilt and orientation, within the given analysis period."""
-
-        data = getattr(self, f"{rtype}_irradiance")(analysis_period)
 
         if ax is None:
             ax = plt.gca()
 
-        # TODO - finishe this method!!!!!!!! - using the method commented out below
-        raise NotImplementedError("not finished yet!")
+        default_kwargs = {"cmap": "YlOrRd", "levels": 100}
+        kwargs = {**default_kwargs, **kwargs}
+
+        # prepare data for plotting
+        data = (
+            (
+                self.get_irradiance(
+                    irradiance_type=irradiance_type,
+                    agg=agg,
+                    analysis_period=analysis_period,
+                )
+                * irradiance_unit.multiplier
+            )
+            .unstack()
+            .reset_index()
+            .rename(columns={0: "vals"})
+        )
+        max_idx = data.sort_values("vals", ascending=False).index[0]
+        max_alt = data.altitude[max_idx]
+        max_az = data.azimuth[max_idx]
+        max_val = data.vals[max_idx]
+        if max_val == 0:
+            warnings.warn("No irradiance values found for the given analysis period.")
+
+        # set defaults for plot kwargs
+        title = kwargs.pop(
+            "title",
+            f"{location_to_string(self.wea.location)}\n{describe_analysis_period(analysis_period)} ({irradiance_type.to_string()}, {agg})",
+        )
+        quantiles = kwargs.pop("quantiles", [0.25, 0.5, 0.75, 0.95])
+
+        # populate plot
+        tcf = ax.tricontourf(
+            data.azimuth.values,
+            data.altitude.values,
+            data.vals.values,
+            extend="max",
+            **kwargs,
+        )
+        if max_val != 0:
+            quantile_vals = [max_val * i for i in quantiles]
+            tcl = ax.tricontour(
+                data.azimuth.values,
+                data.altitude.values,
+                data.vals.values / max_val,
+                levels=quantiles,
+                colors="k",
+                linestyles="--",
+                alpha=0.5,
+            )
+
+            def cl_fmt(x):
+                return f"{x:.0%} ({max_val * x:,.0f})"
+
+            _ = ax.clabel(tcl, fmt=cl_fmt)
+
+            # maximium pt
+            ax.scatter(max_az, max_alt, c="k", s=10, marker="x")
+            alt_offset = (90 / 100) * 0.5 if max_alt <= 45 else -(90 / 100) * 0.5
+            az_offset = (360 / 100) * 0.5 if max_az <= 180 else -(360 / 100) * 0.5
+            ha = "left" if max_az <= 180 else "right"
+            va = "bottom" if max_alt <= 45 else "top"
+            ax.text(
+                max_az + az_offset,
+                max_alt + alt_offset,
+                f"{max_val:,.0f}{irradiance_unit.to_string()}\n({max_az:0.0f}°, {max_alt:0.0f}°)",
+                ha=ha,
+                va=va,
+                c="k",
+                weight="bold",
+                size="small",
+            )
+            ax.axvline(max_az, 0, max_alt / 90, c="w", ls=":", lw=0.5, alpha=0.25)
+            ax.axhline(max_alt, 0, max_az / 360, c="w", ls=":", lw=0.5, alpha=0.25)
+
+        # format plot
+        for spine in ["top", "right"]:
+            ax.spines[spine].set_visible(False)
+        ax.xaxis.set_major_locator(mticker.MultipleLocator(base=30))
+        ax.yaxis.set_major_locator(mticker.MultipleLocator(base=10))
+
+        def cb_fmt(x, pos):
+            return f"{x:,.0f}"
+
+        cb = plt.colorbar(
+            tcf,
+            ax=ax,
+            orientation="vertical",
+            drawedges=False,
+            fraction=0.05,
+            aspect=25,
+            pad=0.02,
+            label=irradiance_unit.to_string(),
+            format=mticker.FuncFormatter(cb_fmt),
+        )
+        cb.outline.set_visible(False)
+        cb.locator = mticker.MaxNLocator(nbins=10, prune=None)
+        if max_val != 0:
+            for quantile_val in quantile_vals:
+                cb.ax.plot([0, 1], [quantile_val] * 2, "k", ls="--", alpha=0.5)
+
+        # add decorators
+        ax.set_title(title)
+        ax.set_xlabel("Panel orientation (clockwise from North at 0°)")
+        ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
+        plt.tight_layout()
+
+        return ax
 
     @classmethod
-    def from_epw(cls, epw: EPW, n_altitudes: int = 10, n_azimuths: int = 19):
+    def from_epw(
+        cls, epw: EPW, n_altitudes: int = 10, n_azimuths: int = 19
+    ) -> PVYieldMatrix:
+        """Create this object from an EPW file.
+
+        Args:
+            epw (EPW):
+                The EPW file to use (as a ladybug object).
+            n_altitudes (int, optional):
+                The number of altitudes to use. Defaults to 10.
+            n_azimuths (int, optional):
+                The number of azimuths to use. Defaults to 19.
+
+        Returns:
+            PVYieldMatrix:
+                The PVYieldMatrix object.
+        """
         return cls(
             wea=Wea.from_epw_file(epw.file_path),
             n_altitudes=n_altitudes,
@@ -174,154 +454,22 @@ class PVYieldMatrix:
 
     @classmethod
     def from_epw_file(cls, epw_file: str, n_altitudes: int = 10, n_azimuths: int = 19):
+        """Create this object from an EPW file.
+
+        Args:
+            epw_file (str):
+                The EPW file to use (as a path).
+            n_altitudes (int, optional):
+                The number of altitudes to use. Defaults to 10.
+            n_azimuths (int, optional):
+                The number of azimuths to use. Defaults to 19.
+
+        Returns:
+            PVYieldMatrix:
+                The PVYieldMatrix object.
+        """
         return cls(
             wea=Wea.from_epw_file(epw_file),
             n_altitudes=n_altitudes,
             n_azimuths=n_azimuths,
         )
-
-
-# def radiation_tilt_orientation_factor(
-#     radiation_matrix: pd.DataFrame,
-#     ax: plt.Axes = None,
-#     **kwargs,
-# ) -> Figure:
-#     """Convert a radiation matrix to a figure showing the radiation tilt and orientation.
-
-#     Args:
-#         radiation_matrix (pd.DataFrame):
-#             A matrix with altitude index, azimuth columns, and radiation values in Wh/m2.
-#         ax (plt.Axes, optional):
-#             A matplotlib Axes object. Defaults to None.
-#         **kwargs:
-#             Additional keyword arguments are passed to the matplotlib plot.
-
-#     Returns:
-#         plt.Axes:
-#             An Axes object.
-#     """
-
-#     if ax is None:
-#         ax = plt.gca()
-
-#     # TODO - make this work with an object instead of a dataframe to ensure correct input! And make wqork with kwargs
-
-#     cmap = kwargs.get("cmap", "YlOrRd")
-#     title = kwargs.get("title", None)
-
-#     # Construct input values
-#     x = np.tile(radiation_matrix.index, [len(radiation_matrix.columns), 1]).T
-#     y = np.tile(radiation_matrix.columns, [len(radiation_matrix.index), 1])
-#     z = radiation_matrix.values
-
-#     z_max = radiation_matrix.max().max()
-#     z_percent = z / z_max * 100
-
-#     # Find location of max value
-#     ind = np.unravel_index(np.argmax(z, axis=None), z.shape)
-
-#     # Create figure
-#     cf = ax.contourf(y, x, z / 1000, cmap=cmap, levels=10)
-#     cl = ax.contour(
-#         y,
-#         x,
-#         z_percent,
-#         levels=[50, 60, 70, 80, 90, 95, 99],
-#         colors=["w"],
-#         linewidths=[1],
-#         alpha=0.75,
-#         linestyles=[":"],
-#     )
-#     ax.clabel(cl, fmt="%r %%")
-
-#     ax.scatter(y[ind], x[ind], c="k")
-#     ax.text(
-#         y[ind] + 2,
-#         x[ind] - 2,
-#         f"{z_max / 1000:0.0f}kWh/m${{^2}}$/year",
-#         ha="left",
-#         va="top",
-#         c="w",
-#     )
-
-#     for spine in ["top", "right"]:
-#         ax.spines[spine].set_visible(False)
-
-#     ax.xaxis.set_major_locator(mticker.MultipleLocator(base=30))
-
-#     ax.grid(b=True, which="major", color="white", linestyle=":", alpha=0.25)
-
-#     cb = plt.colorbar(
-#         cf,
-#         ax=ax,
-#         orientation="vertical",
-#         drawedges=False,
-#         fraction=0.05,
-#         aspect=25,
-#         pad=0.02,
-#         label="kWh/m${^2}$/year",
-#     )
-#     cb.outline.set_visible(False)
-#     cb.add_lines(cl)
-#     cb.locator = mticker.MaxNLocator(nbins=10, prune=None)
-
-#     ax.set_xlabel("Panel orientation (clock-wise from North at 0°)")
-#     ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
-
-#     # Title
-#     if title is None:
-#         ax.set_title("Annual cumulative radiation", x=0, ha="left", va="bottom")
-#     else:
-#         ax.set_title(
-#             f"{title}\nAnnual cumulative radiation", x=0, ha="left", va="bottom"
-#         )
-
-#     plt.tight_layout()
-
-#     return ax
-
-
-# def radiation_tilt_orientation_matrix(
-#     epw: EPW, n_altitudes: int = 10, n_azimuths: int = 19
-# ) -> pd.DataFrame:
-#     """Compute the annual cumulative radiation matrix per surface tilt and orientation, for a
-#         given EPW object.
-#     Args:
-#         epw (EPW):
-#             The EPW object for which this calculation is made.
-#         n_altitudes (int, optional):
-#             The number of altitudes between 0 and 90 to calculate. Default is 10.
-#         n_azimuths (int, optional):
-#             The number of azimuths between 0 and 360 to calculate. Default is 19.
-#     Returns:
-#         pd.DataFrame:
-#             A table of insolation values for each simulated azimuth and tilt combo.
-#     """
-
-#     # TODO - convert this into an object with properties in order to ensure it can be plotted more easily downstream!
-#     wea = Wea.from_annual_values(
-#         epw.location,
-#         epw.direct_normal_radiation.values,
-#         epw.diffuse_horizontal_radiation.values,
-#         is_leap_year=epw.is_leap_year,
-#     )
-#     # I do a bit of a hack here, to calculate only the Eastern insolation - then mirror it about
-#     # the North-South axis to get the whole matrix
-#     altitudes = np.linspace(0, 90, n_altitudes)
-#     azimuths = np.linspace(0, 180, n_azimuths)
-#     combinations = np.array(list(itertools.product(altitudes, azimuths)))
-
-#     def f(alt_az):
-#         return copy.copy(wea).directional_irradiance(alt_az[0], alt_az[1])[0].total
-
-#     with ThreadPoolExecutor() as executor:
-#         results = np.array(list(executor.map(f, combinations[0:]))).reshape(
-#             len(altitudes), len(azimuths)
-#         )
-#     temp = pd.DataFrame(results, index=altitudes, columns=azimuths)
-#     new_cols = (360 - temp.columns)[::-1][1:]
-#     new_vals = temp.values[::-1, ::-1][
-#         ::-1, 1:
-#     ]  # some weird array transformation stuff here
-#     mirrored = pd.DataFrame(new_vals, columns=new_cols, index=temp.index)
-#     return pd.concat([temp, mirrored], axis=1)

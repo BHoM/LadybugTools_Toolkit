@@ -15,13 +15,12 @@ from ladybug_comfort.collection.utci import UTCI
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
-from ..helpers import decay_rate_smoother
+from ..helpers import decay_rate_smoother, evaporative_cooling_effect
 from ..ladybug_extension.datacollection import (
     collection_from_series,
     collection_to_series,
 )
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
-from .moisture import evaporative_cooling_effect, evaporative_cooling_effect_collection
 from .shelter import (
     Shelter,
     Shelters,

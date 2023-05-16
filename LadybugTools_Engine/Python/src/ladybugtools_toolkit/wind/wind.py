@@ -16,7 +16,6 @@ from matplotlib.colors import Colormap
 from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
-from ..external_comfort.wind import wind_speed_at_height
 from ..helpers import (
     OpenMeteoVariable,
     circular_weighted_mean,
@@ -25,6 +24,7 @@ from ..helpers import (
     weibull_directional,
     weibull_pdf,
     wind_direction_average,
+    wind_speed_at_height,
 )
 from ..ladybug_extension.analysis_period import (
     AnalysisPeriod,
@@ -803,11 +803,11 @@ class Wind:
                 A translated Wind object.
         """
         ws = wind_speed_at_height(
-            self.ws,  # type: ignore
-            self.height_above_ground,
-            target_height,
-            terrain_roughness_length,
-            log_function,
+            reference_value=self.ws,  # type: ignore
+            reference_height=self.height_above_ground,
+            target_height=target_height,
+            terrain_roughness_length=terrain_roughness_length,
+            log_function=log_function,
         )
         return Wind(ws.tolist(), self.wd.tolist(), self.datetimes, target_height)  # type: ignore
 
