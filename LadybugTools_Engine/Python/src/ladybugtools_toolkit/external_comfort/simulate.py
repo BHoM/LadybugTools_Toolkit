@@ -32,6 +32,7 @@ from ladybug_comfort.collection.solarcal import (
 )
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
 from lbt_recipes.recipe import Recipe, RecipeSettings
+from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
@@ -1345,7 +1346,7 @@ class SimulationResult(BHoMObject):
             return ranks
 
         tqdm.pandas(
-            desc="Calculating ranked beneficial impact of comfort mitigation measures"
+            desc=f"Calculating ranked beneficial impact of comfort mitigation measures for {epw}"
         )
         return df.progress_apply(
             lambda row: _temp(
@@ -1360,3 +1361,7 @@ class SimulationResult(BHoMObject):
             ),
             axis=1,
         )
+
+    @staticmethod
+    def plot_ranked_mitigations(df: pd.DataFrame, ax: plt.Axes = None) -> plt.Axes:
+        raise NotImplementedError("Not yet done, also, should probably go elsewhere!")
