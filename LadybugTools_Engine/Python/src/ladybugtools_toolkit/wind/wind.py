@@ -1176,7 +1176,7 @@ class Wind:
 
         return fig
 
-    def plot_wind_matrix(self, title: str = None, cmap: Union[Colormap, str] = "YlGnBu", show_values: bool = False, speed_lims: Tuple[float] = None) -> plt.Figure:  # type: ignore
+    def plot_wind_matrix(self, ax: plt.Axes = None, title: str = None, cmap: Union[Colormap, str] = "YlGnBu", show_values: bool = False, speed_lims: Tuple[float] = None) -> plt.Axes:  # type: ignore
         """Create a plot showing the annual wind speed and direction bins using the month_time_average method."""
         df = self.wind_matrix()
 
@@ -1191,6 +1191,7 @@ class Wind:
         return wind_matrix(
             wind_speeds=wind_speed_bins,
             wind_directions=wind_direction_bins,
+            ax=ax,
             cmap=cmap,
             title=title,
             show_values=show_values,
