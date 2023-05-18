@@ -1616,3 +1616,71 @@ def _representative_day() -> pd.DataFrame:
     #! TODO - ensure that wind direction is being accounted for correctly - aliginign with the peak weighted variable/s
 
     raise NotImplementedError
+
+
+def hottest_day(epw: EPW) -> datetime:
+    """
+    The hottest day in the year associated with this epw object
+    based on (average for all hours in day), within the summer period."""
+    seasons = seasonality_from_month(epw)
+
+    return (
+        collection_to_series(epw.dry_bulb_temperature)
+        .loc[seasons == "Summer"]
+        .resample("D")
+        .mean()
+        .idxmax()
+        .to_pydatetime()
+    )
+
+
+def coldest_day(epw: EPW) -> datetime:
+    """
+    The coldest day in the year associated with this epw object
+    based on (average for all hours in day), within the winter period."""
+    seasons = seasonality_from_month(epw)
+
+    return (
+        collection_to_series(epw.dry_bulb_temperature)
+        .loc[seasons == "Winter"]
+        .resample("D")
+        .mean()
+        .idxmin()
+        .to_pydatetime()
+    )
+
+
+def sun_up_bool(epw: EPW) -> List[bool]:
+    """
+    A list of booleans aligned with the input EPW stating whether the sun is above the horizon.
+    """
+
+    sunpath = Sunpath.from_location(epw.location)
+    idx = analysis_period_to_datetimes(AnalysisPeriod())
+    suns = [sunpath.calculate_sun_from_date_time(i) for i in idx]
+
+    return [i.altitude > 0 for i in suns]
+
+
+def longest_day(epw: EPW) -> datetime:
+    """
+    The longest day in the year associated with this epw object."""
+
+    sunpath = Sunpath.from_location(epw.location)
+    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1T")
+    suns = [sunpath.calculate_sun_from_date_time(i) for i in idx][:-1]
+
+    s = pd.Series([i.altitude for i in suns], index=idx[:-1])
+    return s[s > 0].resample("D").count().idxmax().to_pydatetime()
+
+
+def shortest_day(epw: EPW) -> datetime:
+    """
+    The shortest day in the year associated with this epw object."""
+
+    sunpath = Sunpath.from_location(epw.location)
+    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1T")
+    suns = [sunpath.calculate_sun_from_date_time(i) for i in idx][:-1]
+
+    s = pd.Series([i.altitude for i in suns], index=idx[:-1])
+    return s[s > 0].resample("D").count().idxmin().to_pydatetime()

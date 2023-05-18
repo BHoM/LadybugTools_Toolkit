@@ -18,8 +18,9 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.color import Colorset
 from ladybug.compass import Compass
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import \
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
+from ladybug.datatype.temperature import (
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
+)
 from ladybug.epw import EPW
 from ladybug.sunpath import Sunpath
 from ladybug.viewsphere import ViewSphere
@@ -27,9 +28,15 @@ from ladybug.wea import Wea
 from ladybug.windrose import WindRose
 from matplotlib.cm import ScalarMappable
 from matplotlib.collections import LineCollection, PatchCollection
-from matplotlib.colors import (BoundaryNorm, Colormap, LinearSegmentedColormap,
-                               ListedColormap, Normalize, is_color_like,
-                               rgb2hex)
+from matplotlib.colors import (
+    BoundaryNorm,
+    Colormap,
+    LinearSegmentedColormap,
+    ListedColormap,
+    Normalize,
+    is_color_like,
+    rgb2hex,
+)
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -38,18 +45,27 @@ from scipy.interpolate import make_interp_spline
 from scipy.stats import exponweib
 
 from ..external_comfort import HBR_FOLDERS
-from ..external_comfort.utci import (UniversalThermalClimateIndex, categorise,
-                                     utci_comfort_categories)
-from ..helpers import (cardinality, contrasting_color, lighten_color,
-                       rolling_window, validate_timeseries, weibull_pdf,
-                       wind_direction_average)
-from ..ladybug_extension.analysis_period import (analysis_period_to_boolean,
-                                                 analysis_period_to_datetimes,
-                                                 describe_analysis_period)
-from ..ladybug_extension.datacollection import (collection_to_array,
-                                                collection_to_series)
-from ..ladybug_extension.epw import (EPW, degree_time, epw_to_dataframe,
-                                     get_filename)
+from ..external_comfort.utci import (
+    UniversalThermalClimateIndex,
+    categorise,
+    utci_comfort_categories,
+)
+from ..helpers import (
+    cardinality,
+    contrasting_color,
+    lighten_color,
+    rolling_window,
+    validate_timeseries,
+    weibull_pdf,
+    wind_direction_average,
+)
+from ..ladybug_extension.analysis_period import (
+    analysis_period_to_boolean,
+    analysis_period_to_datetimes,
+    describe_analysis_period,
+)
+from ..ladybug_extension.datacollection import collection_to_array, collection_to_series
+from ..ladybug_extension.epw import EPW, degree_time, epw_to_dataframe, get_filename
 from ..ladybug_extension.location import location_to_string
 from ..wind.direction_bins import DirectionBins
 
@@ -513,6 +529,19 @@ def condensation_risk(
     else:
         ax.set_title(title)
     ax.set_xticks(ax.get_xticks()[0::24], ha="left")
+    # ax.set_xticklabels(
+    #     ax.get_xticklabels(),
+    #     minor=False,
+    #     ha="left",
+    #     color="k",
+    # )
+    months = [calendar.month_abbr[i] for i in range(1, 13, 1)]
+    ax.set_xticklabels(
+        months,
+        minor=True,
+        ha="left",
+        color="k",
+    )
 
     ax.legend(loc="upper left", bbox_to_anchor=(0, 1))
 
@@ -1170,6 +1199,9 @@ def wind_matrix(
         ax.set_title("Wind speed/direction matrix", x=0, ha="left")
     else:
         ax.set_title(f"{title}\nWind speed/direction matrix", x=0, ha="left")
+
+    # invert y axis to match other month-time plots
+    ax.invert_yaxis()
 
     plt.tight_layout()
 
