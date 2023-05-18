@@ -76,6 +76,9 @@ class PVYieldMatrix:
         ground_reflectance (float, optional):
             The ground reflectance to use for the calculation. Default is 0.2.
         isotropic (bool, optional):
+            An isotropic sky assumes an even distribution of diffuse
+            irradiance across the sky while an anisotropic sky places more
+            diffuse irradiance near the solar disc.
             Set to True to use isotropic sky model. Default is False.
     Returns:
         pd.DataFrame:
