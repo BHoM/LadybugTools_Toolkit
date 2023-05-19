@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import colorsys
 import contextlib
@@ -815,6 +817,7 @@ def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
 class OpenMeteoVariable(Enum):
     """An enumeration of the variables available from OpenMeteo."""
 
+    TIME = "time"
     TEMPERATURE_2M = "temperature_2m"
     DEWPOINT_2M = "dewpoint_2m"
     RELATIVEHUMIDITY_2M = "relativehumidity_2m"
@@ -847,16 +850,59 @@ class OpenMeteoVariable(Enum):
     SOIL_MOISTURE_28_TO_100CM = "soil_moisture_28_to_100cm"
     SOIL_MOISTURE_100_TO_255CM = "soil_moisture_100_to_255cm"
 
+    @classmethod
+    def from_string(cls, name: str) -> OpenMeteoVariable:
+        """."""
+        d = {
+            "time": cls.TIME,
+            "temperature_2m": cls.TEMPERATURE_2M,
+            "dewpoint_2m": cls.DEWPOINT_2M,
+            "relativehumidity_2m": cls.RELATIVEHUMIDITY_2M,
+            "surface_pressure": cls.SURFACE_PRESSURE,
+            "shortwave_radiation": cls.SHORTWAVE_RADIATION,
+            "direct_radiation": cls.DIRECT_RADIATION,
+            "diffuse_radiation": cls.DIFFUSE_RADIATION,
+            "winddirection_10m": cls.WINDDIRECTION_10M,
+            "windspeed_10m": cls.WINDSPEED_10M,
+            "cloudcover": cls.CLOUDCOVER,
+            "weathercode": cls.WEATHERCODE,
+            "precipitation": cls.PRECIPITATION,
+            "rain": cls.RAIN,
+            "snowfall": cls.SNOWFALL,
+            "cloudcover_low": cls.CLOUDCOVER_LOW,
+            "cloudcover_mid": cls.CLOUDCOVER_MID,
+            "cloudcover_high": cls.CLOUDCOVER_HIGH,
+            "direct_normal_irradiance": cls.DIRECT_NORMAL_IRRADIANCE,
+            "windspeed_100m": cls.WINDSPEED_100M,
+            "winddirection_100m": cls.WINDDIRECTION_100M,
+            "windgusts_10m": cls.WINDGUSTS_10M,
+            "et0_fao_evapotranspiration": cls.ET0_FAO_EVAPOTRANSPIRATION,
+            "vapor_pressure_deficit": cls.VAPOR_PRESSURE_DEFICIT,
+            "soil_temperature_0_to_7cm": cls.SOIL_TEMPERATURE_0_TO_7CM,
+            "soil_temperature_7_to_28cm": cls.SOIL_TEMPERATURE_7_TO_28CM,
+            "soil_temperature_28_to_100cm": cls.SOIL_TEMPERATURE_28_TO_100CM,
+            "soil_temperature_100_to_255cm": cls.SOIL_TEMPERATURE_100_TO_255CM,
+            "soil_moisture_0_to_7cm": cls.SOIL_MOISTURE_0_TO_7CM,
+            "soil_moisture_7_to_28cm": cls.SOIL_MOISTURE_7_TO_28CM,
+            "soil_moisture_28_to_100cm": cls.SOIL_MOISTURE_28_TO_100CM,
+            "soil_moisture_100_to_255cm": cls.SOIL_MOISTURE_100_TO_255CM,
+        }
+        try:
+            return d[name]
+        except KeyError as e:
+            raise KeyError(e, f"{name} is not a known variable name.")
+
     @property
     def conversion_name(self) -> str:
         """Convert the enum value into a Ladybug dataype string representation (for this toolkit)."""
         d = {
+            self.TIME.value: "Time (datetime)",
             self.TEMPERATURE_2M.value: "Dry Bulb Temperature (C)",
             self.DEWPOINT_2M.value: "Dew Point Temperature (C)",
             self.RELATIVEHUMIDITY_2M.value: "Relative Humidity (%)",
             self.SURFACE_PRESSURE.value: "Atmospheric Station Pressure (Pa)",
             self.SHORTWAVE_RADIATION.value: "Global Horizontal Radiation (Wh/m2)",
-            self.DIRECT_RADIATION.value: "Direct Normal Radiation (Wh/m2)",
+            self.DIRECT_RADIATION.value: "Direct Horizontal Radiation (Wh/m2)",
             self.DIFFUSE_RADIATION.value: "Diffuse Horizontal Radiation (Wh/m2)",
             self.WINDDIRECTION_10M.value: "Wind Direction (degrees)",
             self.WINDSPEED_10M.value: "Wind Speed (m/s)",
@@ -865,23 +911,23 @@ class OpenMeteoVariable(Enum):
             self.PRECIPITATION.value: "Precipitable Water (mm)",
             self.RAIN.value: "Liquid Precipitation Depth (mm)",
             self.SNOWFALL.value: "Snow Depth (cm)",
-            self.CLOUDCOVER_LOW.value: None,
-            self.CLOUDCOVER_MID.value: None,
-            self.CLOUDCOVER_HIGH.value: None,
-            self.DIRECT_NORMAL_IRRADIANCE.value: None,
-            self.WINDSPEED_100M.value: None,
-            self.WINDDIRECTION_100M.value: None,
-            self.WINDGUSTS_10M.value: None,
-            self.ET0_FAO_EVAPOTRANSPIRATION.value: None,
-            self.VAPOR_PRESSURE_DEFICIT.value: None,
-            self.SOIL_TEMPERATURE_0_TO_7CM.value: None,
-            self.SOIL_TEMPERATURE_7_TO_28CM.value: None,
-            self.SOIL_TEMPERATURE_28_TO_100CM.value: None,
-            self.SOIL_TEMPERATURE_100_TO_255CM.value: None,
-            self.SOIL_MOISTURE_0_TO_7CM.value: None,
-            self.SOIL_MOISTURE_7_TO_28CM.value: None,
-            self.SOIL_MOISTURE_28_TO_100CM.value: None,
-            self.SOIL_MOISTURE_100_TO_255CM.value: None,
+            self.CLOUDCOVER_LOW.value: "Cloud Cover @<2km (tenths)",
+            self.CLOUDCOVER_MID.value: "Cloud Cover @2-6km (tenths)",
+            self.CLOUDCOVER_HIGH.value: "Cloud Cover @>6km (tenths)",
+            self.DIRECT_NORMAL_IRRADIANCE.value: "Direct Normal Radiation (Wh/m2)",
+            self.WINDSPEED_100M.value: "Wind Speed @100m (m/s)",
+            self.WINDDIRECTION_100M.value: "Wind Direction @100m (degrees)",
+            self.WINDGUSTS_10M.value: "Wind Gusts (m/s)",
+            self.ET0_FAO_EVAPOTRANSPIRATION.value: "Evapotranspiration (mm/inch)",
+            self.VAPOR_PRESSURE_DEFICIT.value: "Vapor Pressure Deficit (Pa)",
+            self.SOIL_TEMPERATURE_0_TO_7CM.value: "Soil Temperature @0-7cm (C)",
+            self.SOIL_TEMPERATURE_7_TO_28CM.value: "Soil Temperature @7-28cm (C)",
+            self.SOIL_TEMPERATURE_28_TO_100CM.value: "Soil Temperature @28-100cm (C)",
+            self.SOIL_TEMPERATURE_100_TO_255CM.value: "Soil Temperature @100-255cm (C)",
+            self.SOIL_MOISTURE_0_TO_7CM.value: "Soil Moisture @0-7cm (fraction)",
+            self.SOIL_MOISTURE_7_TO_28CM.value: "Soil Moisture @7-28cm (fraction)",
+            self.SOIL_MOISTURE_28_TO_100CM.value: "Soil Moisture @28-100cm (fraction)",
+            self.SOIL_MOISTURE_100_TO_255CM.value: "Soil Moisture @100-255cm (fraction)",
         }
 
         return d[self.value]
@@ -890,6 +936,7 @@ class OpenMeteoVariable(Enum):
     def conversion_factor(self) -> float:
         """Factors to multiple returned data from OpenMeteo by to give EPW standard units."""
         d = {
+            self.TIME.value: None,
             self.TEMPERATURE_2M.value: 1,
             self.DEWPOINT_2M.value: 1,
             self.RELATIVEHUMIDITY_2M.value: 1,
@@ -898,29 +945,29 @@ class OpenMeteoVariable(Enum):
             self.DIRECT_RADIATION.value: 1,
             self.DIFFUSE_RADIATION.value: 1,
             self.WINDDIRECTION_10M.value: 1,
-            self.WINDSPEED_10M.value: 0.277778,
+            self.WINDSPEED_10M.value: 1 / 3.6,
             self.CLOUDCOVER.value: 0.1,
             self.WEATHERCODE.value: None,
             self.PRECIPITATION.value: 1,
             self.RAIN.value: 1,
             self.SNOWFALL.value: 1,
-            self.CLOUDCOVER_LOW.value: None,
-            self.CLOUDCOVER_MID.value: None,
-            self.CLOUDCOVER_HIGH.value: None,
-            self.DIRECT_NORMAL_IRRADIANCE.value: None,
-            self.WINDSPEED_100M.value: None,
-            self.WINDDIRECTION_100M.value: None,
-            self.WINDGUSTS_10M.value: None,
-            self.ET0_FAO_EVAPOTRANSPIRATION.value: None,
-            self.VAPOR_PRESSURE_DEFICIT.value: None,
-            self.SOIL_TEMPERATURE_0_TO_7CM.value: None,
-            self.SOIL_TEMPERATURE_7_TO_28CM.value: None,
-            self.SOIL_TEMPERATURE_28_TO_100CM.value: None,
-            self.SOIL_TEMPERATURE_100_TO_255CM.value: None,
-            self.SOIL_MOISTURE_0_TO_7CM.value: None,
-            self.SOIL_MOISTURE_7_TO_28CM.value: None,
-            self.SOIL_MOISTURE_28_TO_100CM.value: None,
-            self.SOIL_MOISTURE_100_TO_255CM.value: None,
+            self.CLOUDCOVER_LOW.value: 0.1,
+            self.CLOUDCOVER_MID.value: 0.1,
+            self.CLOUDCOVER_HIGH.value: 0.1,
+            self.DIRECT_NORMAL_IRRADIANCE.value: 1,
+            self.WINDSPEED_100M.value: 1 / 3.6,
+            self.WINDDIRECTION_100M.value: 1,
+            self.WINDGUSTS_10M.value: 1 / 3.6,
+            self.ET0_FAO_EVAPOTRANSPIRATION.value: 1,
+            self.VAPOR_PRESSURE_DEFICIT.value: 0.001,
+            self.SOIL_TEMPERATURE_0_TO_7CM.value: 1,
+            self.SOIL_TEMPERATURE_7_TO_28CM.value: 1,
+            self.SOIL_TEMPERATURE_28_TO_100CM.value: 1,
+            self.SOIL_TEMPERATURE_100_TO_255CM.value: 1,
+            self.SOIL_MOISTURE_0_TO_7CM.value: 1,
+            self.SOIL_MOISTURE_7_TO_28CM.value: 1,
+            self.SOIL_MOISTURE_28_TO_100CM.value: 1,
+            self.SOIL_MOISTURE_100_TO_255CM.value: 1,
         }
 
         return d[self.value]
@@ -929,8 +976,8 @@ class OpenMeteoVariable(Enum):
 def scrape_openmeteo(
     latitude: float,
     longitude: float,
-    start_date: datetime,
-    end_date: datetime,
+    start_date: Union[datetime, str],
+    end_date: Union[datetime, str],
     variables: List[OpenMeteoVariable],
     convert_units: bool = False,
 ) -> pd.DataFrame:
@@ -942,9 +989,9 @@ def scrape_openmeteo(
             The latitude of the target site, in degrees.
         longitude (float):
             The longitude of the target site, in degrees.
-        start_date (datetime):
+        start_date Union[datetime, str]:
             The start-date from which records will be obtained.
-        end_date (datetime):
+        end_date Union[datetime, str]:
             The end-date beyond which records will be ignored.
         variables (List[OpenMeteoVariable]):
             A list of variables to query.
@@ -955,19 +1002,37 @@ def scrape_openmeteo(
         pd.DataFrame:
             A DataFrame containing scraped data.
     """
-    query_string = f"https://archive-api.open-meteo.com/v1/era5?latitude={latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&end_date={end_date:%Y-%m-%d}&hourly={','.join([i.value for i in variables])}"
+    if isinstance(start_date, str):
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    if isinstance(end_date, str):
+        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
+    var_strings = ",".join([i.value for i in variables if i.name.lower() != "time"])
+    query_string = f"https://archive-api.open-meteo.com/v1/era5?latitude={latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
 
     with urllib.request.urlopen(query_string) as url:
         data = json.load(url)
 
-    # convert values into more common units here
-    if convert_units:
+    if not convert_units:
         headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
     else:
-        headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
-    df = pd.DataFrame.from_dict(data["hourly"])
-    df.columns = headers
-    df.set_index("time (iso8601)", inplace=True)
+        headers = [
+            OpenMeteoVariable.from_string(k).conversion_name
+            for (k, v) in data["hourly_units"].items()
+        ]
+
+    if not convert_units:
+        values = [v for k, v in data["hourly"].items()]
+    else:
+        values = []
+        for k, v in data["hourly"].items():
+            en = OpenMeteoVariable.from_string(k)
+            if en.conversion_factor is None:
+                values.append(v)
+            else:
+                values.append([i * en.conversion_factor for i in v])
+    df = pd.DataFrame(np.array(values).T, columns=headers)
+    df = df.set_index(df.columns[0])
     df.index = pd.to_datetime(df.index)
     return df
 
