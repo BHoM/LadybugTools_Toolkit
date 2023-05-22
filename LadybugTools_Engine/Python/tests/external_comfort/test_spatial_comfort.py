@@ -80,13 +80,14 @@ def test_run_spatial_sky_view() -> Path:
     # set simulation directory
     hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"
 
-    res_file = (
+    res_file_old = (
         SPATIAL_COMFORT_DIRECTORY
         / "sky_view"
         / "results"
         / "sky_view"
         / "pytest_SC.res"
     )
+    res_file_new = SPATIAL_COMFORT_DIRECTORY / "sky_view" / "results" / "pytest_SC.res"
 
     # load test model containing grids
     model: Model = Model.from_hbjson(MODEL_FILE.as_posix())
@@ -102,7 +103,7 @@ def test_run_spatial_sky_view() -> Path:
         queenbee_path=r"C:\Program Files\ladybug_tools\python\Scripts\queenbee.exe",
     )
 
-    assert res_file.exists()
+    assert res_file_old.exists() or res_file_new.exists()
 
 
 @pytest.mark.order(3)
