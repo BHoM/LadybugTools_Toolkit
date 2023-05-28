@@ -125,10 +125,10 @@ def utci_tabulated_color(collection: HourlyContinuousCollection, hourSpan: int =
 
     # Save to EXCEL / IMG
     if Excel_Path:
-        styled.to_excel(Eecel_Path)
-        print("Excel Saved to " + Excel_Path + "!")
+        styled.to_excel(Excel_Path + ".xlsx")
+        print("Excel Saved to " + Excel_Path + ".xlsx!")
     if Image_Path:
-        dfi.export(styled, Image_Path)
-        print("Image Saved to " + Image_Path + "!")
+        dfi.export(styled, Image_Path + ".jpeg")
+        print("Image Saved to " + Image_Path + ".jpeg!")
 
     return styled
