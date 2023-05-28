@@ -13,6 +13,7 @@ from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_s
 from IPython.display import display
 from ladybugtools_toolkit.plot.colormaps_local import (
     UTCI_LOCAL_COLORMAP,
+    UTCI_LOCAL_LEVELS,
 )
 
 
@@ -110,7 +111,7 @@ def utci_tabulated_color(collection: HourlyContinuousCollection, hourSpan: int =
     hourTill = []
     for i in range(len(h_groups)):
         hourFrom.append(np.where(hour_group == h_groups[i])[0][0])
-        hourTill.append(np.where(hour_group == h_groups[i])[0][-1])
+        hourTill.append(np.where(hour_group == h_groups[i])[0][-1]+1)
     hourFrom = [f"{x:02}" for x in hourFrom]
     hourTill = [f"{x:02}" for x in hourTill]
     hoursIndex = list(map(lambda X: (X[0]+ ":00 to " + X[1] + ":00"), list(zip(hourFrom,hourTill))))
@@ -123,7 +124,7 @@ def utci_tabulated_color(collection: HourlyContinuousCollection, hourSpan: int =
     styled = df_series.style.background_gradient(axis=None, cmap=UTCI_LOCAL_COLORMAP, gmap=np_value, vmin=0, vmax=10)
 
     # Save to EXCEL / IMG
-    if Eecel_Path:
+    if Excel_Path:
         styled.to_excel(Eecel_Path)
         print("Excel Saved to " + Excel_Path + "!")
     if Image_Path:
