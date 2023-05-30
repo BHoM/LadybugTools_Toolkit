@@ -11,6 +11,7 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from IPython.display import display
+from matplotlib.colors import ListedColormap
 from ladybugtools_toolkit.plot.colormaps_local import (
     UTCI_LOCAL_COLORMAP,
     UTCI_LOCAL_LEVELS,
@@ -40,6 +41,7 @@ def dynamic_grouping(totalTimeCount: int, groupingSpan: int = 1) -> List[int]:
 
 def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collection_base: HourlyContinuousCollection, 
                                hourSpan: int = 1, monthSpan: int = 1,
+                               colormap: ListedColormap = UTCI_LOCAL_COLORMAP, levels: list = UTCI_LOCAL_LEVELS,
                                Excel_Path: str = None, Image_Path: str = None
 ) -> pd.io.formats.style.Styler: 
     """Create a styled dataframe showing the annual hourly UTCI values associated with custom Hour Span and Month Span.
@@ -53,6 +55,10 @@ def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collectio
             A custom hour span for table. Can be a single value or a list of values. Default is 1.
         monthSpan (int/[int], optional):
             A custom month span for table. Can be a single value or a list of values. Default is 1.
+        colormap (ListedColormap, optional):
+            A colormap to be used for background color, Default is UTCI_LOCAL_COLORMAP
+        levels (list, optional):
+            A list of levels to be used for background color, Default is UTCI_LOCAL_LEVELS
         Excel_Path (str, optional):
             Full path for the exported Excel File, Default is None
         Image_Path (str, optional):
@@ -85,7 +91,7 @@ def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collectio
 
     # Create value for background color control
     np_value = df_series.copy().to_numpy()
-    np_value = [list(pd.cut(row, bins=[-100] + UTCI_LOCAL_LEVELS + [200], labels=list(range(11)))) for row in np_value]
+    np_value = [list(pd.cut(row, bins=[-100] + levels + [200], labels=list(range(len(levels)+1)))) for row in np_value]
     np_value.reverse()
 
     # Format for table dispaly
@@ -134,7 +140,7 @@ def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collectio
     df_series.index = hoursIndex
 
     # Style DF output
-    styled = df_series.style.background_gradient(axis=None, cmap=UTCI_LOCAL_COLORMAP, gmap=np_value, vmin=0, vmax=10)
+    styled = df_series.style.background_gradient(axis=None, cmap=colormap, gmap=np_value, vmin=0, vmax=len(levels))
 
     # Save to EXCEL / IMG
     if Excel_Path:
