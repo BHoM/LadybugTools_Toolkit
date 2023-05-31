@@ -18,6 +18,14 @@ from ladybugtools_toolkit.plot.colormaps import (
     UTCI_LEVELS,
     UTCI_LEVELS_IP,
 )
+from ladybugtools_toolkit.plot.colormaps_local import (
+    UTCI_LOCAL_BOUNDARYNORM,
+    UTCI_LOCAL_BOUNDARYNORM_IP,
+    UTCI_LOCAL_COLORMAP,
+    UTCI_LOCAL_LABELS,
+    UTCI_LOCAL_LEVELS,
+    UTCI_LOCAL_LEVELS_IP,
+)
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from matplotlib.colors import BoundaryNorm
@@ -25,7 +33,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def utci_heatmap_masked_stacked(
-    collection: HourlyContinuousCollection, title: str = None, show_legend: bool = True, IP: bool = True, masked: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod()
+    collection: HourlyContinuousCollection, title: str = None, show_legend: bool = True, 
+    CustomizedUTCI: bool = False, IP: bool = True, masked: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod()
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
@@ -36,6 +45,8 @@ def utci_heatmap_masked_stacked(
             A title to add to the resulting figure. Default is None.
         show_legend (bool, optional):
             Set to True to plot the legend. Default is True.
+        CustomizedUTCI (bool, optional):
+            Option to use customized UTCI legend. Default is False
         IP (bool, optional):
             Convert data to IP unit. Default is True.
         masekd (bool, optional):
@@ -47,6 +58,20 @@ def utci_heatmap_masked_stacked(
         Figure:
             A matplotlib Figure object.
     """
+    if CustomizedUTCI:
+        UTCI_B = UTCI_LOCAL_BOUNDARYNORM
+        UTCI_B_IP = UTCI_LOCAL_BOUNDARYNORM_IP
+        UTCI_C = UTCI_LOCAL_COLORMAP
+        UTCI_L = UTCI_LOCAL_LABELS
+        UTCI_E = UTCI_LOCAL_LEVELS
+        UTCI_E_IP = UTCI_LOCAL_LEVELS_IP
+    else:
+        UTCI_B = UTCI_BOUNDARYNORM
+        UTCI_B_IP = UTCI_BOUNDARYNORM_IP
+        UTCI_C = UTCI_COLORMAP
+        UTCI_L = UTCI_LABELS
+        UTCI_E = UTCI_LEVELS
+        UTCI_E_IP = UTCI_LEVELS_IP
 
     if not isinstance(collection.header.data_type, UniversalThermalClimateIndex):
         raise ValueError(
@@ -82,7 +107,7 @@ def utci_heatmap_masked_stacked(
     # Add heatmap
     heatmap = heatmap_ax.imshow(
         data,
-        norm=UTCI_BOUNDARYNORM_IP if IP else UTCI_BOUNDARYNORM,
+        norm=UTCI_B_IP if IP else UTCI_B,
         extent=[
             mdates.date2num(series.index.min()),
             mdates.date2num(series.index.max()),
@@ -90,7 +115,7 @@ def utci_heatmap_masked_stacked(
             726450,
         ],
         aspect="auto",
-        cmap=UTCI_COLORMAP,
+        cmap=UTCI_C,
         interpolation="none",
     )
     mask = np.copy(data)
@@ -118,8 +143,8 @@ def utci_heatmap_masked_stacked(
         maskedCM.set_under(color='w', alpha=0)
         maskedNorm = BoundaryNorm([0,0.5],maskedCM.N)
     else:
-        maskedNorm = UTCI_BOUNDARYNORM_IP
-        maskedCM = UTCI_COLORMAP
+        maskedNorm = UTCI_B_IP
+        maskedCM = UTCI_C
         
     heatmap_ax.imshow(
         mask, 
@@ -149,10 +174,10 @@ def utci_heatmap_masked_stacked(
 
     # Add stacked bar chart
     series_adjust = to_series(collection.filter_by_analysis_period(analysis_period))
-    series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_LEVELS_IP + [200] if IP else [-100] + UTCI_LEVELS + [200], labels=UTCI_LABELS)
-    sizes = (series_cut.value_counts() / len(series_adjust))[UTCI_LABELS]
+    series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_E_IP + [200] if IP else [-100] + UTCI_E + [200], labels=UTCI_L)
+    sizes = (series_cut.value_counts() / len(series_adjust))[UTCI_L]
     colors = (
-        [UTCI_COLORMAP.get_under()] + UTCI_COLORMAP.colors + [UTCI_COLORMAP.get_over()]
+        [UTCI_C.get_under()] + UTCI_C.colors + [UTCI_C.get_over()]
     )
 
     catagories = sizes.index.tolist()
@@ -182,16 +207,16 @@ def utci_heatmap_masked_stacked(
             heatmap,
             cax=colorbar_ax,
             orientation="horizontal",
-            ticks=UTCI_LEVELS_IP if IP else UTCI_LEVELS,
+            ticks=UTCI_E_IP if IP else UTCI_E,
             drawedges=False,
         )
         cb.outline.set_visible(False)
         plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
 
         # Add labels to the colorbar
-        levels = [-100] + UTCI_LEVELS_IP + [200] if IP else [-100] + UTCI_LEVELS + [200]
+        levels = [-100] + UTCI_E_IP + [200] if IP else [-100] + UTCI_E + [200]
         for n, ((low, high), label) in enumerate(
-            zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_LABELS])
+            zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_L])
         ):
             if n == 0:
                 ha = "right"
