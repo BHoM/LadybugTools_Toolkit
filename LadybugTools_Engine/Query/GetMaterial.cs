@@ -48,14 +48,15 @@ namespace BH.Engine.LadybugTools
 
             string pythonScript = string.Join("\n", new List<string>()
             {
-                "from ladybugtools_toolkit.external_comfort.material import Materials",
-                "",
+                
+                "import traceback",
                 "try:",
+                "    from ladybugtools_toolkit.external_comfort.material import Materials",
                 $"    materials = [material.value.to_json() for material in Materials if \"{filter}\".lower() in material.value.identifier.lower()]",
                 "    materials = f\"[{', '.join(materials)}]\"",
                 "    print(materials)",
                 "except Exception as exc:",
-                "    print(exc)",
+                "    print(traceback.format_exc())",
             });
             
             string result = env.RunPythonString(pythonScript).Trim();

@@ -127,13 +127,13 @@ class SpatialComfort(BHoMObject):
         self._unshaded_utci = utci(
             self.simulation_result.epw.dry_bulb_temperature,
             self.simulation_result.epw.relative_humidity,
-            self.simulation_result.unshaded_mean_radiant_temperature,
+            self.simulation_result.UnshadedMeanRadiantTemperature,
             self.simulation_result.epw.wind_speed,
         )
         self._shaded_utci = utci(
             self.simulation_result.epw.dry_bulb_temperature,
             self.simulation_result.epw.relative_humidity,
-            self.simulation_result.shaded_mean_radiant_temperature,
+            self.simulation_result.ShadedMeanRadiantTemperature,
             self.simulation_result.epw.wind_speed,
         )
 
@@ -495,8 +495,8 @@ class SpatialComfort(BHoMObject):
 
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
             df = shaded_unshaded_interpolation(
-                unshaded_value=self.simulation_result.unshaded_mean_radiant_temperature.values,
-                shaded_value=self.simulation_result.shaded_mean_radiant_temperature.values,
+                unshaded_value=self.simulation_result.UnshadedMeanRadiantTemperature.values,
+                shaded_value=self.simulation_result.ShadedMeanRadiantTemperature.values,
                 total_irradiance=self.irradiance_total.values,
                 sky_view=self.sky_view.squeeze().values,
                 sun_up=[

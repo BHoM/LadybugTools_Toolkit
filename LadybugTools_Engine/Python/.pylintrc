@@ -21,7 +21,7 @@ disable=
     R0913, # too-many-arguments
     R0914, # too-many-locals
     R0915, # too-many-statements
-    ; C0103, # invalid-name
+    C0103, # invalid-name
     C0114, # missing-module-docstring
     ; C0115, # missing-class-docstring
     C0301, # line-too-long

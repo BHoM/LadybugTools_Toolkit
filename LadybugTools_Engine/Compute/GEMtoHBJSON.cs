@@ -57,6 +57,7 @@ namespace BH.Engine.LadybugTools
 
             string pythonScript = String.Join("\n", new List<string>()
             {
+                "import traceback",
                 "from honeybee.model import Model",
                 "from honeybee_ies.reader import model_from_ies",
                 "",
@@ -65,7 +66,7 @@ namespace BH.Engine.LadybugTools
                 $"    hbjson_file = model.to_hbjson(folder=r\"{outputDirectory}\", name=\"{fileName}\")",
                 "    print(hbjson_file)",
                 "except Exception as exc:",
-                "    print(exc)",
+                "    print(traceback.format_exc())",
             });
 
             return env.RunPythonString(pythonScript).Trim();

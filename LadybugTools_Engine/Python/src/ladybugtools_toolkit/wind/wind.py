@@ -3,6 +3,7 @@ from __future__ import annotations
 import calendar
 import concurrent.futures
 import warnings
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Tuple, Union
@@ -16,6 +17,7 @@ from matplotlib.colors import Colormap
 from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
+from ..bhomutil.bhom_object import BHoMObject
 from ..helpers import (
     OpenMeteoVariable,
     circular_weighted_mean,
@@ -43,40 +45,49 @@ from ..plot import (
 from .direction_bins import DirectionBins
 
 
-class Wind:
-    """An object containing historic, time-indexed wind data."""
+@dataclass(init=True, repr=True, eq=True)
+class Wind(BHoMObject):
+    """An object containing historic, time-indexed wind data.
 
-    def __init__(
-        self,
-        wind_speeds: List[Union[int, float, np.number]],
-        wind_directions: List[Union[int, float, np.number]],
-        datetimes: Union[
-            pd.DatetimeIndex, List[Union[datetime, np.datetime64, pd.Timestamp]]
-        ],
-        height_above_ground: float = 10,
-    ):
-        """
-        Args:
-            wind_speeds (List[Union[int, float, np.number]]):
-                An iterable of wind speeds in m/s.
-            wind_directions (List[Union[int, float, np.number]]):
-                An iterable of wind directions in degrees from North (with North at 0-degrees).
-            datetimes (Union[pd.DatetimeIndex, List[Union[datetime, np.datetime64, pd.Timestamp]]]):
-                An iterable of datetime-like objects.
-            height_above_ground (float, optional):
-                The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
-        """
-        self.validation(wind_speeds, wind_directions, datetimes, height_above_ground)
+    Args:
+        wind_speeds (List[Union[int, float, np.number]]):
+            An iterable of wind speeds in m/s.
+        wind_directions (List[Union[int, float, np.number]]):
+            An iterable of wind directions in degrees from North (with North at 0-degrees).
+        datetimes (Union[pd.DatetimeIndex, List[Union[datetime, np.datetime64, pd.Timestamp]]]):
+            An iterable of datetime-like objects.
+        height_above_ground (float, optional):
+            The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
+    """
 
-        self.datetimes: List[datetime] = pd.to_datetime(datetimes)
+    wind_speeds: List[Union[int, float, np.number]] = field(
+        init=True, compare=True, repr=False
+    )
+    wind_directions: List[Union[int, float, np.number]] = field(
+        init=True, compare=True, repr=False
+    )
+    datetimes: List[datetime] = field(init=True, compare=True, repr=False)
+    height_above_ground: float = field(init=True, compare=True, repr=False, default=10)
+
+    def __post_init__(self):
+        self.validation(
+            self.wind_speeds,
+            self.wind_directions,
+            self.datetimes,
+            self.height_above_ground,
+        )
+
+        self.datetimes: List[datetime] = pd.to_datetime(self.datetimes)
         self.wind_speeds = pd.Series(
-            wind_speeds, index=self.datetimes, name="speed"
+            self.wind_speeds, index=self.datetimes, name="speed"
         ).sort_index()
         self.wind_directions = pd.Series(
-            wind_directions, index=self.datetimes, name="direction"
+            self.wind_directions, index=self.datetimes, name="direction"
         ).sort_index()
         self.df = pd.concat([self.ws, self.wd], axis=1)
-        self.height_above_ground = height_above_ground
+
+        # wrap methods within this class
+        super().__post_init__()
 
     ##################
     # DUNDER METHODS #
@@ -200,7 +211,7 @@ class Wind:
         """Create a Wind object from an EPW file or object.
 
         Args:
-            epw_file (Union[str, Path, EPW]):
+            epw (Union[str, Path, EPW]):
                 The path to the EPW file, or an EPW object.
         """
 

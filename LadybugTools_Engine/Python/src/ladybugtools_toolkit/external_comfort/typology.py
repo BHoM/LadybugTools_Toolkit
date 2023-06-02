@@ -4,6 +4,7 @@ import json
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum
+from types import FunctionType
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
@@ -14,7 +15,8 @@ from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
-from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
+from ..bhomutil.bhom_object import BHoMObject
+from ..bhomutil.encoder import BHoMEncoder
 from ..helpers import decay_rate_smoother, evaporative_cooling_effect
 from ..ladybug_extension.datacollection import (
     collection_from_series,
@@ -57,17 +59,17 @@ class Typology(BHoMObject):
         Typology: An external comfort typology.
     """
 
-    name: str = field(init=True, compare=True, repr=True)
-    shelters: List[Shelter] = field(
+    Name: str = field(init=True, compare=True, repr=True)
+    Shelters: List[Shelter] = field(
         init=True, compare=True, repr=False, default_factory=list
     )
-    evaporative_cooling_effect: Union[float, List[float]] = field(
+    EvaporativeCoolingEffect: Union[float, List[float]] = field(
         init=True, compare=True, repr=False, default=0
     )
-    wind_speed_multiplier: Union[float, List[float]] = field(
+    WindSpeedMultiplier: Union[float, List[float]] = field(
         init=True, compare=True, repr=False, default=1
     )
-    radiant_temperature_adjustment: Union[float, List[float]] = field(
+    RadiantTemperatureAdjustment: Union[float, List[float]] = field(
         init=True, compare=True, repr=False, default=0
     )
 
@@ -76,42 +78,42 @@ class Typology(BHoMObject):
     )
 
     def __post_init__(self):
-        if isinstance(self.wind_speed_multiplier, (float, int)):
-            self.wind_speed_multiplier = np.ones(8760) * self.wind_speed_multiplier
+        if isinstance(self.WindSpeedMultiplier, (float, int)):
+            self.WindSpeedMultiplier = np.ones(8760) * self.WindSpeedMultiplier
         else:
-            self.wind_speed_multiplier = np.array(self.wind_speed_multiplier)
-        if min(self.wind_speed_multiplier) < 0:
+            self.WindSpeedMultiplier = np.array(self.WindSpeedMultiplier)
+        if min(self.WindSpeedMultiplier) < 0:
             raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
-        if len(self.wind_speed_multiplier) != 8760:
+        if len(self.WindSpeedMultiplier) != 8760:
             raise ValueError(
                 "Wind speed multiplier can only currently be either a single value applied across the entire year, or a list of 8760 values."
             )
 
-        if isinstance(self.evaporative_cooling_effect, (float, int)):
-            self.evaporative_cooling_effect = (
-                np.ones(8760) * self.evaporative_cooling_effect
+        if isinstance(self.EvaporativeCoolingEffect, (float, int)):
+            self.EvaporativeCoolingEffect = (
+                np.ones(8760) * self.EvaporativeCoolingEffect
             )
         else:
-            self.evaporative_cooling_effect = np.array(self.evaporative_cooling_effect)
+            self.EvaporativeCoolingEffect = np.array(self.EvaporativeCoolingEffect)
         if (
-            min(self.evaporative_cooling_effect) < 0
-            or max(self.evaporative_cooling_effect) > 1
+            min(self.EvaporativeCoolingEffect) < 0
+            or max(self.EvaporativeCoolingEffect) > 1
         ):
             raise ValueError("Evaporative cooling effect must be between 0 and 1.")
-        if len(self.evaporative_cooling_effect) != 8760:
+        if len(self.EvaporativeCoolingEffect) != 8760:
             raise ValueError(
                 "Evaporative cooling effect can only currently be either a single value applied across the entire year, or a list of 8760 values."
             )
 
-        if isinstance(self.radiant_temperature_adjustment, (float, int)):
-            self.radiant_temperature_adjustment = (
-                np.ones(8760) * self.radiant_temperature_adjustment
+        if isinstance(self.RadiantTemperatureAdjustment, (float, int)):
+            self.RadiantTemperatureAdjustment = (
+                np.ones(8760) * self.RadiantTemperatureAdjustment
             )
         else:
-            self.radiant_temperature_adjustment = np.array(
-                self.radiant_temperature_adjustment
+            self.RadiantTemperatureAdjustment = np.array(
+                self.RadiantTemperatureAdjustment
             )
-        if len(self.radiant_temperature_adjustment) != 8760:
+        if len(self.RadiantTemperatureAdjustment) != 8760:
             raise ValueError(
                 "Radiant temperature adjustment can only currently be either a single value applied across the entire year, or a list of 8760 values."
             )
@@ -123,49 +125,70 @@ class Typology(BHoMObject):
     def from_dict(cls, dictionary: Dict[str, Any]) -> Typology:
         """Create this object from a dictionary."""
 
-        sanitised_dict = bhom_dict_to_dict(dictionary)
-        sanitised_dict.pop("_t", None)
-
         # handle shelter object conversions
-        shelters = []
-        for obj in sanitised_dict["shelters"]:
-            if isinstance(obj, BHoMObject):
-                shelters.append(obj)
-            elif isinstance(obj, dict):
-                shelters.append(Shelter.from_dict(obj))
-            elif isinstance(obj, str):
-                shelters.append(Shelter.from_json(obj))
-            else:
-                raise ValueError(
-                    "Objects in the in input dictionary are not of a recognised type."
-                )
-        sanitised_dict["shelters"] = shelters
+        for n, shelter in enumerate(dictionary["Shelters"]):
+            if not isinstance(shelter, Shelter):
+                dictionary["Shelters"][n] = Shelter.from_dict(shelter)
 
         return cls(
-            name=sanitised_dict["name"],
-            shelters=sanitised_dict["shelters"],
-            evaporative_cooling_effect=sanitised_dict["evaporative_cooling_effect"],
-            wind_speed_multiplier=sanitised_dict["wind_speed_multiplier"],
-            radiant_temperature_adjustment=sanitised_dict[
-                "radiant_temperature_adjustment"
-            ],
+            Name=dictionary["Name"],
+            Shelters=dictionary["Shelters"],
+            EvaporativeCoolingEffect=dictionary["EvaporativeCoolingEffect"],
+            WindSpeedMultiplier=dictionary["WindSpeedMultiplier"],
+            RadiantTemperatureAdjustment=dictionary["RadiantTemperatureAdjustment"],
         )
 
     @classmethod
     def from_json(cls, json_string: str) -> Typology:
         """Create this object from a JSON string."""
+        return cls.from_dict(json.loads(json_string))
 
-        dictionary = json.loads(json_string)
+    def to_dict(self) -> Dict[str, Any]:
+        """Return this object as it's dictionary equivalent."""
+        dictionary = {}
+        for k, v in self.__dict__.items():
+            if isinstance(getattr(self, k), FunctionType):
+                continue
+            dictionary[k] = v
+        dictionary["_t"] = self._t
+        return dictionary
 
-        return cls.from_dict(dictionary)
+    def to_json(self) -> str:
+        """Return this object as it's JSON string equivalent."""
+        return json.dumps(self.to_dict(), cls=BHoMEncoder)
+
+    @property
+    def evaporative_cooling_effect(self) -> List[float]:
+        """Handy alias for the evaporative cooling effect."""
+        return self.EvaporativeCoolingEffect
+
+    @property
+    def shelters(self) -> List[Shelter]:
+        """Handy alias for the shelters."""
+        return self.Shelters
+
+    @property
+    def wind_speed_multiplier(self) -> List[float]:
+        """Handy alias for the wind speed multiplier."""
+        return self.WindSpeedMultiplier
+
+    @property
+    def radiant_temperature_adjustment(self) -> List[float]:
+        """Handy alias for the radiant temperature adjustment."""
+        return self.RadiantTemperatureAdjustment
+
+    @property
+    def name(self) -> str:
+        """Handy alias for the name."""
+        return self.Name
 
     def sky_exposure(self) -> float:
         """Direct access to "sky_exposure" method for this typology object."""
-        return sky_exposure(self.shelters, include_radiation_porosity=True)
+        return sky_exposure(self.Shelters, include_radiation_porosity=True)
 
     def sun_exposure(self, epw: EPW) -> List[float]:
         """Direct access to "sun_exposure" method for this typology object."""
-        return annual_sun_exposure(self.shelters, epw, include_radiation_porosity=True)
+        return annual_sun_exposure(self.Shelters, epw, include_radiation_porosity=True)
 
     def dry_bulb_temperature(self, epw: EPW) -> HourlyContinuousCollection:
         """Get the effective DBT for the given EPW file for this Typology.
@@ -178,7 +201,7 @@ class Typology(BHoMObject):
                 cooling effects.
         """
         # if there is no evaporative cooling effect, return the original DBT
-        if sum(self.evaporative_cooling_effect) == 0:
+        if sum(self.EvaporativeCoolingEffect) == 0:
             return epw.dry_bulb_temperature
 
         # if there is evaporative cooling effect, return the adjusted DBT
@@ -188,7 +211,7 @@ class Typology(BHoMObject):
                 *[
                     epw.dry_bulb_temperature,
                     epw.relative_humidity,
-                    self.evaporative_cooling_effect,
+                    self.EvaporativeCoolingEffect,
                     epw.atmospheric_station_pressure,
                 ]
             )
@@ -215,7 +238,7 @@ class Typology(BHoMObject):
         """
 
         # if there is no evaporative cooling effect, return the original RH
-        if sum(self.evaporative_cooling_effect) == 0:
+        if sum(self.EvaporativeCoolingEffect) == 0:
             return epw.relative_humidity
 
         # if there is evaporative cooling effect, return the adjusted RH
@@ -225,7 +248,7 @@ class Typology(BHoMObject):
                 *[
                     epw.dry_bulb_temperature,
                     epw.relative_humidity,
-                    self.evaporative_cooling_effect,
+                    self.EvaporativeCoolingEffect,
                     epw.atmospheric_station_pressure,
                 ]
             )
@@ -252,23 +275,23 @@ class Typology(BHoMObject):
 
         ws = epw.wind_speed
 
-        if len(self.shelters) == 0:
+        if len(self.Shelters) == 0:
             return ws.get_aligned_collection(
-                np.array(ws.values) * self.wind_speed_multiplier
+                np.array(ws.values) * self.WindSpeedMultiplier
             )
 
         # adjust to 0 if multiplier is 0
-        if sum(self.wind_speed_multiplier) == 0:
+        if sum(self.WindSpeedMultiplier) == 0:
             return ws.get_aligned_collection(0)
 
         # adjust ws based on shelter configuration
         wind_speed_pre_multiplier = epw.wind_speed.get_aligned_collection(
-            annual_effective_wind_speed(self.shelters, epw)
+            annual_effective_wind_speed(self.Shelters, epw)
         )
 
         # adjust ws based on multiplier (collection)
         return ws.get_aligned_collection(
-            np.array(wind_speed_pre_multiplier.values) * self.wind_speed_multiplier
+            np.array(wind_speed_pre_multiplier.values) * self.WindSpeedMultiplier
         )
 
     def mean_radiant_temperature(
@@ -288,10 +311,10 @@ class Typology(BHoMObject):
         """
 
         shaded_mrt = collection_to_series(
-            simulation_result.shaded_mean_radiant_temperature
+            simulation_result.ShadedMeanRadiantTemperature
         )
         unshaded_mrt = collection_to_series(
-            simulation_result.unshaded_mean_radiant_temperature
+            simulation_result.UnshadedMeanRadiantTemperature
         )
 
         daytime = np.array(
@@ -321,7 +344,7 @@ class Typology(BHoMObject):
         )
 
         # apply radiant temperature adjustment if given
-        return collection_from_series(mrt_series + self.radiant_temperature_adjustment)
+        return collection_from_series(mrt_series + self.RadiantTemperatureAdjustment)
 
     def universal_thermal_climate_index(
         self, simulation_result: SimulationResult, return_comfort_obj: bool = False
@@ -352,7 +375,7 @@ class Typology(BHoMObject):
         )
 
         CONSOLE_LOGGER.info(
-            f"[{simulation_result.identifier} - {self.name}] - Calculating universal thermal climate index"
+            f"[{simulation_result.Identifier} - {self.Name}] - Calculating universal thermal climate index"
         )
 
         if return_comfort_obj:
@@ -409,7 +432,7 @@ class Typology(BHoMObject):
             "While it is possible to call from a Typology object, the recommended method of calling the UTCI histogram is from an ExternalComfort object."
         )
         return utci_heatmap_histogram(
-            self.universal_thermal_climate_index(res), self.name
+            self.universal_thermal_climate_index(res), title=self.Name
         )
 
 
@@ -465,30 +488,30 @@ def combine_typologies(
 
     all_shelters = []
     for typ in typologies:
-        all_shelters.extend(typ.shelters)
+        all_shelters.extend(typ.Shelters)
 
     ec_effect = np.average(
-        [i.evaporative_cooling_effect for i in typologies],
+        [i.EvaporativeCoolingEffect for i in typologies],
         weights=evaporative_cooling_effect_weights,
         axis=0,
     )
     ws_multiplier = np.average(
-        [i.wind_speed_multiplier for i in typologies],
+        [i.WindSpeedMultiplier for i in typologies],
         weights=wind_speed_multiplier_weights,
         axis=0,
     )
     tr_adjustment = np.average(
-        [i.radiant_temperature_adjustment for i in typologies],
+        [i.RadiantTemperatureAdjustment for i in typologies],
         weights=radiant_temperature_adjustment_weights,
         axis=0,
     )
 
     return Typology(
-        name=" + ".join([i.name for i in typologies]),
-        shelters=all_shelters,
-        evaporative_cooling_effect=ec_effect,
-        wind_speed_multiplier=ws_multiplier,
-        radiant_temperature_adjustment=tr_adjustment,
+        Name=" + ".join([i.Name for i in typologies]),
+        Shelters=all_shelters,
+        EvaporativeCoolingEffect=ec_effect,
+        WindSpeedMultiplier=ws_multiplier,
+        RadiantTemperatureAdjustment=tr_adjustment,
     )
 
 
@@ -496,11 +519,11 @@ class Typologies(Enum):
     """A list of pre-defined Typology objects."""
 
     OPENFIELD = Typology(
-        name="Openfield",
+        Name="Openfield",
     )
     ENCLOSED = Typology(
-        name="Enclosed",
-        shelters=[
+        Name="Enclosed",
+        Shelters=[
             Shelters.NORTH.value,
             Shelters.EAST.value,
             Shelters.SOUTH.value,
@@ -509,8 +532,8 @@ class Typologies(Enum):
         ],
     )
     POROUS_ENCLOSURE = Typology(
-        name="Porous enclosure",
-        shelters=[
+        Name="Porous enclosure",
+        Shelters=[
             Shelters.NORTH.value.set_porosity(0.5),
             Shelters.EAST.value.set_porosity(0.5),
             Shelters.SOUTH.value.set_porosity(0.5),
@@ -519,133 +542,133 @@ class Typologies(Enum):
         ],
     )
     SKY_SHELTER = Typology(
-        name="Sky-shelter",
-        shelters=[
+        Name="Sky-shelter",
+        Shelters=[
             Shelters.OVERHEAD_LARGE.value,
         ],
     )
     FRITTED_SKY_SHELTER = Typology(
-        name="Fritted sky-shelter",
-        shelters=[
+        Name="Fritted sky-shelter",
+        Shelters=[
             Shelters.OVERHEAD_LARGE.value.set_porosity(0.5),
         ],
     )
     NEAR_WATER = Typology(
-        name="Near water",
-        evaporative_cooling_effect=0.15,
+        Name="Near water",
+        EvaporativeCoolingEffect=0.15,
     )
     MISTING = Typology(
-        name="Misting",
-        evaporative_cooling_effect=0.3,
+        Name="Misting",
+        EvaporativeCoolingEffect=0.3,
     )
     PDEC = Typology(
-        name="PDEC",
-        evaporative_cooling_effect=0.7,
+        Name="PDEC",
+        EvaporativeCoolingEffect=0.7,
     )
     NORTH_SHELTER = Typology(
-        name="North shelter",
-        shelters=[
+        Name="North shelter",
+        Shelters=[
             Shelters.NORTH.value,
         ],
     )
     NORTHEAST_SHELTER = Typology(
-        name="Northeast shelter", shelters=[Shelters.NORTHEAST.value]
+        Name="Northeast shelter", Shelters=[Shelters.NORTHEAST.value]
     )
-    EAST_SHELTER = Typology(name="East shelter", shelters=[Shelters.EAST.value])
+    EAST_SHELTER = Typology(Name="East shelter", Shelters=[Shelters.EAST.value])
     SOUTHEAST_SHELTER = Typology(
-        name="Southeast shelter", shelters=[Shelters.SOUTHEAST.value]
+        Name="Southeast shelter", Shelters=[Shelters.SOUTHEAST.value]
     )
     SOUTH_SHELTER = Typology(
-        name="South shelter",
-        shelters=[
+        Name="South shelter",
+        Shelters=[
             Shelters.SOUTH.value,
         ],
     )
     SOUTHWEST_SHELTER = Typology(
-        name="Southwest shelter", shelters=[Shelters.SOUTHWEST.value]
+        Name="Southwest shelter", Shelters=[Shelters.SOUTHWEST.value]
     )
-    WEST_SHELTER = Typology(name="West shelter", shelters=[Shelters.WEST.value])
+    WEST_SHELTER = Typology(Name="West shelter", Shelters=[Shelters.WEST.value])
     NORTHWEST_SHELTER = Typology(
-        name="Northwest shelter", shelters=[Shelters.NORTHWEST.value]
+        Name="Northwest shelter", Shelters=[Shelters.NORTHWEST.value]
     )
     NORTH_SHELTER_WITH_CANOPY = Typology(
-        name="North shelter with canopy",
-        shelters=[
+        Name="North shelter with canopy",
+        Shelters=[
             Shelters.NORTH.value,
             Shelters.CANOPY_N_E_S_W.value,
         ],
     )
     NORTHEAST_SHELTER_WITH_CANOPY = Typology(
-        name="Northeast shelter with canopy",
-        shelters=[
+        Name="Northeast shelter with canopy",
+        Shelters=[
             Shelters.NORTHEAST.value,
             Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
     )
     EAST_SHELTER_WITH_CANOPY = Typology(
-        name="East shelter with canopy",
-        shelters=[
+        Name="East shelter with canopy",
+        Shelters=[
             Shelters.EAST.value,
             Shelters.CANOPY_N_E_S_W.value,
         ],
     )
     SOUTHEAST_SHELTER_WITH_CANOPY = Typology(
-        name="Southeast shelter with canopy",
-        shelters=[
+        Name="Southeast shelter with canopy",
+        Shelters=[
             Shelters.SOUTHEAST.value,
             Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
     )
     SOUTH_SHELTER_WITH_CANOPY = Typology(
-        name="South shelter with canopy",
-        shelters=[
+        Name="South shelter with canopy",
+        Shelters=[
             Shelters.SOUTH.value,
             Shelters.CANOPY_N_E_S_W.value,
         ],
     )
     SOUTHWEST_SHELTER_WITH_CANOPY = Typology(
-        name="Southwest shelter with canopy",
-        shelters=[
+        Name="Southwest shelter with canopy",
+        Shelters=[
             Shelters.SOUTHWEST.value,
             Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
     )
     WEST_SHELTER_WITH_CANOPY = Typology(
-        name="West shelter with canopy",
-        shelters=[
+        Name="West shelter with canopy",
+        Shelters=[
             Shelters.WEST.value,
             Shelters.CANOPY_N_E_S_W.value,
         ],
     )
     NORTHWEST_SHELTER_WITH_CANOPY = Typology(
-        name="Northwest shelter with canopy",
-        shelters=[
+        Name="Northwest shelter with canopy",
+        Shelters=[
             Shelters.NORTHWEST.value,
             Shelters.CANOPY_NE_SE_SW_NW.value,
         ],
     )
 
     NORTHSOUTH_LINEAR_SHELTER = Typology(
-        name="North-south linear overhead shelter",
-        shelters=[
+        Name="North-south linear overhead shelter",
+        Shelters=[
             Shelters.NORTH_SOUTH_LINEAR.value,
         ],
     )
     NORTHEAST_SOUTHWEST_LINEAR_SHELTER = Typology(
-        name="Northeast-southwest linear overhead shelter",
-        shelters=[
+        Name="Northeast-southwest linear overhead shelter",
+        Shelters=[
             Shelters.NORTHEAST_SOUTHWEST_LINEAR.value,
         ],
     )
     EAST_WEST_LINEAR_SHELTER = Typology(
-        name="East-west linear overhead shelter",
-        shelters=[
+        Name="East-west linear overhead shelter",
+        Shelters=[
             Shelters.EAST_WEST_LINEAR.value,
         ],
     )
     NORTHWEST_SOUTHEAST_LINEAR_SHELTER = Typology(
-        name="Northwest-southeast linear overhead shelter",
-        shelters=[
+        Name="Northwest-southeast linear overhead shelter",
+        Shelters=[
             Shelters.NORTHWEST_SOUTHEAST_LINEAR.value,
         ],
     )

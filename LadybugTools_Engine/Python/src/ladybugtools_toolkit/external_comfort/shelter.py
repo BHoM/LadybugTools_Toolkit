@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from enum import Enum
+from types import FunctionType
 from typing import Any, Dict, List
 
 import matplotlib.pyplot as plt
@@ -14,67 +15,68 @@ from ladybug.viewsphere import ViewSphere
 from ladybug_geometry.geometry3d import Face3D, Point3D, Ray3D, Vector3D
 from mpl_toolkits import mplot3d
 
-from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
+from ..bhomutil.bhom_object import BHoMObject
+from ..bhomutil.encoder import BHoMEncoder
 from ..helpers import wind_speed_at_height
 from ..ladybug_extension.epw import sun_position_list, unique_wind_speed_direction
 
 _LINEAR_SHELTER_VERTICES_NORTH_SOUTH = [
-    [2, -1000, 3.5],
-    [2, 1000, 3.5],
-    [-2, 1000, 3.5],
-    [-2, -1000, 3.5],
+    Point3D(2, -1000, 3.5),
+    Point3D(2, 1000, 3.5),
+    Point3D(-2, 1000, 3.5),
+    Point3D(-2, -1000, 3.5),
 ]
 _OVERHEAD_SHELTER_VERTICES_SMALL = [
-    [2, 0, 3.5],
-    [1.879385, 0.68404, 3.5],
-    [1.532089, 1.285575, 3.5],
-    [1, 1.732051, 3.5],
-    [0.347296, 1.969616, 3.5],
-    [-0.347296, 1.969616, 3.5],
-    [-1.0, 1.732051, 3.5],
-    [-1.532089, 1.285575, 3.5],
-    [-1.879385, 0.68404, 3.5],
-    [-2, 0, 3.5],
-    [-1.879385, -0.68404, 3.5],
-    [-1.532089, -1.285575, 3.5],
-    [-1, -1.732051, 3.5],
-    [-0.347296, -1.969616, 3.5],
-    [0.347296, -1.969616, 3.5],
-    [1.0, -1.732051, 3.5],
-    [1.532089, -1.285575, 3.5],
-    [1.879385, -0.68404, 3.5],
+    Point3D(2, 0, 3.5),
+    Point3D(1.879385, 0.68404, 3.5),
+    Point3D(1.532089, 1.285575, 3.5),
+    Point3D(1, 1.732051, 3.5),
+    Point3D(0.347296, 1.969616, 3.5),
+    Point3D(-0.347296, 1.969616, 3.5),
+    Point3D(-1.0, 1.732051, 3.5),
+    Point3D(-1.532089, 1.285575, 3.5),
+    Point3D(-1.879385, 0.68404, 3.5),
+    Point3D(-2, 0, 3.5),
+    Point3D(-1.879385, -0.68404, 3.5),
+    Point3D(-1.532089, -1.285575, 3.5),
+    Point3D(-1, -1.732051, 3.5),
+    Point3D(-0.347296, -1.969616, 3.5),
+    Point3D(0.347296, -1.969616, 3.5),
+    Point3D(1.0, -1.732051, 3.5),
+    Point3D(1.532089, -1.285575, 3.5),
+    Point3D(1.879385, -0.68404, 3.5),
 ]
 _OVERHEAD_SHELTER_VERTICES_LARGE = [
-    [250, 0, 3.5],
-    [234.923155, 85.505036, 3.5],
-    [191.511111, 160.696902, 3.5],
-    [125, 216.506351, 3.5],
-    [43.412044, 246.201938, 3.5],
-    [-43.412044, 246.201938, 3.5],
-    [-125.0, 216.506351, 3.5],
-    [-191.511111, 160.696902, 3.5],
-    [-234.923155, 85.505036, 3.5],
-    [-250, 0, 3.5],
-    [-234.923155, -85.505036, 3.5],
-    [-191.511111, -160.696902, 3.5],
-    [-125, -216.506351, 3.5],
-    [-43.412044, -246.201938, 3.5],
-    [43.412044, -246.201938, 3.5],
-    [125.0, -216.506351, 3.5],
-    [191.511111, -160.696902, 3.5],
-    [234.923155, -85.505036, 3.5],
+    Point3D(250, 0, 3.5),
+    Point3D(234.923155, 85.505036, 3.5),
+    Point3D(191.511111, 160.696902, 3.5),
+    Point3D(125, 216.506351, 3.5),
+    Point3D(43.412044, 246.201938, 3.5),
+    Point3D(-43.412044, 246.201938, 3.5),
+    Point3D(-125.0, 216.506351, 3.5),
+    Point3D(-191.511111, 160.696902, 3.5),
+    Point3D(-234.923155, 85.505036, 3.5),
+    Point3D(-250, 0, 3.5),
+    Point3D(-234.923155, -85.505036, 3.5),
+    Point3D(-191.511111, -160.696902, 3.5),
+    Point3D(-125, -216.506351, 3.5),
+    Point3D(-43.412044, -246.201938, 3.5),
+    Point3D(43.412044, -246.201938, 3.5),
+    Point3D(125.0, -216.506351, 3.5),
+    Point3D(191.511111, -160.696902, 3.5),
+    Point3D(234.923155, -85.505036, 3.5),
 ]
 _DIRECTIONAL_SHELTER_VERTICES_NORTH = [
-    [1, 1, 0],
-    [-1, 1, 0],
-    [-1, 1, 5],
-    [1, 1, 5],
+    Point3D(1, 1, 0),
+    Point3D(-1, 1, 0),
+    Point3D(-1, 1, 5),
+    Point3D(1, 1, 5),
 ]
 _CANOPY_NORTH = [
-    [1, 1, 5],
-    [-1, 1, 5],
-    [-1, -1, 5],
-    [1, -1, 5],
+    Point3D(1, 1, 5),
+    Point3D(-1, 1, 5),
+    Point3D(-1, -1, 5),
+    Point3D(1, -1, 5),
 ]
 
 
@@ -97,11 +99,11 @@ class Shelter(BHoMObject):
         Shelter: A Shelter object.
     """
 
-    vertices: List[List[float]] = field(
+    Vertices: List[Point3D] = field(
         init=True, repr=False
     )  # a list of xyz coordinates representing the vertices of the sheltering object
-    wind_porosity: float = field(init=True, repr=True, compare=True, default=0)
-    radiation_porosity: float = field(init=True, repr=True, compare=True, default=0)
+    WindPorosity: float = field(init=True, repr=True, compare=True, default=0)
+    RadiationPorosity: float = field(init=True, repr=True, compare=True, default=0)
 
     _t: str = field(
         init=False, repr=False, compare=True, default="BH.oM.LadybugTools.Shelter"
@@ -109,25 +111,23 @@ class Shelter(BHoMObject):
 
     def __post_init__(self) -> None:
         # handle nulls
-        if self.vertices is None:
+        if self.Vertices is None:
             raise ValueError("vertices cannot be None")
-        if self.wind_porosity is None:
-            self.wind_porosity = 0
-        if self.radiation_porosity is None:
-            self.radiation_porosity = 0
+        if self.WindPorosity is None:
+            self.WindPorosity = 0
+        if self.RadiationPorosity is None:
+            self.RadiationPorosity = 0
 
-        if (not 0 <= self.wind_porosity <= 1) or (
-            not 0 <= self.radiation_porosity <= 1
-        ):
+        if (not 0 <= self.WindPorosity <= 1) or (not 0 <= self.RadiationPorosity <= 1):
             raise ValueError("porosity values must be between 0 and 1")
 
-        if all([self.wind_porosity == 1, self.radiation_porosity == 1]):
+        if all([self.WindPorosity == 1, self.RadiationPorosity == 1]):
             raise ValueError(
                 "This shelter would have no effect as it does not impact wind or radiation exposure."
             )
 
         # create face for shelter
-        self.face = Face3D([Point3D(*i) for i in self.vertices])
+        self.face = Face3D(self.Vertices)
         self.face.check_planar(0.001)
 
         # create origin pt - representing an analytical person-point
@@ -140,13 +140,21 @@ class Shelter(BHoMObject):
     def from_dict(cls, dictionary: Dict[str, Any]) -> Shelter:
         """Create this object from a dictionary."""
 
-        sanitised_dict = bhom_dict_to_dict(dictionary)
-        sanitised_dict.pop("_t", None)
+        if all(isinstance(i, Point3D) for i in dictionary["Vertices"]):
+            # from a standard dictionary, no special treatment required
+
+            return cls(
+                WindPorosity=dictionary["WindPorosity"],
+                RadiationPorosity=dictionary["RadiationPorosity"],
+                Vertices=dictionary["Vertices"],
+            )
+
+        vertices = [Point3D(i["X"], i["Y"], i["Z"]) for i in dictionary["Vertices"]]
 
         return cls(
-            wind_porosity=sanitised_dict["wind_porosity"],
-            radiation_porosity=sanitised_dict["radiation_porosity"],
-            vertices=sanitised_dict["vertices"],
+            WindPorosity=dictionary["WindPorosity"],
+            RadiationPorosity=dictionary["RadiationPorosity"],
+            Vertices=vertices,
         )
 
     @classmethod
@@ -162,9 +170,8 @@ class Shelter(BHoMObject):
         cls, face: Face3D, wind_porosity: float = 0, radiation_porosity: float = 0
     ) -> Shelter:
         """Create a shelter object from a Ladybug Face3D object."""
-        vertices = [i.to_array() for i in face.vertices]
         return cls(
-            vertices=vertices,
+            vertices=face.vertices,
             wind_porosity=wind_porosity,
             radiation_porosity=radiation_porosity,
         )
@@ -172,7 +179,7 @@ class Shelter(BHoMObject):
     @classmethod
     def from_hb_face(cls, face: Face) -> Shelter:
         """Create a shelter object from a Honeybee Face object."""
-        vertices = [i.to_array() for i in face.vertices]
+        vertices = face.vertices
         wind_porosity = 0
         radiation_porosity = (
             0
@@ -180,28 +187,56 @@ class Shelter(BHoMObject):
             else face.properties.radiance.modifier.average_transmittance
         )
         return cls(
-            vertices=vertices,
-            wind_porosity=wind_porosity,
-            radiation_porosity=radiation_porosity,
+            Vertices=vertices,
+            WindPorosity=wind_porosity,
+            RadiationPorosity=radiation_porosity,
         )
 
-    def rotate(self, angle: float) -> Shelter:
+    def to_dict(self) -> Dict[str, Any]:
+        """Return this object as it's dictionary equivalent."""
+        dictionary = {}
+        for k, v in self.__dict__.items():
+            if isinstance(getattr(self, k), FunctionType):
+                continue
+            dictionary[k] = v
+        dictionary["_t"] = self._t
+        return dictionary
+
+    @property
+    def vertices(self) -> List[Point3D]:
+        """A handy accessor using proper Python naming conventions."""
+        return self.Vertices
+
+    @property
+    def wind_porosity(self) -> float:
+        """A handy accessor using proper Python naming conventions."""
+        return self.WindPorosity
+
+    @property
+    def radiation_porosity(self) -> float:
+        """A handy accessor using proper Python naming conventions."""
+        return self.RadiationPorosity
+
+    def to_json(self) -> str:
+        """Return this object as it's JSON string equivalent."""
+        return json.dumps(self.to_dict(), cls=BHoMEncoder)
+
+    def rotate(self, angle: float, center: Point3D = Point3D()) -> Shelter:
         """Rotate the shelter about 0, 0, 0 by the given angle in degrees clockwise from north at 0.
 
         Args:
             angle (float):
                 An angle in degrees.
+            center (Point3D, optional):
+                A Point3D representing the center of rotation. Defaults to 0, 0, 0.
 
         Returns:
             Shelter:
                 The rotated shelter object.
         """
         angle = np.deg2rad(-angle)
-        rotated_vertices = [
-            list(i.to_array())
-            for i in self.face.rotate_xy(angle, Point3D(0, 0, 0)).vertices
-        ]
-        return Shelter(rotated_vertices, self.wind_porosity, self.radiation_porosity)
+        rotated_vertices = self.face.rotate_xy(angle, center).vertices
+        return Shelter(rotated_vertices, self.WindPorosity, self.RadiationPorosity)
 
     def move(self, vector: Vector3D) -> Shelter:
         """Move the shelter by the given vector.
@@ -214,8 +249,8 @@ class Shelter(BHoMObject):
             Shelter:
                 The moved shelter object.
         """
-        moved_vertices = [list(i.to_array()) for i in self.face.move(vector).vertices]
-        return Shelter(moved_vertices, self.wind_porosity, self.radiation_porosity)
+        moved_vertices = self.face.move(vector).vertices
+        return Shelter(moved_vertices, self.WindPorosity, self.RadiationPorosity)
 
     def sky_exposure(self, include_radiation_porosity: bool = True) -> float:
         """Determine the proportion of sky the analytical point is exposed to. Also account for radiation_porosity in that exposure.
@@ -234,7 +269,7 @@ class Shelter(BHoMObject):
         ]
         n_intersections = sum(bool(self.face.intersect_line_ray(ray)) for ray in rays)
         if include_radiation_porosity:
-            return 1 - ((n_intersections / len(rays)) * (1 - self.radiation_porosity))
+            return 1 - ((n_intersections / len(rays)) * (1 - self.RadiationPorosity))
         return 1 - (n_intersections / len(rays))
 
     def sun_exposure(self, sun: Sun, include_radiation_porosity: bool = True) -> float:
@@ -255,7 +290,7 @@ class Shelter(BHoMObject):
         ray = Ray3D(self.origin, (sun.position_3d() - self.origin).normalize())
         if self.face.intersect_line_ray(ray) is None:
             return 1
-        return self.radiation_porosity if include_radiation_porosity else 0
+        return self.RadiationPorosity if include_radiation_porosity else 0
 
     def annual_sun_exposure(
         self, epw: EPW, include_radiation_porosity: bool = True
@@ -308,7 +343,7 @@ class Shelter(BHoMObject):
         if wind_speed == 0:
             return 0
 
-        if self.wind_porosity == 1:
+        if self.WindPorosity == 1:
             return wind_speed
 
         # create components for sample vectors
@@ -340,14 +375,14 @@ class Shelter(BHoMObject):
         # return effective wind speed
         if n_intersections == len(rays):
             # fully obstructed
-            return wind_speed * self.wind_porosity
+            return wind_speed * self.WindPorosity
         if n_intersections == 0:
             # fully unobstructed
             return wind_speed
         # get the propostion of obstruction adn adjust acceleration based on that proportion
         proportion_obstructed = n_intersections / len(rays)
         return (
-            (wind_speed * self.wind_porosity)
+            (wind_speed * self.WindPorosity)
             * proportion_obstructed  # obstructed wind component
         ) + (
             wind_speed
@@ -421,7 +456,7 @@ class Shelter(BHoMObject):
 
     def set_porosity(self, porosity: float) -> Shelter:
         """Return this shelter with an adjusted porosity value applied to both wind and radiation components."""
-        return Shelter(self.vertices, porosity, porosity)
+        return Shelter(self.Vertices, porosity, porosity)
 
     def visualise(self) -> plt.Figure:
         """Visualise this shelter to check validity and that it exists where you think it should!"""
@@ -481,7 +516,7 @@ def sky_exposure(
             [
                 1
                 if shelter.face.intersect_line_ray(ray) is None
-                else (shelter.radiation_porosity if include_radiation_porosity else 0)
+                else (shelter.RadiationPorosity if include_radiation_porosity else 0)
                 for ray in rays
             ]
         )
@@ -643,48 +678,48 @@ class Shelters(Enum):
     """A list of pre-defined Shelter forms."""
 
     NORTH_SOUTH_LINEAR = Shelter(
-        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
+        Vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     )
     EAST_WEST_LINEAR = Shelter(
-        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
+        Vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     ).rotate(90)
     NORTHEAST_SOUTHWEST_LINEAR = Shelter(
-        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
+        Vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     ).rotate(45)
     NORTHWEST_SOUTHEAST_LINEAR = Shelter(
-        vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
+        Vertices=_LINEAR_SHELTER_VERTICES_NORTH_SOUTH,
     ).rotate(135)
 
     OVERHEAD_SMALL = Shelter(
-        vertices=_OVERHEAD_SHELTER_VERTICES_SMALL,
+        Vertices=_OVERHEAD_SHELTER_VERTICES_SMALL,
     )
     OVERHEAD_LARGE = Shelter(
-        vertices=_OVERHEAD_SHELTER_VERTICES_LARGE,
+        Vertices=_OVERHEAD_SHELTER_VERTICES_LARGE,
     )
-    CANOPY_N_E_S_W = Shelter(vertices=_CANOPY_NORTH)
-    CANOPY_NE_SE_SW_NW = Shelter(vertices=_CANOPY_NORTH).rotate(45)
+    CANOPY_N_E_S_W = Shelter(Vertices=_CANOPY_NORTH)
+    CANOPY_NE_SE_SW_NW = Shelter(Vertices=_CANOPY_NORTH).rotate(45)
 
     NORTH = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     )
     NORTHEAST = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(45)
     EAST = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(90)
     SOUTHEAST = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(135)
     SOUTH = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(180)
     SOUTHWEST = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(225)
     WEST = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(270)
     NORTHWEST = Shelter(
-        vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
+        Vertices=_DIRECTIONAL_SHELTER_VERTICES_NORTH,
     ).rotate(315)
