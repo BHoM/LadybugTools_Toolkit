@@ -29,6 +29,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using BH.oM.Python;
 using BH.Engine.Base;
+using BH.oM.Base;
+using Eto.Forms;
 
 namespace BH.Engine.LadybugTools
 {
@@ -47,21 +49,24 @@ namespace BH.Engine.LadybugTools
 
             string pythonScript = string.Join("\n", new List<string>()
             {
-                "from ladybugtools_toolkit.external_comfort.typology import Typologies",
+                "import traceback",
                 "",
                 "try:",
+                "    from ladybugtools_toolkit.external_comfort.typology import Typologies",
                 $"    typologies = [typology.value.to_json() for typology in Typologies if \"{filter}\".lower() in typology.value.name.lower()]",
                 "    typologies = f\"[{', '.join(typologies)}]\"",
                 "    print(typologies)",
                 "except Exception as exc:",
-                "    print(exc)",
+                "    print(traceback.format_exc())",
             });
 
             string result = env.RunPythonString(pythonScript).Trim();
 
             List<object> lbtTypologies = Serialiser.Convert.FromJsonArray(result).ToList();
 
-            return lbtTypologies.Select(t => t as Typology).Where(t => t != null).ToList();
+            List<Typology> typologies = lbtTypologies.Select(t => t as Typology).Where(t => t != null).ToList();
+            
+            return typologies;
         }
     }
 }

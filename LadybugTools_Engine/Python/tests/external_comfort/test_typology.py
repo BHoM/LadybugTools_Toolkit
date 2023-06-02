@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
+from ladybug_geometry.geometry3d.pointvector import Point3D
 from ladybugtools_toolkit.external_comfort.material import Materials
 from ladybugtools_toolkit.external_comfort.typology import (
     Shelter,
@@ -15,12 +16,12 @@ from .. import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
 EPW_OBJ = EPW(EPW_FILE)
 GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
 SHADE_MATERIAL = Materials.FABRIC.value
-GENERIC_SHELTER = Shelter([[0, 0, 5], [1, 1, 5], [1, 0, 5]])
+GENERIC_SHELTER = Shelter([Point3D(0, 0, 5), Point3D(1, 1, 5), Point3D(1, 0, 5)])
 
 TYPOLOGY = Typology(
-    name=EXTERNAL_COMFORT_IDENTIFIER,
-    shelters=[GENERIC_SHELTER],
-    evaporative_cooling_effect=0.1,
+    Name=EXTERNAL_COMFORT_IDENTIFIER,
+    Shelters=[GENERIC_SHELTER],
+    EvaporativeCoolingEffect=0.1,
 )
 
 

@@ -81,13 +81,14 @@ namespace BH.Engine.LadybugTools
             PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
             string pythonScript = string.Join("\n", new List<string>()
             {
+                "import json",
+                "import traceback",
                 "try:",
-                "    import json",
                 "    from ladybugtools_toolkit.external_comfort.simulate import SimulationResult",
                 $"    simulation_result = SimulationResult.from_json('{simulationResultJsonStr}').run()",
                 "    print(simulation_result.to_json())",
                 "except Exception as exc:",
-                "    print(json.dumps({'error': str(exc)}))",
+                "    print(json.dumps({'error': str(traceback.format_exc())}))",
             });
             string output = env.RunPythonString(pythonScript).Trim().Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
 
