@@ -85,9 +85,9 @@ namespace BH.Engine.LadybugTools
             {
                 Name = name,
                 Shelters = shelters.Where(s => s != null).ToList(),
-                EvaporativeCoolingEffect = evaporativeCoolingEffect,
-                WindSpeedMultiplier = windSpeedMultiplier,
-                RadiantTemperatureAdjustment = radiantTemperatureAdjustment,
+                EvaporativeCoolingEffect = Enumerable.Repeat(evaporativeCoolingEffect, 8760).ToList(),
+                WindSpeedMultiplier = Enumerable.Repeat(windSpeedMultiplier, 8760).ToList(),
+                RadiantTemperatureAdjustment = Enumerable.Repeat(radiantTemperatureAdjustment, 8760).ToList(),
             };
         }
 

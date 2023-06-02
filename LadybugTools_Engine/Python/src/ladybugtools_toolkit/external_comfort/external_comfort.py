@@ -3,6 +3,7 @@ from __future__ import annotations
 import calendar
 import json
 from dataclasses import dataclass, field
+from types import FunctionType
 from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
@@ -13,7 +14,13 @@ from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
-from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict, pascalcase
+from ..bhomutil.bhom_object import BHoMObject
+from ..bhomutil.encoder import (
+    BHoMEncoder,
+    inf_dtype_to_inf_str,
+    inf_str_to_inf_dtype,
+    pascalcase,
+)
 from ..external_comfort.utci import categorise, utci_comfort_categories
 from ..helpers import evaporative_cooling_effect
 from ..ladybug_extension.analysis_period import (
@@ -59,22 +66,22 @@ class ExternalComfort(BHoMObject):
         and resultant thermal comfort metrics.
     """
 
-    simulation_result: SimulationResult = field(init=True, compare=True, repr=True)
-    typology: Typology = field(init=True, compare=True, repr=True)
+    SimulationResult: SimulationResult = field(init=True, compare=True, repr=True)
+    Typology: Typology = field(init=True, compare=True, repr=True)
 
-    dry_bulb_temperature: HourlyContinuousCollection = field(
+    DryBulbTemperature: HourlyContinuousCollection = field(
         init=True, compare=True, repr=False, default=None
     )
-    relative_humidity: HourlyContinuousCollection = field(
+    RelativeHumidity: HourlyContinuousCollection = field(
         init=True, compare=True, repr=False, default=None
     )
-    wind_speed: HourlyContinuousCollection = field(
+    WindSpeed: HourlyContinuousCollection = field(
         init=True, compare=True, repr=False, default=None
     )
-    mean_radiant_temperature: HourlyContinuousCollection = field(
+    MeanRadiantTemperature: HourlyContinuousCollection = field(
         init=True, compare=True, repr=False, default=None
     )
-    universal_thermal_climate_index: HourlyContinuousCollection = field(
+    UniversalThermalClimateIndex: HourlyContinuousCollection = field(
         init=True, compare=True, repr=False, default=None
     )
 
@@ -86,80 +93,78 @@ class ExternalComfort(BHoMObject):
     )
 
     def __post_init__(self):
-        if not self.simulation_result.is_run():
-            self.simulation_result = self.simulation_result.run()
+        if not self.SimulationResult.is_run():
+            self.SimulationResult = self.SimulationResult.run()
 
         # calculate metrics
-        epw = self.simulation_result.epw
+        epw = self.SimulationResult.epw
 
-        self.dry_bulb_temperature = (
-            self.dry_bulb_temperature
+        self.DryBulbTemperature = (
+            self.DryBulbTemperature
             if isinstance(
-                getattr(self, "dry_bulb_temperature"), HourlyContinuousCollection
+                getattr(self, "DryBulbTemperature"), HourlyContinuousCollection
             )
-            else self.typology.dry_bulb_temperature(epw)
+            else self.Typology.dry_bulb_temperature(epw)
         )
-        self.relative_humidity = (
-            self.relative_humidity
+        self.RelativeHumidity = (
+            self.RelativeHumidity
+            if isinstance(getattr(self, "RelativeHumidity"), HourlyContinuousCollection)
+            else self.Typology.relative_humidity(epw)
+        )
+        self.WindSpeed = (
+            self.WindSpeed
+            if isinstance(getattr(self, "WindSpeed"), HourlyContinuousCollection)
+            else self.Typology.wind_speed(epw)
+        )
+        self.MeanRadiantTemperature = (
+            self.MeanRadiantTemperature
             if isinstance(
-                getattr(self, "relative_humidity"), HourlyContinuousCollection
+                getattr(self, "MeanRadiantTemperature"), HourlyContinuousCollection
             )
-            else self.typology.relative_humidity(epw)
-        )
-        self.wind_speed = (
-            self.wind_speed
-            if isinstance(getattr(self, "wind_speed"), HourlyContinuousCollection)
-            else self.typology.wind_speed(epw)
-        )
-        self.mean_radiant_temperature = (
-            self.mean_radiant_temperature
-            if isinstance(
-                getattr(self, "mean_radiant_temperature"), HourlyContinuousCollection
-            )
-            else self.typology.mean_radiant_temperature(self.simulation_result)
+            else self.Typology.mean_radiant_temperature(self.SimulationResult)
         )
         if isinstance(
-            getattr(self, "universal_thermal_climate_index"), HourlyContinuousCollection
+            getattr(self, "UniversalThermalClimateIndex"), HourlyContinuousCollection
         ):
             pass
         elif all(
             [
                 isinstance(
-                    getattr(self, "dry_bulb_temperature"), HourlyContinuousCollection
+                    getattr(self, "DryBulbTemperature"), HourlyContinuousCollection
                 ),
                 isinstance(
-                    getattr(self, "relative_humidity"), HourlyContinuousCollection
+                    getattr(self, "RelativeHumidity"), HourlyContinuousCollection
                 ),
-                isinstance(getattr(self, "wind_speed"), HourlyContinuousCollection),
+                isinstance(getattr(self, "WindSpeed"), HourlyContinuousCollection),
                 isinstance(
-                    getattr(self, "mean_radiant_temperature"),
+                    getattr(self, "MeanRadiantTemperature"),
                     HourlyContinuousCollection,
                 ),
             ]
         ):
-            CONSOLE_LOGGER.info(f"[{self.typology.name}] - Calculating UTCI")
-            self.universal_thermal_climate_index = utci(
-                air_temperature=self.dry_bulb_temperature,
-                relative_humidity=self.relative_humidity,
-                mean_radiant_temperature=self.mean_radiant_temperature,
-                wind_speed=self.wind_speed,
+            CONSOLE_LOGGER.info(f"[{self.Typology.Name}] - Calculating UTCI")
+            self.UniversalThermalClimateIndex = utci(
+                air_temperature=self.DryBulbTemperature,
+                relative_humidity=self.RelativeHumidity,
+                mean_radiant_temperature=self.MeanRadiantTemperature,
+                wind_speed=self.WindSpeed,
             )
         else:
-            self.universal_thermal_climate_index = (
-                self.typology.universal_thermal_climate_index(self.simulation_result)
+            self.UniversalThermalClimateIndex = (
+                self.Typology.universal_thermal_climate_index(self.SimulationResult)
             )
 
         # populate metadata in metrics with current ExternalComfort config
-        if self.typology.sky_exposure() != 1:
-            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.to_lbt().identifier} ground and {self.simulation_result.shade_material.to_lbt().identifier} shade)"
+        if self.Typology.sky_exposure() != 1:
+            typology_description = f"{self.Typology.Name} ({self.SimulationResult.GroundMaterial.to_lbt().identifier} ground and {self.SimulationResult.ShadeMaterial.to_lbt().identifier} shade)"
         else:
-            typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.to_lbt().identifier} ground)"
+            typology_description = f"{self.Typology.Name} ({self.SimulationResult.GroundMaterial.to_lbt().identifier} ground)"
         for attr in [
-            "dry_bulb_temperature",
-            "relative_humidity",
-            "wind_speed",
-            "mean_radiant_temperature",
-            "universal_thermal_climate_index",
+            "DryBulbTemperature",
+            "RelativeHumidity",
+            "WindSpeed",
+            "MeanRadiantTemperature",
+            "UniversalThermalClimateIndex",
         ]:
             obj = getattr(self, attr)
             if isinstance(obj, HourlyContinuousCollection):
@@ -177,53 +182,95 @@ class ExternalComfort(BHoMObject):
     def from_dict(cls, dictionary: Dict[str, Any]) -> SimulationResult:
         """Create this object from a dictionary."""
 
-        sanitised_dict = bhom_dict_to_dict(dictionary)
-        sanitised_dict.pop("_t", None)
-
         # handle object conversions
-        if isinstance(sanitised_dict["simulation_result"], dict):
-            sanitised_dict["simulation_result"] = SimulationResult.from_dict(
-                sanitised_dict["simulation_result"]
+        if not isinstance(dictionary["SimulationResult"], SimulationResult):
+            dictionary["SimulationResult"] = SimulationResult.from_dict(
+                dictionary["SimulationResult"]
             )
-        if isinstance(sanitised_dict["typology"], dict):
-            sanitised_dict["typology"] = Typology.from_dict(sanitised_dict["typology"])
+
+        if not isinstance(dictionary["Typology"], Typology):
+            dictionary["Typology"] = Typology.from_dict(dictionary["Typology"])
 
         for calculated_result in [
-            "dry_bulb_temperature",
-            "relative_humidity",
-            "wind_speed",
-            "mean_radiant_temperature",
-            "universal_thermal_climate_index",
+            "DryBulbTemperature",
+            "RelativeHumidity",
+            "WindSpeed",
+            "MeanRadiantTemperature",
+            "UniversalThermalClimateIndex",
         ]:
-            if isinstance(sanitised_dict[calculated_result], dict):
-                if "type" in sanitised_dict[calculated_result].keys():
-                    sanitised_dict[
-                        calculated_result
-                    ] = HourlyContinuousCollection.from_dict(
-                        sanitised_dict[calculated_result]
-                    )
-            else:
-                sanitised_dict[calculated_result] = None
+            if dictionary[calculated_result] is None:
+                continue
+            if not isinstance(
+                dictionary[calculated_result], HourlyContinuousCollection
+            ):
+                dictionary[calculated_result] = HourlyContinuousCollection.from_dict(
+                    inf_str_to_inf_dtype(dictionary[calculated_result])
+                )
 
         return cls(
-            simulation_result=sanitised_dict["simulation_result"],
-            typology=sanitised_dict["typology"],
-            dry_bulb_temperature=sanitised_dict["dry_bulb_temperature"],
-            relative_humidity=sanitised_dict["relative_humidity"],
-            wind_speed=sanitised_dict["wind_speed"],
-            mean_radiant_temperature=sanitised_dict["mean_radiant_temperature"],
-            universal_thermal_climate_index=sanitised_dict[
-                "universal_thermal_climate_index"
-            ],
+            SimulationResult=dictionary["SimulationResult"],
+            Typology=dictionary["Typology"],
+            DryBulbTemperature=dictionary["DryBulbTemperature"],
+            RelativeHumidity=dictionary["RelativeHumidity"],
+            WindSpeed=dictionary["WindSpeed"],
+            MeanRadiantTemperature=dictionary["MeanRadiantTemperature"],
+            UniversalThermalClimateIndex=dictionary["UniversalThermalClimateIndex"],
         )
 
     @classmethod
     def from_json(cls, json_string: str) -> SimulationResult:
         """Create this object from a JSON string."""
 
-        dictionary = json.loads(json_string)
+        return cls.from_dict(json.loads(json_string))
 
-        return cls.from_dict(dictionary)
+    def to_dict(self) -> Dict[str, Any]:
+        """Return this object as it's dictionary equivalent."""
+        dictionary = {}
+        for k, v in self.__dict__.items():
+            if isinstance(getattr(self, k), FunctionType):
+                continue
+            dictionary[k] = v
+        dictionary["_t"] = self._t
+        return inf_dtype_to_inf_str(dictionary)
+
+    def to_json(self) -> str:
+        """Return this object as it's JSON string equivalent."""
+        return json.dumps(self.to_dict(), cls=BHoMEncoder)
+
+    @property
+    def simulation_result(self) -> SimulationResult:
+        """Handy accessor using proper Python naming convention."""
+        return self.SimulationResult
+
+    @property
+    def typology(self) -> Typology:
+        """Handy accessor using proper Python naming convention."""
+        return self.Typology
+
+    @property
+    def dry_bulb_temperature(self) -> HourlyContinuousCollection:
+        """Handy accessor using proper Python naming convention."""
+        return self.DryBulbTemperature
+
+    @property
+    def relative_humidity(self) -> HourlyContinuousCollection:
+        """Handy accessor using proper Python naming convention."""
+        return self.RelativeHumidity
+
+    @property
+    def wind_speed(self) -> HourlyContinuousCollection:
+        """Handy accessor using proper Python naming convention."""
+        return self.WindSpeed
+
+    @property
+    def mean_radiant_temperature(self) -> HourlyContinuousCollection:
+        """Handy accessor using proper Python naming convention."""
+        return self.MeanRadiantTemperature
+
+    @property
+    def universal_thermal_climate_index(self) -> HourlyContinuousCollection:
+        """Handy accessor using proper Python naming convention."""
+        return self.UniversalThermalClimateIndex
 
     def to_dataframe(
         self,
@@ -249,24 +296,24 @@ class ExternalComfort(BHoMObject):
 
         if include_epw:
             dfs.append(
-                epw_to_dataframe(self.simulation_result.epw, include_epw_additional)
+                epw_to_dataframe(self.SimulationResult.epw, include_epw_additional)
             )
 
         if include_simulation_results:
-            dfs.append(self.simulation_result.to_dataframe())
+            dfs.append(self.SimulationResult.to_dataframe())
 
         variables = [
-            "universal_thermal_climate_index",
-            "dry_bulb_temperature",
-            "relative_humidity",
-            "mean_radiant_temperature",
-            "wind_speed",
+            "UniversalThermalClimateIndex",
+            "DryBulbTemperature",
+            "RelativeHumidity",
+            "MeanRadiantTemperature",
+            "WindSpeed",
         ]
         for var in variables:
             s = collection_to_series(getattr(self, var))
             s.rename(
                 (
-                    f"{self.simulation_result.identifier} - {self.typology.name}",
+                    f"{self.SimulationResult.Identifier} - {self.Typology.Name}",
                     pascalcase(var),
                     s.name,
                 ),
@@ -293,7 +340,7 @@ class ExternalComfort(BHoMObject):
             List[HourlyContinuousCollection]: The lowest UTCI and highest UTCI temperatures for each hour of the year.
         """
 
-        epw = self.simulation_result.epw
+        epw = self.SimulationResult.epw
 
         dbt_evap, rh_evap = np.array(
             [
@@ -326,13 +373,13 @@ class ExternalComfort(BHoMObject):
         utcis = []
         for _dbt, _rh in dbt_rh_options:
             for _ws in [
-                self.wind_speed,
-                self.wind_speed.get_aligned_collection(0),
-                self.wind_speed * 1.1,
+                self.WindSpeed,
+                self.WindSpeed.get_aligned_collection(0),
+                self.WindSpeed * 1.1,
             ]:
                 for _mrt in [
-                    self.dry_bulb_temperature,
-                    self.mean_radiant_temperature,
+                    self.DryBulbTemperature,
+                    self.MeanRadiantTemperature,
                 ]:
                     utcis.append(
                         UTCI(
@@ -501,21 +548,20 @@ class ExternalComfort(BHoMObject):
         # check that inputs are right shape
         if isinstance(wind_speed_multiplier, (float, int)):
             wind_speed_multiplier = (
-                np.ones_like(self.typology.wind_speed_multiplier)
-                * wind_speed_multiplier
+                np.ones_like(self.Typology.WindSpeedMultiplier) * wind_speed_multiplier
             )
-        if len(wind_speed_multiplier) != len(self.typology.wind_speed_multiplier):
+        if len(wind_speed_multiplier) != len(self.Typology.WindSpeedMultiplier):
             raise ValueError(
                 "wind_speed_multiplier must be a float or an iterable with the same length as the number times in the original EC object."
             )
 
         if isinstance(evaporative_cooling_effectiveness, (float, int)):
             evaporative_cooling_effectiveness = (
-                np.ones_like(self.typology.evaporative_cooling_effect)
+                np.ones_like(self.Typology.EvaporativeCoolingEffect)
                 * evaporative_cooling_effectiveness
             )
         if len(evaporative_cooling_effectiveness) != len(
-            self.typology.evaporative_cooling_effect
+            self.Typology.EvaporativeCoolingEffect
         ):
             raise ValueError(
                 "evaporative_cooling_effectiveness must be a float or an iterable with the same length as the number times in the original EC object."
@@ -523,11 +569,11 @@ class ExternalComfort(BHoMObject):
 
         if isinstance(radiant_temperature_adjustment, (float, int)):
             radiant_temperature_adjustment = (
-                np.ones_like(self.typology.radiant_temperature_adjustment)
+                np.ones_like(self.Typology.RadiantTemperatureAdjustment)
                 * radiant_temperature_adjustment
             )
         if len(radiant_temperature_adjustment) != len(
-            self.typology.radiant_temperature_adjustment
+            self.Typology.RadiantTemperatureAdjustment
         ):
             raise ValueError(
                 "radiant_temperature_adjustment must be a float or an iterable with the same length as the number times in the original EC object."
@@ -537,31 +583,31 @@ class ExternalComfort(BHoMObject):
         radiant_temperature_adjustment = np.array(radiant_temperature_adjustment)
 
         # create title to give the adjusted EC typology
-        new_typology_name = f"{self.typology.name}"
+        new_typology_name = f"{self.Typology.Name}"
 
         # OVERHEAD SHELTER
         if add_overhead_shelter:
             new_typology_name += " + overhead shelter"
             # TODO - check that overhead is not already sheltered and raise error if it is
             overhead_shelter_obj = Shelter(
-                vertices=[[-3, -3, 3], [-3, 3, 3], [3, 3, 3], [3, -3, 3]],
-                wind_porosity=0,
-                radiation_porosity=0,
+                Vertices=[[-3, -3, 3], [-3, 3, 3], [3, 3, 3], [3, -3, 3]],
+                WindPorosity=0,
+                RadiationPorosity=0,
             )
-            shelters = self.typology.shelters + [overhead_shelter_obj]
+            shelters = self.Typology.Shelters + [overhead_shelter_obj]
         else:
-            shelters = self.typology.shelters
+            shelters = self.Typology.Shelters
 
         # AIR MOVEMENT
         if add_additional_air_movement:
-            if np.any(wind_speed_multiplier < self.typology.wind_speed_multiplier):
+            if np.any(wind_speed_multiplier < self.Typology.WindSpeedMultiplier):
                 raise ValueError(
                     'The original typology used has an elevated wind speed greater than that of the proposed "increase".'
                 )
             new_typology_name += " + additional air movement"
             if increase_shelter_wind_porosity:
                 if any(
-                    shelter.wind_porosity > adjusted_shelter_wind_porosity
+                    shelter.WindPorosity > adjusted_shelter_wind_porosity
                     for shelter in shelters
                 ):
                     raise ValueError(
@@ -570,18 +616,18 @@ class ExternalComfort(BHoMObject):
                 if add_overhead_shelter:
                     shelters = [
                         Shelter(
-                            vertices=shelter.vertices,
-                            radiation_porosity=shelter.radiation_porosity,
-                            wind_porosity=adjusted_shelter_wind_porosity,
+                            Vertices=shelter.Vertices,
+                            RadiationPorosity=shelter.RadiationPorosity,
+                            WindPorosity=adjusted_shelter_wind_porosity,
                         )
                         for shelter in shelters[:-1]
                     ] + [shelters[-1]]
                 else:
                     shelters = [
                         Shelter(
-                            vertices=shelter.vertices,
-                            radiation_porosity=shelter.radiation_porosity,
-                            wind_porosity=adjusted_shelter_wind_porosity,
+                            Vertices=shelter.Vertices,
+                            RadiationPorosity=shelter.RadiationPorosity,
+                            WindPorosity=adjusted_shelter_wind_porosity,
                         )
                         for shelter in shelters
                     ]
@@ -590,14 +636,14 @@ class ExternalComfort(BHoMObject):
         if add_misting:
             if np.any(
                 evaporative_cooling_effectiveness
-                < self.typology.evaporative_cooling_effect
+                < self.Typology.EvaporativeCoolingEffect
             ):
                 raise ValueError(
                     'The misting effect being applied is less effective than in the "baseline" it is being applied to.'
                 )
             new_typology_name += f" + evaporative cooling (~{np.mean(evaporative_cooling_effectiveness):.0%} effective)"
         else:
-            evaporative_cooling_effectiveness = self.typology.evaporative_cooling_effect
+            evaporative_cooling_effectiveness = self.Typology.EvaporativeCoolingEffect
 
         # RADIANT COOLING
         if add_radiant_cooling:
@@ -605,7 +651,7 @@ class ExternalComfort(BHoMObject):
                 raise ValueError("radiant_cooling_amount must be a negative value.")
             if np.any(
                 radiant_temperature_adjustment
-                > self.typology.radiant_temperature_adjustment
+                > self.Typology.RadiantTemperatureAdjustment
             ):
                 raise ValueError(
                     'The radiant_temperature_adjustment being applied is less than in the original "baseline" it is being applied to.'
@@ -615,28 +661,28 @@ class ExternalComfort(BHoMObject):
                 f" + radiant cooling ({np.mean(radiant_temperature_adjustment):0.0f}°C)"
             )
         else:
-            radiant_temperature_adjustment = self.typology.evaporative_cooling_effect
+            radiant_temperature_adjustment = self.Typology.EvaporativeCoolingEffect
 
         # create new typology
         new_typology = Typology(
-            name=new_typology_name,
-            shelters=shelters,
-            wind_speed_multiplier=wind_speed_multiplier,
-            evaporative_cooling_effect=evaporative_cooling_effectiveness,
-            radiant_temperature_adjustment=radiant_temperature_adjustment,
+            Name=new_typology_name,
+            Shelters=shelters,
+            WindSpeedMultiplier=wind_speed_multiplier,
+            EvaporativeCoolingEffect=evaporative_cooling_effectiveness,
+            RadiantTemperatureAdjustment=radiant_temperature_adjustment,
         )
 
         return ExternalComfort(
-            simulation_result=self.simulation_result,
-            typology=new_typology,
+            SimulationResult=self.SimulationResult,
+            Typology=new_typology,
         )
 
     @property
     def plot_title_string(self) -> str:
         """Return the description of this result suitable for use in plotting titles."""
-        if self.typology.sky_exposure() == 1:
-            return f"{location_to_string(self.simulation_result.epw.location)}\n{self.simulation_result.ground_material.to_lbt().display_name} ground, No shade\n{self.typology.name}"
-        return f"{location_to_string(self.simulation_result.epw.location)}\n{self.simulation_result.ground_material.to_lbt().display_name} ground, {self.simulation_result.shade_material.to_lbt().display_name} shade\n{self.typology.name}"
+        if self.Typology.sky_exposure() == 1:
+            return f"{location_to_string(self.SimulationResult.epw.location)}\n{self.SimulationResult.GroundMaterial.to_lbt().display_name} ground, No shade\n{self.Typology.Name}"
+        return f"{location_to_string(self.SimulationResult.epw.location)}\n{self.SimulationResult.GroundMaterial.to_lbt().display_name} ground, {self.SimulationResult.ShadeMaterial.to_lbt().display_name} shade\n{self.Typology.Name}"
 
     def plot_utci_day_comfort_metrics(self, month: int = 3, day: int = 21) -> Figure:
         """Plot a single day UTCI and composite components
@@ -650,11 +696,11 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_day_comfort_metrics(
-            collection_to_series(self.universal_thermal_climate_index),
-            collection_to_series(self.dry_bulb_temperature),
-            collection_to_series(self.mean_radiant_temperature),
-            collection_to_series(self.relative_humidity),
-            collection_to_series(self.wind_speed),
+            collection_to_series(self.UniversalThermalClimateIndex),
+            collection_to_series(self.DryBulbTemperature),
+            collection_to_series(self.MeanRadiantTemperature),
+            collection_to_series(self.RelativeHumidity),
+            collection_to_series(self.WindSpeed),
             month,
             day,
             self.plot_title_string,
@@ -668,7 +714,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_heatmap(
-            utci_collection=self.universal_thermal_climate_index,
+            utci_collection=self.UniversalThermalClimateIndex,
             ax=None,
             title=self.plot_title_string,
         )
@@ -681,7 +727,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_heatmap_histogram(
-            collection=self.universal_thermal_climate_index,
+            collection=self.UniversalThermalClimateIndex,
             title=self.plot_title_string,
         )
 
@@ -707,7 +753,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_distance_to_comfortable(
-            collection=self.universal_thermal_climate_index,
+            collection=self.UniversalThermalClimateIndex,
             title=self.plot_title_string,
             comfort_thresholds=comfort_thresholds,
             low_limit=low_limit,
@@ -726,7 +772,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return heatmap(
-            series=collection_to_series(self.dry_bulb_temperature),
+            series=collection_to_series(self.DryBulbTemperature),
             cmap=DBT_COLORMAP,
             title=self.plot_title_string,
             **kwargs,
@@ -744,7 +790,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return heatmap(
-            series=collection_to_series(self.relative_humidity),
+            series=collection_to_series(self.RelativeHumidity),
             cmap=RH_COLORMAP,
             title=self.plot_title_string,
             **kwargs,
@@ -762,7 +808,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return heatmap(
-            series=collection_to_series(self.wind_speed),
+            series=collection_to_series(self.WindSpeed),
             cmap=WS_COLORMAP,
             title=self.plot_title_string,
             **kwargs,
@@ -780,7 +826,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return heatmap(
-            series=collection_to_series(self.mean_radiant_temperature),
+            series=collection_to_series(self.MeanRadiantTemperature),
             cmap=MRT_COLORMAP,
             title=self.plot_title_string,
             **kwargs,

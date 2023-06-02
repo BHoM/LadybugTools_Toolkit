@@ -33,7 +33,7 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Compute
     {
-        [Description("Convert an EPW file into a time-indexed CSV version.")]
+        [Description("Convert an EPW file into a custom BHoM object.")]
         [Input("epwFile", "An EPW file.")]
         [Output("object", "A BHoM object wrapping a Ladybug EPW object.")]
         public static CustomObject EPWtoCustomObject(string epwFile)
@@ -54,6 +54,7 @@ namespace BH.Engine.LadybugTools
 
             string pythonScript = string.Join("\n", new List<string>()
             {
+                "import traceback",
                 "import json",
                 "from pathlib import Path",
                 "from ladybug.epw import EPW",
@@ -62,7 +63,7 @@ namespace BH.Engine.LadybugTools
                 "try:",
                 "    print(json.dumps(EPW(epw_path.as_posix()).to_dict()))",
                 "except Exception as exc:",
-                "    print(exc)",
+                "    print(traceback.format_exc())",
             });
 
             string output = env.RunPythonString(pythonScript).Trim();

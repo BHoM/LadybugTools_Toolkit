@@ -19,16 +19,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.datatype.temperature import WetBulbTemperature
-from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
+from ladybug.epw import (EPW, AnalysisPeriod, HourlyContinuousCollection,
+                         Location)
 from ladybug.psychrometrics import wet_bulb_from_db_rh
-from ladybug.skymodel import (
-    calc_horizontal_infrared,
-    calc_sky_temperature,
-    estimate_illuminance_from_irradiance,
-    get_extra_radiation,
-    zhang_huang_solar,
-    zhang_huang_solar_split,
-)
+from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
+                              estimate_illuminance_from_irradiance,
+                              get_extra_radiation, zhang_huang_solar,
+                              zhang_huang_solar_split)
 from ladybug.sunpath import Sunpath
 from matplotlib.colors import cnames, colorConverter, to_rgb
 from matplotlib.figure import Figure
@@ -1064,13 +1061,18 @@ def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
     """Calculate the parameters of an exponentiated Weibull continuous random variable.
     Returns:
         x (float):
-            Fixed shape parameter (1).
+            Shape parameter
+            scipy - mean
         k (float):
-            Shape parameter 1.
+            Shape parameter
+            scipy - variance
         λ (float):
             Scale parameter.
+            scipy - skew
         α (float):
-            Shape parameter 2.
+            Shape parameter.
+            CFD - scale, c
+            scipy - kurtosis
     """
     ws = np.array(wind_speeds)
     ws = ws[ws != 0]
@@ -1695,3 +1697,4 @@ def evaporative_cooling_effect_collection(
     ] = f"{evaporative_cooling_effectiveness:0.0%}"
 
     return [dbt, rh]
+

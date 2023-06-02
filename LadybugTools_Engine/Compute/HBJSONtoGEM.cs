@@ -57,6 +57,7 @@ namespace BH.Engine.LadybugTools
 
             string pythonScript = String.Join("\n", new List<string>()
             {
+                "import traceback",
                 "from honeybee.model import Model",
                 "from pathlib import Path",
                 "",
@@ -65,7 +66,7 @@ namespace BH.Engine.LadybugTools
                 $"    gem_file = model.to_gem(r\"{outputDirectory}\", name=\"{fileName}\")",
                 "    print(gem_file)",
                 "except Exception as exc:",
-                "    print(exc)",
+                "    print(traceback.format_exc())",
             });
 
             return env.RunPythonString(pythonScript).Trim();

@@ -39,19 +39,19 @@ def test_external_comfort_array():
         EXTERNAL_COMFORT_IDENTIFIER,
     ).run()
     typ = Typology(
-        name="example",
-        shelters=[Shelters.EAST.value],
-        evaporative_cooling_effect=np.where(
+        Name="example",
+        Shelters=[Shelters.EAST.value],
+        EvaporativeCoolingEffect=np.where(
             np.array(range(8760)) % 8 == 0, np.ones(8760) * 0.85, np.zeros(8760)
         ),
-        wind_speed_multiplier=np.where(
+        WindSpeedMultiplier=np.where(
             np.array(range(8760)) % 2 == 0, np.ones(8760) - 0.5, np.zeros(8760) + 1.5
         ),
-        radiant_temperature_adjustment=np.where(
+        RadiantTemperatureAdjustment=np.where(
             np.array(range(8760)) % 3 == 0, np.zeros(8760) - 1.2, np.zeros(8760)
         ),
     )
-    ext_comf = ExternalComfort(simulation_result=sim_res, typology=typ)
+    ext_comf = ExternalComfort(SimulationResult=sim_res, Typology=typ)
 
     assert (
         pytest.approx(ext_comf.universal_thermal_climate_index.average, rel=0.1)
