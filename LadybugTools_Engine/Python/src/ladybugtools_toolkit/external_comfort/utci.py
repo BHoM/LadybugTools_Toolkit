@@ -210,9 +210,18 @@ def utci(
             vel=np.clip(np.array(wind_speed), 0, 17),
         )
 
-    raise ValueError(
-        "No possible means of calculating UTCI from that combination of inputs was found."
-    )
+    try:
+        # assume numpy array
+        return utci_vectorised(
+            ta=air_temperature,
+            rh=relative_humidity,
+            tr=mean_radiant_temperature,
+            vel=np.clip(wind_speed, 0, 17),
+        )
+    except Exception as e:
+        raise ValueError(
+            "No possible means of calculating UTCI from that combination of inputs was found."
+        )
 
 
 def compare_utci_collections(
