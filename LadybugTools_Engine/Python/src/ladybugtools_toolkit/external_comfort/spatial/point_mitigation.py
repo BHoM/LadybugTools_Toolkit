@@ -61,7 +61,7 @@ class PointMitigation:
 
         # adjust values in sim res to contain values from point location
         sim_res = copy(simulation_result)
-        sim_res.unshaded_mean_radiant_temperature = self._point_mrt
+        sim_res.UnshadedMeanRadiantTemperature = self._point_mrt
         setattr(getattr(sim_res.epw, "wind_speed"), "values", self._point_ws.values)
         setattr(
             getattr(sim_res.epw, "relative_humidity"), "values", self._point_rh.values

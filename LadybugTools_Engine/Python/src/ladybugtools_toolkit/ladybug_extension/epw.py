@@ -119,6 +119,7 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
     saz = solar_azimuth(epw, sun_position)
     sazr = solar_azimuth_radians(epw, sun_position)
     ci = clearness_index(epw, sun_position)
+    st = epw.sky_temperature
 
     # Calculate additional psychrometric properties
     hr = humidity_ratio(epw)
@@ -136,6 +137,7 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
         saz,
         sazr,
         ci,
+        st,
         hr,
         ent,
         wbt,

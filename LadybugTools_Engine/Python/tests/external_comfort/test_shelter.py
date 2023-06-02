@@ -1,11 +1,18 @@
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.shelter import Shelter
+from ladybugtools_toolkit.external_comfort.shelter import Point3D, Shelter
 from ladybugtools_toolkit.ladybug_extension.epw import sun_position_list
 
 from .. import EPW_FILE
 
 EPW_OBJ = EPW(EPW_FILE)
-GENERIC_SHELTER = Shelter([[-10, -10, 5], [-10, 10, 5], [10, 10, 5], [10, -10, 5]])
+GENERIC_SHELTER = Shelter(
+    [
+        Point3D(-10, -10, 5),
+        Point3D(-10, 10, 5),
+        Point3D(10, 10, 5),
+        Point3D(10, -10, 5),
+    ]
+)
 SUNS = sun_position_list(EPW_OBJ)
 
 
@@ -39,10 +46,10 @@ def test_from_json_native():
 
 def test_set_porosity():
     """Test whether porosity setting works."""
-    assert GENERIC_SHELTER.wind_porosity == 0
-    assert GENERIC_SHELTER.radiation_porosity == 0
-    assert GENERIC_SHELTER.set_porosity(0.5).wind_porosity == 0.5
-    assert GENERIC_SHELTER.set_porosity(0.5).radiation_porosity == 0.5
+    assert GENERIC_SHELTER.WindPorosity == 0
+    assert GENERIC_SHELTER.RadiationPorosity == 0
+    assert GENERIC_SHELTER.set_porosity(0.5).WindPorosity == 0.5
+    assert GENERIC_SHELTER.set_porosity(0.5).RadiationPorosity == 0.5
 
 
 def test_sky_exposure():

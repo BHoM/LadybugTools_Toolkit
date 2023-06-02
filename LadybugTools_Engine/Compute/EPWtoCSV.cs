@@ -34,8 +34,9 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Convert an EPW file into a CSV and return the path to that CSV.")]
         [Input("epwFile", "An EPW file.")]
+        [Input("includeAdditional", "Add sun position and psychrometric properties to the resultant CSV.")]
         [Output("csv", "The generated CSV file.")]
-        public static string EPWtoCSV(string epwFile)
+        public static string EPWtoCSV(string epwFile, bool includeAdditional = false)
         {
             if (epwFile == null)
             {
@@ -50,20 +51,22 @@ namespace BH.Engine.LadybugTools
             }
 
             PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
+            string additionalProperties = includeAdditional ? "True" : "False";
 
             string pythonScript = string.Join("\n", new List<string>()
             {
+                "import traceback",
                 "from pathlib import Path",
                 "from ladybug.epw import EPW",
-                "from ladybugtools_toolkit.ladybug_extension.epw import to_dataframe",
+                "from ladybugtools_toolkit.ladybug_extension.epw import epw_to_dataframe",
                 "",
                 $"epw_path = Path(r'{epwFile}')",
                 "csv_path = epw_path.with_suffix('.csv')",
                 "try:",
-                "    to_dataframe(EPW(epw_path.as_posix())).to_csv(csv_path.as_posix())",
+                $"    epw_to_dataframe(EPW(epw_path.as_posix()), include_additional={additionalProperties}).to_csv(csv_path.as_posix())",
                 "    print(csv_path)",
                 "except Exception as exc:",
-                "    print(exc)",
+                "    print(traceback.format_exc())",
             });
 
             return env.RunPythonString(pythonScript).Trim();

@@ -41,7 +41,7 @@ namespace BH.oM.LadybugTools
         public virtual double RadiationPorosity { get; set; } = 0.0;
 
         [Description("The vertices of this shelter object.")]
-        public virtual List<List<double>> Vertices { get; set; } = new List<List<double>>();
+        public virtual List<Point> Vertices { get; set; } = new List<Point>();
     }
 }
 

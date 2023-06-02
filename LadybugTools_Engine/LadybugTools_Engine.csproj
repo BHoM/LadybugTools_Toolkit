@@ -128,8 +128,6 @@
     <Compile Include="Compute\EPWtoCustomObject.cs" />
     <Compile Include="Compute\SimulationResult.cs" />
     <Compile Include="Convert\FromHoneybeeSurface.cs" />
-    <Compile Include="Convert\FromShelter.cs" />
-    <Compile Include="Convert\ToShelter.cs" />
     <Compile Include="Convert\PascalCaseToSnakeCase.cs" />
     <Compile Include="Convert\SanitiseString.cs" />
     <Compile Include="Convert\SnakeCaseToPascalCase.cs" />

@@ -24,7 +24,7 @@ def test_solar_radiation():
         identifier=EXTERNAL_COMFORT_IDENTIFIER,
     )
     result = solar_radiation(model, EPW_OBJ)
-    assert result["unshaded_up_total_irradiance"].average == pytest.approx(203, rel=1.5)
+    assert result["UnshadedUpTotalIrradiance"].average == pytest.approx(203, rel=1.5)
 
 
 def test_surface_temperature():
@@ -35,7 +35,7 @@ def test_surface_temperature():
         identifier=EXTERNAL_COMFORT_IDENTIFIER,
     )
     result = surface_temperature(model, EPW_OBJ)
-    assert result["unshaded_up_temperature"].average == EPW_OBJ.sky_temperature.average
+    assert result["UnshadedUpTemperature"].average == EPW_OBJ.sky_temperature.average
 
 
 def test_longwave_radiant_temperature():
