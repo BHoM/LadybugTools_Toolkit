@@ -246,8 +246,10 @@ class Wind:
             [OpenMeteoVariable.WINDSPEED_10M, OpenMeteoVariable.WINDDIRECTION_10M],
         )
         df.dropna(how="any", axis=0, inplace=True)
-        wind_speeds = np.multiply(df["windspeed_10m (km/h)"], 0.277778).tolist()
-        wind_directions = df["winddirection_10m (°)"].tolist()
+        wind_speeds = np.multiply(
+            df["windspeed_10m (km/h)"].astype(float), 0.277778
+        ).tolist()
+        wind_directions = df["winddirection_10m (°)"].astype(float).tolist()
         if len(wind_speeds) == 0 or len(wind_directions) == 0:
             raise ValueError(
                 "OpenMeteo did not return any data for the given latitude, longitude and start/end dates."
