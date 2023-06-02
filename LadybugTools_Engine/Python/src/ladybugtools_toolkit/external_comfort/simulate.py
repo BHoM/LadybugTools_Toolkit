@@ -1181,6 +1181,7 @@ class SimulationResult(BHoMObject):
         n_steps: int = 8,
         analysis_period: AnalysisPeriod = None,
         comfort_limits: Tuple[float] = (9, 26),
+        evaporative_cooling_effectiveness: float = 0.7,
     ) -> pd.DataFrame:
         """Determine the relative impact of different measures to adjust UTCI.
 
@@ -1260,7 +1261,9 @@ class SimulationResult(BHoMObject):
             # create feasible ranges of values
             dbts, rhs = np.array(
                 [
-                    evaporative_cooling_effect(dbt, rh, evap_x * 0.7, atm)
+                    evaporative_cooling_effect(
+                        dbt, rh, evap_x * evaporative_cooling_effectiveness, atm
+                    )
                     for evap_x in evap_clg_proportions
                 ]
             ).T
