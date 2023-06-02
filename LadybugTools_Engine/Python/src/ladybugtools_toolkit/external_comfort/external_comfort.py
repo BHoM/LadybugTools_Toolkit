@@ -456,11 +456,11 @@ class ExternalComfort(BHoMObject):
         add_additional_air_movement: bool = True,
         add_misting: bool = True,
         add_radiant_cooling: bool = True,
-        evaporative_cooling_effectiveness: float = 0.7,
-        wind_speed_multiplier: float = 1,
+        evaporative_cooling_effectiveness: Union[float, Tuple[float]] = 0.7,
+        wind_speed_multiplier: Union[float, Tuple[float]] = 1,
         increase_shelter_wind_porosity: bool = True,
         adjusted_shelter_wind_porosity: float = 0.75,
-        radiant_temperature_adjustment: float = -5,
+        radiant_temperature_adjustment: Union[float, Tuple[float]] = 0,
     ) -> ExternalComfort:
         """Apply varying levels of additional measures to the insitu comfort model, taking into account any existing measures that are in place already.
 
@@ -498,6 +498,44 @@ class ExternalComfort(BHoMObject):
         ):
             return self
 
+        # check that inputs are right shape
+        if isinstance(wind_speed_multiplier, (float, int)):
+            wind_speed_multiplier = (
+                np.ones_like(self.typology.wind_speed_multiplier)
+                * wind_speed_multiplier
+            )
+        if len(wind_speed_multiplier) != len(self.typology.wind_speed_multiplier):
+            raise ValueError(
+                "wind_speed_multiplier must be a float or an iterable with the same length as the number times in the original EC object."
+            )
+
+        if isinstance(evaporative_cooling_effectiveness, (float, int)):
+            evaporative_cooling_effectiveness = (
+                np.ones_like(self.typology.evaporative_cooling_effect)
+                * evaporative_cooling_effectiveness
+            )
+        if len(evaporative_cooling_effectiveness) != len(
+            self.typology.evaporative_cooling_effect
+        ):
+            raise ValueError(
+                "evaporative_cooling_effectiveness must be a float or an iterable with the same length as the number times in the original EC object."
+            )
+
+        if isinstance(radiant_temperature_adjustment, (float, int)):
+            radiant_temperature_adjustment = (
+                np.ones_like(self.typology.radiant_temperature_adjustment)
+                * radiant_temperature_adjustment
+            )
+        if len(radiant_temperature_adjustment) != len(
+            self.typology.radiant_temperature_adjustment
+        ):
+            raise ValueError(
+                "radiant_temperature_adjustment must be a float or an iterable with the same length as the number times in the original EC object."
+            )
+        wind_speed_multiplier = np.array(wind_speed_multiplier)
+        evaporative_cooling_effectiveness = np.array(evaporative_cooling_effectiveness)
+        radiant_temperature_adjustment = np.array(radiant_temperature_adjustment)
+
         # create title to give the adjusted EC typology
         new_typology_name = f"{self.typology.name}"
 
@@ -516,15 +554,12 @@ class ExternalComfort(BHoMObject):
 
         # AIR MOVEMENT
         if add_additional_air_movement:
-            if self.typology.wind_speed_multiplier > wind_speed_multiplier:
+            if np.any(wind_speed_multiplier < self.typology.wind_speed_multiplier):
                 raise ValueError(
                     'The original typology used has an elevated wind speed greater than that of the proposed "increase".'
                 )
             new_typology_name += " + additional air movement"
             if increase_shelter_wind_porosity:
-                # CONSOLE_LOGGER.warning(
-                #     f"Adjustments being made to {len(shelters) - 1 if add_overhead_shelter else len(shelters)} in-situ shelters to enable additional air movement."
-                # )
                 if any(
                     shelter.wind_porosity > adjusted_shelter_wind_porosity
                     for shelter in shelters
@@ -553,47 +588,32 @@ class ExternalComfort(BHoMObject):
 
         # MISTING
         if add_misting:
-            if not isinstance(
-                self.typology.evaporative_cooling_effect,
-                (float, int),
-            ):
-                raise ValueError(
-                    'This method only works for typologies with a single "evaporative_cooling_effectiveness" value applied to all hours of the year.'
-                )
-            if (
-                self.typology.evaporative_cooling_effect
-                >= evaporative_cooling_effectiveness
+            if np.any(
+                evaporative_cooling_effectiveness
+                < self.typology.evaporative_cooling_effect
             ):
                 raise ValueError(
                     'The misting effect being applied is less effective than in the "baseline" it is being applied to.'
                 )
-            new_typology_name += " + misting"
+            new_typology_name += f" + evaporative cooling (~{np.mean(evaporative_cooling_effectiveness):.0%} effective)"
         else:
             evaporative_cooling_effectiveness = self.typology.evaporative_cooling_effect
 
         # RADIANT COOLING
         if add_radiant_cooling:
-            if not isinstance(
-                self.typology.radiant_temperature_adjustment,
-                (float, int),
-            ):
-                raise ValueError(
-                    'This method only works for typologies with a single "radiant_temperature_adjustment" value applied to all hours of the year.'
-                )
-            # if radiant_temperature_adjustment == 0:
-            #     CONSOLE_LOGGER.warning(
-            #         "Radiant temperature adjustment has been requested - but is set to 0."
-            #     )
-            if (
-                self.typology.radiant_temperature_adjustment
-                <= radiant_temperature_adjustment
+            if np.any(radiant_temperature_adjustment > 0):
+                raise ValueError("radiant_cooling_amount must be a negative value.")
+            if np.any(
+                radiant_temperature_adjustment
+                > self.typology.radiant_temperature_adjustment
             ):
                 raise ValueError(
                     'The radiant_temperature_adjustment being applied is less than in the original "baseline" it is being applied to.'
                 )
-            if radiant_temperature_adjustment > 0:
-                raise ValueError("radiant_cooling_amount must be a negative value.")
-            new_typology_name += " + radiant cooling"
+
+            new_typology_name += (
+                f" + radiant cooling ({np.mean(radiant_temperature_adjustment):0.0f}°C)"
+            )
         else:
             radiant_temperature_adjustment = self.typology.evaporative_cooling_effect
 
