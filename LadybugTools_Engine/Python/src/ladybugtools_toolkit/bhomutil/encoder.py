@@ -1,7 +1,7 @@
 import json
 import math
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -69,6 +69,19 @@ def keys_to_snakecase(dictionary: Dict[str, Any]) -> Dict[str, Any]:
         else v
         for k, v in dictionary.items()
     }
+
+
+def fix_bhom_jsondict(dictionary: Dict[str, Any]) -> List[Any]:
+    """Convert any values in a dict that in the form x: {"_t": "...", "_v": [...]} into x: [...]"""
+    if not isinstance(dictionary, dict):
+        return dictionary
+    if dictionary.keys() == {"_t", "_v"}:
+        dictionary = dictionary["_v"]
+        return dictionary
+    if dictionary.keys() == {"BHoM_Guid"}:
+        dictionary = None
+        return dictionary
+    return dictionary
 
 
 class BHoMEncoder(json.JSONEncoder):

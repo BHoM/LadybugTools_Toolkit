@@ -42,6 +42,7 @@ from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..bhomutil.encoder import (
     BHoMDecoder,
     BHoMEncoder,
+    fix_bhom_jsondict,
     inf_dtype_to_inf_str,
     inf_str_to_inf_dtype,
 )
@@ -923,7 +924,7 @@ class SimulationResult(BHoMObject):
             if isinstance(dictionary[simulated_result], dict):
                 if "type" in dictionary[simulated_result].keys():
                     dictionary[simulated_result] = HourlyContinuousCollection.from_dict(
-                        inf_str_to_inf_dtype(dictionary[simulated_result])
+                        dictionary[simulated_result]
                     )
                 else:
                     dictionary[simulated_result] = None
@@ -969,8 +970,9 @@ class SimulationResult(BHoMObject):
     def from_json(cls, json_string: str) -> SimulationResult:
         """Create this object from a JSON string."""
 
-        dictionary = json.loads(json_string, cls=BHoMDecoder)
-
+        dictionary = inf_str_to_inf_dtype(
+            json.loads(json_string, object_hook=fix_bhom_jsondict)
+        )
         return cls.from_dict(dictionary)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -981,11 +983,11 @@ class SimulationResult(BHoMObject):
                 continue
             dictionary[k] = v
         dictionary["_t"] = self._t
-        return inf_dtype_to_inf_str(dictionary)
+        return dictionary
 
     def to_json(self) -> str:
         """Return this object as it's JSON string equivalent."""
-        return json.dumps(self.to_dict(), cls=BHoMEncoder)
+        return json.dumps(inf_dtype_to_inf_str(self.to_dict()), cls=BHoMEncoder)
 
     @property
     def epw(self) -> EPW:
