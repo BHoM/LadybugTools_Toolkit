@@ -32,6 +32,7 @@ using System.IO;
 using BH.oM.LadybugTools;
 using BH.Engine.Serialiser;
 using Rhino.DocObjects;
+using BH.Engine.Geometry;
 
 namespace BH.Engine.LadybugTools
 {
@@ -53,6 +54,15 @@ namespace BH.Engine.LadybugTools
             {
                 BH.Engine.Base.Compute.RecordError("typology input cannot be null.");
                 return null;
+            }
+
+            foreach (Shelter shelter in typology.Shelters)
+            {
+                if (!BH.Engine.Geometry.Create.Polyline(shelter.Vertices).IsPlanar())
+                {
+                    BH.Engine.Base.Compute.RecordError("A shelter in this Typology is not planar.");
+                    return null;
+                }
             }
 
             // construct the base object

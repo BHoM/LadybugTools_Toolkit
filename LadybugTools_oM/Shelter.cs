@@ -30,7 +30,6 @@ using BH.oM.Base.Attributes;
 
 namespace BH.oM.LadybugTools
 {
-    [NoAutoConstructor]
     public class Shelter : BHoMObject
     {
         
