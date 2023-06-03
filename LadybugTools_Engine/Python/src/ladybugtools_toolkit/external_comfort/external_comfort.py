@@ -17,6 +17,7 @@ from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject
 from ..bhomutil.encoder import (
     BHoMEncoder,
+    fix_bhom_jsondict,
     inf_dtype_to_inf_str,
     inf_str_to_inf_dtype,
     pascalcase,
@@ -221,7 +222,10 @@ class ExternalComfort(BHoMObject):
     def from_json(cls, json_string: str) -> SimulationResult:
         """Create this object from a JSON string."""
 
-        return cls.from_dict(json.loads(json_string))
+        dictionary = inf_str_to_inf_dtype(
+            json.loads(json_string, object_hook=fix_bhom_jsondict)
+        )
+        return cls.from_dict(dictionary)
 
     def to_dict(self) -> Dict[str, Any]:
         """Return this object as it's dictionary equivalent."""
@@ -231,11 +235,11 @@ class ExternalComfort(BHoMObject):
                 continue
             dictionary[k] = v
         dictionary["_t"] = self._t
-        return inf_dtype_to_inf_str(dictionary)
+        return dictionary
 
     def to_json(self) -> str:
         """Return this object as it's JSON string equivalent."""
-        return json.dumps(self.to_dict(), cls=BHoMEncoder)
+        return json.dumps(inf_dtype_to_inf_str(self.to_dict()), cls=BHoMEncoder)
 
     @property
     def simulation_result(self) -> SimulationResult:
