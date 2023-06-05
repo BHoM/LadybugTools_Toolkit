@@ -4,32 +4,29 @@
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
- *                                           
- *                                                                              
- * The BHoM is free software: you can redistribute it and/or modify         
- * it under the terms of the GNU Lesser General Public License as published by  
- * the Free Software Foundation, either version 3.0 of the License, or          
- * (at your option) any later version.                                          
- *                                                                              
- * The BHoM is distributed in the hope that it will be useful,              
- * but WITHOUT ANY WARRANTY; without even the implied warranty of               
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                 
- * GNU Lesser General Public License for more details.                          
- *                                                                            
- * You should have received a copy of the GNU Lesser General Public License     
- * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
+ *
+ *
+ * The BHoM is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3.0 of the License, or
+ * (at your option) any later version.
+ *
+ * The BHoM is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
  */
 
 using BH.Engine.Python;
 using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
 using System.Linq;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Collections;
 using BH.oM.Python;
-using BH.Engine.Base;
 
 namespace BH.Engine.LadybugTools
 {
@@ -38,7 +35,7 @@ namespace BH.Engine.LadybugTools
         [Description("Returns a list of materials from the Python Materials list.")]
         [Input("filter", "Text to filter the resultant list by. Filter applies to the material identifier. Leave blank to return all materials.")]
         [Output("materials", "A list of materials.")]
-        [PreviousVersion("6.1", "BH.Engine.LadybugTools.Query.GetMaterial(BH.oM.LadybugTools.Materials)")]
+        [PreviousVersion("6.2", "BH.Engine.LadybugTools.Query.GetMaterial(BH.oM.LadybugTools.Materials)")]
         public static List<ILBTMaterial> GetMaterial(string filter = "")
         {
             if (string.IsNullOrEmpty(filter))
@@ -48,7 +45,7 @@ namespace BH.Engine.LadybugTools
 
             string pythonScript = string.Join("\n", new List<string>()
             {
-                
+
                 "import traceback",
                 "try:",
                 "    from ladybugtools_toolkit.external_comfort.material import Materials",
@@ -58,7 +55,7 @@ namespace BH.Engine.LadybugTools
                 "except Exception as exc:",
                 "    print(traceback.format_exc())",
             });
-            
+
             string result = env.RunPythonString(pythonScript).Trim();
 
             List<object> lbtMaterials = Serialiser.Convert.FromJsonArray(result).ToList();
