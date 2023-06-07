@@ -40,7 +40,6 @@ from tqdm import tqdm
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject, bhom_dict_to_dict
 from ..bhomutil.encoder import (
-    BHoMDecoder,
     BHoMEncoder,
     fix_bhom_jsondict,
     inf_dtype_to_inf_str,
