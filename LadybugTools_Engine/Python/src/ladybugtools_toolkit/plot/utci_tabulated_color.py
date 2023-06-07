@@ -127,7 +127,7 @@ def utci_tabulated_color(collection: HourlyContinuousCollection, hourSpan: int =
     df_series.index = hoursIndex
 
     # Style DF output
-    styled = df_series.style.background_gradient(axis=None, cmap=colormap, gmap=np_value, vmin=0, vmax=len(levels), text_color_threshold=1)
+    styled = df_series.style.background_gradient(axis=None, cmap=colormap, gmap=np_value, vmin=1, vmax=len(levels)-1, text_color_threshold=1)
 
     # Save to EXCEL / IMG
     if Excel_Path:
