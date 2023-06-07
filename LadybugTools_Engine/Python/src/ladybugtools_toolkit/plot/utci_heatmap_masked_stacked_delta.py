@@ -32,7 +32,7 @@ from matplotlib.colors import BoundaryNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def utci_heatmap_masked_stacked(
+def utci_heatmap_masked_stacked_delta(
     collection: HourlyContinuousCollection, title: str = None, show_legend: bool = True, 
     CustomizedUTCI: bool = False, IP: bool = True, masked: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod()
 ) -> Figure:
@@ -143,7 +143,7 @@ def utci_heatmap_masked_stacked(
         maskedCM.set_under(color='w', alpha=0)
         maskedNorm = BoundaryNorm([0,0.5],maskedCM.N)
     else:
-        maskedNorm = UTCI_B_IP if IP else UTCI_B
+        maskedNorm = UTCI_B_IP
         maskedCM = UTCI_C
         
     heatmap_ax.imshow(
@@ -174,7 +174,7 @@ def utci_heatmap_masked_stacked(
 
     # Add stacked bar chart
     series_adjust = to_series(collection.filter_by_analysis_period(analysis_period))
-    series_cut = pd.cut(series_adjust, bins=[-100] + (UTCI_E_IP if IP else UTCI_E + [200]), labels=UTCI_L)
+    series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_E_IP + [200] if IP else [-100] + UTCI_E + [200], labels=UTCI_L)
     sizes = (series_cut.value_counts() / len(series_adjust))[UTCI_L]
     colors = (
         [UTCI_C.get_under()] + UTCI_C.colors + [UTCI_C.get_over()]
@@ -214,7 +214,7 @@ def utci_heatmap_masked_stacked(
         plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
 
         # Add labels to the colorbar
-        levels = [-100] + (UTCI_E_IP if IP else UTCI_E) + [200]
+        levels = [-100] + UTCI_E_IP + [200] if IP else [-100] + UTCI_E + [200]
         for n, ((low, high), label) in enumerate(
             zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_L])
         ):

@@ -54,7 +54,7 @@ def utci_stacked_bar(
         )
     # Convert data to IP unit
     if collectionNames is None:
-        collectionNames = map(str, np.arange(len(collections))) 
+        collectionNames = list(map(str, np.arange(len(collections))))
 
     df = pd.DataFrame(index = UTCI_LOCAL_LABELS)
     df_cols = collectionNames
