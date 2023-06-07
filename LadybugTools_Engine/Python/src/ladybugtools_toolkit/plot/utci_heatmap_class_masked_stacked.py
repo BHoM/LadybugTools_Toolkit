@@ -31,8 +31,8 @@ def utci_heatmap_class_masked_stacked(
             A title to add to the resulting figure. Default is None.
         show_legend (bool, optional):
             Set to True to plot the legend. Default is True.
-        CustomizedUTCI (bool, optional):
-            Option to use customized UTCI legend. Default is False
+        UTCIColor (UTCIColorScheme, optional):
+            Option to use customized UTCI color scheme object. Default is None.
         IP (bool, optional):
             Convert data to IP unit. Default is True.
         masekd (bool, optional):

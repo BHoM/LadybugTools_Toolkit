@@ -11,11 +11,8 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from IPython.display import display
-from matplotlib.colors import ListedColormap
-from ladybugtools_toolkit.plot.colormaps_local import (
-    UTCI_LOCAL_COLORMAP,
-    UTCI_LOCAL_LEVELS,
-)
+from ladybugtools_toolkit.plot.colormaps_class import UTCIColorScheme
+from ladybugtools_toolkit.plot.colormaps_classes import UTCIColorSchemes
 
 
 
@@ -39,26 +36,21 @@ def dynamic_grouping(totalTimeCount: int, groupingSpan: int = 1) -> List[int]:
 
 
 
-def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collection_base: HourlyContinuousCollection, 
-                               hourSpan: int = 1, monthSpan: int = 1,
-                               colormap: ListedColormap = UTCI_LOCAL_COLORMAP, levels: list = UTCI_LOCAL_LEVELS,
-                               Excel_Path: str = None, Image_Path: str = None
+def utci_tabulated_class_color(collection: HourlyContinuousCollection, hourSpan: int = 1, monthSpan: int = 1,
+                         UTCIColor: UTCIColorScheme = UTCIColorSchemes.UTCI_Original,
+                         Excel_Path: str = None, Image_Path: str = None
 ) -> pd.io.formats.style.Styler: 
     """Create a styled dataframe showing the annual hourly UTCI values associated with custom Hour Span and Month Span.
 
     Args:
         collection (HourlyContinuousCollection):
             A ladybug HourlyContinuousCollection object.
-        collection_base (HourlyContinuousCollection):
-            A ladybug HourlyContinuousCollection object that represents the base value to compare to.
         hourSpan (int/[int], optional):
             A custom hour span for table. Can be a single value or a list of values. Default is 1.
         monthSpan (int/[int], optional):
             A custom month span for table. Can be a single value or a list of values. Default is 1.
-        colormap (ListedColormap, optional):
-            A colormap to be used for background color, Default is UTCI_LOCAL_COLORMAP
-        levels (list, optional):
-            A list of levels to be used for background color, Default is UTCI_LOCAL_LEVELS
+        UTCIColor (UTCIColorScheme, optional):
+            Option to use customized UTCI color scheme object. Default is None.
         Excel_Path (str, optional):
             Full path for the exported Excel File, Default is None
         Image_Path (str, optional):
@@ -68,6 +60,11 @@ def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collectio
     """
 
     # Check collection type
+    if not isinstance(UTCIColor, UTCIColorScheme):
+        raise ValueError(
+            "UTCIColor is not a UTCI color scheme object and cannot be used in this plot."
+        )
+        
     if not isinstance(collection.header.data_type, UniversalThermalClimateIndex):
         raise ValueError(
             "Collection data type is not UTCI and cannot be used in this plot."
@@ -91,28 +88,18 @@ def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collectio
 
     # Create value for background color control
     np_value = df_series.copy().to_numpy()
-    np_value = [list(pd.cut(row, bins=[-100] + levels + [200], labels=list(range(len(levels)+1)))) for row in np_value]
+    np_value = [list(pd.cut(row, bins=[-100] + UTCIColor.UTCI_LEVELS + [200], labels=list(range(len(UTCIColor.UTCI_LABELS))))) for row in np_value]
     np_value.reverse()
-
-    # Format for table dispaly
-    # Construct series
-    series_base = to_series(collection_base)
-    df_series_base = pd.DataFrame(series_base, columns=[series_base.name])
-    df_series_base.index = pd.to_datetime(df_series_base.index, format='%Y-%m-%d %H:%M:%S')
     
-    # Compute base on grouping
-    df_series_base = df_series_base.groupby([df_series_base.index.month, df_series_base.index.hour]).mean().unstack(level=0)
-    df_series_base = df_series_base.groupby(hour_group, axis=0).mean().groupby(month_group,axis=1).mean().reset_index(drop=True)
-
+    # Format for table dispaly
     # in this case calculate Celsius Average  
     celsiusAverage = df_series.to_numpy()
     fahrenheitAverage = (celsiusAverage * 1.8 + 32)
-    celsiusAverage_base = df_series_base.to_numpy()
-
+    
     df_series = df_series.astype('string')
     for i in range(len(h_groups)):
         for j in range(len(m_groups)):
-            df_series.at[i,j] = str(celsiusAverage[i][j].round(1)) + " | "  + str(fahrenheitAverage[i][j].round(1)) + " ("  + str((celsiusAverage_base[i][j]-celsiusAverage[i][j]).round(1)) + ")"
+            df_series.at[i,j] = str(celsiusAverage[i][j].round(1)) + " | "  + str(fahrenheitAverage[i][j].round(1))
     df_series = df_series.iloc[::-1]
 
     # Set index & column names
@@ -140,7 +127,7 @@ def utci_tabulated_color_delta(collection: HourlyContinuousCollection, collectio
     df_series.index = hoursIndex
 
     # Style DF output
-    styled = df_series.style.background_gradient(axis=None, cmap=colormap, gmap=np_value, vmin=1, vmax=len(levels)-1, text_color_threshold=1)
+    styled = df_series.style.background_gradient(axis=None, cmap=UTCIColor.UTCI_COLORMAP, gmap=np_value, vmin=1, vmax=len(UTCIColor.UTCI_LEVELS)-1, text_color_threshold=1)
 
     # Save to EXCEL / IMG
     if Excel_Path:
