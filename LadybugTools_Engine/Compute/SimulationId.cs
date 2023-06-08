@@ -34,7 +34,7 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A material object.")]
         [Input("shadeMaterial", "A material object.")]
         [Output("id", "A simulation ID.")]
-        public static string SimulationId(string epwFile, ILBTMaterial groundMaterial, ILBTMaterial shadeMaterial)
+        public static string SimulationId(string epwFile, ILadybugToolsMaterial groundMaterial, ILadybugToolsMaterial shadeMaterial)
         {
             if (epwFile == null)
             {
