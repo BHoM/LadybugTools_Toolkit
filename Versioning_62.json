@@ -1,0 +1,25 @@
+{
+  "Namespace": {
+    "ToNew": {
+    },
+    "ToOld": {
+    }
+  },
+  "Type": {
+    "ToNew": {
+    },
+    "ToOld": {
+    }
+  },
+  "Property": {
+    "ToNew": {
+    },
+    "ToOld": {
+    }
+  },
+  "MessageForDeleted": {
+    "BH.oM.LadybugTools.ILBTMaterial": "This class has been removed from the installer and has been replaced with an interface of the same name. You may need to manually update your code to be compatible with the new interface.",
+      },
+  "MessageForNoUpgrade": {
+  }
+}
