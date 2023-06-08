@@ -31,9 +31,9 @@ namespace BH.oM.LadybugTools
         [Description("The EPW file associated with this object.")]
         public virtual string EpwFile { get; set; } = string.Empty;
         [Description("The ground material used in the processing of this object.")]
-        public virtual ILBTMaterial GroundMaterial { get; set; } = new OpaqueMaterial();
+        public virtual ILadybugToolsMaterial GroundMaterial { get; set; } = new OpaqueMaterial();
         [Description("The shade material used in the processing of this object.")]
-        public virtual ILBTMaterial ShadeMaterial { get; set; } = new OpaqueMaterial();
+        public virtual ILadybugToolsMaterial ShadeMaterial { get; set; } = new OpaqueMaterial();
         [Description("The identifier used to distinguish existing results for this object.")]
         public virtual string Identifier { get; set; } = string.Empty;
 
