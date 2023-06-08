@@ -26,7 +26,7 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class OpaqueVegetationMaterial : ILBTMaterial
+    public class OpaqueVegetationMaterial : ILadybugToolsMaterial
     {
         [Description("The name of this EnergyMaterialVegetation.")]
         public virtual string Identifier { get; set; } = "Generic Opaque Vegetation Material";
