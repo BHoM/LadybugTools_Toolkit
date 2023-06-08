@@ -40,7 +40,7 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A ground material.")]
         [Input("shadeMaterial", "A shade material.")]
         [Output("simulationResult", "An simulation result object containing simulation results.")]
-        public static SimulationResult SimulationResult(string epwFile, ILBTMaterial groundMaterial, ILBTMaterial shadeMaterial)
+        public static SimulationResult SimulationResult(string epwFile, ILadybugToolsMaterial groundMaterial, ILadybugToolsMaterial shadeMaterial)
         {
             if (epwFile == null)
             {

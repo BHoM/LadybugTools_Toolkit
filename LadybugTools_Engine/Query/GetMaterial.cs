@@ -36,7 +36,7 @@ namespace BH.Engine.LadybugTools
         [Input("filter", "Text to filter the resultant list by. Filter applies to the material identifier. Leave blank to return all materials.")]
         [Output("materials", "A list of materials.")]
         [PreviousVersion("6.2", "BH.Engine.LadybugTools.Query.GetMaterial(BH.oM.LadybugTools.Materials)")]
-        public static List<ILBTMaterial> GetMaterial(string filter = "")
+        public static List<ILadybugToolsMaterial> GetMaterial(string filter = "")
         {
             if (string.IsNullOrEmpty(filter))
                 filter = "";
@@ -60,7 +60,7 @@ namespace BH.Engine.LadybugTools
 
             List<object> lbtMaterials = Serialiser.Convert.FromJsonArray(result).ToList();
 
-            return lbtMaterials.Select(m => m as ILBTMaterial).Where(m => m != null).ToList();
+            return lbtMaterials.Select(m => m as ILadybugToolsMaterial).Where(m => m != null).ToList();
         }
     }
 }

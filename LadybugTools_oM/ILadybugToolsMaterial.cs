@@ -26,7 +26,7 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public interface ILBTMaterial : IObject
+    public interface ILadybugToolsMaterial : IObject
     {
         [Description("The identifier for this material object.")]
         string Identifier { get; set; }
