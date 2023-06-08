@@ -10,43 +10,32 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datatype.temperature import UniversalThermalClimateIndex
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
-from ladybugtools_toolkit.plot.colormaps import (
-    UTCI_BOUNDARYNORM,
-    UTCI_BOUNDARYNORM_IP,
-    UTCI_COLORMAP,
-    UTCI_LABELS,
-    UTCI_LEVELS,
-    UTCI_LEVELS_IP,
-)
-from ladybugtools_toolkit.plot.colormaps_local import (
-    UTCI_LOCAL_BOUNDARYNORM,
-    UTCI_LOCAL_BOUNDARYNORM_IP,
-    UTCI_LOCAL_COLORMAP,
-    UTCI_LOCAL_LABELS,
-    UTCI_LOCAL_LEVELS,
-    UTCI_LOCAL_LEVELS_IP,
-)
+from ladybugtools_toolkit.plot.colormaps_class import UTCIColorScheme
+from ladybugtools_toolkit.plot.colormaps_classes import UTCIColorSchemes
 from matplotlib.colors import rgb2hex
 from matplotlib.figure import Figure
 from matplotlib.colors import BoundaryNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def utci_heatmap_masked_stacked_delta(
-    collection: HourlyContinuousCollection, title: str = None, show_legend: bool = True, 
-    CustomizedUTCI: bool = False, IP: bool = True, masked: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod()
+def utci_heatmap_class_masked_stacked_delta(
+    collection: HourlyContinuousCollection, collection_base: HourlyContinuousCollection,
+    title: str = None, show_legend: bool = True, UTCIColor: UTCIColorScheme = UTCIColorSchemes.UTCI_Original, 
+    IP: bool = True, masked: bool = True, analysis_period: AnalysisPeriod = AnalysisPeriod()
 ) -> Figure:
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
     Args:
         collection (HourlyContinuousCollection):
             A ladybug HourlyContinuousCollection object.
+        collection_base (HourlyContinuousCollection):
+            A ladybug HourlyContinuousCollection object that represents the base value to compare to.
         title (str, optional):
             A title to add to the resulting figure. Default is None.
         show_legend (bool, optional):
             Set to True to plot the legend. Default is True.
-        CustomizedUTCI (bool, optional):
-            Option to use customized UTCI legend. Default is False
+        UTCIColor (UTCIColorScheme, optional):
+            Option to use customized UTCI color scheme object. Default is None.
         IP (bool, optional):
             Convert data to IP unit. Default is True.
         masekd (bool, optional):
@@ -58,25 +47,17 @@ def utci_heatmap_masked_stacked_delta(
         Figure:
             A matplotlib Figure object.
     """
-    if CustomizedUTCI:
-        UTCI_B = UTCI_LOCAL_BOUNDARYNORM
-        UTCI_B_IP = UTCI_LOCAL_BOUNDARYNORM_IP
-        UTCI_C = UTCI_LOCAL_COLORMAP
-        UTCI_L = UTCI_LOCAL_LABELS
-        UTCI_E = UTCI_LOCAL_LEVELS
-        UTCI_E_IP = UTCI_LOCAL_LEVELS_IP
-    else:
-        UTCI_B = UTCI_BOUNDARYNORM
-        UTCI_B_IP = UTCI_BOUNDARYNORM_IP
-        UTCI_C = UTCI_COLORMAP
-        UTCI_L = UTCI_LABELS
-        UTCI_E = UTCI_LEVELS
-        UTCI_E_IP = UTCI_LEVELS_IP
+   
+    if not isinstance(UTCIColor, UTCIColorScheme):
+        raise ValueError(
+            "UTCIColor is not a UTCI color scheme object and cannot be used in this plot."
+        )
 
     if not isinstance(collection.header.data_type, UniversalThermalClimateIndex):
         raise ValueError(
             "Collection data type is not UTCI and cannot be used in this plot."
         )
+
     # Convert data to IP unit
     if IP:
         collection = collection.to_ip()
@@ -107,7 +88,7 @@ def utci_heatmap_masked_stacked_delta(
     # Add heatmap
     heatmap = heatmap_ax.imshow(
         data,
-        norm=UTCI_B_IP if IP else UTCI_B,
+        norm=UTCIColor.UTCI_BOUNDARYNORM_IP if IP else UTCIColor.UTCI_BOUNDARYNORM,
         extent=[
             mdates.date2num(series.index.min()),
             mdates.date2num(series.index.max()),
@@ -115,7 +96,7 @@ def utci_heatmap_masked_stacked_delta(
             726450,
         ],
         aspect="auto",
-        cmap=UTCI_C,
+        cmap=UTCIColor.UTCI_COLORMAP,
         interpolation="none",
     )
     mask = np.copy(data)
@@ -143,8 +124,8 @@ def utci_heatmap_masked_stacked_delta(
         maskedCM.set_under(color='w', alpha=0)
         maskedNorm = BoundaryNorm([0,0.5],maskedCM.N)
     else:
-        maskedNorm = UTCI_B_IP
-        maskedCM = UTCI_C
+        maskedNorm = UTCIColor.UTCI_BOUNDARYNORM_IP if IP else UTCIColor.UTCI_BOUNDARYNORM
+        maskedCM = UTCIColor.UTCI_COLORMAP
         
     heatmap_ax.imshow(
         mask, 
@@ -172,34 +153,47 @@ def utci_heatmap_masked_stacked_delta(
         heatmap_ax.spines[spine].set_color("k")
     heatmap_ax.grid(visible=True, which="major", color="k", linestyle=":", alpha=0.5)
 
-    # Add stacked bar chart
-    series_adjust = to_series(collection.filter_by_analysis_period(analysis_period))
-    series_cut = pd.cut(series_adjust, bins=[-100] + UTCI_E_IP + [200] if IP else [-100] + UTCI_E + [200], labels=UTCI_L)
-    sizes = (series_cut.value_counts() / len(series_adjust))[UTCI_L]
-    colors = (
-        [UTCI_C.get_under()] + UTCI_C.colors + [UTCI_C.get_over()]
-    )
 
-    catagories = sizes.index.tolist()
+    # Convert data
+    collections = [collection, collection_base]
+    collectionNames = ["current", "baseline"]
+    df = pd.DataFrame(index = UTCIColor.UTCI_LABELS)
+    df_cols = collectionNames
+    bottom = np.zeros(len(df_cols))
 
-    for i in range(len(sizes)):
-        # print(catagories[ind],cata)
-        val = sizes[i]*100
-        # if (val) != 0:
-            # print(catagories[i], ": ", val)
+    # Construct DF series
+    for i in range(len(df_cols)):
+        series_adjust = to_series(collections[i].filter_by_analysis_period(analysis_period))
+        series_cut = pd.cut(series_adjust, bins=[-100] + (UTCIColor.UTCI_LEVELS_IP if IP else UTCIColor.UTCI_LEVELS) + [200], labels=UTCIColor.UTCI_LABELS)
+        sizes = (series_cut.value_counts() / len(series_adjust))[UTCIColor.UTCI_LABELS]
+        colors = (
+            [UTCIColor.UTCI_COLORMAP.get_under()] + UTCIColor.UTCI_COLORMAP.colors + [UTCIColor.UTCI_COLORMAP.get_over()]
+        )
+        catagories = sizes.index.tolist()
+        df[df_cols[i]] = sizes.values
+    df = df.T.reset_index()
+    df = df.rename(columns={'index': 'Location'})
 
-        bar_ax.bar('Roof',val,bottom=np.sum(sizes[:i]*100, axis = 0),color=colors[i], label=catagories[i])
-        # ax.legend()
-        bar_ax.axis('off')
+    for i in range(len(df.columns)-1):
+        val = df[df.columns[i+1]]*100
+        bar_ax.bar(df_cols,val,bottom=bottom,color=colors[i], label=catagories[i])
+        bottom += val
 
+    bar_ax.spines['top'].set_visible(False)
+    bar_ax.spines['right'].set_visible(False)
+    bar_ax.set_xticklabels(df_cols, fontsize=8)
+    ylabel = np.arange(0,101,20)
+    bar_ax.set_yticklabels(ylabel, fontsize=8)
+    
     # Add text to each bar patch
     for i in range(len(bar_ax.patches)):
-        if round(sizes[i]*100,0) > 1:
+        # if round(df[df.columns[i+1]]*100,0) > 1:
+        if round(bar_ax.patches[i].get_height(), 0) > 1:
             # print(round(sizes[i]*100,0))
             bar_ax.text(bar_ax.patches[i].get_x() + bar_ax.patches[i].get_width() / 2,
             bar_ax.patches[i].get_height() / 2 + bar_ax.patches[i].get_y(),
-            str(int(round(sizes[i]*100,0))) + "%", ha = 'center',
-            color = 'k', size = 8)
+                str(int(round(bar_ax.patches[i].get_height(), 0))) + "%", ha = 'center',
+                color = 'k', size = 8)
 
     if show_legend:
         # Add colorbar legend and text descriptors for comfort bands
@@ -207,16 +201,16 @@ def utci_heatmap_masked_stacked_delta(
             heatmap,
             cax=colorbar_ax,
             orientation="horizontal",
-            ticks=UTCI_E_IP if IP else UTCI_E,
+            ticks=UTCIColor.UTCI_LEVELS_IP if IP else UTCIColor.UTCI_LEVELS,
             drawedges=False,
         )
         cb.outline.set_visible(False)
         plt.setp(plt.getp(cb.ax.axes, "xticklabels"), color="k")
 
         # Add labels to the colorbar
-        levels = [-100] + UTCI_E_IP + [200] if IP else [-100] + UTCI_E + [200]
+        levels = [-100] + (UTCIColor.UTCI_LEVELS_IP if IP else UTCIColor.UTCI_LEVELS) + [200]
         for n, ((low, high), label) in enumerate(
-            zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCI_L])
+            zip(*[[(x, y) for x, y in zip(levels[:-1], levels[1:])], UTCIColor.UTCI_LABELS])
         ):
             if n == 0:
                 ha = "right"
@@ -237,7 +231,8 @@ def utci_heatmap_masked_stacked_delta(
                 size="small",
                 # transform=colorbar_ax.transAxes,
             )
-    # Add title to the pie
+
+    # Add title
     if st_hour == 23:
         st_hour_title = str(st_hour - 12) + " am"
     elif st_hour < 12:
@@ -251,12 +246,14 @@ def utci_heatmap_masked_stacked_delta(
         end_hour_title = str(end_hour + 1) + "am"
     else:
         end_hour_title = str(end_hour - 12 + 1) + " pm"
-    bar_title = "Occupied hours:" + st_hour_title + " to " + end_hour_title
+    bar_title = "Design focus period: " + st_hour_title + " to " + end_hour_title
+
+    if (st_hour == 0 and end_hour == 23):
+        bar_title = "Design focus period: full day"
+    bar_ax.set_title(bar_title, color="k", size="small")
 
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)
-        bar_ax.set_title("Design focus period: full day", color="k", size="small")
-
     else:
         heatmap_ax.set_title(
             f"{series.name} - {title}",
@@ -266,5 +263,5 @@ def utci_heatmap_masked_stacked_delta(
             va="bottom",
             x=0,
         )
-        bar_ax.set_title(bar_title, color="k", size="small")
+
     return fig

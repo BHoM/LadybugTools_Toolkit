@@ -4,6 +4,9 @@ from ladybugtools_toolkit.external_comfort.shelter.shelter import Shelter
 from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
     SimulationResult,
 )
+from ladybugtools_toolkit.external_comfort.simulate.simulation_result_location import (
+    SimulationResultLocation,
+)
 from ladybugtools_toolkit.external_comfort.spatial.metric.spatial_metric import (
     SpatialMetric,
 )

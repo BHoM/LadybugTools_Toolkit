@@ -311,6 +311,8 @@
     <Content Include="Python\src\ladybugtools_toolkit\ladybug_extension\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\animation.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\annotate_imshow.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps_classes.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps_class.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps_local.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormaps.py" />
     <Content Include="Python\src\ladybugtools_toolkit\plot\colormap_sequential.py" />

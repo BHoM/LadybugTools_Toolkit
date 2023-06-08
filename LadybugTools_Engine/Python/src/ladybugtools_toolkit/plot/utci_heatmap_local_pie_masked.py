@@ -215,7 +215,7 @@ def utci_heatmap_local_pie_masked(
                 # transform=colorbar_ax.transAxes,
             )
 
-    # Add title to the pie
+    # Add title
     if st_hour == 23:
         st_hour_title = str(st_hour - 12) + " am"
     elif st_hour < 12:
@@ -229,12 +229,14 @@ def utci_heatmap_local_pie_masked(
         end_hour_title = str(end_hour + 1) + "am"
     else:
         end_hour_title = str(end_hour - 12 + 1) + " pm"
-    bar_title = "Occupied hours:" + st_hour_title + " to " + end_hour_title
+    bar_title = "Design focus period: " + st_hour_title + " to " + end_hour_title
+
+    if (st_hour == 0 and end_hour == 23):
+        bar_title = "Design focus period: full day"
+    bar_ax.set_title(bar_title, color="k", size="small")
 
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)
-        pie_ax.set_title("Design focus period: full day", color="k", size="small")
-
     else:
         heatmap_ax.set_title(
             f"{series.name} - {title}",
@@ -244,6 +246,5 @@ def utci_heatmap_local_pie_masked(
             va="bottom",
             x=0,
         )
-        pie_ax.set_title(pie_title, color="k", size="small", y=1.05)
 
     return fig

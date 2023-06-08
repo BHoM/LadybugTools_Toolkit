@@ -30,7 +30,7 @@ def utci_stacked_bar(
     """Create a histogram showing the annual hourly UTCI values associated with this Typology.
 
     Args:
-        collection (HourlyContinuousCollection):
+        collections (HourlyContinuousCollection):
             A ladybug HourlyContinuousCollection object.
         collectionNames (list(str), optional): 
             A list of collection names
@@ -118,26 +118,34 @@ def utci_stacked_bar(
                 str(int(round(bar_ax.patches[i].get_height(), 0))) + "%", ha = 'center',
                 color = 'k', size = 24)
     
-    # Add title to the pie
+    # Add title
     st_hour = analysis_period.st_hour
     end_hour = analysis_period.end_hour
     st_day = analysis_period.doys_int[0] - 1
     end_day = analysis_period.doys_int[-1] - 1
     end_count = 23 - end_hour - 1
     start_count = 23 - st_hour
-    if st_hour < 12:
+
+    if st_hour == 23:
+        st_hour_title = str(st_hour - 12) + " am"
+    elif st_hour < 12:
         st_hour_title = str(st_hour) + " am"
     else:
         st_hour_title = str(st_hour - 12) + " pm"
 
-    if end_hour < 12:
-        end_hour_title = str(end_hour) + "am"
+    if end_hour == 23:
+        end_hour_title = str(end_hour - 12 + 1) + "am"
+    elif end_hour < 12:
+        end_hour_title = str(end_hour + 1) + "am"
     else:
         end_hour_title = str(end_hour - 12 + 1) + " pm"
-    pie_title = "Design focus period:" + st_hour_title + " to " + end_hour_title
+    bar_title = "Design focus period: " + st_hour_title + " to " + end_hour_title
+
+    if (st_hour == 0 and end_hour == 23):
+        bar_title = "Design focus period: full day"
 
     if title is None:
-        bar_ax.set_title(pie_title, color="k", size=24, y=1.03)
+        bar_ax.set_title(bar_title, color="k", size=24, y=1.03)
     else:
         bar_ax.set_title(title, color="k", size=24, y=1.03)
 
