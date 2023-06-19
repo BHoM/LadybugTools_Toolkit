@@ -1,0 +1,48 @@
+"type": "OpaqueConstruction" | "WindowConstruction"
+def HB_Construction_Type_From_IES_Construction(IES_Construction)
+if IES_Construction.is_opaque == "true":
+    HB_Construction.type = "OpaqueConstruction"
+else:
+    HB_Construction.type = "WindowConstruction"
+
+# Needs to test first/last to get correct solar and thermal absorptance
+HB_materials = []
+for layer in IES_Construction.layers:
+    HB_material = {}
+    HB_material["conductivity"] = layer.material_properties.conductivity
+    HB_material["specific_heat"] = layer.material_properties.specific_heat_capacity
+    HB_material["density"] = layer.material_properties.density
+    HB_material["thermal_absorptance"] = layer.material_properties.conductivity
+
+
+{
+"display_name": IES_Construction.construction_name,
+"type": HB_Construction_Type_From_IES_Construction,
+"identifier": IES_Construction.construction_id,
+"materials": [
+  {
+    "conductivity": XXX,
+    "specific_heat": 1000.0,
+    "density": 1300.0,
+    "thermal_absorptance": 0.90000000000000002,
+    "thickness": 0.019,
+    "solar_absorptance": 0.69999999999999996,
+    "visible_absorptance": 0.69999999999999996,
+    "display_name": "IES External Rendering",
+    "roughness": "MediumRough",
+    "type": "EnergyMaterial",
+    "identifier": "IES External Rendering"
+  },
+  {
+    "conductivity": 1.1299999999999999,
+    "specific_heat": 1000.0,
+    "density": 2300.0,
+    "thermal_absorptance": 0.90000000000000002,
+    "thickness": 0.10000000000000001,
+    "solar_absorptance": 0.69999999999999996,
+    "visible_absorptance": 0.69999999999999996,
+    "display_name": "IES Concrete Block (Heavyweight) Outer",
+    "roughness": "MediumRough",
+    "type": "EnergyMaterial",
+    "identifier": "IES Concrete Block (Heavyweight) Outer"
+  },
