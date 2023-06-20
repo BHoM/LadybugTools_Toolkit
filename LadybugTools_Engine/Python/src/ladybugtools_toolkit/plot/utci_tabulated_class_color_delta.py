@@ -112,7 +112,7 @@ def utci_tabulated_class_color_delta(collection: HourlyContinuousCollection, col
     df_series = df_series.astype('string')
     for i in range(len(h_groups)):
         for j in range(len(m_groups)):
-            df_series.at[i,j] = str(celsiusAverage[i][j].round(1)) + " | "  + str(fahrenheitAverage[i][j].round(1)) + " ("  + str((celsiusAverage_base[i][j]-celsiusAverage[i][j]).round(1)) + ")"
+            df_series.at[i,j] = str(celsiusAverage[i][j].round(1)) + " | "  + str(fahrenheitAverage[i][j].round(1)) + " ("  + str((celsiusAverage[i][j]-celsiusAverage_base[i][j]).round(1)) + ")"
     df_series = df_series.iloc[::-1]
 
     # Set index & column names
