@@ -9,7 +9,7 @@ from ladybug.epw import EPW
 from matplotlib.figure import Figure
 
 from ..external_comfort.utci import (
-    UniversalThermalClimateIndex,
+    UTCICategories,
     feasible_comfort_category,
     utci_comfort_categories,
 )
@@ -131,7 +131,7 @@ def utci_feasibility(
             for nn, i in enumerate(colors):
                 ax.axhspan(ymin=nn - 0.5, ymax=nn + 0.5, fc=i, alpha=0.2, zorder=1)
         else:
-            for nn, i in enumerate(UniversalThermalClimateIndex):
+            for nn, i in enumerate(UTCICategories):
                 ax.axhspan(
                     ymin=nn - 0.5, ymax=nn + 0.5, fc=i.color, alpha=0.2, zorder=1
                 )
@@ -151,7 +151,7 @@ def utci_feasibility(
                 for col, lab in list(zip(*[["#3C65AF", "#2EB349", "#C31F25"], labels])):
                     handles.append(mpatches.Patch(color=col, label=lab, alpha=0.3))
             else:
-                for i in UniversalThermalClimateIndex:
+                for i in UTCICategories:
                     handles.append(
                         mpatches.Patch(color=i.color, label=i.value, alpha=0.3)
                     )

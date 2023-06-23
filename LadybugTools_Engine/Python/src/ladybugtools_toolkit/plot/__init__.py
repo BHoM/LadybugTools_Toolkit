@@ -18,9 +18,8 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.color import Colorset
 from ladybug.compass import Compass
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import (
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
-)
+from ladybug.datatype.temperature import \
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
 from ladybug.epw import EPW
 from ladybug.sunpath import Sunpath
 from ladybug.viewsphere import ViewSphere
@@ -28,44 +27,29 @@ from ladybug.wea import Wea
 from ladybug.windrose import WindRose
 from matplotlib.cm import ScalarMappable
 from matplotlib.collections import LineCollection, PatchCollection
-from matplotlib.colors import (
-    BoundaryNorm,
-    Colormap,
-    LinearSegmentedColormap,
-    ListedColormap,
-    Normalize,
-    is_color_like,
-    rgb2hex,
-)
+from matplotlib.colors import (BoundaryNorm, Colormap, LinearSegmentedColormap,
+                               ListedColormap, Normalize, is_color_like,
+                               rgb2hex)
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats
 from scipy.interpolate import make_interp_spline
-from scipy.stats import exponweib
+from scipy.stats import weibull_min
 
 from ..external_comfort import HBR_FOLDERS
-from ..external_comfort.utci import (
-    UniversalThermalClimateIndex,
-    categorise,
-    utci_comfort_categories,
-)
-from ..helpers import (
-    cardinality,
-    contrasting_color,
-    lighten_color,
-    rolling_window,
-    validate_timeseries,
-    weibull_pdf,
-    wind_direction_average,
-)
-from ..ladybug_extension.analysis_period import (
-    analysis_period_to_boolean,
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
-from ..ladybug_extension.datacollection import collection_to_array, collection_to_series
-from ..ladybug_extension.epw import EPW, degree_time, epw_to_dataframe, get_filename
+from ..external_comfort.utci import (UTCI_CATEGORIES, categorise,
+                                     utci_comfort_categories)
+from ..helpers import (cardinality, contrasting_color, lighten_color,
+                       rolling_window, validate_timeseries, weibull_pdf,
+                       wind_direction_average)
+from ..ladybug_extension.analysis_period import (analysis_period_to_boolean,
+                                                 analysis_period_to_datetimes,
+                                                 describe_analysis_period)
+from ..ladybug_extension.datacollection import (collection_to_array,
+                                                collection_to_series)
+from ..ladybug_extension.epw import (EPW, degree_time, epw_to_dataframe,
+                                     get_filename)
 from ..ladybug_extension.location import location_to_string
 from ..wind.direction_bins import DirectionBins
 
@@ -2283,7 +2267,7 @@ def wind_speed_frequency(
     wind_speeds: List[float],
     ax: plt.Axes = None,
     speed_bins: List[float] = None,
-    weibull: Union[bool, Tuple[float]] = False,
+    # weibull: Union[bool, Tuple[float]] = False,
     percentiles: Tuple[float] = (),
     **kwargs,
 ) -> plt.Axes:
@@ -2321,14 +2305,14 @@ def wind_speed_frequency(
 
     ax.hist(wind_speeds, bins=speed_bins, density=True, color="grey")
 
-    if weibull != False:
-        if isinstance(weibull, bool):
-            params = weibull_pdf(wind_speeds)
-        elif not isinstance(weibull, bool):
-            params = weibull
-        new_x = np.linspace(min(speed_bins), max(speed_bins), 100)
-        new_y = exponweib.pdf(new_x, *params)
-        ax.plot(new_x, new_y, label="Weibull (PDF)", c="k")
+    # if weibull != False:
+    #     if isinstance(weibull, bool):
+    #         params = weibull_pdf(wind_speeds)
+    #     elif not isinstance(weibull, bool):
+    #         params = weibull
+    #     new_x = np.linspace(min(speed_bins), max(speed_bins), 100)
+    #     new_y = weibull_min.pdf(new_x, *params)
+    #     ax.plot(new_x, new_y, label="Weibull (PDF)", c="k")
 
     low, _ = ax.get_ylim()
     for percentile in percentiles:
@@ -2439,6 +2423,7 @@ def wind_windrose(
 
     # TODO- replace standard windrose with this one, and implement kwargsm nd decouple from .
     title = kwargs.get("title", None)
+    legend_unit = title = kwargs.get("legend_unit", None)
     cmap = kwargs.get(
         "cmap",
         ListedColormap(
@@ -2459,6 +2444,8 @@ def wind_windrose(
             ]
         ),
     )
+    if isinstance(cmap, str):
+        cmap = plt.get_cmap(cmap)
 
     if ax is None:
         _, ax = plt.subplots(subplot_kw={"projection": "polar"})
@@ -2554,7 +2541,7 @@ def wind_windrose(
             borderaxespad=0,
             frameon=False,
             fontsize="small",
-            title="m/s",
+            title=legend_unit,
         )
 
     if title:
