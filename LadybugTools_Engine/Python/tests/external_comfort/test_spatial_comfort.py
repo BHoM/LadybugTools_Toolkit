@@ -9,7 +9,7 @@ import pytest
 from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 from ladybug.wea import AnalysisPeriod, Wea
-from ladybugtools_toolkit.external_comfort.external_comfort import SimulationResult
+from ladybugtools_toolkit.external_comfort._external_comfort import SimulationResult
 from ladybugtools_toolkit.external_comfort.material import Materials
 from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort import SpatialComfort
 from lbt_recipes.recipe import Recipe, RecipeSettings

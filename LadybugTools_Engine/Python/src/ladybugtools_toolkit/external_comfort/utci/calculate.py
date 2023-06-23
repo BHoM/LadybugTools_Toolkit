@@ -2,6 +2,7 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug_comfort.collection.utci import UTCI
@@ -308,27 +309,27 @@ def utci(
         HourlyContinuousCollection,
         pd.DataFrame,
         pd.Series,
-        np.typing.NDArray[np.float64],
+        npt.NDArray[np.float64],
     ],
     relative_humidity: Union[
         HourlyContinuousCollection,
         pd.DataFrame,
         pd.Series,
-        np.typing.NDArray[np.float64],
+        npt.NDArray[np.float64],
     ],
     mean_radiant_temperature: Union[
         HourlyContinuousCollection,
         pd.DataFrame,
         pd.Series,
-        np.typing.NDArray[np.float64],
+        npt.NDArray[np.float64],
     ],
     wind_speed: Union[
         HourlyContinuousCollection,
         pd.DataFrame,
         pd.Series,
-        np.typing.NDArray[np.float64],
+        npt.NDArray[np.float64],
     ],
-) -> Union[HourlyContinuousCollection, pd.DataFrame, np.typing.NDArray[np.float64]]:
+) -> Union[HourlyContinuousCollection, pd.DataFrame, npt.NDArray[np.float64]]:
     """Return the UTCI for the given inputs.
 
     Arguments:

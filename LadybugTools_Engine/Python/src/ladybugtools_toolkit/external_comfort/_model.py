@@ -261,6 +261,13 @@ def _create_shade_valence(
     return shades
 
 
+def single_layer_construction(
+    material: _EnergyMaterialOpaqueBase,
+) -> OpaqueConstruction:
+    """Create a single layer construction from a material."""
+    return OpaqueConstruction(material.identifier, [material])
+
+
 def create_model(
     ground_material: _EnergyMaterialOpaqueBase,
     shade_material: _EnergyMaterialOpaqueBase,
@@ -287,10 +294,8 @@ def create_model(
     displacement_vector = Vector3D(y=200)
 
     # convert materials to single-leayer constructions
-    ground_construction = OpaqueConstruction(
-        ground_material.identifier, [ground_material]
-    )
-    shade_construction = OpaqueConstruction(shade_material.identifier, [shade_material])
+    ground_construction = single_layer_construction(ground_material)
+    shade_construction = single_layer_construction(shade_material)
 
     # unshaded case
     ground_zone_unshaded = _create_ground_zone(ground_construction, shaded=False)

@@ -42,8 +42,7 @@ from ..simulate import SimulationResult
 from ..simulate import direct_sun_hours as dsh
 from ..simulate import working_directory
 from ..utci import describe_monthly as describe_utci_monthly
-from ..utci import utci
-from ..utci.calculate import utci_parallel
+from ..utci.calculate import utci, utci_parallel
 from .calculate import (
     rwdi_london_thermal_comfort_category,
     shaded_unshaded_interpolation,
