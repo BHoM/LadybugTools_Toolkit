@@ -35,7 +35,6 @@ namespace BH.Engine.LadybugTools
         [Input("epwFile", "An EPW file.")]
         [Input("includeAdditional", "Add sun position and psychrometric properties to the resultant CSV.")]
         [Output("csv", "The generated CSV file.")]
-        [PreviousVersion("6.2", "BH.Engine.LadybugTools.Compute.EPWtoCSV(System.String)")]
         public static string EPWtoCSV(string epwFile, bool includeAdditional = false)
         {
             if (epwFile == null)
