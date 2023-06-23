@@ -140,7 +140,7 @@ def describe_analysis_period(
     base_str = []
     for ap in analysis_period:
         base_str.append(
-            f"{calendar.month_abbr[ap.st_month]} {ap.st_day:02} to {calendar.month_abbr[ap.end_month]} {ap.end_day:02} between {ap.st_hour:02}:00 and {ap.end_hour + 1 if ap.end_hour != 23 else 0:02}:00"
+            f"{calendar.month_abbr[ap.st_month]} {ap.st_day:02} to {calendar.month_abbr[ap.end_month]} {ap.end_day:02} between {ap.st_hour:02}:00 and {ap.end_hour:02}:59"
         )
     base_str = ", and ".join(base_str)
 

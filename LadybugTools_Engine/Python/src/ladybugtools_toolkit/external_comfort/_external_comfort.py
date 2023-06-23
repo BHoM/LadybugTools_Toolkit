@@ -23,7 +23,6 @@ from ..bhomutil.encoder import (
     inf_str_to_inf_dtype,
     pascalcase,
 )
-from ..external_comfort.utci import categorise, utci_comfort_categories
 from ..helpers import evaporative_cooling_effect
 from ..ladybug_extension.analysis_period import (
     AnalysisPeriod,
@@ -46,9 +45,10 @@ from ..plot import (
 from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
 from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
+from ._simulate import SimulationResult
 from .shelter import Shelter
-from .simulate import SimulationResult
 from .typology import Typology
+from .utci import categorise, utci_comfort_categories
 from .utci.calculate import utci
 
 
