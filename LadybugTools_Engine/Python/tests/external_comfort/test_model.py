@@ -1,13 +1,13 @@
 import pytest
 from honeybee_energy.material.opaque import EnergyMaterial
-from ladybugtools_toolkit.external_comfort._model import (
+from ladybugtools_toolkit.external_comfort.material import Materials
+from ladybugtools_toolkit.external_comfort.model import (
     _create_ground_zone,
     _create_shade_valence,
     _create_shade_zone,
     create_model,
     single_layer_construction,
 )
-from ladybugtools_toolkit.external_comfort.material import Materials
 
 from .. import BASE_IDENTIFIER
 

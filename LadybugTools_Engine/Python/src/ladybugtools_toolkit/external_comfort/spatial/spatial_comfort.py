@@ -41,7 +41,6 @@ from ...plot.utci_heatmap_histogram import utci_heatmap_histogram
 from ..simulate import SimulationResult
 from ..simulate import direct_sun_hours as dsh
 from ..simulate import working_directory
-from ..utci import describe_monthly as describe_utci_monthly
 from ..utci.calculate import utci, utci_parallel
 from .calculate import (
     rwdi_london_thermal_comfort_category,
