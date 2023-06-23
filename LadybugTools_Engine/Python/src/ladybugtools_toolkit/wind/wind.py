@@ -778,14 +778,12 @@ class Wind(BHoMObject):
         """Calculate the parameters of an exponentiated Weibull continuous random variable.
 
         Returns:
-            x (float):
-                Fixed shape parameter (1).
             k (float):
-                Shape parameter 1.
-            λ (float):
+                Shape parameter
+            loc (float):
+                Location parameter.
+            c (float):
                 Scale parameter.
-            α (float):
-                Shape parameter 2.
         """
         return weibull_pdf(self.ws.tolist())
 
@@ -1236,10 +1234,12 @@ class Wind(BHoMObject):
         speed_bins = np.linspace(min(self.ws), np.quantile(self.ws, 0.999), 16)
         percentiles = (0.5, 0.95)
 
+        # TODO - reimplement weibull_pdf plotting curve
+
         return wind_speed_frequency(
             self.ws.tolist(),
             speed_bins=speed_bins,
-            weibull=self.weibull_pdf(),
+            # weibull=self.weibull_pdf(),
             percentiles=percentiles,
             title=title,
         )
