@@ -211,52 +211,91 @@ class Categories:
     def timeseries_summary_categorical(
         self,
         value: Union[pd.Series, HourlyContinuousCollection],
-        analysis_period: AnalysisPeriod = AnalysisPeriod(),
-    ) -> str:
-        """Return a table summary of the categories."""
+        mask: List[bool] = None,
+    ) -> pd.Categorical:
+        """Return a table summary of the categories.
+
+        Args:
+            value Union[pd.Series, HourlyContinuousCollection]:
+                The time-indexed dataset to summarise.
+            mask List[bool] (optional):
+                A mask to apply to the data before summarising.
+
+        Returns:
+            pd.Categorical:
+                A categorical series with the same index as the input.
+        """
 
         if isinstance(value, HourlyContinuousCollection):
             assert (
                 value.is_continuous and len(value) >= 8760
             ), "The collection given is not continuous, or annual-hourly"
-            series = collection_to_series(
-                value.filter_by_analysis_period(analysis_period)
-            )
+            series = collection_to_series(value)
         elif isinstance(value, pd.Series):
-            col = collection_from_series(value).filter_by_analysis_period(
-                analysis_period
-            )
-            series = series = collection_to_series(col)
+            assert isinstance(
+                value.index, pd.DatetimeIndex
+            ), "The index must be a DatetimeIndex"
+            series = value
         else:
             raise TypeError(f"{type(value)} cannot be passed to this function.")
+
+        if mask is not None:
+            assert len(mask) == len(
+                series
+            ), "The mask must be the same length as the data passed"
+            series = series[mask]
+        else:
+            mask = [True] * len(series)
 
         categorical = self.categorise(series)
         return categorical
 
-    def timeseries_summary_series(
+    def timeseries_summary_valuecounts(
         self,
         value: Union[pd.Series, HourlyContinuousCollection],
-        analysis_period: AnalysisPeriod = AnalysisPeriod(),
+        mask: List[bool] = None,
     ) -> pd.Series:
-        """Return a table summary of the categories."""
-        categorical = self.timeseries_summary_categorical(
-            value, analysis_period=analysis_period
-        )
+        """Return a table summary of the categories.
+
+        Args:
+            value Union[pd.Series, HourlyContinuousCollection]:
+                The time-indexed dataset to summarise.
+            mask List[bool] (optional):
+                A mask to apply to the data before summarising.
+
+        Returns:
+            pd.Series:
+                A series value counts of the categories.
+        """
+        categorical = self.timeseries_summary_categorical(value, mask=mask)
         return categorical.value_counts()
 
     def timeseries_summary_text(
         self,
         value: Union[pd.Series, HourlyContinuousCollection],
-        analysis_period: AnalysisPeriod = AnalysisPeriod(),
+        mask: List[bool] = None,
+        mask_name: str = None,
     ) -> str:
-        """Return a text summary of the categories."""
-        categorical = self.timeseries_summary_categorical(
-            value, analysis_period=analysis_period
-        )
+        """Return a text summary of the categories.
+
+        Args:
+            value Union[pd.Series, HourlyContinuousCollection]:
+                The time-indexed dataset to summarise.
+            mask List[bool] (optional):
+                A mask to apply to the data before summarising.
+            mask_name str (optional):
+                A name to give the mask in the text summary.
+
+        Returns:
+            str:
+                A text summary of the categories.
+        """
+        categorical = self.timeseries_summary_categorical(value, mask=mask)
         total_number_of_hours = len(categorical)
-        statements = [
-            f"For {describe_analysis_period(analysis_period, include_timestep=False)}, accounting for {total_number_of_hours} hours"
-        ]
+
+        statements = []
+        if mask_name is not None:
+            statements.append(f"For {mask_name}, over {total_number_of_hours} hours: ")
         for idx, val in categorical.value_counts().iteritems():
             statements.append(
                 f'The "{idx}" category is achieved for {val} hours ({val/total_number_of_hours:0.1%}).'
@@ -266,17 +305,29 @@ class Categories:
     def timeseries_summary_monthly(
         self,
         value: Union[pd.Series, HourlyContinuousCollection],
-        analysis_period: AnalysisPeriod = AnalysisPeriod(),
+        mask: List[bool] = None,
+        mask_name: str = None,
         density: bool = False,
     ) -> pd.DataFrame:
-        """Return a table summary of the categories."""
+        """Return a table summary of the categories.
 
-        categorical = self.timeseries_summary_categorical(
-            value, analysis_period=analysis_period
-        )
+        Args:
+            value Union[pd.Series, HourlyContinuousCollection]:
+                The time-indexed dataset to summarise.
+            mask List[bool] (optional):
+                A mask to apply to the data before summarising.
+            mask_name str (optional):
+                A name to give the mask in the summary.
+
+        Returns:
+            pd.DataFrame:
+                A table summary of the categories over each month
+        """
+
+        categorical = self.timeseries_summary_categorical(value, mask=mask)
         d = categorical.groupby(categorical.index.month).value_counts().unstack()
         d.index = [month_abbr[i] for i in d.index]
-        d.index.name = analysis_period
+        d.index.name = mask_name
         if density:
             d = d.div(d.sum(axis=1), axis=0)
         return d

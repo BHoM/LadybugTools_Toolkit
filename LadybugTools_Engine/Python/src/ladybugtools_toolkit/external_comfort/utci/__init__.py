@@ -95,19 +95,19 @@ UTCI_CATEGORIES = Categories(
 UTCI_SIMPLIFIED_CATEGORIES = Categories(
     categories=[
         Category(
-            name="Too cold",
+            name="Too cold (x < 9°C)",
             low_limit=-np.inf,
             high_limit=9,
             color="#3C65AF",
         ),
         Category(
-            name="Comfortable",
+            name="Comfortable (9°C ≤ x < 26°C)",
             low_limit=9,
             high_limit=26,
             color="#2EB349",
         ),
         Category(
-            name="Too hot",
+            name="Too hot (x ≥ 26°C)",
             low_limit=26,
             high_limit=np.inf,
             color="#C31F25",
@@ -116,68 +116,21 @@ UTCI_SIMPLIFIED_CATEGORIES = Categories(
 )
 
 
-def summarise_utci(
-    universal_thermal_climate_index: HourlyContinuousCollection,
-    analysis_period: AnalysisPeriod = None,
-    comfort_limits: Tuple[float] = (9, 26),
-    sep: str = "\n",
-) -> str:
-    """Create a text summary of the given UTCI data collection.
-
-    Args:
-        universal_thermal_climate_index (HourlyContinuousCollection):
-            A collection containing UTCI values.
-        analysis_period (AnalysisPeriod, optional):
-            An analysis period over which to summaries the collection. Defaults to None.
-        comfort_limits (Tuple[float], optional):
-            Bespoke comfort limits. Defaults to (9, 26).
-        sep: (str, optional):
-            A separator for each summary string. Default is "\n".
-
-    Returns:
-        str:
-            A text summary of the given UTCI data collection.
-    """
-    if analysis_period is None:
-        analysis_period = AnalysisPeriod()
-
-    ap_description = describe_analysis_period(analysis_period, include_timestep=False)
-
-    col = universal_thermal_climate_index.filter_by_analysis_period(analysis_period)
-    series = collection_to_series(col)
-
-    limit_low = min(comfort_limits)
-    limit_high = max(comfort_limits)
-
-    total_number_of_hours = len(series)
-    comfortable_hours = ((series >= limit_low) & (series <= limit_high)).sum()
-    hot_hours = (series > limit_high).sum()
-    cold_hours = (series < limit_low).sum()
-
-    statements = [
-        f"In this summary, thermal comfort or periods experiencing no thermal stress, are UTCI values of between {limit_low}°C and {limit_high}°C.",
-        f'For {ap_description}, "No thermal stress" is expected for {comfortable_hours} out of a possible {total_number_of_hours} hours ({comfortable_hours/total_number_of_hours:0.1%}).',
-        f'"Cold stress" is expected for {cold_hours} hours ({cold_hours/total_number_of_hours:0.1%}).',
-        f'"Heat stress" is expected for {hot_hours} hours ({hot_hours/total_number_of_hours:0.1%}).',
-    ]
-    return sep.join(statements)
-
-
-def compare_utci_collections(
-    baseline: HourlyContinuousCollection,
-    comparable: HourlyContinuousCollection,
-    analysis_period: AnalysisPeriod = None,
-    identifiers: Tuple[str] = ("UTCI collection 1", "UTCI collection 2"),
-) -> str:
+def summarise_utci_collections(
+    utci_collections: List[HourlyContinuousCollection],
+    categories: Categories = UTCI_CATEGORIES,
+    mask: List[bool] = None,
+    identifiers: Tuple[str] = None,
+) -> pd.DataFrame:
     """Create a summary of a comparison between a "baseline" UTCI collection, and another.
 
     Args:
-        baseline (HourlyContinuousCollection):
-            The baseline UTCI collection to compare against.
-        comparable (HourlyContinuousCollection):
-            The comparable UTCI collection to compare against the baseline.
-        analysis_period (AnalysisPeriod):
-            An optional analysis period to filter the data by. If None, then use AnalysisPeriod().
+        utci_collections (List[HourlyContinuousCollection]):
+            A list of UTCI collections to compare.
+        categories (Categories, optional):
+            A set of categories to use for the comparison.
+        mask (List[bool], optional):
+            An analysis period or list of boolean values to mask the collections by.
         identifiers (Tuple[str]):
             A tuple of identifiers for the baseline and comparable collections.
 
@@ -185,183 +138,25 @@ def compare_utci_collections(
         str:
             A text summary of the differences between the given UTCI data collection.
     """
-    if analysis_period is None:
-        analysis_period = AnalysisPeriod()
 
-    if len(identifiers) != 2:
-        raise ValueError('The number of "identifiers" must be equal to 2.')
+    # ensure each collection given it a UTCI collection
+    if len(utci_collections) < 2:
+        raise ValueError("At least two UTCI collections must be given to compare them.")
+    if identifiers is None:
+        identifiers = range(len(utci_collections))
+    else:
+        assert len(identifiers) == len(
+            utci_collections
+        ), "The identifiers given must be the same length as the collections given."
 
-    if len(baseline) != len(comparable):
-        raise ValueError(
-            "The collections given are not comparable as they are not the same length."
-        )
-
-    ap_description = describe_analysis_period(analysis_period)
-
-    col_baseline = baseline.filter_by_analysis_period(analysis_period)
-    series_baseline = collection_to_series(col_baseline)
-    col_comparable = comparable.filter_by_analysis_period(analysis_period)
-    series_comparable = collection_to_series(col_comparable)
-
-    # total_number_of_hours = len(col_baseline)
-    comfortable_hours_baseline = (
-        (series_baseline >= 9) & (series_baseline <= 26)
-    ).sum()
-    hot_hours_baseline = (series_baseline > 26).sum()
-    cold_hours_baseline = (series_baseline < 9).sum()
-
-    comfortable_hours_comparable = (
-        (series_comparable >= 9) & (series_comparable <= 26)
-    ).sum()
-    hot_hours_comparable = (series_comparable > 26).sum()
-    cold_hours_comparable = (series_comparable < 9).sum()
-
-    comfortable_hours_difference = (
-        comfortable_hours_baseline - comfortable_hours_comparable
+    return pd.concat(
+        [
+            categories.timeseries_summary_valuecounts(i, mask=mask)
+            for i in utci_collections
+        ],
+        axis=1,
+        names=identifiers,
     )
-    comfortable_hours_worse = comfortable_hours_difference > 0
-    hot_hours_difference = hot_hours_baseline - hot_hours_comparable
-    hot_hours_worse = hot_hours_difference < 0
-    cold_hours_difference = cold_hours_baseline - cold_hours_comparable
-    cold_hours_worse = cold_hours_difference < 0
-
-    statements = [
-        f'For {ap_description}, "{identifiers[1]}" is generally {"less" if comfortable_hours_worse else "more"} thermally comfortable than "{identifiers[0]}" (with a {abs(comfortable_hours_difference / comfortable_hours_baseline):0.1%} {"reduction" if comfortable_hours_worse else "increase"} in number of hours experiencing "no thermal stress").',
-        f'"{identifiers[1]}" demonstrates a {abs(hot_hours_difference / hot_hours_baseline):0.1%} {"increase" if hot_hours_worse else "decrease"} in number of hours experiencing some form of "heat stress" from "{identifiers[0]}"',
-        f'"{identifiers[1]}" demonstrates a {abs(cold_hours_difference / cold_hours_baseline):0.1%} {"increase" if cold_hours_worse else "decrease"} in number of hours experiencing some form of "cold stress" from "{identifiers[0]}".',
-    ]
-
-    return " ".join(statements)
-
-
-def describe_as_dataframe(
-    universal_thermal_climate_index: HourlyContinuousCollection,
-    analysis_periods: Tuple[AnalysisPeriod] = (AnalysisPeriod()),
-    comfort_limits: Tuple[float] = (9, 26),
-) -> pd.DataFrame:
-    """Create a text summary of the given UTCI data collection.
-
-    Args:
-        universal_thermal_climate_index (HourlyContinuousCollection):
-            A collection containing UTCI values.
-        analysis_periods (List[AnalysisPeriod], optional):
-            A list of analysis periods over which to summaries the collection. Defaults to AnalysisPeriod().
-        comfort_limits (Tuple[float], optional):
-            Bespoke comfort limits. Defaults to (9, 26).
-
-    Returns:
-        pd.DataFrame:
-            A table containing % comfort for given analysis periods.
-    """
-
-    # check analysis periods are iterable
-    try:
-        iter(analysis_periods)
-        if not all(isinstance(ap, AnalysisPeriod) for ap in analysis_periods):
-            raise TypeError("analysis_periods must be an iterable of AnalysisPeriods")
-    except TypeError:
-        print("analysis_periods is not iterable")
-
-    limit_low = min(comfort_limits)
-    limit_high = max(comfort_limits)
-
-    index = [
-        "Hours",
-        f"No Thermal Stress [{limit_low} ≤ x ≤ {limit_high}] (Hours)",
-        f"Heat Stress [x > {limit_high}] (Hours)",
-        f"Cold Stress [x < {limit_low}] (Hours)",
-        f"No Thermal Stress [{limit_low} ≤ x ≤ {limit_high}]",
-        f"Heat Stress [x > {limit_high}]",
-        f"Cold Stress [x < {limit_low}]",
-    ]
-
-    dfs = []
-    for analysis_period in analysis_periods:
-        col = universal_thermal_climate_index.filter_by_analysis_period(analysis_period)
-        series = collection_to_series(col)
-
-        total_number_of_hours = len(series)
-        comfortable_hours = ((series >= limit_low) & (series <= limit_high)).sum()
-        hot_hours = (series > limit_high).sum()
-        cold_hours = (series < limit_low).sum()
-        comfortable_hours_percentage = comfortable_hours / total_number_of_hours
-        hot_hours_percentage = hot_hours / total_number_of_hours
-        cold_hours_percentage = cold_hours / total_number_of_hours
-
-        dfs.append(
-            pd.Series(
-                name=analysis_period,
-                data=[
-                    total_number_of_hours,
-                    comfortable_hours,
-                    hot_hours,
-                    cold_hours,
-                    comfortable_hours_percentage,
-                    hot_hours_percentage,
-                    cold_hours_percentage,
-                ],
-                index=index,
-            )
-        )
-    df = pd.concat(dfs, axis=1)
-
-    return df.T
-
-
-def describe_monthly(
-    utci_collection: HourlyContinuousCollection,
-    density: bool = True,
-    simplified: bool = False,
-    comfort_limits: Tuple[float] = (9, 26),
-    analysis_periods: Union[List[AnalysisPeriod], AnalysisPeriod] = AnalysisPeriod(),
-) -> pd.DataFrame:
-    """Create a monthly table containing cold/comfortable/hot comfort categories for each month.
-
-    Args:
-        utci_collection (HourlyContinuousCollection):
-            A collection containing UTCI values.
-        density (bool, optional):
-            Whether to return the density of each category, or the value
-            counts. Defaults to True.
-        simplified (bool, optional):
-            Whether to return simplified categories. Defaults to False.
-        comfort_limits (Tuple[float], optional):
-            Bespoke comfort limits to apply to simplified categories.
-            Defaults to (9, 26).
-        analysis_periods (Union[List[AnalysisPeriod], AnalysisPeriod], optional):
-            A combinatorial set of analysis periods over which to summaries
-            the collection. Defaults to all hours in all months.
-    Returns:
-        pd.DataFrame:
-            A monthly table containing categorical comfort categories for
-            each month within analysis periods specified.
-    """
-
-    # create mask if necessary
-    if isinstance(analysis_periods, AnalysisPeriod):
-        analysis_periods = [analysis_periods]
-    annual_mask = analysis_period_to_boolean(analysis_periods)
-
-    # convert
-    utci_series = collection_to_series(utci_collection)[annual_mask]
-
-    # categorise
-    utci_categories = categorise(
-        utci_series, simplified=simplified, comfort_limits=comfort_limits
-    )
-
-    # groupby month
-    df_summary = (
-        utci_categories.groupby(utci_categories.index.month).value_counts().unstack()
-    )
-    if density:
-        df_summary = (
-            df_summary.T / utci_categories.groupby(utci_categories.index.month).count()
-        ).T
-
-    df_summary.index = [calendar.month_abbr[i] for i in df_summary.index]
-
-    return df_summary
 
 
 def utci_shade_benefit_categories(
