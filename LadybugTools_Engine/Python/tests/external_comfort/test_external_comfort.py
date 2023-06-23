@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
-from ladybugtools_toolkit.external_comfort.external_comfort import (
+from ladybugtools_toolkit.external_comfort._external_comfort import (
     ExternalComfort,
     SimulationResult,
 )

@@ -108,7 +108,7 @@ def simulation_id(
     epw_id = sanitise_string(Path(epw_file).stem)
     ground_material_id = sanitise_string(ground_material.identifier)
     shade_material_id = sanitise_string(shade_material.identifier)
-    id_string = f"NEW_{epw_id}__{ground_material_id}__{shade_material_id}"
+    id_string = f"{epw_id}__{ground_material_id}__{shade_material_id}"
     if len(id_string) > 100:
         warnings.warn(
             "simulation ID would be longer than 100 characters. In order for this to work it needs to be shortened. As such it might make things break if we try to reload this configuration in the future!"
@@ -399,6 +399,184 @@ def direct_sun_hours(
     return load_res(results_file).squeeze()
 
 
+def solar_radiation(model: Model, epw: EPW) -> Dict[str, HourlyContinuousCollection]:
+    """Run Radiance on a model and return the results.
+
+    Args:
+        model (Model): A honeybee Model to be run through Radiance.
+        epw (EPW): An EPW object to be used for the simulation.
+
+    Returns:
+        Dict[str, LBTHourlyContinuousCollection]: A dictionary containing radiation-related
+            collections.
+    """
+
+    wd = working_directory(model, True)
+
+    if solar_radiation_results_exist(model, epw):
+        CONSOLE_LOGGER.info(f"[{model.identifier}] - Loading annual irradiance")
+        return solar_radiation_results_load(model)
+
+    epw.save((wd / get_filename(epw, True)).as_posix())
+
+    CONSOLE_LOGGER.info(f"[{model.identifier}] - Simulating annual irradiance")
+    wea = Wea.from_epw_file(epw.file_path)
+
+    recipe = Recipe("annual-irradiance")
+    recipe.input_value_by_name("model", model)
+    recipe.input_value_by_name("wea", wea)
+    recipe.input_value_by_name("north", 0)
+    recipe.input_value_by_name("timestep", 1)
+    recipe.input_value_by_name("output-type", "solar")
+    recipe_settings = RecipeSettings()
+    _ = recipe.run(
+        settings=recipe_settings,
+        radiance_check=True,
+        queenbee_path=QUEENBEE_PATH,
+    )
+
+    return solar_radiation_results_load(model)
+
+
+def solar_radiation_results_load(model: Model) -> Dict[str, HourlyContinuousCollection]:
+    """Load results from the solar radiation simulation.
+
+    Args:
+        model (Model): A honeybee Model to be run through Radiance.
+
+    Returns:
+        Dict[str, HourlyContinuousCollection]: A dictionary containing
+            radiation-related collections.
+    """
+
+    wd = working_directory(model, False)
+
+    shaded_down_direct_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/SHADED_DOWN.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    shaded_up_direct_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/SHADED_UP.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    unshaded_down_direct_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/UNSHADED_DOWN.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    unshaded_up_direct_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/direct/UNSHADED_UP.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    shaded_down_total_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/SHADED_DOWN.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    shaded_up_total_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/SHADED_UP.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    unshaded_down_total_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/UNSHADED_DOWN.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    unshaded_up_total_irradiance = collection_from_series(
+        make_annual(load_ill(wd / "annual_irradiance/results/total/UNSHADED_UP.ill"))
+        .squeeze()
+        .fillna(0)
+        .rename("Irradiance (W/m2)")
+    )
+    shaded_down_diffuse_irradiance = (
+        shaded_down_total_irradiance - shaded_down_direct_irradiance
+    )
+    shaded_up_diffuse_irradiance = (
+        shaded_up_total_irradiance - shaded_up_direct_irradiance
+    )
+    unshaded_down_diffuse_irradiance = (
+        unshaded_down_total_irradiance - unshaded_down_direct_irradiance
+    )
+    unshaded_up_diffuse_irradiance = (
+        unshaded_up_total_irradiance - unshaded_up_direct_irradiance
+    )
+
+    # load data and return in dict
+    return {
+        "ShadedDownDiffuseIrradiance": shaded_down_diffuse_irradiance,
+        "ShadedDownDirectIrradiance": shaded_down_direct_irradiance,
+        "ShadedDownTotalIrradiance": shaded_down_total_irradiance,
+        "ShadedUpDiffuseIrradiance": shaded_up_diffuse_irradiance,
+        "ShadedUpDirectIrradiance": shaded_up_direct_irradiance,
+        "ShadedUpTotalIrradiance": shaded_up_total_irradiance,
+        "UnshadedDownDiffuseIrradiance": unshaded_down_diffuse_irradiance,
+        "UnshadedDownDirectIrradiance": unshaded_down_direct_irradiance,
+        "UnshadedDownTotalIrradiance": unshaded_down_total_irradiance,
+        "UnshadedUpDiffuseIrradiance": unshaded_up_diffuse_irradiance,
+        "UnshadedUpDirectIrradiance": unshaded_up_direct_irradiance,
+        "UnshadedUpTotalIrradiance": unshaded_up_total_irradiance,
+    }
+
+
+def solar_radiation_results_exist(model: Model, epw: EPW = None) -> bool:
+    """Check whether results already exist for this configuration of model and EPW.
+
+    Args:
+        model (Model): The model to check for.
+        epw (EPW): The EPW to check for.
+
+    Returns:
+        bool: True if the model and EPW have already been simulated, False otherwise.
+    """
+    wd = working_directory(model, False)
+
+    # Try to load existing HBJSON file and check that it matches
+    try:
+        existing_model = Model.from_hbjson(
+            (wd / "annual_irradiance" / f"{model.identifier}.hbjson").as_posix()
+        )
+        if not model_eq(model, existing_model, include_identifier=True):
+            return False
+    except (FileNotFoundError, AssertionError):
+        return False
+
+    # Try to load existing EPW file and check that it matches
+    try:
+        existing_epw = EPW((wd / get_filename(epw, True)).as_posix())
+        if not epw_eq(epw, existing_epw, include_header=True):
+            return False
+    except (FileNotFoundError, AssertionError):
+        return False
+
+    # Check that the output files necessary to reload exist
+    if not all(
+        [
+            (wd / "annual_irradiance/results/direct/SHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/direct/SHADED_UP.ill").exists(),
+            (wd / "annual_irradiance/results/direct/UNSHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/direct/UNSHADED_UP.ill").exists(),
+            (wd / "annual_irradiance/results/total/SHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/total/SHADED_UP.ill").exists(),
+            (wd / "annual_irradiance/results/total/UNSHADED_DOWN.ill").exists(),
+            (wd / "annual_irradiance/results/total/UNSHADED_UP.ill").exists(),
+        ]
+    ):
+        return False
+
+    return True
+
+
 @dataclass(init=True, repr=True, eq=True)
 class SimulationResult(BHoMObject):
     """An object containing all the results of a mean radiant temperature
@@ -508,28 +686,18 @@ class SimulationResult(BHoMObject):
 
         # handle objects
         for simulated_result in [
-            "ShadedDownDiffuseIrradiance",
-            "ShadedDownDirectIrradiance",
             "ShadedDownTemperature",
-            "ShadedDownTotalIrradiance",
-            "ShadedLongwaveMeanRadiantTemperature",
-            "ShadedMeanRadiantTemperature",
-            "ShadedShortwaveMeanRadiantTemperature",
-            "ShadedUpDiffuseIrradiance",
-            "ShadedUpDirectIrradiance",
             "ShadedUpTemperature",
-            "ShadedUpTotalIrradiance",
-            "UnshadedDownDiffuseIrradiance",
-            "UnshadedDownDirectIrradiance",
+            "ShadedRadiantTemperature",
+            "ShadedLongwaveMeanRadiantTemperatureDelta",
+            "ShadedShortwaveMeanRadiantTemperatureDelta",
+            "ShadedMeanRadiantTemperature",
             "UnshadedDownTemperature",
-            "UnshadedDownTotalIrradiance",
-            "UnshadedLongwaveMeanRadiantTemperature",
-            "UnshadedMeanRadiantTemperature",
-            "UnshadedShortwaveMeanRadiantTemperature",
-            "UnshadedUpDiffuseIrradiance",
-            "UnshadedUpDirectIrradiance",
             "UnshadedUpTemperature",
-            "UnshadedUpTotalIrradiance",
+            "UnshadedRadiantTemperature",
+            "UnshadedLongwaveMeanRadiantTemperatureDelta",
+            "UnshadedShortwaveMeanRadiantTemperatureDelta",
+            "UnshadedMeanRadiantTemperature",
         ]:
             if dictionary[simulated_result] is None:
                 continue
