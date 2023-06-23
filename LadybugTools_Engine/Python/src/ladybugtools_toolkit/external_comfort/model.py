@@ -5,9 +5,20 @@ from honeybee.boundarycondition import boundary_conditions
 from honeybee.facetype import face_types
 from honeybee.model import Face, Model, Room, Shade
 from honeybee_energy.construction.opaque import OpaqueConstruction
-from honeybee_energy.material.opaque import EnergyMaterial, _EnergyMaterialOpaqueBase
+from honeybee_energy.construction.shade import ShadeConstruction
+from honeybee_energy.material.opaque import _EnergyMaterialOpaqueBase
 from honeybee_radiance.sensorgrid import Sensor, SensorGrid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
+
+
+def opaque_to_shade(construction: OpaqueConstruction) -> ShadeConstruction:
+    """Convert an opaque construction to a shade construction."""
+    return ShadeConstruction(
+        identifier="{construction.identifier}_shade",
+        solar_reflectance=construction.outside_solar_reflectance,
+        visible_reflectance=construction.outside_visible_reflectance,
+        is_specular=False,
+    )
 
 
 def equality(model0: Model, model1: Model, include_identifier: bool = False) -> bool:
@@ -49,7 +60,7 @@ def equality(model0: Model, model1: Model, include_identifier: bool = False) -> 
 
 
 def _create_ground_zone(
-    material: _EnergyMaterialOpaqueBase,
+    construction: OpaqueConstruction,
     shaded: bool = False,
     width: float = 10,
     depth: float = 10,
@@ -59,8 +70,8 @@ def _create_ground_zone(
          per external comfort workflow.
 
     Args:
-        material (_EnergyMaterialOpaqueBase):
-            A surface material for the ground zones topmost face.
+        construction (OpaqueConstruction):
+            A construction for the ground zones topmost face.
         shaded (bool, optional):
             A flag to describe whether this zone is shaded. Defaults to False.
         width (float, optional):
@@ -85,52 +96,28 @@ def _create_ground_zone(
         origin=Point3D(-width / 2, -depth / 2, -thickness),
     )
 
-    ground_top_construction = OpaqueConstruction(
-        identifier="GROUND_CONSTRUCTION_TOP", materials=[material]
-    )
-    ground_top_modifier = ground_top_construction.to_radiance_solar_exterior()
-    ground_interface_construction = OpaqueConstruction(
-        identifier="GROUND_CONSTRUCTION_INTERFACE",
-        materials=[
-            EnergyMaterial(
-                identifier="GROUND_MATERIAL_INTERFACE",
-                roughness="Rough",
-                thickness=0.5,
-                conductivity=3.0,
-                density=1250.0,
-                specific_heat=1250.0,
-                thermal_absorptance=0.9,
-                solar_absorptance=0.7,
-                visible_absorptance=0.7,
-            )
-        ],
-    )
+    # apply ground construction
+    ground_zone.properties.energy.make_ground(construction)
 
     for face in ground_zone.faces:
         face: Face
         if face.normal.z == 1:
             face.identifier = f"GROUND_ZONE_UP_{shade_id}"
-            face.boundary_condition = boundary_conditions.outdoors
-            face.type = face_types.roof_ceiling
-            face.properties.energy.construction = ground_top_construction
-            face.properties.radiance.modifier = ground_top_modifier
+            face.properties.radiance.modifier = (
+                construction.to_radiance_solar_exterior()
+            )
         elif face.normal.z == -1:
             face.identifier = f"GROUND_ZONE_DOWN_{shade_id}"
-            face.boundary_condition = boundary_conditions.ground
-            face.type = face_types.floor
-            face.properties.energy.construction = ground_interface_construction
         else:
             face.identifier = (
                 f"GROUND_ZONE_{face.cardinal_direction().upper()}_{shade_id}"
             )
             face.boundary_condition = boundary_conditions.ground
-            face.type = face_types.wall
-            face.properties.energy.construction = ground_interface_construction
     return ground_zone
 
 
 def _create_shade_zone(
-    material: _EnergyMaterialOpaqueBase,
+    construction: OpaqueConstruction,
     width: float = 10,
     depth: float = 10,
     shade_height: float = 3,
@@ -140,8 +127,8 @@ def _create_shade_zone(
         per external comfort workflow.
 
     Args:
-        material (_EnergyMaterialOpaqueBase):
-            A surface material for the shade zones faces.
+        construction (OpaqueConstruction):
+            A construction for the shade zones faces.
         width (float, optional):
             The width (x-dimension) of the shaded zone. Defaults to 10m.
         depth (float, optional):
@@ -163,42 +150,55 @@ def _create_shade_zone(
         height=shade_thickness,
         origin=Point3D(-width / 2, -depth / 2, shade_height),
     )
+    # convert zone into a plenum
+    shade_zone.properties.energy.make_plenum(False, True, False)
+    # apply high infiltration rate
+    shade_zone.properties.energy.absolute_infiltration_ach(30)
 
-    shade_construction = OpaqueConstruction(
-        identifier="SHADE_CONSTRUCTION", materials=[material]
-    )
-    shade_modifier = shade_construction.to_radiance_solar_exterior()
     for face in shade_zone.faces:
         face: Face
         if face.normal.z == 1:
             face.identifier = "SHADE_ZONE_UP"
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.roof_ceiling
-            face.properties.energy.construction = shade_construction
-            face.properties.radiance.modifier = shade_modifier
+            face.properties.energy.construction = construction
+            face.properties.radiance.modifier = (
+                construction.to_radiance_solar_exterior()
+            )
         elif face.normal.z == -1:
             face.identifier = "SHADE_ZONE_DOWN"
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.floor
-            face.properties.energy.construction = shade_construction
-            face.properties.radiance.modifier = shade_modifier
+            face.properties.energy.construction = construction
+            face.properties.radiance.modifier = (
+                construction.to_radiance_solar_exterior()
+            )
         else:
             face.identifier = f"SHADE_ZONE_{face.cardinal_direction().upper()}"
             face.boundary_condition = boundary_conditions.outdoors
             face.type = face_types.wall
-            face.properties.energy.construction = shade_construction
-            face.properties.radiance.modifier = shade_modifier
+            face.properties.energy.construction = construction
+            face.properties.radiance.modifier = (
+                construction.to_radiance_solar_exterior()
+            )
+
+    # ventilate the shade zone
 
     return shade_zone
 
 
 def _create_shade_valence(
-    width: float = 10, depth: float = 10, shade_height: float = 3
+    construction: OpaqueConstruction,
+    width: float = 10,
+    depth: float = 10,
+    shade_height: float = 3,
 ) -> List[Shade]:
     """Create a massless shade around the location being assessed for a shaded
         external comfort condition.
 
     Args:
+        construction (OpaqueConstruction):
+            A construction for the shade faces.
         width (float, optional):
             The width (x-dimension) of the shaded zone. Defaults to 10m.
         depth (float, optional):
@@ -211,6 +211,8 @@ def _create_shade_valence(
             A list of shading surfaces.
     """
 
+    shade_construction = opaque_to_shade(construction)
+
     shades = [
         Shade.from_vertices(
             identifier="SHADE_VALENCE_SOUTH",
@@ -220,6 +222,7 @@ def _create_shade_valence(
                 Point3D(width / 2, -depth / 2, shade_height),
                 Point3D(width / 2, -depth / 2, 0),
             ],
+            is_detached=True,
         ),
         Shade.from_vertices(
             identifier="SHADE_VALENCE_NORTH",
@@ -229,6 +232,7 @@ def _create_shade_valence(
                 Point3D(-width / 2, depth / 2, shade_height),
                 Point3D(-width / 2, depth / 2, 0),
             ],
+            is_detached=True,
         ),
         Shade.from_vertices(
             identifier="SHADE_VALENCE_WEST",
@@ -238,6 +242,7 @@ def _create_shade_valence(
                 Point3D(-width / 2, -depth / 2, shade_height),
                 Point3D(-width / 2, -depth / 2, 0),
             ],
+            is_detached=True,
         ),
         Shade.from_vertices(
             identifier="SHADE_VALENCE_EAST",
@@ -247,10 +252,20 @@ def _create_shade_valence(
                 Point3D(width / 2, depth / 2, shade_height),
                 Point3D(width / 2, depth / 2, 0),
             ],
+            is_detached=True,
         ),
     ]
+    for shade in shades:
+        shade.properties.energy.construction = shade_construction
 
     return shades
+
+
+def single_layer_construction(
+    material: _EnergyMaterialOpaqueBase,
+) -> OpaqueConstruction:
+    """Create a single layer construction from a material."""
+    return OpaqueConstruction(material.identifier, [material])
 
 
 def create_model(
@@ -276,19 +291,23 @@ def create_model(
             A model containing geometry describing a shaded and unshaded
             external comfort scenario, including sensor grids for simulation.
     """
-    displacement_vector = Vector3D(y=500)
+    displacement_vector = Vector3D(y=200)
+
+    # convert materials to single-leayer constructions
+    ground_construction = single_layer_construction(ground_material)
+    shade_construction = single_layer_construction(shade_material)
 
     # unshaded case
-    ground_zone_unshaded = _create_ground_zone(ground_material, shaded=False)
+    ground_zone_unshaded = _create_ground_zone(ground_construction, shaded=False)
 
     # shaded case
-    ground_zone_shaded = _create_ground_zone(ground_material, shaded=True)
+    ground_zone_shaded = _create_ground_zone(ground_construction, shaded=True)
     ground_zone_shaded.move(displacement_vector)
 
-    shade_zone = _create_shade_zone(shade_material)
+    shade_zone = _create_shade_zone(shade_construction)
     shade_zone.move(displacement_vector)
 
-    shades = _create_shade_valence()
+    shades = _create_shade_valence(shade_construction)
     for shade in shades:
         shade.move(displacement_vector)
 
