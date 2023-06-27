@@ -7,8 +7,12 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybugtools_toolkit.external_comfort.simulate.simulation_result import (
     SimulationResult,
 )
+from ladybugtools_toolkit.external_comfort.simulate.simulation_result_location import (
+    SimulationResultLocation,
+)
 from ladybugtools_toolkit.external_comfort.thermal_comfort.utci.utci import utci
 from ladybugtools_toolkit.external_comfort.typology.typology import Typology
+from ladybugtools_toolkit.external_comfort.typology.typology_location import TypologyLocation
 from ladybugtools_toolkit.ladybug_extension.datacollection.to_series import to_series
 from ladybugtools_toolkit.ladybug_extension.epw.filename import filename
 from ladybugtools_toolkit.ladybug_extension.epw.to_dataframe import to_dataframe
@@ -45,7 +49,7 @@ class ExternalComfortLocation:
     """
 
     def __init__(
-        self, simulation_result: SimulationResult, typology: Typology
+        self, simulation_result: SimulationResultLocation, typology: TypologyLocation
     ) -> ExternalComfort:
 
         self.simulation_result = simulation_result

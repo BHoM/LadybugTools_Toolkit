@@ -155,6 +155,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\climate\climate_at_height.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\encoder\encoder.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\encoder\__init__.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\external_comfort_location.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\external_comfort.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\ground_temperature\energyplus_strings.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\ground_temperature\energyplus_strings_otherside_coefficient.py" />
@@ -236,6 +237,7 @@
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\utci\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\thermal_comfort\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\typologies.py" />
+    <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\typology_location.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\typology.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\typology\__init__.py" />
     <Content Include="Python\src\ladybugtools_toolkit\external_comfort\wind\target_wind_speed_collection.py" />

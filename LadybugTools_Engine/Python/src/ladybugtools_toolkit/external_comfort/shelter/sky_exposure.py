@@ -33,3 +33,28 @@ def sky_exposure(shelters: List[Shelter]) -> float:
     for shelter in shelters:
         exposure -= shelter.sky_blocked()
     return exposure
+
+
+def sky_exposure_location(shelters: List[Shelter], sky_view_factor: float = 1, sky_view_factor_shaded: float = 1) -> float:
+    """Determine the proportion of the sky visible beneath a set of shelters. Includes porosity of
+        shelters in the resultant value (e.g. fully enclosed by a single 50% porous shelter would
+        mean 50% sky exposure).
+
+    Args:
+        shelters (List[Shelter]):
+            Shelters that could block the sun.
+
+    Returns:
+        float:
+            The proportion of sky visible beneath shelters.
+    """
+
+    if any_shelters_overlap(shelters):
+        raise ValueError(
+            "Shelters overlap, so sky-exposure calculation cannot be completed."
+        )
+
+    exposure = sky_view_factor
+    if len(shelters) > 0:
+        exposure = sky_view_factor_shaded
+    return exposure
