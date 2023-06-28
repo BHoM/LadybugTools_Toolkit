@@ -31,7 +31,7 @@ from ladybugtools_toolkit.plot.utci_heatmap_histogram import utci_heatmap_histog
 from matplotlib.figure import Figure
 
 
-class ExternalComfortLocation:
+class ExternalComfort:
     """An object containing all inputs and results of an external MRT simulation and resultant
         thermal comfort metrics.
 

@@ -61,7 +61,10 @@ class TypologyLocation:
             raise ValueError("The wind_speed_adjustment factor cannot be less than 0.")
 
         self.name = name
+        self.sun_hours = sun_hours
         self.shelters = shelters
+        self.sky_view_factor = sky_view_factor
+        self.sky_view_factor_shaded = sky_view_factor_shaded
         self.evaporative_cooling_effectiveness = evaporative_cooling_effectiveness
         self.wind_speed_adjustment = wind_speed_adjustment
 
@@ -94,11 +97,11 @@ class TypologyLocation:
         }
         return d
 
-    def sky_exposure(self) -> float:
+    def sky_exposure_location(self, sky_view_factor: float = 1, sky_view_factor_shaded: float = 1) -> float:
         """Direct access to "sky_exposure" method for this typology object."""
         return sky_exposure_location(self.shelters, sky_view_factor, sky_view_factor_shaded)
 
-    def sun_exposure(self, epw: EPW, sun_hours: HourlyContinuousCollection) -> List[float]:
+    def sun_exposure_location(self, epw: EPW, sun_hours: HourlyContinuousCollection) -> List[float]:
         """Direct access to "sun_exposure" method for this typology object."""
         return sun_exposure_location(self.shelters, epw, sun_hours)
 
@@ -190,7 +193,7 @@ class TypologyLocation:
             else:
                 mrts.append(
                     np.interp(
-                        self.sky_exposure_location(sky_view_factor, sky_view_factor_shaded),
+                        self.sky_exposure_location(self.sky_view_factor, self.sky_view_factor_shaded),
                         [0, 1],
                         [shaded_mrt[hour], unshaded_mrt[hour]],
                     )

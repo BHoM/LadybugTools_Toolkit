@@ -64,7 +64,7 @@ class ExternalComfortLocation:
         )
         self.wind_speed = self.typology.wind_speed(self.simulation_result.epw)
         self.mean_radiant_temperature = self.typology.mean_radiant_temperature(
-            self.simulation_result
+            self.simulation_result, self.typology.sun_hours
         )
 
         # calculate UTCI
@@ -76,7 +76,7 @@ class ExternalComfortLocation:
         )
 
         # add typology descriptions to collection metadata
-        if typology.sky_exposure() != 1:
+        if typology.sky_exposure_location() != 1:
             typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.identifier} ground and {self.simulation_result.shade_material.identifier} shade)"
         else:
             typology_description = f"{self.typology.name} ({self.simulation_result.ground_material.identifier} ground)"
