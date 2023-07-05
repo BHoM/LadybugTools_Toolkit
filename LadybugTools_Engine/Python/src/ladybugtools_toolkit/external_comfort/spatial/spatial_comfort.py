@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import calendar
 import contextlib
+import copy
 import io
 import shutil
 import warnings
@@ -27,6 +28,7 @@ from ...bhomutil.bhom_object import BHoMObject
 from ...helpers import create_triangulation, sanitise_string
 from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from ...ladybug_extension.analysis_period import (
+    analysis_period_to_boolean,
     analysis_period_to_datetimes,
     describe_analysis_period,
 )
@@ -638,6 +640,115 @@ class SpatialComfort(BHoMObject):
             .idxmax()
             .to_pydatetime()
         )
+
+    def filter_by_point_indices(self, indices: List[int]) -> SpatialComfort:
+        """Filter this object by a list of indices."""
+
+        new_obj = copy.copy(self)
+
+        if new_obj._points is not None:
+            new_obj._points = new_obj.points.iloc[indices]
+
+        if new_obj._sky_view is not None:
+            new_obj._sky_view = new_obj.sky_view.iloc[indices]
+
+        if new_obj._dry_bulb_temperature_epw is not None:
+            new_obj._dry_bulb_temperature_epw = new_obj.dry_bulb_temperature_epw.iloc[
+                :, indices
+            ]
+
+        if new_obj._relative_humidity_epw is not None:
+            new_obj._relative_humidity_epw = new_obj.relative_humidity_epw.iloc[
+                :, indices
+            ]
+
+        if new_obj._wind_speed_epw is not None:
+            new_obj._wind_speed_epw = new_obj.wind_speed_epw.iloc[:, indices]
+
+        if new_obj._wind_direction_epw is not None:
+            new_obj._wind_direction_epw = new_obj.wind_direction_epw.iloc[:, indices]
+
+        if new_obj._irradiance_total is not None:
+            new_obj._irradiance_total = new_obj.irradiance_total.iloc[:, indices]
+
+        if new_obj._irradiance_direct is not None:
+            new_obj._irradiance_direct = new_obj.irradiance_direct.iloc[:, indices]
+
+        if new_obj._irradiance_diffuse is not None:
+            new_obj._irradiance_diffuse = new_obj.irradiance_diffuse.iloc[:, indices]
+
+        if new_obj._mean_radiant_temperature_interpolated is not None:
+            new_obj._mean_radiant_temperature_interpolated = (
+                new_obj.mean_radiant_temperature_interpolated.iloc[:, indices]
+            )
+
+        if new_obj._wind_speed_cfd is not None:
+            new_obj._wind_speed_cfd = new_obj.wind_speed_cfd.iloc[:, indices]
+
+        if new_obj._universal_thermal_climate_index_interpolated is not None:
+            new_obj._universal_thermal_climate_index_interpolated = (
+                new_obj.universal_thermal_climate_index_interpolated.iloc[:, indices]
+            )
+
+        if new_obj._universal_thermal_climate_index_calculated is not None:
+            new_obj._universal_thermal_climate_index_calculated = (
+                new_obj.universal_thermal_climate_index_calculated.iloc[:, indices]
+            )
+
+        return new_obj
+
+    def calculate_comfortable_time_percentage(
+        self,
+        analysis_periods: List[AnalysisPeriod] = [AnalysisPeriod()],
+        comfort_limits: Tuple[float] = (9, 26),
+    ) -> pd.Series:
+        """Calculate the proportion of comfortable hours for each point in the Spatial case."""
+        _bool = analysis_period_to_boolean(analysis_periods)
+        _filtered = self.universal_thermal_climate_index_calculated[_bool]
+        _iscomfortable = (_filtered >= min(comfort_limits)) & (
+            _filtered <= max(comfort_limits)
+        )
+        _hourscomfortable = _iscomfortable.sum(axis=0)
+        _percenttimecomfortable = _hourscomfortable / _bool.sum()
+        return _percenttimecomfortable
+
+    def calculate_comfortable_area_percentage(
+        self,
+        time_proportion_threshold: float,
+        analysis_periods: List[AnalysisPeriod] = [AnalysisPeriod()],
+        comfort_limits: Tuple[float] = (9, 26),
+    ) -> float:
+        if time_proportion_threshold >= 1 or time_proportion_threshold <= 0:
+            raise ValueError("Time proportion threshold must be between 0 and 1.")
+
+        _percenttimecomfortable = self.calculate_comfortable_time_percentage(
+            analysis_periods, comfort_limits
+        )
+        return (_percenttimecomfortable > time_proportion_threshold).sum() / len(
+            _percenttimecomfortable
+        )
+
+    def calculate_annual_comfortable_hours(
+        self,
+        analysis_period_groups: List[List[AnalysisPeriod]] = [[AnalysisPeriod()]],
+        comfort_limit_groups: List[Tuple[float]] = [(9, 26)],
+    ) -> float:
+        # given a list of analysis periods and comfort limits, calculate the annual comfortable hours across all AP hours within teh comofrt limts per AP period, in the year
+        if len(analysis_period_groups) != len(comfort_limit_groups):
+            raise ValueError(
+                "The number of analysis period groups must match the number of comfort limit groups."
+            )
+
+        annual_hours = 0
+        annual_comf_hours = 0
+        for ap_group, cl_group in zip(analysis_period_groups, comfort_limit_groups):
+            _bool = analysis_period_to_boolean(ap_group)
+            _filtered = self.universal_thermal_climate_index_calculated[_bool]
+            _iscomfortable = (_filtered >= min(cl_group)) & (_filtered <= max(cl_group))
+            _hourscomfortable = _iscomfortable.sum(axis=0)
+            annual_comf_hours += _hourscomfortable.sum()
+            annual_hours += _iscomfortable.shape[0] * _iscomfortable.shape[1]
+        return annual_comf_hours / annual_hours
 
     def london_comfort_category(
         self,
