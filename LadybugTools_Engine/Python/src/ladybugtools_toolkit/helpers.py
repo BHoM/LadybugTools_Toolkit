@@ -71,17 +71,64 @@ def contrasting_color(color: Any):
     return ".15" if relative_luminance(color) > 0.408 else "w"
 
 
-def default_analysis_periods() -> List[AnalysisPeriod]:
-    """A set of generic Analysis Period objects, keyed by name."""
+def default_time_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning times of day."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
         aps = [
-            AnalysisPeriod(),
             AnalysisPeriod(st_hour=5, end_hour=12, timestep=1),
             AnalysisPeriod(st_hour=13, end_hour=17, timestep=1),
             AnalysisPeriod(st_hour=18, end_hour=21, timestep=1),
             AnalysisPeriod(st_hour=22, end_hour=4, timestep=1),
         ]
+
+    return aps
+
+
+def default_month_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning month of year."""
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        aps = [
+            AnalysisPeriod(st_month=12, end_month=2),
+            AnalysisPeriod(st_month=3, end_month=5),
+            AnalysisPeriod(st_month=6, end_month=8),
+            AnalysisPeriod(st_month=9, end_month=11),
+        ]
+
+    return aps
+
+
+def default_combined_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning combinations of time of day and month of year."""
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        aps = []
+        for ap_time in default_time_analysis_periods():
+            for ap_month in default_month_analysis_periods():
+                aps.append(
+                    AnalysisPeriod(
+                        st_month=ap_month.st_month,
+                        end_month=ap_month.end_month,
+                        st_hour=ap_time.st_hour,
+                        end_hour=ap_time.end_hour,
+                        timestep=ap_time.timestep,
+                    )
+                )
+
+    return aps
+
+
+def default_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning all predefined combinations of time of ady and month of year."""
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        aps = [
+            AnalysisPeriod(),
+        ]
+        aps.extend(default_month_analysis_periods()),
+        aps.extend(default_time_analysis_periods()),
+        aps.extend(default_combined_analysis_periods())
 
     return aps
 
@@ -129,7 +176,15 @@ def animation(
 
 
 def chunks(lst: List[Any], chunksize: int):
-    """Partition an iterable into lists of lenght "chunksize"."""
+    """Partition an iterable into lists of length "chunksize".
+
+    Args:
+        lst (List[Any]): The list to be partitioned.
+        chunksize (int): The size of each partition.
+
+    Yields:
+        List[Any]: A list of length "chunksize".
+    """
     for i in range(0, len(lst), chunksize):
         yield lst[i : i + chunksize]
 
@@ -1250,7 +1305,7 @@ def weibull_directional(
 
 
 def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
-    """Estimatye the two-parameter Weibull parameters for a set of wind speeds.
+    """Estimate the two-parameter Weibull parameters for a set of wind speeds.
 
     Args:
         wind_speeds (List[float]):
@@ -1267,6 +1322,8 @@ def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
     ws = np.array(wind_speeds)
     ws = ws[ws != 0]
     ws = ws[~np.isnan(ws)]
+    if ws.min() < 0:
+        raise ValueError("Wind speeds must be positive.")
     try:
         return weibull_min.fit(ws)
     except ValueError as exc:
@@ -1461,7 +1518,6 @@ def radiation_at_height(
     reference_value: float,
     target_height: float,
     reference_height: float,
-    lapse_rate: float = 0.08,
     **kwargs,
 ) -> float:
     """Calculate the radiation at a given height, given a reference radiation
@@ -1933,17 +1989,9 @@ def time_binned_dataframe(
             A dataframe with the binned series.
     """
 
-    # create generic bins if none are given by user
-    if hour_bins is None:
-        hour_bins = [[i] for i in range(24)]
-    if month_bins is None:
-        month_bins = [[i] for i in range(1, 13)]
-
-    # create generic bin labels if none are given by user
-    if hour_bin_labels is None:
-        hour_bin_labels = [", ".join([f"{j:02d}:00" for j in i]) for i in hour_bins]
-    if month_bin_labels is None:
-        month_bin_labels = [", ".join([month_abbr[j] for j in i]) for i in month_bins]
+    # check that input dtype is pd.Series
+    if not isinstance(series, pd.Series):
+        raise ValueError("The series must be a pandas Series.")
 
     # check that the series is time indexed
     if not isinstance(series.index, pd.DatetimeIndex):
@@ -1960,6 +2008,22 @@ def time_binned_dataframe(
     # check that the series has at least 24-values per day
     if series.groupby(series.index.day_of_year).count().min() < 24:
         raise ValueError("The series must have at least 24-values per day")
+
+    # add name to series if no name found
+    if series.name is None:
+        series.name = "series"
+
+    # create generic bins if none are given by user
+    if hour_bins is None:
+        hour_bins = [[i] for i in range(24)]
+    if month_bins is None:
+        month_bins = [[i] for i in range(1, 13)]
+
+    # create generic bin labels if none are given by user
+    if hour_bin_labels is None:
+        hour_bin_labels = [", ".join([f"{j:02d}:00" for j in i]) for i in hour_bins]
+    if month_bin_labels is None:
+        month_bin_labels = [", ".join([month_abbr[j] for j in i]) for i in month_bins]
 
     # check that length of hour-bin-labels matches that of hour-bins
     if len(hour_bin_labels) != len(hour_bins):

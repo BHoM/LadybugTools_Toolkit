@@ -13,18 +13,13 @@ from ladybug_comfort.collection.utci import UTCI
 from ...categorical import Categories, Category
 from ...helpers import evaporative_cooling_effect
 from ...ladybug_extension.analysis_period import analysis_period_to_boolean
-from ...ladybug_extension.analysis_period import (
-    describe_analysis_period as describe_analysis_period,
-)
-from ...ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
-from ...ladybug_extension.epw import (
-    seasonality_from_day_length,
-    seasonality_from_month,
-    seasonality_from_temperature,
-)
+from ...ladybug_extension.analysis_period import \
+    describe_analysis_period as describe_analysis_period
+from ...ladybug_extension.datacollection import (collection_from_series,
+                                                 collection_to_series)
+from ...ladybug_extension.epw import (seasonality_from_day_length,
+                                      seasonality_from_month,
+                                      seasonality_from_temperature)
 from .process import met_rate_adjustment
 
 UTCI_CATEGORIES = Categories(
