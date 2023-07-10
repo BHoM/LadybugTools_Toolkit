@@ -2,9 +2,11 @@ from calendar import month_abbr
 from dataclasses import dataclass, field
 from typing import Any, List, Tuple, Union
 
+import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
 from ladybug.legend import Color
+from matplotlib import pyplot as plt
 from matplotlib.colors import (
     BoundaryNorm,
     Colormap,
@@ -13,9 +15,9 @@ from matplotlib.colors import (
     to_hex,
     to_rgba,
 )
+from matplotlib.legend import Legend
 
-from .ladybug_extension.analysis_period import AnalysisPeriod, describe_analysis_period
-from .ladybug_extension.datacollection import (
+from ..ladybug_extension.datacollection import (
     HourlyContinuousCollection,
     collection_from_series,
     collection_to_series,
@@ -23,7 +25,7 @@ from .ladybug_extension.datacollection import (
 
 
 @dataclass(init=True, repr=True, unsafe_hash=True)
-class Category:
+class CategoryBase:
     """Base class for categories."""
 
     low_limit: float = field(init=True, repr=False)
@@ -66,12 +68,12 @@ class Category:
     def description(self) -> str:
         """Return the description of the category."""
         if np.isinf(self.low_limit):
-            return f"{self.name} (<{self.high_limit}°C UTCI)"
+            return f"{self.name} (≤{self.high_limit})"
 
         if np.isinf(self.high_limit):
-            return f"{self.name} (>{self.low_limit}°C UTCI)"
+            return f"{self.name} (>{self.low_limit})"
 
-        return f"{self.name} ({self.low_limit}°C < x < {self.high_limit}°C UTCI)"
+        return f"{self.name} ({self.low_limit}<x≤{self.high_limit})"
 
     def lb_color(self) -> Color:
         """Return the ladybug color of the category."""
@@ -80,12 +82,25 @@ class Category:
 
 
 @dataclass(init=True, repr=True)
-class Categories:
-    """ "Base class for categorical binning of data."""
+class CategoriesBase:
+    """Base class for categorical binning of data.
 
-    categories: List[Category] = field(init=True, repr=True)
+    Args:
+        categories List[Category]:
+            A list of categories.
+        below Category (optional):
+            A category to use for values below the first category.
+        above Category (optional):
+            A category to use for values above the last category.
+    """
+
+    categories: List[CategoryBase] = field(init=True, repr=True)
+    below: CategoryBase = field(init=True, repr=False, default=None)
+    above: CategoryBase = field(init=True, repr=False, default=None)
 
     def __post_init__(self):
+        """Validation checks."""
+
         # check that the categories are sorted
         for i, category in enumerate(self.categories):
             if i == 0:
@@ -94,60 +109,181 @@ class Categories:
                 category.low_limit > self.categories[i - 1].low_limit
             ), "The categories must be sorted by increasing low limit."
 
+        # check that the categories are adjacent
+        for i, category in enumerate(self.categories):
+            if i == 0:
+                continue
+            assert (
+                category.low_limit == self.categories[i - 1].high_limit
+            ), "Adjacent categories must share an edge."
+
+        # check that if categories is only 1-long, below and above are not None
+        if len(self.categories) == 1:
+            assert (
+                self.below is not None
+            ), "If there is only one category, below must be supplied."
+            assert (
+                self.above is not None
+            ), "If there is only one category, above must be supplied."
+
+        if self.below is not None:
+            # check "below" category low-limit is -inf
+            if self.below.low_limit != -np.inf:
+                raise ValueError(
+                    'The lower limit of the "below" category must be -inf if a "below" category is supplied.'
+                )
+            # check that below category upper limit is less than or equal to the first category lower limit
+            if self.below.high_limit != self.categories[0].low_limit:
+                raise ValueError(
+                    "The upper limit of the 'below' category must be equal to the lower limit of the first category."
+                )
+
+        if self.above is not None:
+            # check "above" category high-limit is inf
+            if self.above.high_limit != np.inf:
+                raise ValueError(
+                    'The upper limit of the "above" category must be inf if an "above" category is supplied.'
+                )
+            # check that above category lower limit is greater than or equal to the last category upper limit
+            if self.above.low_limit != self.categories[-1].high_limit:
+                raise ValueError(
+                    "The lower limit of the 'above' category must be equal to the upper limit of the last category."
+                )
+
     @classmethod
     def from_bins(
-        cls, names: List[str], bins: List[float], colors: List[str]
-    ) -> "Categories":
-        """Create a Categorical object from a list of bins."""
-        assert len(names) >= 2, "There must be at least two categories."
+        cls,
+        names: List[str],
+        bins: List[float],
+        colors: List[str],
+        left_closed: bool = False,
+        right_closed: bool = False,
+    ) -> "CategoriesBase":
+        """Create a Categorical object from a list of bins.
+
+        Args:
+            names List[str]:
+                A list of names for the categories.
+            bins List[float]:
+                A list of bin edges. Should be sorted, unique and one longer than names.
+            colors List[str]:
+                A list of colors for the categories. Should be the same length as names.
+            left_closed bool (optional):
+                If True, the first category is considered the "below" category.
+            right_closed bool (optional):
+                If True, the last category is considered the "above" category.
+        """
+
+        # check that there is at least 2-values in bins
+        assert (
+            len(bins) >= 2
+        ), "There must be at least two values when defining a single bin."
+
+        # check that if bins is only 2-long, left_closed and right_closed are both False
+        if len(bins) == 2:
+            assert (
+                not left_closed
+            ), "If there is only one bin (defined by two values), left_closed must be False."
+            assert (
+                not right_closed
+            ), "If there is only one bin (defined by two values), right_closed must be False."
+
+        if (left_closed or right_closed) and len(names) == 2:
+            raise ValueError("Cannot have a closed end with only two categories.")
+
+        # check input lengths align
         assert (
             len(names) == len(bins) - 1
         ), "The length of names must be one less than the length of bins."
-        assert np.all(np.diff(bins) > 0), "The bins must be sorted."
-        assert len(np.unique(bins)) == len(bins), "The bins must be unique."
         assert len(names) == len(
             colors
         ), "The length of names must equal the length of colors."
 
+        # check input bin edges are all sorted
+        assert np.all(np.diff(bins) > 0), "The bins must be sorted."
+
+        # check input bin edges are all unique
+        assert len(np.unique(bins)) == len(bins), "The bins must be unique."
+
+        # create object
         categories = []
         for i, name in enumerate(names):
             categories.append(
-                Category(
+                CategoryBase(
                     name=name,
                     low_limit=bins[i],
                     high_limit=bins[i + 1],
                     color=colors[i],
                 )
             )
-        return cls(categories=categories)
+
+        # return the generic case, without above/below categories
+        if not left_closed and not right_closed:
+            return cls(categories=categories)
+
+        # return the case with a below category only
+        if left_closed and not right_closed:
+            return cls(categories=categories[1:], below=categories[0])
+
+        # return the case with a below category only
+        if right_closed and not left_closed:
+            return cls(categories=categories[:-1], below=categories[-1])
+
+        # return the case with both above and below categories
+        return cls(
+            categories=categories[1:-1],
+            below=categories[0],
+            above=categories[-1],
+        )
+
+    def categories_with_limits(self) -> List[CategoryBase]:
+        """Return the categories, including any upper/lower limits where included."""
+        _categories = self.categories
+        if self.below is not None:
+            _categories = [self.below] + _categories
+        if self.above is not None:
+            _categories = _categories + [self.above]
+        return _categories
 
     @property
     def colors(self) -> List[Any]:
-        """Return the colors of the categories."""
-        return [i.color for i in self.categories]
+        """Return the colors of the categories, including any upper/lower limits where included."""
+        return [i.color for i in self.categories_with_limits()]
 
     def _bin_edges(self) -> List[float]:
         """Return the limits of the categories."""
         return np.unique(
-            np.array([i.range for i in self.categories]).flatten()
+            np.array([i.range for i in self.categories_with_limits()]).flatten()
         ).tolist()
 
     @property
     def names(self) -> List[str]:
         """Return the names of the categories."""
-        return [i.name for i in self.categories]
+        return [i.name for i in self.categories_with_limits()]
+
+    @property
+    def descriptions(self) -> List[str]:
+        """Return the descriptions of the categories."""
+        return [i.description for i in self.categories_with_limits()]
 
     @property
     def cmap(self) -> Colormap:
         """Return the colormap associated with this categorical."""
-        cmap = ListedColormap(
-            colors=self.colors,
-            # name="Categorical",
-        )
-        cmap.set_under(self.categories[0].color)
-        cmap.set_over(self.categories[-1].color)
+        cmap = ListedColormap(colors=[i.color for i in self.categories])
+        if self.below is not None:
+            cmap.set_under(self.below.color)
+        if self.above is not None:
+            cmap.set_over(self.above.color)
 
         return cmap
+
+    def min(self) -> float:
+        """Return the minimum value of the categories."""
+        return self._bin_edges()[0]
+
+    def max(self) -> float:
+        """Return the maximum value of the categories."""
+        return self._bin_edges()[-1]
 
     @property
     def boundarynorm(self) -> BoundaryNorm:
@@ -331,3 +467,23 @@ class Categories:
         if density:
             d = d.div(d.sum(axis=1), axis=0)
         return d
+
+    def create_legend(self, ax: plt.Axes = None, **kwargs) -> Legend:
+        """Create a legend for the categories."""
+
+        if ax is None:
+            ax = plt.gca()
+
+        include_values = kwargs.pop("include_values", False)
+
+        handles = []
+        labels = []
+        for cat in self.categories_with_limits():
+            handles.append(
+                mpatches.Patch(
+                    facecolor=cat.color,
+                    edgecolor=None,
+                )
+            )
+            labels.append(cat.description if include_values else cat.name)
+        return ax.legend(handles=handles, labels=labels, **kwargs)

@@ -34,17 +34,9 @@ from ..ladybug_extension.datacollection import (
 )
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
-from ..plot import (
-    DBT_COLORMAP,
-    MRT_COLORMAP,
-    RH_COLORMAP,
-    WS_COLORMAP,
-    heatmap,
-    utci_heatmap,
-)
-from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
-from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
-from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
+from ..plot import heatmap, utci_heatmap, utci_heatmap_histogram
+from ..plot._utci import utci_day_comfort_metrics, utci_distance_to_comfortable
+from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMAP
 from .shelter import Shelter
 from .simulate import SimulationResult
 from .typology import Typology
@@ -747,7 +739,7 @@ class ExternalComfort(BHoMObject):
         """
 
         return utci_heatmap_histogram(
-            collection=self.UniversalThermalClimateIndex,
+            utci_collection=self.UniversalThermalClimateIndex,
             title=self.plot_title_string,
         )
 

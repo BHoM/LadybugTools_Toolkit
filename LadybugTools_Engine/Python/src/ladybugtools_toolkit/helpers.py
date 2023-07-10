@@ -126,8 +126,8 @@ def default_analysis_periods() -> List[AnalysisPeriod]:
         aps = [
             AnalysisPeriod(),
         ]
-        aps.extend(default_month_analysis_periods()),
-        aps.extend(default_time_analysis_periods()),
+        aps.extend(default_month_analysis_periods())
+        aps.extend(default_time_analysis_periods())
         aps.extend(default_combined_analysis_periods())
 
     return aps

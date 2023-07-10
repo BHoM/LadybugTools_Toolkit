@@ -10,110 +10,29 @@ from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
 
-from ...categorical import Categories, Category
+from ...categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoriesBase
 from ...helpers import evaporative_cooling_effect
 from ...ladybug_extension.analysis_period import analysis_period_to_boolean
-from ...ladybug_extension.analysis_period import \
-    describe_analysis_period as describe_analysis_period
-from ...ladybug_extension.datacollection import (collection_from_series,
-                                                 collection_to_series)
-from ...ladybug_extension.epw import (seasonality_from_day_length,
-                                      seasonality_from_month,
-                                      seasonality_from_temperature)
+from ...ladybug_extension.analysis_period import (
+    describe_analysis_period as describe_analysis_period,
+)
+from ...ladybug_extension.datacollection import (
+    collection_from_series,
+    collection_to_series,
+)
+from ...ladybug_extension.epw import (
+    seasonality_from_day_length,
+    seasonality_from_month,
+    seasonality_from_temperature,
+)
 from .process import met_rate_adjustment
 
-UTCI_CATEGORIES = Categories(
-    categories=[
-        Category(
-            name="Extreme cold stress",
-            low_limit=-np.inf,
-            high_limit=-40,
-            color="#0D104B",
-        ),
-        Category(
-            name="Very strong cold stress",
-            low_limit=-40,
-            high_limit=-27,
-            color="#262972",
-        ),
-        Category(
-            name="Strong cold stress",
-            low_limit=-27,
-            high_limit=-13,
-            color="#3452A4",
-        ),
-        Category(
-            name="Moderate cold stress",
-            low_limit=-13,
-            high_limit=0,
-            color="#3C65AF",
-        ),
-        Category(
-            name="Slight cold stress",
-            low_limit=0,
-            high_limit=9,
-            color="#37BCED",
-        ),
-        Category(
-            name="No thermal stress",
-            low_limit=9,
-            high_limit=26,
-            color="#2EB349",
-        ),
-        Category(
-            name="Moderate heat stress",
-            low_limit=26,
-            high_limit=32,
-            color="#F38322",
-        ),
-        Category(
-            name="Strong heat stress",
-            low_limit=32,
-            high_limit=38,
-            color="#C31F25",
-        ),
-        Category(
-            name="Very strong heat stress",
-            low_limit=38,
-            high_limit=46,
-            color="#7F1416",
-        ),
-        Category(
-            name="Extreme heat stress",
-            low_limit=46,
-            high_limit=np.inf,
-            color="#580002",
-        ),
-    ]
-)
-
-UTCI_SIMPLIFIED_CATEGORIES = Categories(
-    categories=[
-        Category(
-            name="Too cold (x < 9°C)",
-            low_limit=-np.inf,
-            high_limit=9,
-            color="#3C65AF",
-        ),
-        Category(
-            name="Comfortable (9°C ≤ x < 26°C)",
-            low_limit=9,
-            high_limit=26,
-            color="#2EB349",
-        ),
-        Category(
-            name="Too hot (x ≥ 26°C)",
-            low_limit=26,
-            high_limit=np.inf,
-            color="#C31F25",
-        ),
-    ]
-)
+# TODO - use Categories for binning of UTCI data!
 
 
 def summarise_utci_collections(
     utci_collections: List[HourlyContinuousCollection],
-    categories: Categories = UTCI_CATEGORIES,
+    categories: CategoriesBase = UTCI_DEFAULT_CATEGORIES,
     mask: List[bool] = None,
     identifiers: Tuple[str] = None,
 ) -> pd.DataFrame:
@@ -601,7 +520,7 @@ def feasible_comfort_temporal(
         temp.index = [calendar.month_abbr[i] for i in temp.index]
         return temp
 
-    if seasonality is None:
+    if seasonality is None:  # pylint disable=W0143
         temp = (
             (((temp >= low_limit) & (temp <= high_limit)).sum() / temp.count())
             .sort_values()
@@ -615,7 +534,7 @@ def feasible_comfort_temporal(
         return temp.T
 
     # pylint disable=comparison-with-callable
-    if seasonality == seasonality_from_month:
+    if seasonality == seasonality_from_month:  # pylint disable=W0143
         seasons = seasonality_from_month(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -632,7 +551,7 @@ def feasible_comfort_temporal(
         ]
         return temp
 
-    if seasonality == seasonality_from_day_length:
+    if seasonality == seasonality_from_day_length:  # pylint disable=W0143
         seasons = seasonality_from_day_length(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -649,7 +568,7 @@ def feasible_comfort_temporal(
         ]
         return temp
 
-    if seasonality == seasonality_from_temperature:
+    if seasonality == seasonality_from_temperature:  # pylint disable=W0143
         seasons = seasonality_from_temperature(epw, annotate=True)[ap_bool]
         keys = seasons.unique()
         temp = ((temp >= low_limit) & (temp <= high_limit)).groupby(
@@ -698,7 +617,7 @@ def utci_comfort_categories(
         if simplified:
             labels = ["#3C65AF", "#2EB349", "#C31F25"]
         else:
-            labels = UTCI_CATEGORIES.colors
+            labels = UTCI_DEFAULT_CATEGORIES.colors
     else:
         if simplified:
             labels = [
@@ -707,12 +626,12 @@ def utci_comfort_categories(
                 f"Too hot (>{max(comfort_limits)}°C)",
             ]
         else:
-            labels = UTCI_CATEGORIES.names
+            labels = UTCI_DEFAULT_CATEGORIES.names
 
     if simplified:
         bounds = [-np.inf, min(comfort_limits), max(comfort_limits), np.inf]
     else:
-        bounds = UTCI_CATEGORIES._bin_edges()
+        bounds = UTCI_DEFAULT_CATEGORIES._bin_edges()
 
     return (
         labels,
