@@ -33,10 +33,16 @@ from ladybug.skymodel import (
 from ladybug.sunpath import Sunpath
 from matplotlib.colors import cnames, colorConverter, to_rgb
 from matplotlib.figure import Figure
+from matplotlib.ticker import FuncFormatter
 from matplotlib.tri.triangulation import Triangulation
 from PIL import Image
 from scipy.stats import weibull_min
 from tqdm import tqdm
+
+
+@FuncFormatter
+def ZeroPadPercentFormatter(x, pos):
+    return f"{x:5.1%}"
 
 
 def relative_luminance(color: Any):

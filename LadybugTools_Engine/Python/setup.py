@@ -11,7 +11,6 @@ def _bhom_version() -> str:
     info = GetFileVersionInfo(
         "C:/ProgramData/BHoM/Assemblies/BHoM.dll", "\\"
     )  # pylint: disable=[no-name-in-module]
-    print(info)
     ms = info["FileVersionMS"]
     ls = info["FileVersionLS"]
     return f"{HIWORD(ms)}.{LOWORD(ms)}.{HIWORD(ls)}.{LOWORD(ls)}"  # pylint: disable=[no-name-in-module]
