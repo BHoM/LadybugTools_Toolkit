@@ -28,7 +28,7 @@ from ..categorical.categories import (
     ComfortClass,
 )
 from ..external_comfort.utci import categorise, utci_comfort_categories
-from ..helpers import lighten_color
+from ..helpers import ZeroPadPercentFormatter, contrasting_color, lighten_color
 from ..ladybug_extension.analysis_period import (
     analysis_period_to_boolean,
     describe_analysis_period,
@@ -37,7 +37,7 @@ from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.epw import EPW
 from ._heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
-from .utilities import colormap_sequential
+from .utilities import colormap_sequential, create_title
 
 
 def utci_distance_to_comfortable(
@@ -171,7 +171,9 @@ def utci_comfort_band_comparison(
         width=0.8,
         legend=False,
     )
-    utci_categories.create_legend(ax, bbox_to_anchor=(1, 0.5), loc="center left")
+
+    if kwargs.pop("legend", True):
+        utci_categories.create_legend(ax, bbox_to_anchor=(1, 0.5), loc="center left")
 
     for spine in ["top", "right", "bottom", "left"]:
         ax.spines[spine].set_visible(False)
@@ -295,7 +297,7 @@ def utci_comparison_diurnal_day(
     show_legend: bool = True,
     categories_in_legend: bool = True,
     **kwargs,
-) -> Figure:
+) -> plt.Axes:
     """Plot a set of UTCI collections on a single figure for monthly diurnal periods.
 
     Args:
@@ -712,8 +714,6 @@ def utci_monthly_histogram(
         utci_collection.header.data_type, LB_UniversalThermalClimateIndex
     ):
         raise ValueError("Input collection is not a UTCI collection.")
-    if not isinstance(utci_categories, CategoriesBase):
-        raise ValueError("utci_categories must be a Categories object.")
 
     series = collection_to_series(utci_collection)
 
@@ -732,7 +732,7 @@ def utci_monthly_histogram(
     ax.set_xlim(-0.5, 11.5)
     ax.set_ylim(0, 1)
     ax.set_xticklabels(t.columns, ha="center", rotation=0)
-    ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
+    ax.yaxis.set_major_formatter(ZeroPadPercentFormatter)
 
     # Add header percentages for bar plot - and check that ComfortClass is available on object using that if it is
     try:
@@ -833,9 +833,10 @@ def utci_heatmap_histogram(
     series = collection_to_series(utci_collection)
 
     title = kwargs.pop("title", None)
+    figsize = kwargs.pop("figsize", (15, 5))
 
     # Instantiate figure
-    fig = plt.figure(figsize=(15, 5), constrained_layout=True)
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
     spec = fig.add_gridspec(
         ncols=1, nrows=2, width_ratios=[1], height_ratios=[4, 2], hspace=0.0
     )
@@ -894,3 +895,111 @@ def utci_heatmap_histogram(
     heatmap_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
 
     return fig
+
+
+def utci_histogram(
+    utci_collection: HourlyContinuousCollection,
+    ax: plt.Axes = None,
+    utci_categories: CategoriesBase = UTCI_DEFAULT_CATEGORIES,
+    **kwargs,
+) -> plt.Axes:
+    """Create a histogram showing the distribution of UTCI values.
+
+    Args:
+        utci_collection (HourlyContinuousCollection):
+            A ladybug HourlyContinuousCollection object.
+        ax (plt.Axes, optional):
+            A matplotlib Axes object to plot on. Defaults to None.
+        utci_categories (Categories, optional):
+            A Categories object with colors, ranges and limits. Defaults to UTCI_DEFAULT_CATEGORIES.
+        **kwargs:
+            Additional keyword arguments to pass to the plotting function.
+
+    Returns:
+        plt.Axes:
+            A matplotlib Axes object.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    ti = kwargs.pop("title", None)
+    if ti is not None:
+        ax.set_title(ti)
+
+    color = kwargs.pop("color", "white")
+    bg_lighten = kwargs.pop("bg_lighten", 0.8)
+    alpha = kwargs.pop("alpha", 0.5)
+
+    edges = utci_categories._bin_edges()
+
+    # fill between ranges
+    for cat in utci_categories.categories_with_limits():
+        ax.axvspan(
+            max([cat.low_limit, -100]),
+            min([cat.high_limit, 100]),
+            facecolor=lighten_color(cat.color, bg_lighten),
+            label=cat.name,
+        )
+
+    # get the bins
+    bins = kwargs.pop(
+        "bins",
+        np.linspace(
+            edges[1] - 100,
+            edges[-2] + 100,
+            int((edges[-2] + 100) - (edges[1] - 100)) + 1,
+        ),
+    )
+    density = kwargs.pop("density", True)
+
+    # get the binned data within categories
+    series = collection_to_series(utci_collection)
+    cnt = utci_categories.categorise(series).value_counts()[
+        [i.name for i in utci_categories.categories_with_limits()]
+    ]
+    cnt = cnt / sum(cnt)
+
+    # plot data
+    series.plot(
+        kind="hist", ax=ax, bins=bins, color=color, alpha=alpha, density=density
+    )
+
+    # set xlims
+    xlim = kwargs.pop(
+        "xlim",
+        (edges[1] - 10, edges[-2] + 10),
+    )
+    ax.set_xlim(xlim)
+
+    # get positions for percentage labels
+    _ylow, _yhigh = ax.get_ylim()
+    _xlow, _xhigh = ax.get_xlim()
+    for n, cat in enumerate(utci_categories.categories_with_limits()):
+        midpt = cat.mid_point
+        if n == 0:
+            if np.isinf(midpt):
+                midpt = (cat.high_limit + _xlow) / 2
+            if midpt < _xlow:
+                continue
+        if n == len(utci_categories.categories_with_limits()) - 1:
+            if np.isinf(midpt):
+                midpt = (cat.low_limit + _xhigh) / 2
+            if midpt > _xhigh:
+                continue
+        ax.text(
+            midpt,
+            _yhigh * 0.99,
+            f"{textwrap.fill(cat.name, 10)}\n{cnt[n]:0.1%}",
+            ha="center",
+            va="top",
+            color=contrasting_color(lighten_color(cat.color, bg_lighten)),
+            fontsize="small",
+        )
+    # print(cnt)
+
+    ax.set_xlabel(series.name)
+    ax.yaxis.set_major_formatter(ZeroPadPercentFormatter)
+
+    ax.set_xticks(edges[1:-1])
+
+    return ax

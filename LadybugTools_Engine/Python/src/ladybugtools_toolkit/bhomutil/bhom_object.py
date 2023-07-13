@@ -19,6 +19,7 @@ from .encoder import (
 
 
 def is_decorated(func):
+    """Check if a function is decorated with a BHoM analytics decorator."""
     return hasattr(func, "__wrapped__") or func.__name__ not in globals()
 
 
