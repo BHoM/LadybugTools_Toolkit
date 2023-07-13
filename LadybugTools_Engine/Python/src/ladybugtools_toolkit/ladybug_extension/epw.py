@@ -39,11 +39,13 @@ from ..helpers import (
     radiation_at_height,
     temperature_at_height,
     timedelta_tostring,
+    wind_direction_average,
     wind_speed_at_height,
 )
 from .analysis_period import analysis_period_to_datetimes
 from .datacollection import collection_to_series
 from .header import header_to_string as header_to_string
+from .location import average_location
 from .location import location_to_string as location_to_string
 
 
@@ -1686,3 +1688,168 @@ def shortest_day(epw: EPW) -> datetime:
 
     s = pd.Series([i.altitude for i in suns], index=idx[:-1])
     return s[s > 0].resample("D").count().idxmin().to_pydatetime()
+
+
+def angle_to_vector(angle_from_north: float) -> List[float]:
+    """Return the X, Y vector from of an angle from north at 0-degrees."""
+    warnings.warn("UNTESTED!")
+    if (angle_from_north > 360) or (angle_from_north < 0):
+        raise ValueError(
+            "angle_from_north must be between 0 and 360 degrees (inclusive)."
+        )
+
+    angle_from_north = np.radians(angle_from_north)
+
+    return np.sin(angle_from_north), np.cos(angle_from_north)
+
+
+from ladybug_geometry.geometry2d import Vector2D
+
+
+def weighted_wind_speed_direction(
+    wind_speeds: List[float], wind_directions: List[float]
+) -> List[float]:
+    """Return a speed-weighted average wind direction and speed for a set of input wind speeds and directions.
+
+    Args:
+        wind_speeds (List[float]):
+            A collection of wind speeds, in m/s.
+        wind_directions (List[float]):
+            A collection of wind directions, in degrees from North (0).
+
+    Returns:
+        List[float]:
+            A weighted average wind speed and direction.
+    """
+    warnings.warn("UNDER DEFVEKLOPMENT")
+    # convert directions into XY vectors (including speed magnitude)
+    wind_vectors = (
+        np.array([angle_to_vector(d) for d in wind_directions]).T * wind_speeds
+    ).T
+
+    # create weights based on wind speed (0-1, higher speeds higher weighting)
+    weights = np.array(wind_speeds) / np.array(wind_speeds).sum()
+
+    # multiply by wind speeds (magnitude) to get the average wind vector (weighted by speed)
+    resultant_wind_vector = np.average((wind_vectors.T).T, axis=0, weights=weights)
+
+    # get unit vector and magnitude (wind_speed)
+    resultant_wind_speed = np.linalg.norm(resultant_wind_vector)
+
+    # determine new wind direction (angle from north)
+    try:
+        resultant_wind_direction = np.degrees(
+            Vector2D.from_array(resultant_wind_vector).angle_counterclockwise(
+                Vector2D(0, 1)
+            )
+        )
+    except:
+        resultant_wind_direction = 0
+
+    return resultant_wind_speed, resultant_wind_direction
+
+
+def create_average_epw(
+    epws: List[EPW],
+    location: Location = None,
+    comments_1: str = "",
+    comments_2: str = "",
+    file_path: str = "synthetic.epw",
+    weights: List[float] = None,
+) -> EPW:
+    """For a set of input EPW files, construct an "average", with wind speeds and direction weighted based on speed."""
+    warnings.warn("UNDER DEVELOPMENT")
+    if weights is None:
+        weights = [1 / len(epws)] * len(epws)
+
+    # construct "empty" EPW
+    synthetic_epw = EPW.from_missing_values()
+
+    # set location data as average of all inputs
+    if location is None:
+        location = average_location([i.location for i in epws], weights=weights)
+    synthetic_epw.location = location
+
+    # set metadata
+    synthetic_epw.comments_1 = comments_1
+    synthetic_epw.comments_2 = comments_2
+    synthetic_epw._file_path = file_path
+
+    # set ground temperayture data
+    all_depths = []
+    for epw in epws:
+        all_depths.append(list(epw.monthly_ground_temperature.keys()))
+    all_depths = list(set(np.array(all_depths).flatten()))
+
+    d = {}
+    warnings.warn("ground temp avg not working yet")
+    for depth in all_depths:
+        collections = []
+        for n, epw in enumerate(epws):
+            collections.append(epw.monthly_ground_temperature[depth] * weights[n])
+
+        # get the average for the collections included
+        base = collections[0]
+        try:
+            for coll in collections[1:]:
+                base += coll
+        except:
+            pass
+        base = base / len(collections)
+        d[depth] = base
+    synthetic_epw.monthly_ground_temperature = d
+
+    # set "years" variable
+    synthetic_epw.years.values = epws[0].years.values
+
+    # set ground temperature variable
+
+    # set variables that are an average of all inputs
+    for var in [
+        "dry_bulb_temperature",
+        "dew_point_temperature",
+        "relative_humidity",
+        "atmospheric_station_pressure",
+        "extraterrestrial_horizontal_radiation",
+        "extraterrestrial_direct_normal_radiation",
+        "horizontal_infrared_radiation_intensity",
+        "global_horizontal_radiation",
+        "direct_normal_radiation",
+        "diffuse_horizontal_radiation",
+        "global_horizontal_illuminance",
+        "direct_normal_illuminance",
+        "diffuse_horizontal_illuminance",
+        "zenith_luminance",
+        "total_sky_cover",
+        "opaque_sky_cover",
+        "visibility",
+        "ceiling_height",
+        "precipitable_water",
+        "aerosol_optical_depth",
+        "snow_depth",
+        "days_since_last_snowfall",
+        "albedo",
+        "liquid_precipitation_depth",
+        "liquid_precipitation_quantity",
+    ]:
+        average_values = [
+            round(sum(j) / len(epws), 2)
+            for j in list(
+                zip(*[list(getattr(i, var).values) for n, i in enumerate(epws)])
+            )
+        ]
+        setattr(getattr(synthetic_epw, var), "values", average_values)
+
+    # set attributes that are specially handled (wind speed and direction)
+    wss = np.array([epw.wind_speed.values for epw in epws]).T
+    wds = np.array([epw.wind_direction.values for epw in epws]).T
+    wind_speed = []
+    wind_direction = []
+    for ws, wd in list(zip(*[wss, wds])):
+        a, b = weighted_wind_speed_direction(ws, wd)
+        wind_speed.append(a)
+        wind_direction.append(b)
+    synthetic_epw.wind_speed.values = wind_speed
+    synthetic_epw.wind_direction.values = wind_direction
+
+    return synthetic_epw

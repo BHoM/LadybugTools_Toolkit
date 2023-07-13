@@ -1,7 +1,7 @@
 import json
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,7 @@ from ladybug.datautil import (
     collections_to_csv,
     collections_to_json,
 )
+from ladybug.dt import DateTime
 
 from ..helpers import wind_direction_average
 from .analysis_period import analysis_period_to_datetimes
@@ -574,3 +575,24 @@ def to_hourly(
         header=collection.header,
         values=series_annual.interpolate(method=interpolation_methods[method]).values,
     )
+
+
+def peak_time(collection: BaseCollection) -> Tuple[Any, Tuple[DateTime]]:
+    """Find the peak value within a collection, and the time, or times at which it occurs.
+
+    Args:
+        collection (BaseCollection):
+            A Ladybug DataCollection.
+
+    Returns:
+        peak_value, times (Tuple[Any, Tuple[DateTime]]):
+            The peak value and times it occurs.
+    """
+
+    peak_value = collection.max
+    times = []
+    for dt, v in list(zip(*[collection.datetimes, collection.values])):
+        if v == peak_value:
+            times.append(dt)
+
+    return peak_value, times
