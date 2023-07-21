@@ -36,6 +36,7 @@ from ..ladybug_extension.datacollection import (
 )
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
+from ..plot import heatmap
 from ..plot._utci import (
     utci_day_comfort_metrics,
     utci_distance_to_comfortable,
@@ -501,7 +502,7 @@ class ExternalComfort(BHoMObject):
 
         return temp
 
-    def insitu_comfort_addmeasures_hotclimate(
+    def add_insitu_comfort_measures(
         self,
         overhead_shelter: bool = False,
         wind_speed_multiplier: float = 1,
@@ -534,7 +535,7 @@ class ExternalComfort(BHoMObject):
                 A modified object!
         """
 
-        # modify each input into a "list" to apply hourly to the typlogy
+        # Validation stage and data preparation
         if isinstance(wind_speed_multiplier, (int, float)):
             _wind_speed_multiplier = (
                 np.ones_like(self.Typology.WindSpeedMultiplier) * wind_speed_multiplier
@@ -589,22 +590,17 @@ class ExternalComfort(BHoMObject):
             _additional_air_movement, 1.1, 10
         )
 
+        # check if any changes are needed, and return original object if not
         if not overhead_shelter:
-            # print("no overhead")
             if sum(_wind_speed_multiplier) == len(self.Typology.WindSpeedMultiplier):
-                # print("winds not being multiplied!")
                 if sum(_evaporative_cooling_effectiveness) == 0:
-                    # print("evap clg not added!")
                     if sum(_radiant_temperature_adjustment) == 0:
-                        # print("rad temp not modified!")
                         if adjust_shelter_wind_porosity is None:
-                            # print("shelter wind poros not mod!")
                             if adjust_shelter_radiation_porosity is None:
-                                # print("shelter rad poros not mod!")
                                 if sum(_additional_air_movement) == 0:
-                                    # print("additional air movement not added!")
                                     return self
 
+        # create new typology
         new_typology_name = f"{self.Typology.Name}"
 
         # OVERHEAD SHELTER
@@ -630,6 +626,16 @@ class ExternalComfort(BHoMObject):
                 new_typology_name += f" + {min(_wind_speed_multiplier):0.0%} wind"
             else:
                 new_typology_name += f" + varying ({min(_wind_speed_multiplier):0.0%}-{max(_wind_speed_multiplier):0.0%}) wind"
+
+        # ADD ADDITIONAL AIR MOVEMENT
+        if sum(_additional_air_movement) != 0:
+            if len(set(_additional_air_movement)) == 1:
+                new_typology_name += (
+                    f" + {additional_air_movement:0.1f}m/s additional air movement"
+                )
+            else:
+                original = wind_speed_at_height(_additional_air_movement, 10, 1.1)
+                new_typology_name += f" + varying ({min(original):0.1f}-{max(original):0.1f}m/s) additional air movement"
 
         # MODIFY EVAPORATIVE COOLING
         if sum(_evaporative_cooling_effectiveness) != 0:
@@ -659,15 +665,6 @@ class ExternalComfort(BHoMObject):
                 shelter.RadiationPorosity = (
                     shelter.RadiationPorosity * adjust_shelter_radiation_porosity
                 )
-
-        if sum(_additional_air_movement) != 0:
-            if len(set(_additional_air_movement)) == 1:
-                new_typology_name += (
-                    f" + {additional_air_movement:0.1f}m/s additional air movement"
-                )
-            else:
-                original = wind_speed_at_height(_additional_air_movement, 10, 1.1)
-                new_typology_name += f" + varying ({min(original):0.1f}-{max(original):0.1f}m/s) additional air movement"
 
         # create new typology
         new_typology = Typology(
@@ -717,29 +714,33 @@ class ExternalComfort(BHoMObject):
             return ret_str
         return f"{ret_str}\n{describe_analysis_period(analysis_period)}"
 
-    def plot_utci_day_comfort_metrics(self, month: int = 3, day: int = 21) -> Figure:
+    def plot_utci_day_comfort_metrics(
+        self, ax: plt.Axes = None, month: int = 3, day: int = 21
+    ) -> plt.Axes:
         """Plot a single day UTCI and composite components
 
         Args:
+            ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
             month (int, optional): The month to plot. Defaults to 3.
             day (int, optional): The day to plot. Defaults to 21.
 
         Returns:
-            Figure: A figure showing UTCI and component parts for the given day.
+            Axes: A figure showing UTCI and component parts for the given day.
         """
 
         return utci_day_comfort_metrics(
-            collection_to_series(self.UniversalThermalClimateIndex),
-            collection_to_series(self.DryBulbTemperature),
-            collection_to_series(self.MeanRadiantTemperature),
-            collection_to_series(self.RelativeHumidity),
-            collection_to_series(self.WindSpeed),
-            month,
-            day,
-            self.plot_title_string(),
+            utci=collection_to_series(self.UniversalThermalClimateIndex),
+            dbt=collection_to_series(self.DryBulbTemperature),
+            mrt=collection_to_series(self.MeanRadiantTemperature),
+            rh=collection_to_series(self.RelativeHumidity),
+            ws=collection_to_series(self.WindSpeed),
+            ax=ax,
+            month=month,
+            day=day,
+            title=self.plot_title_string(),
         )
 
-    def plot_utci_heatmap(self) -> plt.Axes:
+    def plot_utci_heatmap(self, ax: plt.Axes = None) -> plt.Axes:
         """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
         Returns:
@@ -748,11 +749,11 @@ class ExternalComfort(BHoMObject):
 
         return utci_heatmap(
             utci_collection=self.UniversalThermalClimateIndex,
-            ax=None,
+            ax=ax,
             title=self.plot_title_string(),
         )
 
-    def plot_utci_heatmap_histogram(self, **kwargs) -> Figure:
+    def plot_utci_heatmap_histogram(self, **kwargs) -> plt.Figure:
         """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
         Returns:
@@ -796,19 +797,21 @@ class ExternalComfort(BHoMObject):
 
     def plot_utci_distance_to_comfortable(
         self,
+        ax: plt.Axes = None,
         comfort_thresholds: Tuple[float] = (9, 26),
-        low_limit: float = 15,
-        high_limit: float = 25,
+        vmin: float = 15,
+        vmax: float = 25,
     ) -> Figure:
         """Create a heatmap showing the "distance" in C from the "no thermal stress" UTCI comfort
             band.
 
         Args:
+            ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
             comfort_thresholds (List[float], optional): The comfortable band of UTCI temperatures.
                 Defaults to [9, 26].
-            low_limit (float, optional): The distance from the lower edge of the comfort threshold
+            vmin (float, optional): The distance from the lower edge of the comfort threshold
                 to include in the "too cold" part of the heatmap. Defaults to 15.
-            high_limit (float, optional): The distance from the upper edge of the comfort threshold
+            vmax (float, optional): The distance from the upper edge of the comfort threshold
                 to include in the "too hot" part of the heatmap. Defaults to 25.
 
         Returns:
@@ -817,10 +820,11 @@ class ExternalComfort(BHoMObject):
 
         return utci_distance_to_comfortable(
             utci_collection=self.UniversalThermalClimateIndex,
+            ax=ax,
             title=self.plot_title_string(),
             comfort_thresholds=comfort_thresholds,
-            low_limit=low_limit,
-            high_limit=high_limit,
+            vmin=vmin,
+            vmax=vmax,
         )
 
     def plot_dbt_heatmap(self, **kwargs) -> plt.Axes:

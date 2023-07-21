@@ -1,11 +1,8 @@
 import calendar
-import copy
 import textwrap
-import warnings
 from typing import List
 
 import matplotlib.collections as mcollections
-import matplotlib.dates as mdates
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt

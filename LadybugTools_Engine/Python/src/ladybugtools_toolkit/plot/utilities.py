@@ -1,11 +1,100 @@
-from typing import List, Tuple, Union
+import base64
+import colorsys
+import copy
+import io
+from pathlib import Path
+from typing import Any, List, Tuple, Union
 
 import matplotlib.image as mimage
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 from ladybug.color import Colorset
-from matplotlib.colors import LinearSegmentedColormap, is_color_like, rgb2hex
+from matplotlib.colors import (
+    LinearSegmentedColormap,
+    cnames,
+    colorConverter,
+    is_color_like,
+    rgb2hex,
+    to_rgb,
+    to_rgba_array,
+)
+from matplotlib.tri import Triangulation
+from PIL import Image
+
+
+def animation(
+    image_files: List[Union[str, Path]],
+    output_gif: Union[str, Path],
+    ms_per_image: int = 333,
+) -> Path:
+    """Create an animated gif from a set of images.
+
+    Args:
+        image_files (List[Union[str, Path]]):
+            A list of image files.
+        output_gif (Union[str, Path]):
+            The output gif file to be created.
+        ms_per_image (int, optional):
+            NUmber of milliseconds per image. Default is 333, for 3 images per second.
+
+    Returns:
+        Path:
+            The animated gif.
+
+    """
+
+    image_files = [Path(i) for i in image_files]
+
+    images = [Image.open(i) for i in image_files]
+
+    # create white background
+    background = Image.new("RGBA", images[0].size, (255, 255, 255))
+
+    images = [Image.alpha_composite(background, i) for i in images]
+
+    images[0].save(
+        output_gif,
+        save_all=True,
+        append_images=images[1:],
+        optimize=False,
+        duration=ms_per_image,
+        loop=0,
+    )
+
+    return output_gif
+
+
+def relative_luminance(color: Any):
+    """Calculate the relative luminance of a color according to W3C standards
+
+    Args:
+
+    color : matplotlib color or sequence of matplotlib colors - Hex code,
+    rgb-tuple, or html color name.
+    Returns
+    -------
+    luminance : float(s) between 0 and 1
+    """
+    rgb = colorConverter.to_rgba_array(color)[:, :3]
+    rgb = np.where(rgb <= 0.03928, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    lum = rgb.dot([0.2126, 0.7152, 0.0722])
+    try:
+        return lum.item()
+    except ValueError:
+        return lum
+
+
+def contrasting_color(color: Any):
+    """Calculate the contrasting color for a given color.
+
+    Args:
+        color (Any): matplotlib color or sequence of matplotlib colors - Hex code,
+        rgb-tuple, or html color name.
+    Returns:
+        str: String code of the contrasting color.
+    """
+    return ".15" if relative_luminance(color) > 0.408 else "w"
 
 
 def colormap_sequential(
@@ -151,84 +240,63 @@ def annotate_imshow(
     return texts
 
 
-def add_bar_labels(ax: plt.Axes, padding: float = 5, vertical: bool = True) -> None:
+def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]:
+    """
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+
+    Args:
+        color (str):
+            A color-like string.
+        amount (float):
+            The amount of lightening to apply.
+
+    Returns:
+        Tuple[float]:
+            An RGB value.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    try:
+        c = cnames[color]
+    except KeyError:
+        c = color
+    c = colorsys.rgb_to_hls(*to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
+
+
+def add_bar_labels(ax: plt.Axes, orientation: str, threshold: float) -> None:
     """Add labels to the end of each bar in a bar chart.
 
     Arguments:
         ax (matplotlib.axes.Axes):
             The matplotlib object containing the axes of the plot to annotate.
-        padding (float, optional):
-            The distance between the labels and the bars.
-        vertical (bool, optional):
-            If True, the labels are placed above the bars. If False, they are placed to the right
+        orientation (str):
+            The orientation of the plot. Either "vertical" or "horizontal".
+        threshold (float):
+            The threshold value to use to determine whether to add a label.
 
     """
 
-    # For each bar: Place a label
-    if vertical:
-        for rect in ax.patches:
-            # Get X and Y placement of label from rect.
-            y_value = rect.get_height()
-            x_value = rect.get_x() + rect.get_width() / 2
-
-            # Number of points between bar and label. Change to your liking.
-            space = padding
-
-            # Vertical alignment for positive values
-            va = "bottom"
-
-            # If value of bar is negative: Place label below bar
-            if y_value < 0:
-                # Invert space to place label below
-                space *= -1
-                # Vertically align label at top
-                va = "top"
-
-            # Use Y value as label and format number with one decimal place
-            label = f"{y_value:.0f}"
-
-            # Create annotation
+    for rect in ax.patches:
+        x = rect.get_x() + (rect.get_width() / 2)
+        y = rect.get_y() + (rect.get_height() / 2)
+        if orientation == "vertical":
+            value = rect.get_height()
+        elif orientation == "horizontal":
+            value = rect.get_width()
+        else:
+            raise ValueError("orientation must be either 'vertical' or 'horizontal'")
+        if value > threshold:
             ax.annotate(
-                label,  # Use `label` as label
-                (x_value, y_value),  # Place label at end of the bar
-                xytext=(0, space),  # Vertically shift label by `space`
-                textcoords="offset points",  # Interpret `xytext` as offset in points
-                ha="center",  # Horizontally center label
-                va=va,
-            )  # Vertically align label differently for
-            # positive and negative values.
-    else:
-        for rect in ax.patches:
-            # Get X and Y placement of label from rect.
-            y_value = rect.get_y() + rect.get_height() / 2
-            x_value = rect.get_width()
-
-            # Number of points between bar and label. Change to your liking.
-            space = padding
-
-            # Horizontal alignment for positive values
-            ha = "left"
-
-            # If value of bar is negative: Place label left of bar
-            if x_value < 0:
-                # Invert space to place label left
-                space *= -1
-                # Horizontally align label at right
-                ha = "right"
-
-            # Use X value as label and format number with one decimal place
-            label = f"{x_value:.0f}"
-
-            # Create annotation
-            ax.annotate(
-                label,  # Use `label` as label
-                (x_value, y_value),  # Place label at end of the bar
-                xytext=(0, space),  # Vertically shift label by `space`
-                textcoords="offset points",  # Interpret `xytext` as offset in points
-                ha=ha,
-                va="center",  # Vertically center label
-            )  # Horizontally align label differently for
-            # positive and negative values.
+                f"{value:.0%}",
+                (x, y),
+                ha="center",
+                va="center",
+                c=contrasting_color(rect.get_facecolor()),
+            )
 
 
 def create_title(text: str, plot_type: str) -> str:
@@ -254,3 +322,288 @@ def create_title(text: str, plot_type: str) -> str:
             if i is not None
         ]
     )
+
+
+def average_color(colors: Any, keep_alpha: bool = False) -> str:
+    """Return the average color from a list of colors.
+
+    Args:
+        colors (Any):
+            A list of colors.
+        keep_alpha (bool, optional):
+            If True, the alpha value of the color is kept. Defaults to False.
+
+    Returns:
+        color: str
+            The average color in hex format.
+    """
+
+    if not isinstance(colors, (list, tuple)):
+        raise ValueError("colors must be a list")
+
+    for i in colors:
+        if not is_color_like(i):
+            raise ValueError(
+                f"colors must be a list of valid colors - '{i}' is not valid."
+            )
+
+    if len(colors) == 1:
+        return colors[0]
+
+    return rgb2hex(to_rgba_array(colors).mean(axis=0), keep_alpha=keep_alpha)
+
+
+def base64_to_image(base64_string: str, image_path: Path) -> Path:
+    """Convert a base64 encoded image into a file on disk.
+
+    Arguments:
+        base64_string (str):
+            A base64 string encoding of an image file.
+        image_path (Path):
+            The location where the image should be stored.
+
+    Returns:
+        Path:
+            The path to the image file.
+    """
+
+    # remove html pre-amble, if necessary
+    if base64_string.startswith("data:image"):
+        base64_string = base64_string.split(";")[-1]
+
+    with open(Path(image_path), "wb") as fp:
+        fp.write(base64.decodebytes(base64_string))
+
+    return image_path
+
+
+def image_to_base64(image_path: Path, html: bool = False) -> str:
+    """Load an image file from disk and convert to base64 string.
+
+    Arguments:
+        image_path (Path):
+            The file path for the image to be converted.
+        html (bool, optional):
+            Set to True to include the HTML preamble for a base64 encoded image. Default is False.
+
+    Returns:
+        str:
+            A base64 string encoding of the input image file.
+    """
+
+    # convert path string to Path object
+    image_path = Path(image_path).absolute()
+
+    # ensure format is supported
+    supported_formats = [".png", ".jpg", ".jpeg"]
+    if image_path.suffix not in supported_formats:
+        raise ValueError(
+            f"'{image_path.suffix}' format not supported. Use one of {supported_formats}"
+        )
+
+    # load image and convert to base64 string
+    with open(image_path, "rb") as image_file:
+        base64_string = base64.b64encode(image_file.read()).decode("utf-8")
+
+    if html:
+        content_type = f"data:image/{image_path.suffix.replace('.', '')}"
+        content_encoding = "utf-8"
+        return f"{content_type};charset={content_encoding};base64,{base64_string}"
+
+    return base64_string
+
+
+def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
+    """Convert a matplotlib figure object into a base64 string.
+
+    Arguments:
+        figure (Figure):
+            A matplotlib figure object.
+        html (bool, optional):
+            Set to True to include the HTML preamble for a base64 encoded image. Default is False.
+
+    Returns:
+        str:
+            A base64 string encoding of the input figure object.
+    """
+
+    buffer = io.BytesIO()
+    figure.savefig(buffer)
+    buffer.seek(0)
+    base64_string = base64.b64encode(buffer.read()).decode("utf-8")
+
+    if html:
+        content_type = "data:image/png"
+        content_encoding = "utf-8"
+        return f"{content_type};charset={content_encoding};base64,{base64_string}"
+
+    return base64_string
+
+
+def figure_to_image(fig: plt.Figure) -> Image:
+    """Convert a matplotlib Figure object into a PIL Image.
+
+    Args:
+        fig (Figure):
+            A matplotlib Figure object.
+
+    Returns:
+        Image:
+            A PIL Image.
+    """
+
+    # draw the renderer
+    fig.canvas.draw()
+
+    # Get the RGBA buffer from the figure
+    w, h = fig.canvas.get_width_height()
+    buf = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
+    buf.shape = (w, h, 4)
+    buf = np.roll(buf, 3, axis=2)
+
+    return Image.fromarray(buf)
+
+
+def tile_images(
+    imgs: Union[List[Path], List[Image.Image]], rows: int, cols: int
+) -> Image.Image:
+    """Tile a set of images into a grid.
+
+    Args:
+        imgs (Union[List[Path], List[Image.Image]]):
+            A list of images to tile.
+        rows (int):
+            The number of rows in the grid.
+        cols (int):
+            The number of columns in the grid.
+
+    Returns:
+        Image.Image:
+            A PIL image of the tiled images.
+    """
+
+    imgs = np.array([Path(i) for i in np.array(imgs).flatten()])
+
+    # open images if paths passed
+    imgs = [Image.open(img) if isinstance(img, Path) else img for img in imgs]
+
+    if len(imgs) != rows * cols:
+        raise ValueError(
+            f"The number of images given ({len(imgs)}) does not equal ({rows}*{cols})"
+        )
+
+    # ensure each image has the same dimensions
+    w, h = imgs[0].size
+    for img in imgs:
+        if img.size != (w, h):
+            raise ValueError("All images must have the same dimensions")
+
+    w, h = imgs[0].size
+    grid = Image.new("RGBA", size=(cols * w, rows * h))
+
+    for i, img in enumerate(imgs):
+        grid.paste(img, box=(i % cols * w, i // cols * h))
+        img.close()
+
+    return grid
+
+
+def triangulation_area(triang: Triangulation) -> float:
+    """Calculate the area of a matplotlib Triangulation.
+
+    Args:
+        triang (Triangulation):
+            A matplotlib Triangulation object.
+
+    Returns:
+        float:
+            The area of the Triangulation in the units given.
+    """
+
+    triangles = triang.triangles
+    x, y = triang.x, triang.y
+    a, _ = triangles.shape
+    i = np.arange(a)
+    area = np.sum(
+        np.abs(
+            0.5
+            * (
+                (x[triangles[i, 1]] - x[triangles[i, 0]])
+                * (y[triangles[i, 2]] - y[triangles[i, 0]])
+                - (x[triangles[i, 2]] - x[triangles[i, 0]])
+                * (y[triangles[i, 1]] - y[triangles[i, 0]])
+            )
+        )
+    )
+
+    return area
+
+
+def create_triangulation(
+    x: List[float],
+    y: List[float],
+    alpha: float = None,
+    max_iterations: int = 250,
+    increment: float = 0.01,
+) -> Triangulation:
+    """Create a matplotlib Triangulation from a list of x and y coordinates, including a mask to
+        remove elements with edges larger than alpha.
+
+    Args:
+        x (List[float]):
+            A list of x coordinates.
+        y (List[float]):
+            A list of y coordinates.
+        alpha (float, optional):
+            A value to start alpha at.
+            Defaults to None, with an estimate made for a suitable starting point.
+        max_iterations (int, optional):
+            The number of iterations to run to check against triangulation validity.
+            Defaults to 250.
+        increment (int, optional):
+            The value by which to increment alpha by when searching for a valid triangulation.
+            Defaults to 0.01.
+
+    Returns:
+        Triangulation:
+            A matplotlib Triangulation object.
+    """
+
+    if alpha is None:
+        # TODO - add method here to automatically determine appropriate alpha value
+        alpha = 1.1
+
+    if len(x) != len(y):
+        raise ValueError("x and y must be the same length")
+
+    # Triangulate X, Y locations
+    triang = Triangulation(x, y)
+
+    xtri = x[triang.triangles] - np.roll(x[triang.triangles], 1, axis=1)
+    ytri = y[triang.triangles] - np.roll(y[triang.triangles], 1, axis=1)
+    maxi = np.max(np.sqrt(xtri**2 + ytri**2), axis=1)
+
+    # Iterate triangulation masking until a possible mask is found
+    count = 0
+    fig, ax = plt.subplots(1, 1)
+    synthetic_values = range(len(x))
+    success = False
+    while not success:
+        count += 1
+        try:
+            tr = copy.deepcopy(triang)
+            tr.set_mask(maxi > alpha)
+            ax.tricontour(tr, synthetic_values)
+            success = True
+        except ValueError:
+            alpha += increment
+        else:
+            break
+        if count > max_iterations:
+            plt.close(fig)
+            raise ValueError(
+                f"Could not create a valid triangulation mask within {max_iterations}"
+            )
+    plt.close(fig)
+    triang.set_mask(maxi > alpha)
+    return triang

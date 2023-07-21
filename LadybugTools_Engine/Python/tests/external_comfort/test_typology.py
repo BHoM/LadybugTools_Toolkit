@@ -18,6 +18,9 @@ GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
 SHADE_MATERIAL = Materials.FABRIC.value
 GENERIC_SHELTER = Shelter([Point3D(0, 0, 5), Point3D(1, 1, 5), Point3D(1, 0, 5)])
 
+SIMULATION_RESULT = SimulationResult(
+    EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
+).run()
 TYPOLOGY = Typology(
     Name=EXTERNAL_COMFORT_IDENTIFIER,
     Shelters=[GENERIC_SHELTER],
@@ -59,12 +62,9 @@ def test_wind_speed():
 
 def test_mean_radiant_temperature():
     """_"""
-    sim_result = SimulationResult(
-        EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
-    ).run()
-    assert TYPOLOGY.mean_radiant_temperature(sim_result).average == pytest.approx(
-        15.64262493993061, rel=0.5
-    )
+    assert TYPOLOGY.mean_radiant_temperature(
+        SIMULATION_RESULT
+    ).average == pytest.approx(15.64262493993061, rel=0.5)
 
 
 def test_typologies():
@@ -75,9 +75,7 @@ def test_typologies():
 
 def test_universal_thermal_climate_index():
     """_"""
-    sim_result = SimulationResult(
-        EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
-    ).run()
     assert isinstance(
-        TYPOLOGY.universal_thermal_climate_index(sim_result), HourlyContinuousCollection
+        TYPOLOGY.universal_thermal_climate_index(SIMULATION_RESULT),
+        HourlyContinuousCollection,
     )

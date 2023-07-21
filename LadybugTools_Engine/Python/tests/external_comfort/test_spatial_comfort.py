@@ -33,6 +33,13 @@ SHADE_MATERIAL = Materials.FABRIC.value
 for file in list(CFD_DIRECTORY.glob("**/*")):
     shutil.copy(file, CFD_LOCAL_DIRECTORY)
 
+SIMULATION_RESULT = SimulationResult(
+    EPW_FILE,
+    GROUND_MATERIAL,
+    SHADE_MATERIAL,
+    EXTERNAL_COMFORT_IDENTIFIER,
+).run()
+
 
 @pytest.mark.order(1)
 def test_run_spatial_annual_irradiance() -> Path:
@@ -110,15 +117,8 @@ def test_run_spatial_sky_view() -> Path:
 def test_spatial_comfort():
     """_"""
 
-    sim_res = SimulationResult(
-        EPW_FILE,
-        GROUND_MATERIAL,
-        SHADE_MATERIAL,
-        EXTERNAL_COMFORT_IDENTIFIER,
-    ).run()
-
     assert isinstance(
-        SpatialComfort(SPATIAL_COMFORT_DIRECTORY, sim_res), SpatialComfort
+        SpatialComfort(SPATIAL_COMFORT_DIRECTORY, SIMULATION_RESULT), SpatialComfort
     )
 
 
@@ -126,14 +126,7 @@ def test_spatial_comfort():
 def test_spatial_comfort_processing():
     """_"""
 
-    sim_res = SimulationResult(
-        EPW_FILE,
-        GROUND_MATERIAL,
-        SHADE_MATERIAL,
-        EXTERNAL_COMFORT_IDENTIFIER,
-    ).run()
-
-    spatial_comfort = SpatialComfort(SPATIAL_COMFORT_DIRECTORY, sim_res)
+    spatial_comfort = SpatialComfort(SPATIAL_COMFORT_DIRECTORY, SIMULATION_RESULT)
 
     # remove existing files
     for fp in spatial_comfort.spatial_simulation_directory.glob("*.parquet"):
@@ -149,14 +142,7 @@ def test_spatial_comfort_processing():
 def test_spatial_comfort_summary():
     """_"""
 
-    sim_res = SimulationResult(
-        EPW_FILE,
-        GROUND_MATERIAL,
-        SHADE_MATERIAL,
-        EXTERNAL_COMFORT_IDENTIFIER,
-    ).run()
-
-    spatial_comfort = SpatialComfort(SPATIAL_COMFORT_DIRECTORY, sim_res)
+    spatial_comfort = SpatialComfort(SPATIAL_COMFORT_DIRECTORY, SIMULATION_RESULT)
 
     # remove analsyis periods fo testing
     spatial_comfort.analysis_periods = [
