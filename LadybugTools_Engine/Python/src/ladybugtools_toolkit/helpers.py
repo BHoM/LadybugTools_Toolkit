@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import colorsys
 import contextlib
 import copy
 import io
@@ -16,7 +14,6 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.datatype.temperature import WetBulbTemperature
@@ -31,50 +28,23 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
-from matplotlib.colors import cnames, colorConverter, to_rgb
-from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter
-from matplotlib.tri.triangulation import Triangulation
-from PIL import Image
 from scipy.stats import weibull_min
 from tqdm import tqdm
 
 
 @FuncFormatter
-def ZeroPadPercentFormatter(x, pos):
-    return f"{x:5.1%}"
-
-
-def relative_luminance(color: Any):
-    """Calculate the relative luminance of a color according to W3C standards
+def ZeroPadPercentFormatter(x: float) -> str:
+    """A matplotlib formatter for percentages that pads with zeros.
 
     Args:
+        x (float): The value to be formatted.
 
-    color : matplotlib color or sequence of matplotlib colors - Hex code,
-    rgb-tuple, or html color name.
-    Returns
-    -------
-    luminance : float(s) between 0 and 1
-    """
-    rgb = colorConverter.to_rgba_array(color)[:, :3]
-    rgb = np.where(rgb <= 0.03928, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
-    lum = rgb.dot([0.2126, 0.7152, 0.0722])
-    try:
-        return lum.item()
-    except ValueError:
-        return lum
-
-
-def contrasting_color(color: Any):
-    """Calculate the contrasting color for a given color.
-
-    Args:
-        color (Any): matplotlib color or sequence of matplotlib colors - Hex code,
-        rgb-tuple, or html color name.
     Returns:
-        str: String code of the contrasting color.
+        str: The formatted string.
     """
-    return ".15" if relative_luminance(color) > 0.408 else "w"
+
+    return f"{x:5.0%}"
 
 
 def default_time_analysis_periods() -> List[AnalysisPeriod]:
@@ -137,48 +107,6 @@ def default_analysis_periods() -> List[AnalysisPeriod]:
         aps.extend(default_combined_analysis_periods())
 
     return aps
-
-
-def animation(
-    image_files: List[Union[str, Path]],
-    output_gif: Union[str, Path],
-    ms_per_image: int = 333,
-) -> Path:
-    """Create an animated gif from a set of images.
-
-    Args:
-        image_files (List[Union[str, Path]]):
-            A list of image files.
-        output_gif (Union[str, Path]):
-            The output gif file to be created.
-        ms_per_image (int, optional):
-            NUmber of milliseconds per image. Default is 333, for 3 images per second.
-
-    Returns:
-        Path:
-            The animated gif.
-
-    """
-
-    image_files = [Path(i) for i in image_files]
-
-    images = [Image.open(i) for i in image_files]
-
-    # create white background
-    background = Image.new("RGBA", images[0].size, (255, 255, 255))
-
-    images = [Image.alpha_composite(background, i) for i in images]
-
-    images[0].save(
-        output_gif,
-        save_all=True,
-        append_images=images[1:],
-        optimize=False,
-        duration=ms_per_image,
-        loop=0,
-    )
-
-    return output_gif
 
 
 def chunks(lst: List[Any], chunksize: int):
@@ -440,117 +368,6 @@ def proximity_decay(
     raise ValueError(f"Unknown curve type: {decay_method}")
 
 
-def base64_to_image(base64_string: str, image_path: Path) -> Path:
-    """Convert a base64 encoded image into a file on disk.
-
-    Arguments:
-        base64_string (str):
-            A base64 string encoding of an image file.
-        image_path (Path):
-            The location where the image should be stored.
-
-    Returns:
-        Path:
-            The path to the image file.
-    """
-
-    # remove html pre-amble, if necessary
-    if base64_string.startswith("data:image"):
-        base64_string = base64_string.split(";")[-1]
-
-    with open(Path(image_path), "wb") as fp:
-        fp.write(base64.decodebytes(base64_string))
-
-    return image_path
-
-
-def image_to_base64(image_path: Path, html: bool = False) -> str:
-    """Load an image file from disk and convert to base64 string.
-
-    Arguments:
-        image_path (Path):
-            The file path for the image to be converted.
-        html (bool, optional):
-            Set to True to include the HTML preamble for a base64 encoded image. Default is False.
-
-    Returns:
-        str:
-            A base64 string encoding of the input image file.
-    """
-
-    # convert path string to Path object
-    image_path = Path(image_path).absolute()
-
-    # ensure format is supported
-    supported_formats = [".png", ".jpg", ".jpeg"]
-    if image_path.suffix not in supported_formats:
-        raise ValueError(
-            f"'{image_path.suffix}' format not supported. Use one of {supported_formats}"
-        )
-
-    # load image and convert to base64 string
-    with open(image_path, "rb") as image_file:
-        base64_string = base64.b64encode(image_file.read()).decode("utf-8")
-
-    if html:
-        content_type = f"data:image/{image_path.suffix.replace('.', '')}"
-        content_encoding = "utf-8"
-        return f"{content_type};charset={content_encoding};base64,{base64_string}"
-
-    return base64_string
-
-
-def figure_to_base64(figure: Figure, html: bool = False) -> str:
-    """Convert a matplotlib figure object into a base64 string.
-
-    Arguments:
-        figure (Figure):
-            A matplotlib figure object.
-        html (bool, optional):
-            Set to True to include the HTML preamble for a base64 encoded image. Default is False.
-
-    Returns:
-        str:
-            A base64 string encoding of the input figure object.
-    """
-
-    buffer = io.BytesIO()
-    figure.savefig(buffer)
-    buffer.seek(0)
-    base64_string = base64.b64encode(buffer.read()).decode("utf-8")
-
-    if html:
-        content_type = "data:image/png"
-        content_encoding = "utf-8"
-        return f"{content_type};charset={content_encoding};base64,{base64_string}"
-
-    return base64_string
-
-
-def figure_to_image(fig: Figure) -> Image:
-    """Convert a matplotlib Figure object into a PIL Image.
-
-    Args:
-        fig (Figure):
-            A matplotlib Figure object.
-
-    Returns:
-        Image:
-            A PIL Image.
-    """
-
-    # draw the renderer
-    fig.canvas.draw()
-
-    # Get the RGBA buffer from the figure
-    w, h = fig.canvas.get_width_height()
-    buf = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
-    buf.shape = (w, h, 4)
-    buf = np.roll(buf, 3, axis=2)
-
-    return Image.fromarray(buf)
-
-
 def timedelta_tostring(time_delta: timedelta) -> str:
     """timedelta objects don't have a nice string representation, so this function converts them.
 
@@ -775,6 +592,18 @@ def angle_from_north(vector: List[float]) -> float:
     angle1 = np.arctan2(*north[::-1])
     angle2 = np.arctan2(*vector[::-1])
     return np.rad2deg((angle1 - angle2) % (2 * np.pi))
+
+
+def angle_to_vector(_angle_from_north: float) -> List[float]:
+    """Return the X, Y vector from of an angle from north at 0-degrees."""
+    if (_angle_from_north > 360) or (_angle_from_north < 0):
+        raise ValueError(
+            "angle_from_north must be between 0 and 360 degrees (inclusive)."
+        )
+
+    _angle_from_north = np.radians(_angle_from_north)
+
+    return np.sin(_angle_from_north), np.cos(_angle_from_north)
 
 
 def sanitise_string(string: str) -> str:
@@ -1337,21 +1166,22 @@ def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
         return (np.nan, np.nan, np.nan)  # type: ignore
 
 
-def circular_weighted_mean(angles: List[float], weights: List[float]):
+def circular_weighted_mean(angles: List[float], weights: List[float] = None):
     """Get the average angle from a set of weighted angles.
 
     Args:
         angles (List[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
         weights (List[float]):
-            A collection of weights, which must sum to 1.
+            A collection of weights, which must sum to 1. Defaults to None which will equally weight all angles.
 
     Returns:
         float:
             An average wind direction.
     """
-
     angles = np.array(angles)
+    if weights is None:
+        weights = np.ones_like(angles) / len(angles)
     weights = np.array(weights)
 
     if angles.shape != weights.shape:
@@ -1360,11 +1190,8 @@ def circular_weighted_mean(angles: List[float], weights: List[float]):
     if np.any(angles < 0) or np.any(angles > 360):
         raise ValueError("Input angles exist outside of expected range (0-360).")
 
-    if weights is None:
-        weights = np.ones_like(angles) / len(angles)
-
-    if sum(weights) != 1:
-        raise ValueError("weights must total 1.")
+    weights = np.array(weights)
+    weights = weights / sum(weights)
 
     x = y = 0.0
     for angle, weight in zip(angles, weights):
@@ -1425,7 +1252,7 @@ def wind_speed_at_height(
         as stated in an EPW file.
 
     Args:
-        reference_wind_speed (float):
+        reference_value (float):
             The speed to be translated.
         reference_height (float):
             The original height of the wind speed being translated.
@@ -1485,22 +1312,20 @@ def temperature_at_height(
         dry-bulb temperature at another height.
 
     Args:
-        reference_temperature (float):
+        reference_value (float):
             The temperature to translate.
         reference_height (float):
             The height of the reference temperature.
         target_height (float):
             The height to translate the reference temperature towards.
         **kwargs:
-            Additional keyword arguments to be passed to the
-            temperature_at_height function. This includes:
-                reduction_per_km_altitude_gain (float, optional):
-                    The lapse rate of the atmosphere. Defaults to 0.0065 based
-                    on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
-
-        lapse_rate (float, optional):
-            The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
-            conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
+            Additional keyword arguments to be passed to the temperature_at_height function. This includes:
+            reduction_per_km_altitude_gain (float, optional):
+                The lapse rate of the atmosphere. Defaults to 0.0065 based
+                on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
+            lapse_rate (float, optional):
+                The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
+                conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
 
     Returns:
         float:
@@ -1536,7 +1361,7 @@ def radiation_at_height(
         Nov 2009, Frascati, Italy. pp.S05.
 
     Args:
-        reference_radiation (float):
+        reference_value (float):
             The radiation at the reference height.
         target_height (float):
             The height at which the radiation is required, in m.
@@ -1568,7 +1393,7 @@ def air_pressure_at_height(
     """Calculate the air pressure at a given height, given a reference pressure and height.
 
     Args:
-        reference_pressure (float):
+        reference_value (float):
             The pressure at the reference height, in Pa.
         target_height (float):
             The height at which the pressure is required, in m.
@@ -1640,50 +1465,6 @@ def dry_bulb_temperature_at_height(
     return dbt_collection
 
 
-def tile_images(
-    imgs: Union[List[Path], List[Image.Image]], rows: int, cols: int
-) -> Image.Image:
-    """Tile a set of images into a grid.
-
-    Args:
-        imgs (Union[List[Path], List[Image.Image]]):
-            A list of images to tile.
-        rows (int):
-            The number of rows in the grid.
-        cols (int):
-            The number of columns in the grid.
-
-    Returns:
-        Image.Image:
-            A PIL image of the tiled images.
-    """
-
-    imgs = np.array([Path(i) for i in np.array(imgs).flatten()])
-
-    # open images if paths passed
-    imgs = [Image.open(img) if isinstance(img, Path) else img for img in imgs]
-
-    if len(imgs) != rows * cols:
-        raise ValueError(
-            f"The number of images given ({len(imgs)}) does not equal ({rows}*{cols})"
-        )
-
-    # ensure each image has the same dimensions
-    w, h = imgs[0].size
-    for img in imgs:
-        if img.size != (w, h):
-            raise ValueError("All images must have the same dimensions")
-
-    w, h = imgs[0].size
-    grid = Image.new("RGBA", size=(cols * w, rows * h))
-
-    for i, img in enumerate(imgs):
-        grid.paste(img, box=(i % cols * w, i // cols * h))
-        img.close()
-
-    return grid
-
-
 def validate_timeseries(
     obj: Any,
     is_annual: bool = False,
@@ -1724,134 +1505,6 @@ def validate_timeseries(
     if is_contiguous:
         if not obj.index.is_monotonic_increasing:
             raise ValueError("series is not contiguous")
-
-
-def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]:
-    """
-    Lightens the given color by multiplying (1-luminosity) by the given amount.
-
-    Args:
-        color (str):
-            A color-like string.
-        amount (float):
-            The amount of lightening to apply.
-
-    Returns:
-        Tuple[float]:
-            An RGB value.
-
-    Examples:
-    >> lighten_color('g', 0.3)
-    >> lighten_color('#F034A3', 0.6)
-    >> lighten_color((.3,.55,.1), 0.5)
-    """
-    try:
-        c = cnames[color]
-    except KeyError:
-        c = color
-    c = colorsys.rgb_to_hls(*to_rgb(c))
-    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
-
-
-def triangulation_area(triang: Triangulation) -> float:
-    """Calculate the area of a matplotlib Triangulation.
-
-    Args:
-        triang (Triangulation):
-            A matplotlib Triangulation object.
-
-    Returns:
-        float:
-            The area of the Triangulation in the units given.
-    """
-
-    triangles = triang.triangles
-    x, y = triang.x, triang.y
-    a, _ = triangles.shape
-    i = np.arange(a)
-    area = np.sum(
-        np.abs(
-            0.5
-            * (
-                (x[triangles[i, 1]] - x[triangles[i, 0]])
-                * (y[triangles[i, 2]] - y[triangles[i, 0]])
-                - (x[triangles[i, 2]] - x[triangles[i, 0]])
-                * (y[triangles[i, 1]] - y[triangles[i, 0]])
-            )
-        )
-    )
-
-    return area
-
-
-def create_triangulation(
-    x: List[float],
-    y: List[float],
-    alpha: float = None,
-    max_iterations: int = 250,
-    increment: float = 0.01,
-) -> Triangulation:
-    """Create a matplotlib Triangulation from a list of x and y coordinates, including a mask to
-        remove elements with edges larger than alpha.
-
-    Args:
-        x (List[float]):
-            A list of x coordinates.
-        y (List[float]):
-            A list of y coordinates.
-        alpha (float, optional):
-            A value to start alpha at.
-            Defaults to None, with an estimate made for a suitable starting point.
-        max_iterations (int, optional):
-            The number of iterations to run to check against triangulation validity.
-            Defaults to 250.
-        increment (int, optional):
-            The value by which to increment alpha by when searching for a valid triangulation.
-            Defaults to 0.01.
-
-    Returns:
-        Triangulation:
-            A matplotlib Triangulation object.
-    """
-
-    if alpha is None:
-        # TODO - add method here to automatically determine appropriate alpha value
-        alpha = 1.1
-
-    if len(x) != len(y):
-        raise ValueError("x and y must be the same length")
-
-    # Triangulate X, Y locations
-    triang = Triangulation(x, y)
-
-    xtri = x[triang.triangles] - np.roll(x[triang.triangles], 1, axis=1)
-    ytri = y[triang.triangles] - np.roll(y[triang.triangles], 1, axis=1)
-    maxi = np.max(np.sqrt(xtri**2 + ytri**2), axis=1)
-
-    # Iterate triangulation masking until a possible mask is found
-    count = 0
-    fig, ax = plt.subplots(1, 1)
-    synthetic_values = range(len(x))
-    success = False
-    while not success:
-        count += 1
-        try:
-            tr = copy.deepcopy(triang)
-            tr.set_mask(maxi > alpha)
-            ax.tricontour(tr, synthetic_values)
-            success = True
-        except ValueError:
-            alpha += increment
-        else:
-            break
-        if count > max_iterations:
-            plt.close(fig)
-            raise ValueError(
-                f"Could not create a valid triangulation mask within {max_iterations}"
-            )
-    plt.close(fig)
-    triang.set_mask(maxi > alpha)
-    return triang
 
 
 def evaporative_cooling_effect(

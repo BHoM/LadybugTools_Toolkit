@@ -25,7 +25,7 @@ from PIL import Image
 
 from ...bhomutil.analytics import CONSOLE_LOGGER
 from ...bhomutil.bhom_object import BHoMObject
-from ...helpers import create_triangulation, sanitise_string
+from ...helpers import sanitise_string
 from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from ...ladybug_extension.analysis_period import (
     analysis_period_to_boolean,
@@ -37,9 +37,12 @@ from ...ladybug_extension.datacollection import (
     collection_to_series,
 )
 from ...ladybug_extension.epw import seasonality_from_month, sun_position_list
-from ...plot import sunpath, utci_heatmap_difference
-from ...plot.utci_distance_to_comfortable import utci_distance_to_comfortable
-from ...plot.utci_heatmap_histogram import utci_heatmap_histogram
+from ...plot._utci import (
+    utci_distance_to_comfortable,
+    utci_heatmap_difference,
+    utci_heatmap_histogram,
+)
+from ...plot.utilities import create_triangulation
 from ..simulate import SimulationResult
 from ..simulate import direct_sun_hours as dsh
 from ..simulate import working_directory

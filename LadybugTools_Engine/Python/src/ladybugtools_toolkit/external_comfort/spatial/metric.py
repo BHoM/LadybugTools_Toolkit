@@ -5,7 +5,13 @@ from typing import Any, Dict
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ...plot import UTCI_BOUNDARYNORM, UTCI_COLORMAP, UTCI_LEVELS
+from ...categorical.categories import UTCI_DEFAULT_CATEGORIES
+
+UTCI_BOUNDARYNORM = UTCI_DEFAULT_CATEGORIES.norm
+UTCI_COLORMAP = UTCI_DEFAULT_CATEGORIES.cmap
+UTCI_LEVELS = UTCI_DEFAULT_CATEGORIES.bins
+
+# import UTCI_BOUNDARYNORM, UTCI_COLORMAP, UTCI_LEVELS
 
 
 class SpatialMetric(Enum):

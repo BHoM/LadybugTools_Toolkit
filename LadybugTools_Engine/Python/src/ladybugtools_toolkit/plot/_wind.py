@@ -11,16 +11,14 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Colormap, Normalize
 from scipy import stats
 
-from ..categorical.categories import CategoriesBase
 from ..helpers import (
     angle_from_north,
     cardinality,
-    contrasting_color,
     rolling_window,
     wind_direction_average,
 )
 from ..wind.direction_bins import DirectionBins
-from .utilities import annotate_imshow
+from .utilities import annotate_imshow, contrasting_color
 
 # TODO - add Climate Consultant-style "wind wheel" plot here (http://2.bp.blogspot.com/-F27rpZL4VSs/VngYxXsYaTI/AAAAAAAACAc/yoGXmk13uf8/s1600/CC-graphics%2B-%2BWind%2BWheel.jpg)
 
@@ -30,9 +28,8 @@ def windrose(
     data: List[float] = None,
     ax: plt.Axes = None,
     direction_bins: DirectionBins = DirectionBins(),
-    data_bins: Union[int, List[float], CategoriesBase] = 11,
+    data_bins: Union[int, List[float]] = 11,
     include_legend: bool = True,
-    include_percentages: bool = False,
     **kwargs,
 ) -> plt.Axes:
     """Plot a windrose for a collection of wind speeds and directions.
@@ -46,12 +43,10 @@ def windrose(
             The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
         direction_bins (DirectionBins, optional):
             A DirectionBins object.
-        data_bins (List[float], optional):
-            Bins to sort data into. Defaults to the boundaries for Beaufort wind conditions.
+        data_bins (Union[int, List[float]], optional):
+            Bins to sort data into. Defaults to 11 bins between the min/max data values.
         include_legend (bool, optional):
             Set to True to include the legend. Defaults to True.
-        include_percentages (bool, optional):
-            Add bin totals as % to rose. Defaults to False.
         **kwargs:
             Additional keyword arguments to pass to the function.
             data_unit (str, optional):
@@ -59,7 +54,7 @@ def windrose(
             ylim (Tuple[float], optional):
                 The minimum and maximum values for the y-axis. Defaults to None.
             cmap (str, optional):
-                The name of the colormap to use. Defaults to "viridis". If data_bins is CategoriesBase, then this will override the CategoriesBase.cmap() value.
+                The name of the colormap to use. Defaults to "viridis".
 
     Returns:
         plt.Figure:
@@ -77,15 +72,13 @@ def windrose(
     # set data binning defaults
     _data_bins: List[float] = data_bins
     if isinstance(data_bins, int):
-        _data_bins = np.linspace(min(data), max(data), data_bins + 1).round(1)
-    elif isinstance(data_bins, CategoriesBase):
-        _data_bins = data_bins._bin_edges()
+        _data_bins = np.linspace(min(data), max(data), data_bins + 1)
 
     # get colormap
     cmap = plt.get_cmap(
         kwargs.pop(
             "cmap",
-            "viridis" if not isinstance(data_bins, CategoriesBase) else data_bins.cmap,
+            "viridis",
         )
     )
 
@@ -93,15 +86,12 @@ def windrose(
     thetas = np.deg2rad(direction_bins.midpoints)
     width = np.deg2rad(direction_bins.bin_width)
     binned_data = direction_bins.bin_data(wind_directions, data)
-    radiis = np.array(
-        [
-            np.nan_to_num(np.histogram(a=values, bins=_data_bins)[0])
-            for _, values in binned_data.items()
-        ]
-    )
-    bottoms = np.vstack([[0] * len(direction_bins.midpoints), radiis.cumsum(axis=1).T])[
-        :-1
-    ].T
+    radiis = []
+    for _, values in binned_data.items():
+        radiis.append(np.histogram(a=values, bins=_data_bins)[0])
+    bottoms = np.vstack(
+        [[0] * len(direction_bins.midpoints), np.array(radiis).cumsum(axis=1).T]
+    )[:-1].T
     colors = [cmap(i) for i in np.linspace(0, 1, len(_data_bins) - 1)]
 
     # create figure
@@ -111,22 +101,6 @@ def windrose(
     # plot binned data
     for theta, radii, bottom in zip(*[thetas, radiis, bottoms]):
         _ = ax.bar(theta, radii, width=width, bottom=bottom, color=colors, zorder=2)
-
-    if include_percentages:
-        percentages = [
-            len(vals) / len(wind_directions)
-            for (low, high), vals in binned_data.items()
-        ]
-        for theta, radii, percentage in zip(*[thetas, radiis.sum(axis=1), percentages]):
-            tt = ax.text(
-                theta,
-                radii,
-                f"{percentage:0.1%}",
-                fontsize="x-small",
-                ha="center",
-                va="center",
-            )
-            tt.set_bbox(dict(facecolor="white", alpha=0.5, linewidth=0))
 
     # format plot area
     ax.spines["polar"].set_visible(False)
@@ -205,8 +179,6 @@ def wind_matrix(
             A list of time-indexed additional data values to plot as a heatmap, aligning with the wind speeds and directions. Defaults to None.
         show_values (bool, optional):
             Show the values in the matrix. Defaults to False.
-        data_lims (Tuple[float], optional):
-            The minimum and maximum data values to use for the colorbar. Defaults to None.
         **kwargs:
             Additional keyword arguments to pass to the matplotlib pcolor function.
             vmin (float, optional):
