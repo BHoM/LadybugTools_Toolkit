@@ -10,7 +10,7 @@ from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
 
-from ...categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoriesBase
+from ...categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ...helpers import evaporative_cooling_effect
 from ...ladybug_extension.analysis_period import analysis_period_to_boolean
 from ...ladybug_extension.analysis_period import (
@@ -32,7 +32,7 @@ from .process import met_rate_adjustment
 
 def summarise_utci_collections(
     utci_collections: List[HourlyContinuousCollection],
-    categories: CategoriesBase = UTCI_DEFAULT_CATEGORIES,
+    categories: Categorical = UTCI_DEFAULT_CATEGORIES,
     mask: List[bool] = None,
     identifiers: Tuple[str] = None,
 ) -> pd.DataFrame:

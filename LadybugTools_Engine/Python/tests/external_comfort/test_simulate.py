@@ -27,17 +27,6 @@ def test_solar_radiation():
     assert result["UnshadedUpTotalIrradiance"].average == pytest.approx(203, rel=1.5)
 
 
-def test_surface_temperature():
-    """_"""
-    model = create_model(
-        ground_material=GROUND_MATERIAL.to_lbt(),
-        shade_material=SHADE_MATERIAL.to_lbt(),
-        identifier=EXTERNAL_COMFORT_IDENTIFIER,
-    )
-    result = surface_temperature(model, EPW_OBJ)
-    assert result["UnshadedUpTemperature"].average == EPW_OBJ.sky_temperature.average
-
-
 def test_radiant_temperature():
     """_"""
     assert (
@@ -49,53 +38,65 @@ def test_radiant_temperature():
     )
 
 
-def test_simulate():
+def test_surface_temperature():
     """_"""
-    simulation_result = SimulationResult(
+    model = create_model(
+        ground_material=GROUND_MATERIAL.to_lbt(),
+        shade_material=SHADE_MATERIAL.to_lbt(),
+        identifier=EXTERNAL_COMFORT_IDENTIFIER,
+    )
+    result = surface_temperature(model, EPW_OBJ)
+    assert result["UnshadedUpTemperature"].average == EPW_OBJ.sky_temperature.average
+
+
+def test_simulation_result():
+    """_"""
+    res = SimulationResult(
         EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
     )
-    assert simulation_result.run().is_run()
+    assert res.run().is_run()
 
 
 def test_to_dict():
     """Test whether an object can be converted to a dictionary."""
-    simulation_result = SimulationResult(
+
+    res = SimulationResult(
         EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
     )
-    simulation_result_run = simulation_result.run()
-    for obj in [simulation_result, simulation_result_run]:
+    res_run = res.run()
+    for obj in [res, res_run]:
         obj_dict = obj.to_dict()
-        assert "_t" in obj_dict.keys()
+        assert "_t" in obj_dict
 
 
 def test_to_json():
     """Test whether an object can be converted to a json string."""
-    simulation_result = SimulationResult(
+    res = SimulationResult(
         EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
     )
-    simulation_result_run = simulation_result.run()
-    for obj in [simulation_result, simulation_result_run]:
+    res_run = res.run()
+    for obj in [res, res_run]:
         obj_json = obj.to_json()
         assert '"_t":' in obj_json
 
 
 def test_from_dict_native():
     """Test whether an object can be converted from a dictionary directly."""
-    simulation_result = SimulationResult(
+    res = SimulationResult(
         EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
     )
-    simulation_result_run = simulation_result.run()
-    for obj in [simulation_result, simulation_result_run]:
+    res_run = res.run()
+    for obj in [res, res_run]:
         new_obj = type(obj).from_dict(obj.to_dict())
         assert isinstance(new_obj, type(obj))
 
 
 def test_from_json_native():
     """Test whether an object can be converted from a json string directly."""
-    simulation_result = SimulationResult(
+    res = SimulationResult(
         EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
     )
-    simulation_result_run = simulation_result.run()
-    for obj in [simulation_result, simulation_result_run]:
+    res_run = res.run()
+    for obj in [res, res_run]:
         new_obj = type(obj).from_json(obj.to_json())
         assert isinstance(new_obj, type(obj))

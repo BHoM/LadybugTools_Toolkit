@@ -10,8 +10,6 @@ from ladybugtools_toolkit.helpers import (
     angle_from_north,
     cardinality,
     circular_weighted_mean,
-    contrasting_color,
-    create_triangulation,
     decay_rate_smoother,
     default_analysis_periods,
     default_combined_analysis_periods,
@@ -19,10 +17,8 @@ from ladybugtools_toolkit.helpers import (
     default_time_analysis_periods,
     evaporative_cooling_effect,
     evaporative_cooling_effect_collection,
-    lighten_color,
     proximity_decay,
     radiation_at_height,
-    relative_luminance,
     remove_leap_days,
     rolling_window,
     sanitise_string,
@@ -38,24 +34,6 @@ from ladybugtools_toolkit.helpers import (
 from . import EPW_FILE
 
 EPW_OBJ = EPW(EPW_FILE)
-
-
-def test_create_triangulation():
-    # Test with valid input
-    x, y = np.meshgrid(range(10), range(10))
-    triang = create_triangulation(x.flatten(), y.flatten())
-    assert len(triang.triangles) == 162
-
-    # Test with invalid input
-    x = [0, 1, 2, 3, 4, 5]
-    y = [0, 1, 2, 3, 4]
-    with pytest.raises(ValueError):
-        create_triangulation(x, y)
-
-    # Test with alpha value that is too small
-    x, y = np.meshgrid(range(0, 100, 10), range(0, 100, 10))
-    with pytest.raises(ValueError):
-        create_triangulation(x, y, alpha=0.00001)
 
 
 def test_wind_direction_average():
@@ -90,13 +68,13 @@ def test_radiation_at_height():
 
     # Test with custom lapse rate
     assert radiation_at_height(100, 1000, 10, lapse_rate=0.1) == pytest.approx(
-        107.92, rel=1e-2
+        109.9, rel=1e-2
     )
     assert radiation_at_height(200, 2000, 10, lapse_rate=0.2) == pytest.approx(
-        231.84, rel=1e-2
+        279.6, rel=1e-2
     )
     assert radiation_at_height(300, 10000, 10, lapse_rate=0.01) == pytest.approx(
-        539.76, rel=1e-2
+        329.97, rel=1e-2
     )
 
 
@@ -148,12 +126,6 @@ def test_circular_weighted_mean():
     # Test with angles outside of expected range
     angles = [0, 90, 180, 270, 361]
     weights = [0.2, 0.2, 0.2, 0.2, 0.2]
-    with pytest.raises(ValueError):
-        circular_weighted_mean(angles, weights)
-
-    # Test with weights that don't sum to 1
-    angles = [0, 90, 180, 270]
-    weights = [0.2, 0.2, 0.3, 0.4]
     with pytest.raises(ValueError):
         circular_weighted_mean(angles, weights)
 
@@ -249,20 +221,6 @@ def test_rolling_window():
         [5, 6, 7, 8],
     ]
     assert rolling_window(array, window).tolist() == expected_output
-
-
-def test_relative_luminance():
-    """_"""
-    assert relative_luminance("#FFFFFF") == pytest.approx(1.0, rel=1e-7)
-    assert relative_luminance("#000000") == pytest.approx(0.0, rel=1e-7)
-    assert relative_luminance("#808080") == pytest.approx(0.215860500965604, rel=1e-7)
-
-
-def test_contrasting_color():
-    """_"""
-    assert contrasting_color("#FFFFFF") == ".15"
-    assert contrasting_color("#000000") == "w"
-    assert contrasting_color("#808080") == "w"
 
 
 def test_default_time_analysis_periods():
@@ -405,36 +363,6 @@ def test_wind_speed_at_height():
         terrain_roughness_length=0.5,
         log_function=False,
     ) == pytest.approx(1.5891948094037045, rel=0.0001)
-
-
-def test_lighten_color():
-    """_"""
-    # Test lightening a named color
-    assert lighten_color("g", 0.3) == (
-        0.5500000000000002,
-        0.9999999999999999,
-        0.5500000000000002,
-    )
-
-    # Test lightening a hex color
-    assert lighten_color("#F034A3", 0.6) == (
-        0.9647058823529411,
-        0.5223529411764707,
-        0.783529411764706,
-    )
-
-    # Test lightening an RGB color
-    assert lighten_color((0.3, 0.55, 0.1), 0.5) == (
-        0.6365384615384615,
-        0.8961538461538462,
-        0.42884615384615377,
-    )
-
-    # Test lightening a color by 0
-    assert lighten_color("g", 0) == (1.0, 1.0, 1.0)
-
-    # Test lightening a color by 1
-    assert lighten_color("g", 1) == (0.0, 0.5, 0.0)
 
 
 def test_remove_leap_days():

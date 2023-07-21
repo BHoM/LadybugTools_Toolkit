@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import pandas as pd
 
-from ..helpers import contrasting_color, validate_timeseries
+from ..helpers import validate_timeseries
+from .utilities import contrasting_color
 
 
 def monthly_histogram_proportion(

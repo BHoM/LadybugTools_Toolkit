@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import calendar
-import concurrent.futures
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -17,7 +16,7 @@ from matplotlib.colors import Colormap
 from tqdm import tqdm
 
 from ..bhomutil.bhom_object import BHoMObject
-from ..categorical.categories import BEAUFORT_CATEGORIES, CategoriesBase
+from ..categorical.categories import BEAUFORT_CATEGORIES
 from ..helpers import (
     OpenMeteoVariable,
     circular_weighted_mean,
@@ -32,7 +31,6 @@ from ..ladybug_extension.analysis_period import (
     AnalysisPeriod,
     analysis_period_to_boolean,
     analysis_period_to_datetimes,
-    describe_analysis_period,
 )
 from ..plot import timeseries
 from ..plot._wind import (
@@ -1012,11 +1010,10 @@ class Wind(BHoMObject):
         self,
         ax: plt.Axes = None,
         direction_bins: DirectionBins = DirectionBins(),
-        bins: Union[int, List[float], CategoriesBase] = BEAUFORT_CATEGORIES,
+        bins: Union[int, List[float]] = BEAUFORT_CATEGORIES.bins,
         include_legend: bool = True,
         include_percentages: bool = False,
         calm_threshold: float = 0.1,
-        include_calm_threshold: bool = True,
         **kwargs,
     ) -> plt.Axes:  # type: ignore
         """Create a windrose.
@@ -1034,8 +1031,6 @@ class Wind(BHoMObject):
                 Add bin totals as % to rose. Defaults to False.
             cmap (Union[Colormap, str], optional):
                 Use a custom colormap. Defaults to "YlGnBu".
-            calm_threshold (float, optional):
-                The threshold below which wind speeds are considered "calm". Defaults to 0.1.
             include_calm_threshold (bool, optional):
                 Set to True to include the calm threshold in the legend. Defaults to True.
             kwargs:
@@ -1050,12 +1045,6 @@ class Wind(BHoMObject):
         new_w = self.filter_by_speed(
             min_speed=calm_threshold, max_speed=np.inf, inclusive=False
         )
-        calm_percentage = self.calm(calm_threshold)
-
-        # if include_calm_threshold:
-        #     ti = f"{self}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
-        # else:
-        #     ti = f"{self}"
 
         if "cmap" not in kwargs:
             kwargs["cmap"] = "YlGnBu"
@@ -1170,15 +1159,24 @@ class Wind(BHoMObject):
             **kwargs,
         )
 
-    def plot_speed_frequency(self, title: str = None) -> plt.Figure:  # type: ignore
+    def plot_speed_frequency(self, title: str = None, speed_bins: Union[List[float], int] = None) -> plt.Figure:  # type: ignore
         """Create a histogram showing wind speed frequency"""
+
+        # TODO - remake this figure generation as a plt.Axes object!
 
         if title is None:
             title = str(self)
         else:
             title = f"{self}\n{title}"
 
-        speed_bins = np.linspace(min(self.ws), np.quantile(self.ws, 0.999), 16)
+        if speed_bins is None:
+            speed_bins = np.linspace(min(self.ws), np.quantile(self.ws, 0.999), 16)
+        elif isinstance(speed_bins, int):
+            speed_bins = np.linspace(
+                min(self.ws), np.quantile(self.ws, 0.999), speed_bins
+            )
+        else:
+            pass
         percentiles = (0.5, 0.95)
 
         # TODO - reimplement weibull_pdf plotting curve
@@ -1228,3 +1226,46 @@ class Wind(BHoMObject):
     #         title=title if title is not None else str(self),
     #     )
     #     return fig
+
+
+# def weighted_wind_speed_direction(
+#     wind_speeds: List[float], wind_directions: List[float]
+# ) -> List[float]:
+#     """Return a speed-weighted average wind direction and speed for a set of input wind speeds and directions.
+
+#     Args:
+#         wind_speeds (List[float]):
+#             A collection of wind speeds, in m/s.
+#         wind_directions (List[float]):
+#             A collection of wind directions, in degrees from North (0).
+
+#     Returns:
+#         List[float]:
+#             A weighted average wind speed and direction.
+#     """
+#     warnings.warn("UNDER DEFVEKLOPMENT")
+#     # convert directions into XY vectors (including speed magnitude)
+#     wind_vectors = (
+#         np.array([angle_to_vector(d) for d in wind_directions]).T * wind_speeds
+#     ).T
+
+#     # create weights based on wind speed (0-1, higher speeds higher weighting)
+#     weights = np.array(wind_speeds) / np.array(wind_speeds).sum()
+
+#     # multiply by wind speeds (magnitude) to get the average wind vector (weighted by speed)
+#     resultant_wind_vector = np.average((wind_vectors.T).T, axis=0, weights=weights)
+
+#     # get unit vector and magnitude (wind_speed)
+#     resultant_wind_speed = np.linalg.norm(resultant_wind_vector)
+
+#     # determine new wind direction (angle from north)
+#     try:
+#         resultant_wind_direction = np.degrees(
+#             Vector2D.from_array(resultant_wind_vector).angle_counterclockwise(
+#                 Vector2D(0, 1)
+#             )
+#         )
+#     except:
+#         resultant_wind_direction = 0
+
+#     return resultant_wind_speed, resultant_wind_direction

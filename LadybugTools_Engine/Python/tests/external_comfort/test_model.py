@@ -67,6 +67,7 @@ def test_create_shade_zone_construction():
         _create_shade_zone("not_a_construction")
 
 
+@pytest.mark.dependency()
 def test_create_model():
     """_"""
     model = create_model(
