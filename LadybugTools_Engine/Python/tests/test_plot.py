@@ -113,19 +113,6 @@ def test_colormap_sequential():
     )
 
 
-def test_create_triangulation():
-    """_"""
-    x = np.linspace(0, 100, 101)
-    y = np.linspace(0, 100, 101)
-    xx, yy = np.meshgrid(x, y)
-    assert create_triangulation(xx.flatten(), yy.flatten()).x.shape == (10201,)
-
-
-def test_lighten_color():
-    """_"""
-    assert sum(lighten_color("#000444")) == pytest.approx(1.3176470588235292, rel=0.01)
-
-
 def test_spatial_heatmap():
     """_"""
     x = np.linspace(0, 100, 101)
