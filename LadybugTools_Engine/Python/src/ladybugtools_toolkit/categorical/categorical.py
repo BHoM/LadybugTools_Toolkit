@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -42,7 +42,9 @@ class Categorical:
 
     def __post_init__(self):
         if len(self.colors) == 0:
-            self.colors = [to_hex("k")] * (len(self.bins) - 1)
+            self.colors = tuple(
+                plt.rcParams["axes.prop_cycle"].by_key()["color"][: len(self.bins) - 1]
+            )
 
         for color in self.colors:
             if not is_color_like(color):
@@ -201,6 +203,65 @@ class Categorical:
             )
         )
 
+    @property
+    def _bin_name_interval(self) -> Dict[str, pd.Interval]:
+        """The bin name to interval dictionary.
+
+        Returns:
+            Dict[str, pd.Interval]:
+                The bin name to interval dictionary.
+        """
+        return dict(zip(self.bin_names, self.interval_index))
+
+    @property
+    def _interval_bin_name(self) -> Dict[pd.Interval, str]:
+        """The interval to bin name dictionary.
+
+        Returns:
+            Dict[pd.Interval, str]:
+                The interval to bin name dictionary.
+        """
+        return dict(zip(self.interval_index, self.bin_names))
+
+    def interval_from_bin_name(self, bin_name: str) -> pd.Interval:
+        """Return the interval from the bin name.
+
+        Args:
+            bin_name (str):
+                The bin name.
+
+        Returns:
+            pd.Interval:
+                The interval associated with the bin name.
+        """
+        return self._bin_name_interval[bin_name]
+
+    def bin_name_from_interval(self, interval: pd.Interval) -> str:
+        """Return the bin name from the interval.
+
+        Args:
+            interval (pd.Interval):
+                The interval.
+
+        Returns:
+            str:
+                The bin name associated with the interval.
+        """
+        return self._interval_bin_name[interval]
+
+    def color_from_bin_name(self, bin_name: str) -> str:
+        """Return the color from the bin name.
+
+        Args:
+            bin_name (str):
+                The bin name.
+
+        Returns:
+            str:
+                The color associated with the bin name.
+        """
+        return dict(zip(self.bin_names, self.colors))[bin_name]
+
     def get_color(self, value: Union[float, int], as_array: bool = False) -> str:
         """Return the color associated with the categorised value.
 
@@ -260,7 +321,7 @@ class Categorical:
             pd.Series:
                 The number of counts within each categorical bin.
         """
-        result = self.categorise(data).value_counts().sort_index()
+        result = self.categorise(data).value_counts()[list(self.bin_names)]
         if density:
             return result / len(data)
         return result
@@ -287,15 +348,8 @@ class Categorical:
             raise ValueError("The series must have a time series.")
 
         counts = (
-            (
-                self.categorise(series)
-                .groupby(series.index.month)
-                .value_counts()
-                .unstack()
-            )
-            .sort_index(axis=0)
-            .sort_index(axis=1)
-        )
+            self.categorise(series).groupby(series.index.month).value_counts().unstack()
+        ).sort_index(axis=0)[list(self.bin_names)]
         counts.index.name = "Month"
         if density:
             return counts.div(counts.sum(axis=1), axis=0)
@@ -319,7 +373,7 @@ class Categorical:
         result_density = result / result.sum()
 
         statements = []
-        for desc, (idx, val) in list(zip(*[self.descriptions, result.iteritems()])):
+        for desc, (idx, val) in list(zip(*[self.bin_names, result.iteritems()])):
             statements.append(
                 f'"{desc}" occurs {val} times ({result_density[idx]:0.1%}*{len(data)}).'
             )

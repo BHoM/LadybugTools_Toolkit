@@ -48,7 +48,7 @@ from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMA
 from .shelter import Shelter
 from .simulate import SimulationResult
 from .typology import Typology
-from .utci import categorise, utci_comfort_categories
+from .utci import UTCI_DEFAULT_CATEGORIES, Categorical
 from .utci.calculate import utci
 
 

@@ -18,6 +18,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import make_interp_spline
 
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical, ComfortClass
+from ..external_comfort.utci import distance_to_comfortable
 from ..ladybug_extension.datacollection import collection_to_series
 from ._heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
@@ -74,23 +75,12 @@ def utci_distance_to_comfortable(
     if ax is None:
         ax = plt.gca()
 
-    low_limit = min(comfort_thresholds)
-    high_limit = max(comfort_thresholds)
-    midpoint = np.mean(comfort_thresholds)
-
-    vals = np.array(utci_collection.values)
-    if not distance_to_comfort_band_centroid:
-        vals = np.where(
-            vals < low_limit,
-            vals - low_limit,
-            np.where(vals > high_limit, vals - high_limit, 0),
-        )
-        ti = f'Distance from "comfortable" (between {low_limit}°C and {high_limit}°C UTCI)'
-    else:
-        vals = np.where(vals < midpoint, -(midpoint - vals), vals - midpoint)
-        ti = f'Distance from "comfortable" range midpoint (at {midpoint:0.1f}°C between {low_limit}°C and {high_limit}°C UTCI)'
-    new_collection = utci_collection.get_aligned_collection(vals)
-
+    new_collection = distance_to_comfortable(
+        values=utci_collection,
+        comfort_thresholds=comfort_thresholds,
+        distance_to_comfort_band_centroid=distance_to_comfort_band_centroid,
+    )
+    ti = collection_to_series(new_collection).name
     return heatmap(
         collection_to_series(new_collection),
         cmap=kwargs.get("cmap", colormap_sequential("#00A9E0", "w", "#ba000d")),
@@ -770,7 +760,7 @@ def utci_monthly_histogram(
                 )
             if len(set(utci_categories.comfort_classes)) != 3:
                 raise ValueError(
-                    "utci_categories.comfort_classes must have exactly 3 unique values to be used in this plot."
+                    "utci_categories.comfort_classes must have exactly 3 unique values to be used in this method."
                 )
             # get avg "cold", "hot", "comfortable" colors
             cold_color = average_color(
