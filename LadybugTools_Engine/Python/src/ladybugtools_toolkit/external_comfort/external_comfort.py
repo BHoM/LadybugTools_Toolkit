@@ -15,33 +15,19 @@ from matplotlib.figure import Figure
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject
-from ..bhomutil.encoder import (
-    BHoMEncoder,
-    fix_bhom_jsondict,
-    inf_dtype_to_inf_str,
-    inf_str_to_inf_dtype,
-    pascalcase,
-)
+from ..bhomutil.encoder import (BHoMEncoder, fix_bhom_jsondict,
+                                inf_dtype_to_inf_str, inf_str_to_inf_dtype,
+                                pascalcase)
 from ..external_comfort.utci import categorise, utci_comfort_categories
 from ..helpers import evaporative_cooling_effect
-from ..ladybug_extension.analysis_period import (
-    AnalysisPeriod,
-    analysis_period_to_boolean,
-)
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
+from ..ladybug_extension.analysis_period import (AnalysisPeriod,
+                                                 analysis_period_to_boolean)
+from ..ladybug_extension.datacollection import (collection_from_series,
+                                                collection_to_series)
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
-from ..plot import (
-    DBT_COLORMAP,
-    MRT_COLORMAP,
-    RH_COLORMAP,
-    WS_COLORMAP,
-    heatmap,
-    utci_heatmap,
-)
+from ..plot import (DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMAP,
+                    heatmap, utci_heatmap)
 from ..plot.utci_day_comfort_metrics import utci_day_comfort_metrics
 from ..plot.utci_distance_to_comfortable import utci_distance_to_comfortable
 from ..plot.utci_heatmap_histogram import utci_heatmap_histogram

@@ -49,6 +49,9 @@ from ladybug.sql import SQLiteResult
 from ladybug_geometry.geometry3d.face import Face3D
 from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
 from lbt_recipes.settings import RecipeSettings
+from lbt_recipes.recipe import Recipe
+from lbt_recipes.settings import RecipeSettings
+from pollination_streamlit.interactors import Recipe as PollinationRecipe
 
 """
 Within class BoxModel:
@@ -87,7 +90,7 @@ class BoxModel:
     sensor_wall_offset: float = field(init=True, default = 0.5)
     sensor_grid_size: float = field(init=True, default = 0.2)
     sensor_grid_offset: float = field(init=True, default = 0.8)
-    sensor_grid_bay_count: int = field(init=True, default = 2)
+    sensor_grid_bay_count: int = field(init=True, default = 3)
 
     def __post_init__(self):
         # generate UUID
@@ -693,8 +696,27 @@ class AnnualRadianceSettings:
         ambient_resolution = int((longest_dimension * aa) / detail_dimension)
         return '-ar {}'.format(ambient_resolution)
 
+@dataclass
+class RadianceSimulation:
+    model: Union[Model, BoxModel]
+    epw: Union[EPW, Path, str]
+    folder: str = field(init=True, default=None)
+    simulation_parameters: RfluxmtxOptions = field(init=True, default=AnnualRadianceSettings().radiance_parameters)
 
+    def __post_init__(self):
 
+    def simulate(self):
+        settings = RecipeSettings(folder=self.folder, reload_old=False)
+        recipe = Recipe(recipe_name='annual-daylight')
+        silent = False
+        project_folder = recipe.run(settings=settings, radiance_check=True, silent=silent)
+        DA = recipe.output_value_by_name(output_name='da')
+        results = recipe_result(recipe.output_value_by_name('results', project_folder))
+        DA = recipe_result(recipe.output_value_by_name('da', project_folder))
+        cDA = recipe_result(recipe.output_value_by_name('cda', project_folder))
+        UDI = recipe_result(recipe.output_value_by_name('udi', project_folder))
+        UDI_low = recipe_result(recipe.output_value_by_name('udi-lower', project_folder))
+        UDI_up = recipe_result(recipe.output_value_by_name('udi-upper', project_folder))
 ###########################
 
 @dataclass
