@@ -209,7 +209,6 @@ cython_debug/
 .vscode/
 
 # Testing files
-*.ipynb
 .dev/
 prototypes/
 build.ps1
