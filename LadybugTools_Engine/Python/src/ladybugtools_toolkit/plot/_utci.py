@@ -18,7 +18,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import make_interp_spline
 
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical, ComfortClass
-from ..external_comfort.utci import distance_to_comfortable
+from ..external_comfort.utci.postprocess import distance_to_comfortable
 from ..ladybug_extension.datacollection import collection_to_series
 from ._heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
@@ -76,7 +76,7 @@ def utci_distance_to_comfortable(
         ax = plt.gca()
 
     new_collection = distance_to_comfortable(
-        values=utci_collection,
+        utci_values=utci_collection,
         comfort_thresholds=comfort_thresholds,
         distance_to_comfort_band_centroid=distance_to_comfort_band_centroid,
     )
@@ -95,6 +95,7 @@ def utci_comfort_band_comparison(
     ax: plt.Axes = None,
     identifiers: Tuple[str] = None,
     utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    density: bool = True,
     **kwargs,
 ) -> plt.Axes:
     """Create a proportional bar chart showing how different UTCI collections compare in terms of time within each comfort band.
@@ -108,6 +109,8 @@ def utci_comfort_band_comparison(
             A list of names to give each collection. Defaults to None.
         utci_categories (Categories, optional):
             The UTCI categories to use. Defaults to UTCI_DEFAULT_CATEGORIES.
+        density (bool, optional):
+            If True, then show percentage, otherwise show count. Defaults to True.
         **kwargs:
             Additional keyword arguments to pass to the function.
 
@@ -138,7 +141,7 @@ def utci_comfort_band_comparison(
         )
 
     counts = pd.concat(
-        [utci_categories.value_counts(i, density=True) for i in utci_collections],
+        [utci_categories.value_counts(i, density=density) for i in utci_collections],
         axis=1,
         keys=identifiers,
     )
@@ -164,12 +167,27 @@ def utci_comfort_band_comparison(
     for spine in ["top", "right", "bottom", "left"]:
         ax.spines[spine].set_visible(False)
 
-    for c in ax.containers:
-        # Optional: if the segment is small or 0, customize the labels
-        labels = [f"{v.get_height():0.1%}" if v.get_height() > 0.035 else "" for v in c]
+    # add labels to bars
 
-        # remove the labels parameter if it's not needed for customized labels
-        ax.bar_label(c, labels=labels, label_type="center", color="w")
+    # get bar total heights
+    height = np.array([[i.get_height() for i in c] for c in ax.containers]).T.sum(
+        axis=1
+    )[0]
+    for c in ax.containers:
+        labels = []
+        for v in c:
+            label = f"{v.get_height():0.1%}" if density else f"{v.get_height():0.0f}"
+            if v.get_height() / height > 0.04:
+                labels.append(label)
+            else:
+                labels.append("")
+
+        ax.bar_label(
+            c,
+            labels=labels,
+            label_type="center",
+            color=contrasting_color(v.get_facecolor()),
+        )
 
     ax.tick_params(axis="both", which="both", length=0)
     ax.grid(False)

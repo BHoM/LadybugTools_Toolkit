@@ -41,22 +41,25 @@ class Categorical:
     name: str = field(default="GenericCategories")
 
     def __post_init__(self):
+        # ensure colors are valid
         if len(self.colors) == 0:
-            self.colors = tuple(
-                plt.rcParams["axes.prop_cycle"].by_key()["color"][: len(self.bins) - 1]
-            )
-
+            cycle = tuple(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+            while len(cycle) < len(self.bins):
+                cycle += cycle
+            self.colors = cycle[: len(self.bins) - 1]
         for color in self.colors:
             if not is_color_like(color):
                 raise ValueError(f"{color} is not a valid color.")
-        self.colors = tuple([to_hex(i, keep_alpha=True) for i in self.colors])
+        self.colors = tuple(to_hex(i, keep_alpha=True) for i in self.colors)
 
+        # ensure bin names are valid
         if len(self.bin_names) == 0:
             self.bin_names = [str(i) for i in self.interval_index]
 
+        # ensure the number of bins, colors and bin names are consistent
         if len(set([len(self.bin_names), len(self.colors), (len(self.bins) - 1)])) > 1:
             raise ValueError(
-                f"The number of colors ({len(self.colors)}) and bin names ({len(self.bin_names)}) must be one less than the number of bins ({len(self.bins)} - 1)."
+                f"The number of colors ({len(self.colors)}) and bin names ({len(self.bin_names)}) must be one less than the number of bins ({len(self.bins) - 1})."
             )
 
     def __repr__(self):

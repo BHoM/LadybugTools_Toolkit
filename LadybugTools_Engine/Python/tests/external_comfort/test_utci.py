@@ -1,14 +1,14 @@
 import pytest
 from ladybug.epw import EPW
 from ladybug_comfort.collection.utci import UTCI
-from ladybugtools_toolkit.external_comfort.utci import (
-    UTCI_DEFAULT_CATEGORIES,
+from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES
+from ladybugtools_toolkit.external_comfort.utci.calculate import utci
+from ladybugtools_toolkit.external_comfort.utci.postprocess import (
     compare_monthly_utci,
     distance_to_comfortable,
     feasible_utci_limits,
     shade_benefit_category,
 )
-from ladybugtools_toolkit.external_comfort.utci.calculate import utci
 
 from .. import EPW_FILE
 
