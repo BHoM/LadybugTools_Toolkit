@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-import calendar
 import json
-import textwrap
 from dataclasses import dataclass, field
 from types import FunctionType
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.epw import HourlyContinuousCollection
-from ladybug_comfort.collection.utci import UTCI
 from ladybug_geometry.geometry3d.pointvector import Point3D
 from matplotlib.figure import Figure
 
@@ -24,16 +21,10 @@ from ..bhomutil.encoder import (
     inf_str_to_inf_dtype,
     pascalcase,
 )
-from ..helpers import evaporative_cooling_effect, wind_speed_at_height
-from ..ladybug_extension.analysis_period import (
-    AnalysisPeriod,
-    analysis_period_to_boolean,
-    describe_analysis_period,
-)
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
+from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
+from ..helpers import wind_speed_at_height
+from ..ladybug_extension.analysis_period import AnalysisPeriod, describe_analysis_period
+from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
 from ..plot import heatmap
@@ -48,7 +39,6 @@ from ..plot.colormaps import DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP, WS_COLORMA
 from .shelter import Shelter
 from .simulate import SimulationResult
 from .typology import Typology
-from .utci import UTCI_DEFAULT_CATEGORIES, Categorical
 from .utci.calculate import utci
 
 
@@ -330,178 +320,6 @@ class ExternalComfort(BHoMObject):
 
         return df
 
-    def feasible_utci_limits(
-        self, include_additional_moisture: bool = True, as_dataframe: bool = False
-    ) -> Union[pd.DataFrame, List[HourlyContinuousCollection]]:
-        """Calculate the absolute min/max collections of UTCI based on possible shade, wind and moisture adjustments to a pre-computed ExternalComfort condition.
-
-        Args:
-            include_additional_moisture (bool):
-                Include the effect of evaporative cooling on the UTCI limits.
-            as_dataframe (bool):
-                Return the output as a dataframe with two columns, instread of two separate collections.
-
-        Returns:
-            List[HourlyContinuousCollection]: The lowest UTCI and highest UTCI temperatures for each hour of the year.
-        """
-
-        epw = self.SimulationResult.epw
-
-        dbt_evap, rh_evap = np.array(
-            [
-                evaporative_cooling_effect(
-                    dry_bulb_temperature=_dbt,
-                    relative_humidity=_rh,
-                    evaporative_cooling_effectiveness=0.5,
-                    atmospheric_pressure=_atm,
-                )
-                for _dbt, _rh, _atm in list(
-                    zip(
-                        *[
-                            epw.dry_bulb_temperature,
-                            epw.relative_humidity,
-                            epw.atmospheric_station_pressure,
-                        ]
-                    )
-                )
-            ]
-        ).T
-        dbt_evap = epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
-        rh_evap = epw.relative_humidity.get_aligned_collection(rh_evap)
-
-        dbt_rh_options = (
-            [[dbt_evap, rh_evap], [epw.dry_bulb_temperature, epw.relative_humidity]]
-            if include_additional_moisture
-            else [[epw.dry_bulb_temperature, epw.relative_humidity]]
-        )
-
-        utcis = []
-        for _dbt, _rh in dbt_rh_options:
-            for _ws in [
-                self.WindSpeed,
-                self.WindSpeed.get_aligned_collection(0),
-                self.WindSpeed * 1.1,
-            ]:
-                for _mrt in [
-                    self.DryBulbTemperature,
-                    self.MeanRadiantTemperature,
-                ]:
-                    utcis.append(
-                        UTCI(
-                            air_temperature=_dbt,
-                            rad_temperature=_mrt,
-                            rel_humidity=_rh,
-                            wind_speed=_ws,
-                        ).universal_thermal_climate_index,
-                    )
-        df = pd.concat([collection_to_series(i) for i in utcis], axis=1)
-        min_utci = collection_from_series(
-            df.min(axis=1).rename("Universal Thermal Climate Index (C)")
-        )
-        max_utci = collection_from_series(
-            df.max(axis=1).rename("Universal Thermal Climate Index (C)")
-        )
-
-        if as_dataframe:
-            return pd.concat(
-                [
-                    collection_to_series(min_utci),
-                    collection_to_series(max_utci),
-                ],
-                axis=1,
-                keys=["lowest", "highest"],
-            )
-
-        return min_utci, max_utci
-
-    def feasible_comfort_category(
-        self,
-        include_additional_moisture: bool = True,
-        analysis_periods: Tuple[AnalysisPeriod] = (AnalysisPeriod()),
-        simplified: bool = False,
-        comfort_limits: Tuple = (9, 26),
-        density: bool = True,
-    ) -> pd.DataFrame:
-        """Calculate the feasible comfort categories for each hour of the year.
-
-        Args:
-            include_additional_moisture (bool):
-                Include the effect of evaporative cooling on the UTCI limits.
-            analysis_periods (Tuple[AnalysisPeriod]):
-                A tuple of analysis periods to filter the results by.
-            simplified (bool):
-                Set to True to use the simplified comfort categories.
-            comfort_limits (Tuple):
-                A tuple of the lower and upper comfort limits.
-            density (bool):
-                Set to True to return the density of the comfort category.
-
-        Returns:
-            pd.DataFrame: A dataframe with the comfort categories for each hour of the year.
-        """
-
-        try:
-            iter(analysis_periods)
-            if not all(isinstance(ap, AnalysisPeriod) for ap in analysis_periods):
-                raise TypeError(
-                    "analysis_periods must be an iterable of AnalysisPeriods"
-                )
-        except TypeError as exc:
-            raise TypeError(
-                "analysis_periods must be an iterable of AnalysisPeriods"
-            ) from exc
-
-        for ap in analysis_periods:
-            if (ap.st_month != 1) or (ap.end_month != 12):
-                raise ValueError("Analysis periods must be for the whole year.")
-
-        _df = self.feasible_utci_limits(
-            as_dataframe=True, include_additional_moisture=include_additional_moisture
-        )
-
-        # filter by hours
-        hours = analysis_period_to_boolean(analysis_periods)
-        _df_filtered = _df.loc[hours]
-
-        cats, _ = utci_comfort_categories(
-            simplified=simplified,
-            comfort_limits=comfort_limits,
-        )
-
-        # categorise
-        _df_cat = categorise(
-            _df_filtered, simplified=simplified, comfort_limits=comfort_limits
-        )
-
-        # join categories and get low/high lims
-        temp = pd.concat(
-            [
-                _df_cat.groupby(_df_cat.index.month)
-                .lowest.value_counts(normalize=density)
-                .unstack()
-                .reindex(cats, axis=1)
-                .fillna(0),
-                _df_cat.groupby(_df_cat.index.month)
-                .highest.value_counts(normalize=density)
-                .unstack()
-                .reindex(cats, axis=1)
-                .fillna(0),
-            ],
-            axis=1,
-        )
-        columns = pd.MultiIndex.from_product([cats, ["lowest", "highest"]])
-        temp = pd.concat(
-            [
-                temp.groupby(temp.columns, axis=1).min(),
-                temp.groupby(temp.columns, axis=1).max(),
-            ],
-            axis=1,
-            keys=["lowest", "highest"],
-        ).reorder_levels(order=[1, 0], axis=1)[columns]
-        temp.index = [calendar.month_abbr[i] for i in temp.index]
-
-        return temp
-
     def add_insitu_comfort_measures(
         self,
         overhead_shelter: bool = False,
@@ -702,7 +520,15 @@ class ExternalComfort(BHoMObject):
         return ec
 
     def plot_title_string(self, analysis_period: AnalysisPeriod = None) -> str:
-        """Return the description of this result suitable for use in plotting titles."""
+        """Return the description of this result suitable for use in plotting titles.
+
+        Args:
+            analysis_period (AnalysisPeriod, optional): The analysis period to filter the results by. Defaults to None.
+
+        Returns:
+            str: A string describing this result.
+
+        """
         typ_str = self.Typology.Name
 
         if self.Typology.sky_exposure() == 1:
@@ -740,28 +566,46 @@ class ExternalComfort(BHoMObject):
             title=self.plot_title_string(),
         )
 
-    def plot_utci_heatmap(self, ax: plt.Axes = None) -> plt.Axes:
+    def plot_utci_heatmap(
+        self,
+        ax: plt.Axes = None,
+        utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    ) -> plt.Axes:
         """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
+        Args:
+            ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
+            utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
+                UTCI_DEFAULT_CATEGORIES.
+
         Returns:
-            Figure: A matplotlib Figure object.
+            plt.Axes: A matplotlib Axes object.
         """
 
         return utci_heatmap(
             utci_collection=self.UniversalThermalClimateIndex,
             ax=ax,
+            utci_categories=utci_categories,
             title=self.plot_title_string(),
         )
 
-    def plot_utci_heatmap_histogram(self, **kwargs) -> plt.Figure:
+    def plot_utci_heatmap_histogram(
+        self, utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES, **kwargs
+    ) -> plt.Figure:
         """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
+        Args:
+            utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
+                UTCI_DEFAULT_CATEGORIES.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
         Returns:
             Figure: A matplotlib Figure object.
         """
 
         return utci_heatmap_histogram(
             utci_collection=self.UniversalThermalClimateIndex,
+            utci_categories=utci_categories,
             title=self.plot_title_string(),
             **kwargs,
         )
@@ -769,6 +613,7 @@ class ExternalComfort(BHoMObject):
     def plot_utci_histogram(
         self,
         ax: plt.Axes = None,
+        utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
         analysis_period: AnalysisPeriod = AnalysisPeriod(),
         **kwargs,
     ) -> plt.Axes:
@@ -777,6 +622,8 @@ class ExternalComfort(BHoMObject):
         Args:
             ax (plt.Axes, optional):
                 A matplotlib Axes object to plot on. Defaults to None.
+            utci_categories (Categorical, optional):
+                The UTCI categories to use. Defaults to UTCI_DEFAULT_CATEGORIES.
             analysis_period (AnalysisPeriod, optional):
                 The analysis period to filter the results by. Defaults to AnalysisPeriod().
             **kwargs:
@@ -791,6 +638,7 @@ class ExternalComfort(BHoMObject):
                 analysis_period
             ),
             ax=ax,
+            utci_categories=utci_categories,
             title=self.plot_title_string(analysis_period=analysis_period),
             **kwargs,
         )
@@ -799,8 +647,8 @@ class ExternalComfort(BHoMObject):
         self,
         ax: plt.Axes = None,
         comfort_thresholds: Tuple[float] = (9, 26),
-        vmin: float = 15,
-        vmax: float = 25,
+        vmin: float = -10,
+        vmax: float = 10,
     ) -> Figure:
         """Create a heatmap showing the "distance" in C from the "no thermal stress" UTCI comfort
             band.
@@ -810,9 +658,9 @@ class ExternalComfort(BHoMObject):
             comfort_thresholds (List[float], optional): The comfortable band of UTCI temperatures.
                 Defaults to [9, 26].
             vmin (float, optional): The distance from the lower edge of the comfort threshold
-                to include in the "too cold" part of the heatmap. Defaults to 15.
+                to include in the "too cold" part of the heatmap. Defaults to -10.
             vmax (float, optional): The distance from the upper edge of the comfort threshold
-                to include in the "too hot" part of the heatmap. Defaults to 25.
+                to include in the "too hot" part of the heatmap. Defaults to 10.
 
         Returns:
             Figure: A matplotlib Figure object.

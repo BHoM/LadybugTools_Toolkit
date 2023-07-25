@@ -427,7 +427,7 @@ def test_time_binned_dataframe():
 
     # test that the function raises an error if the series is empty
     with pytest.raises(ValueError):
-        time_binned_dataframe(pd.Series())
+        time_binned_dataframe(pd.Series(dtype=float))
 
     # test that the function raises an error if the series does not contain at least 12 months of data
     with pytest.raises(ValueError):
