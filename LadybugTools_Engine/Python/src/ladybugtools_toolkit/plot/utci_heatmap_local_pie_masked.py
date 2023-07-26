@@ -233,7 +233,7 @@ def utci_heatmap_local_pie_masked(
 
     if (st_hour == 0 and end_hour == 23):
         bar_title = "Design focus period: full day"
-    bar_ax.set_title(bar_title, color="k", size="small")
+    pie_ax.set_title(bar_title, color="k", size="small", y=1.05)
 
     if title is None:
         heatmap_ax.set_title(series.name, color="k", y=1, ha="left", va="bottom", x=0)
