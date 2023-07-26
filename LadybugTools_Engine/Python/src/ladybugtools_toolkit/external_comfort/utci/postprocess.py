@@ -1,21 +1,23 @@
-import calendar
 import warnings
 from typing import Any, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import \
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
+from ladybug.datatype.temperature import (
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
+)
 from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
 from scipy.interpolate import interp1d, interp2d
 
 from ...categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
-from ...helpers import evaporative_cooling_effect
-from ...ladybug_extension.datacollection import (collection_from_series,
-                                                 collection_to_series)
+from ...helpers import evaporative_cooling_effect, month_hour_binned_series
+from ...ladybug_extension.datacollection import (
+    collection_from_series,
+    collection_to_series,
+)
 from ...plot.utilities import contrasting_color
 
 
@@ -489,23 +491,18 @@ def feasible_utci_category_limits(
     return df
 
 
-def month_time_binned_table(
+def month_hour_binned(
     utci_data: Union[pd.Series, HourlyContinuousCollection],
-    month_bins: Tuple[Tuple[int]] = ((3, 4, 5), (6, 7, 8), (9, 10, 11), (12, 1, 2)),
-    hour_bins: Tuple[Tuple[int]] = (
-        (5, 6, 7, 8, 9, 10, 11),
-        (12, 13, 14, 15, 16),
-        (17, 18, 19, 20),
-        (21, 22, 23, 0, 1, 2, 3, 4),
-    ),
+    month_bins: Tuple[Tuple[int]] = None,
+    hour_bins: Tuple[Tuple[int]] = None,
     utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
     color_result: bool = False,
-    month_labels: List[str] = None,
-    hour_labels: List[str] = None,
+    month_labels: Tuple[str] = None,
+    hour_labels: Tuple[str] = None,
     agg: str = "mean",
     **kwargs,
 ) -> pd.DataFrame:
-    """Create a table with monthly time binned UTCI data.
+    """Create a table with monthly hour binned UTCI data.
 
     Args:
         utci_data (Union[pd.Series, HourlyContinuousCollection]):
@@ -546,64 +543,14 @@ def month_time_binned_table(
     if isinstance(utci_data, HourlyContinuousCollection):
         utci_data = collection_to_series(utci_data)
 
-    # check that utci_data is annual hourly data
-    if len(utci_data) < 8760:
-        raise ValueError(
-            "utci_data must be hourly data over the course of at least a year (8760+ hours)."
-        )
-
-    # check for continuity of time periods, and overlaps overnight/year
-    flat_hours = [item for sublist in hour_bins for item in sublist]
-    flat_months = [item for sublist in month_bins for item in sublist]
-
-    if (max(flat_hours) != 23) or min(flat_hours) != 0:
-        raise ValueError("hour_bins hours must be in the range 0-23")
-    if (max(flat_months) != 12) or min(flat_months) != 1:
-        raise ValueError("month_bins hours must be in the range 1-12")
-    # cehck for duplicates
-    if len(set(flat_hours)) != len(flat_hours):
-        raise ValueError("hour_bins hours must not contain duplicates")
-    if len(set(flat_months)) != len(flat_months):
-        raise ValueError("month_bins hours must not contain duplicates")
-    if (set(flat_hours) != set(list(range(24)))) or (len(set(flat_hours)) != 24):
-        raise ValueError("Input hour_bins does not contain all hours of the day")
-    if (set(flat_months) != set(list(range(1, 13, 1)))) or (
-        len(set(flat_months)) != 12
-    ):
-        raise ValueError("Input month_bins does not contain all months of the year")
-
-    # create index/column labels
-    if month_labels:
-        if len(month_labels) != len(month_bins):
-            raise ValueError("month_labels must be the same length as month_bins")
-        col_labels = month_labels
-    else:
-        col_labels = []
-        for months in month_bins:
-            if len(months) == 1:
-                col_labels.append(calendar.month_abbr[months[0]])
-            else:
-                col_labels.append(
-                    f"{calendar.month_abbr[months[0]]} to {calendar.month_abbr[months[-1]]}"
-                )
-    if hour_labels:
-        if len(hour_labels) != len(hour_bins):
-            raise ValueError("time_labels must be the same length as hour_bins")
-        row_labels = hour_labels
-    else:
-        row_labels = [f"{i[0]:02d}:00 ≤ t < {i[-1] + 1:02d}:00" for i in hour_bins]
-
-    # create indexing bins
-    values = []
-    for months in month_bins:
-        month_mask = utci_data.index.month.isin(months)
-        inner_values = []
-        for hours in hour_bins:
-            mask = utci_data.index.hour.isin(hours) & month_mask
-            avg = utci_data.loc[mask].agg(agg)
-            inner_values.append(avg)
-        values.append(inner_values)
-    df = pd.DataFrame(values, index=col_labels, columns=row_labels).T
+    df = month_hour_binned_series(
+        series=utci_data,
+        month_bins=month_bins,
+        hour_bins=hour_bins,
+        month_labels=month_labels,
+        hour_labels=hour_labels,
+        agg=agg,
+    )
 
     if color_result:
         warnings.warn(

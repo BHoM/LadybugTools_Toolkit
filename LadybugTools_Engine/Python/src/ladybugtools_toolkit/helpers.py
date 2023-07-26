@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 import contextlib
 import copy
 import io
@@ -8,7 +9,6 @@ import math
 import re
 import urllib.request
 import warnings
-from calendar import month_abbr
 from datetime import datetime, timedelta
 from enum import Enum, auto
 from pathlib import Path
@@ -47,7 +47,7 @@ def ZeroPadPercentFormatter(x: float) -> str:
     return f"{x:5.0%}"
 
 
-def default_time_analysis_periods() -> List[AnalysisPeriod]:
+def default_hour_analysis_periods() -> List[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning times of day."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -80,7 +80,7 @@ def default_combined_analysis_periods() -> List[AnalysisPeriod]:
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
         aps = []
-        for ap_time in default_time_analysis_periods():
+        for ap_time in default_hour_analysis_periods():
             for ap_month in default_month_analysis_periods():
                 aps.append(
                     AnalysisPeriod(
@@ -103,7 +103,7 @@ def default_analysis_periods() -> List[AnalysisPeriod]:
             AnalysisPeriod(),
         ]
         aps.extend(default_month_analysis_periods())
-        aps.extend(default_time_analysis_periods())
+        aps.extend(default_hour_analysis_periods())
         aps.extend(default_combined_analysis_periods())
 
     return aps
@@ -1619,12 +1619,12 @@ def remove_leap_days(
     return pd_object[~mask]
 
 
-def time_binned_dataframe(
+def month_hour_binned_series(
     series: pd.Series,
-    hour_bins: List[List[int]] = None,
-    month_bins: List[List[int]] = None,
-    hour_bin_labels: List[List[int]] = None,
-    month_bin_labels: List[List[int]] = None,
+    month_bins: Tuple[Tuple[int]] = None,
+    hour_bins: Tuple[Tuple[int]] = None,
+    month_labels: Tuple[str] = None,
+    hour_labels: Tuple[str] = None,
     agg: str = "mean",
 ) -> pd.DataFrame:
     """Bin a series by hour and month.
@@ -1632,13 +1632,13 @@ def time_binned_dataframe(
     Args:
         series (pd.Series):
             A series with a datetime index.
-        hour_bins (List[List[int]], optional):
-            A list of lists of hours to bin by. Defaults to None which bins into 24 discrete hours.
-        month_bins (List[List[int]], optional):
-            A list of lists of months to bin by. Defaults to None which bins into 12 discrete months.
-        hour_bin_labels (List[str], optional):
+        hour_bins (Tuple[Tuple[int]], optional):
+            A list of lists of hours to bin by. Defaults to None which bins into the default_time_analysis_periods().
+        month_bins (Tuple[Tuple[int]], optional):
+            A list of lists of months to bin by. Defaults to None which bins into default_month_analysis_periods.
+        hour_labels (List[str], optional):
             A list of labels to use for the hour bins. Defaults to None which just lists the hours in each bin.
-        month_bin_labels (List[str], optional):
+        month_labels (List[str], optional):
             A list of labels to use for the month bins. Defaults to None which just lists the months in each bin.
         agg (str, optional):
             The aggregation method to use. Can be either "min", "mean", "median", "max" or "sum". Defaults to "mean".
@@ -1666,52 +1666,82 @@ def time_binned_dataframe(
 
     # check that the series has at least 24-values per day
     if series.groupby(series.index.day_of_year).count().min() < 24:
-        raise ValueError("The series must have at least 24-values per day")
+        raise ValueError("The series must contain at least 24-values per day")
 
-    # add name to series if no name found
-    if series.name is None:
-        series.name = "series"
-
-    # create generic bins if none are given by user
-    if hour_bins is None:
-        hour_bins = [[i] for i in range(24)]
+    # create generic month/hour sets for binning, from existing defaults if no input
     if month_bins is None:
-        month_bins = [[i] for i in range(1, 13)]
+        _months = np.arange(1, 13, 1)
+        month_bins = []
+        for ap in default_month_analysis_periods():
+            if ap.st_month == ap.end_month:
+                res = (ap.st_month,)
+            else:
+                length = ap.end_month - ap.st_month
+                res = tuple(np.roll(_months, -ap.st_month + 1)[: length + 1])
+            month_bins.append(res)
+        month_bins = tuple(month_bins)
+    if hour_bins is None:
+        _hours = np.arange(0, 24)
+        hour_bins = []
+        for ap in default_hour_analysis_periods():
+            if ap.st_hour == ap.end_hour:
+                res = (ap.st_hour,)
+            else:
+                length = ap.end_hour - ap.st_hour
+                res = tuple(np.roll(_hours, -ap.st_hour)[: length + 1])
+            hour_bins.append(res)
+        hour_bins = tuple(hour_bins)
 
-    # create generic bin labels if none are given by user
-    if hour_bin_labels is None:
-        hour_bin_labels = [", ".join([f"{j:02d}:00" for j in i]) for i in hour_bins]
-    if month_bin_labels is None:
-        month_bin_labels = [", ".join([month_abbr[j] for j in i]) for i in month_bins]
+    # check for contiguity of time periods
+    flat_hours = [item for sublist in hour_bins for item in sublist]
+    flat_months = [item for sublist in month_bins for item in sublist]
+    if (max(flat_hours) != 23) or min(flat_hours) != 0:
+        raise ValueError("hour_bins hours must be in the range 0-23")
+    if (max(flat_months) != 12) or min(flat_months) != 1:
+        raise ValueError("month_bins hours must be in the range 1-12")
+    # cehck for duplicates
+    if len(set(flat_hours)) != len(flat_hours):
+        raise ValueError("hour_bins hours must not contain duplicates")
+    if len(set(flat_months)) != len(flat_months):
+        raise ValueError("month_bins hours must not contain duplicates")
+    if (set(flat_hours) != set(list(range(24)))) or (len(set(flat_hours)) != 24):
+        raise ValueError("Input hour_bins does not contain all hours of the day")
+    if (set(flat_months) != set(list(range(1, 13, 1)))) or (
+        len(set(flat_months)) != 12
+    ):
+        raise ValueError("Input month_bins does not contain all months of the year")
 
-    # check that length of hour-bin-labels matches that of hour-bins
-    if len(hour_bin_labels) != len(hour_bins):
-        raise ValueError(
-            "Hour bin labels must be the same length as the number of hour bins."
-        )
-    if len(month_bin_labels) != len(month_bins):
-        raise ValueError(
-            "Month bin labels must be the same length as the number of month bins."
-        )
+    # create index/column labels
+    if month_labels:
+        if len(month_labels) != len(month_bins):
+            raise ValueError("month_labels must be the same length as month_bins")
+        col_labels = month_labels
+    else:
+        col_labels = []
+        for months in month_bins:
+            if len(months) == 1:
+                col_labels.append(calendar.month_abbr[months[0]])
+            else:
+                col_labels.append(
+                    f"{calendar.month_abbr[months[0]]} to {calendar.month_abbr[months[-1]]}"
+                )
+    if hour_labels:
+        if len(hour_labels) != len(hour_bins):
+            raise ValueError("hour_labels must be the same length as hour_bins")
+        row_labels = hour_labels
+    else:
+        row_labels = [f"{i[0]:02d}:00 ≤ t < {i[-1] + 1:02d}:00" for i in hour_bins]
 
-    # check that hour and month bins are valid
-    if len(set([item for sublist in hour_bins for item in sublist])) != 24:
-        raise ValueError("Hour bins must contain all hours [0-23]")
-    if len(set([item for sublist in month_bins for item in sublist])) != 12:
-        raise ValueError("Month bins must contain all months [1-12]")
-
-    # convert series to dataframe with month/hour columns, and aggregate
-    df = series.to_frame()
-    df["hour"] = series.index.hour
-    df["month"] = series.index.month
-    a = []
+    # create indexing bins
+    values = []
     for months in month_bins:
-        b = []
+        month_mask = series.index.month.isin(months)
+        inner_values = []
         for hours in hour_bins:
-            b.append(
-                df[df.month.isin(months) & df.hour.isin(hours)][series.name].agg(agg)
-            )
-        a.append(b)
-    df = pd.DataFrame(a, index=month_bin_labels, columns=hour_bin_labels).T
+            mask = series.index.hour.isin(hours) & month_mask
+            aggregated = series.loc[mask].agg(agg)
+            inner_values.append(aggregated)
+        values.append(inner_values)
+    df = pd.DataFrame(values, index=col_labels, columns=row_labels).T
 
     return df
