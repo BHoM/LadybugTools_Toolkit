@@ -13,10 +13,11 @@ from ladybugtools_toolkit.helpers import (
     decay_rate_smoother,
     default_analysis_periods,
     default_combined_analysis_periods,
+    default_hour_analysis_periods,
     default_month_analysis_periods,
-    default_time_analysis_periods,
     evaporative_cooling_effect,
     evaporative_cooling_effect_collection,
+    month_hour_binned_series,
     proximity_decay,
     radiation_at_height,
     remove_leap_days,
@@ -24,7 +25,6 @@ from ladybugtools_toolkit.helpers import (
     sanitise_string,
     target_wind_speed_collection,
     temperature_at_height,
-    time_binned_dataframe,
     timedelta_tostring,
     weibull_pdf,
     wind_direction_average,
@@ -223,9 +223,9 @@ def test_rolling_window():
     assert rolling_window(array, window).tolist() == expected_output
 
 
-def test_default_time_analysis_periods():
+def test_default_hour_analysis_periods():
     """_"""
-    aps = default_time_analysis_periods()
+    aps = default_hour_analysis_periods()
     assert len(aps) == 4
     assert isinstance(aps[0], AnalysisPeriod)
     assert isinstance(aps[1], AnalysisPeriod)
@@ -408,30 +408,27 @@ def test_remove_leap_days():
     assert len(s) == 728
 
 
-def test_time_binned_dataframe():
+def test_month_hour_binned_series():
     """_"""
     s = pd.Series(
         index=pd.date_range(start="2017-01-01 00:00:00", freq="60T", periods=8760),
         data=range(8760),
     )
 
-    # Test defaults
-    assert time_binned_dataframe(s).shape == (24, 12)
-
     # test that the function returns a dataframe
-    assert isinstance(time_binned_dataframe(s), pd.DataFrame)
+    assert isinstance(month_hour_binned_series(s), pd.DataFrame)
 
     # test that the function raises an error if the series is not a time series
     with pytest.raises(ValueError):
-        time_binned_dataframe([1, 2, 3])
+        month_hour_binned_series([1, 2, 3])
 
     # test that the function raises an error if the series is empty
     with pytest.raises(ValueError):
-        time_binned_dataframe(pd.Series(dtype=float))
+        month_hour_binned_series(pd.Series(dtype=float))
 
     # test that the function raises an error if the series does not contain at least 12 months of data
     with pytest.raises(ValueError):
-        time_binned_dataframe(
+        month_hour_binned_series(
             pd.Series(
                 index=pd.date_range(
                     start="2017-01-01 00:00:00", freq="60T", periods=5000
@@ -442,7 +439,7 @@ def test_time_binned_dataframe():
 
     # test that the function raises an error if the series does not have at least 24 values per day
     with pytest.raises(ValueError):
-        time_binned_dataframe(
+        month_hour_binned_series(
             pd.Series(
                 index=pd.date_range(
                     start="2017-01-01 00:00:00", freq="120T", periods=8760 * 3
@@ -453,26 +450,38 @@ def test_time_binned_dataframe():
 
     # test that the function raises an error if the length of hour-bin-labels does not match that of hour-bins
     with pytest.raises(ValueError):
-        time_binned_dataframe(s, hour_bin_labels=["Morning", "Afternoon"])
+        month_hour_binned_series(s, hour_labels=["Morning", "Afternoon"])
 
     # test that the function raises an error if the length of month-bin-labels does not match that of month-bins
     with pytest.raises(ValueError):
-        time_binned_dataframe(s, month_bin_labels=["Q1", "Q2", "Q3"])
+        month_hour_binned_series(s, month_labels=["Q1", "Q2", "Q3"])
 
     # test that the function raises an error if hour bins do not contain all hours [0-23]
     with pytest.raises(ValueError):
-        time_binned_dataframe(s, hour_bins=[[0, 1, 2], [3, 4, 5]])
+        month_hour_binned_series(s, hour_bins=[[0, 1, 2], [3, 4, 5]])
 
     # test that the function raises an error if month bins do not contain all months [1-12]
     with pytest.raises(ValueError):
-        time_binned_dataframe(s, month_bins=[[1, 2, 3], [4, 5, 6]])
+        month_hour_binned_series(s, month_bins=[[1, 2, 3], [4, 5, 6]])
+
+    # test that the function raises an error if month bins overlap
+    with pytest.raises(ValueError):
+        month_hour_binned_series(
+            s, month_bins=[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [10, 11, 12]]
+        )
+
+    # test that the function raises an error if hour bins overlap
+    with pytest.raises(ValueError):
+        month_hour_binned_series(
+            s,
+            hour_bins=[
+                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+            ],
+        )
 
     # test that the function returns a dataframe with the expected shape
-    df = time_binned_dataframe(s)
-    assert df.shape == (24, 12)
-
-    # Test with custom bins
-    assert time_binned_dataframe(
+    assert month_hour_binned_series(
         s,
         month_bins=[[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]],
         hour_bins=[
