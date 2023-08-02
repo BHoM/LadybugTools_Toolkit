@@ -552,7 +552,6 @@ def to_hourly(
         HourlyContinuousCollection:
             A Ladybug HourlyContinuousCollection object.
     """
-
     if method is None:
         method = "smooth"
 
