@@ -34,6 +34,7 @@ from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
+from ..external_comfort.ground_temperature import hourly_ground_temperature
 from ..helpers import (
     air_pressure_at_height,
     radiation_at_height,
@@ -49,7 +50,9 @@ from .location import average_location
 from .location import location_to_string as location_to_string
 
 
-def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
+def epw_to_dataframe(
+    epw: EPW, include_additional: bool = False, **kwargs
+) -> pd.DataFrame:
     """Create a Pandas DataFrame from an EPW object, with option for including additional metrics.
 
     Args:
@@ -57,6 +60,12 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
             An EPW object.
         include_additional (bool, optional):
             Set to False to not include additional calculated properties. Default is False.
+        **kwargs:
+            Additional keyword arguments to be passed to the to_dataframe method.
+            ground_temperature_depth (float):
+                The depth in m at which to calculate ground temperatures. Default is 0.5.
+            soil_diffusivity (float):
+                The soil diffusivity in m2/s. Default is 3.1e-7.
 
     Returns:
         pd.DataFrame:
@@ -128,6 +137,13 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
     ent = enthalpy(epw, hr)
     wbt = wet_bulb_temperature(epw)
 
+    # Calculate ground temperatures
+    ground_temp = hourly_ground_temperature(
+        epw,
+        depth=kwargs.pop("ground_temperature_depth", 0.5),
+        soil_diffusivity=kwargs.pop("soil_diffusivity", 3.1e-7),
+    )
+
     # Add properties to DataFrame
     for collection in [
         eot,
@@ -143,6 +159,7 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
         hr,
         ent,
         wbt,
+        ground_temp,
     ]:
         s = collection_to_series(collection)
         s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
@@ -946,16 +963,16 @@ def seasonality_from_day_length_location(
         )
 
     shortest_day_length = timedelta_tostring(sun_times.day_length.min())
-    shortest_day = sun_times.day_length.idxmin()
+    _shortest_day = sun_times.day_length.idxmin()
     middlest_day_length = timedelta_tostring(sun_times.day_length.mean())
     longest_day_length = timedelta_tostring(sun_times.day_length.max())
-    longest_day = sun_times.day_length.idxmax()
+    _longest_day = sun_times.day_length.idxmax()
 
     months = pd.Timedelta(days=3 * 30)
 
-    if (longest_day + months).year != longest_day.year:
-        spring_equinox = shortest_day + months
-        autumn_equinox = shortest_day - months
+    if (_longest_day + months).year != _longest_day.year:
+        spring_equinox = _shortest_day + months
+        autumn_equinox = _shortest_day - months
 
         autumn_right = autumn_equinox + (months / 2)
         autumn_left = autumn_equinox - (months / 2)
@@ -968,8 +985,8 @@ def seasonality_from_day_length_location(
         winter_mask = (idx > autumn_right) & (idx <= spring_left)
 
     else:
-        spring_equinox = longest_day - months
-        autumn_equinox = longest_day + months
+        spring_equinox = _longest_day - months
+        autumn_equinox = _longest_day + months
 
         autumn_right = autumn_equinox + (months / 2)
         autumn_left = autumn_equinox - (months / 2)
