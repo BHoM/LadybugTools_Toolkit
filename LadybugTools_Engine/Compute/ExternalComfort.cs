@@ -71,7 +71,7 @@ namespace BH.Engine.LadybugTools
 
             // send to Python to simulate/load
             string externalComfortJsonStr = System.Text.RegularExpressions.Regex.Unescape(externalComfort.ToJson());
-            PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
+            PythonEnvironment env = InstallPythonEnv_LBT(true);
             string pythonScript = string.Join("\n", new List<string>()
             {
                 "import json",
