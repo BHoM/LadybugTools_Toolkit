@@ -48,8 +48,8 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
                 return null;
             }
-
-            PythonEnvironment env = Python.Query.VirtualEnv(Query.ToolkitName());
+            
+            PythonEnvironment env = InstallPythonEnv_LBT(true);
             string additionalProperties = includeAdditional ? "True" : "False";
 
             string pythonScript = string.Join("\n", new List<string>()

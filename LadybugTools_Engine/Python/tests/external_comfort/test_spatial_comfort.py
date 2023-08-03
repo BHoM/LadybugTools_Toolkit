@@ -9,18 +9,15 @@ import pytest
 from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 from ladybug.wea import AnalysisPeriod, Wea
-from ladybugtools_toolkit.external_comfort.external_comfort import SimulationResult
+from ladybugtools_toolkit.external_comfort.external_comfort import \
+    SimulationResult
 from ladybugtools_toolkit.external_comfort.material import Materials
-from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort import SpatialComfort
+from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort import \
+    SpatialComfort
 from lbt_recipes.recipe import Recipe, RecipeSettings
 
-from .. import (
-    CFD_DIRECTORY,
-    EPW_FILE,
-    EXTERNAL_COMFORT_IDENTIFIER,
-    MODEL_FILE,
-    SPATIAL_COMFORT_DIRECTORY,
-)
+from .. import (CFD_DIRECTORY, EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER,
+                MODEL_FILE, SPATIAL_COMFORT_DIRECTORY)
 
 SPATIAL_COMFORT_DIRECTORY.mkdir(parents=True, exist_ok=True)
 CFD_LOCAL_DIRECTORY = SPATIAL_COMFORT_DIRECTORY / "cfd"
@@ -28,6 +25,13 @@ CFD_LOCAL_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
 GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
 SHADE_MATERIAL = Materials.FABRIC.value
+
+SIMULATION_RESULT = SimulationResult(
+    EPW_FILE,
+    GROUND_MATERIAL,
+    SHADE_MATERIAL,
+    EXTERNAL_COMFORT_IDENTIFIER,
+).run()
 
 # copy cfd values into local directory for testing
 for file in list(CFD_DIRECTORY.glob("**/*")):
@@ -39,7 +43,6 @@ SIMULATION_RESULT = SimulationResult(
     SHADE_MATERIAL,
     EXTERNAL_COMFORT_IDENTIFIER,
 ).run()
-
 
 @pytest.mark.order(1)
 def test_run_spatial_annual_irradiance() -> Path:
@@ -79,7 +82,6 @@ def test_run_spatial_annual_irradiance() -> Path:
 
     assert ill_file.exists()
 
-
 @pytest.mark.order(2)
 def test_run_spatial_sky_view() -> Path:
     """Run spatial sky-view simulation and return working directory."""
@@ -112,7 +114,6 @@ def test_run_spatial_sky_view() -> Path:
 
     assert res_file_old.exists() or res_file_new.exists()
 
-
 @pytest.mark.order(3)
 def test_spatial_comfort():
     """_"""
@@ -120,7 +121,6 @@ def test_spatial_comfort():
     assert isinstance(
         SpatialComfort(SPATIAL_COMFORT_DIRECTORY, SIMULATION_RESULT), SpatialComfort
     )
-
 
 @pytest.mark.order(4)
 def test_spatial_comfort_processing():
@@ -136,7 +136,6 @@ def test_spatial_comfort_processing():
     assert isinstance(
         spatial_comfort.universal_thermal_climate_index_calculated, pd.DataFrame
     )
-
 
 @pytest.mark.order(5)
 def test_spatial_comfort_summary():
