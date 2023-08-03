@@ -40,7 +40,7 @@ namespace BH.Engine.LadybugTools
             if (string.IsNullOrEmpty(filter))
                 filter = "";
 
-            PythonEnvironment env = Python.Query.VirtualEnv(ToolkitName());
+            PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
 
             string pythonScript = string.Join("\n", new List<string>()
             {
