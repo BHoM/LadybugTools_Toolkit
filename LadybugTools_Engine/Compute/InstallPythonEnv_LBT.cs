@@ -72,7 +72,7 @@ namespace BH.Engine.LadybugTools
                 env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName()));
 
                 // create requiremetns from referenced executable
-                string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable);
+                string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
                 env.InstallRequirements(requirementsTxt);
                 File.Delete(requirementsTxt);
             }
