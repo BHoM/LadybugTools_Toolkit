@@ -119,7 +119,7 @@ nest-asyncio==1.5.6
 notebook==6.5.4
 notebook_shim==0.2.3
 numexpr==2.8.4
-numpy==1.21.6
+numpy==1.22.0
 opencv-python==4.7.0.72
 openpyxl==3.1.2
 packaging==23.1
