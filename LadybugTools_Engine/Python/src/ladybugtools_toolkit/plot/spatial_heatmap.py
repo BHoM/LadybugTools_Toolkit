@@ -2,8 +2,11 @@ from typing import Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+from honeybee_radiance.sensorgrid import SensorGrid
+from matplotlib.collections import PatchCollection
 from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
+from matplotlib.patches import PathPatch
 from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -158,5 +161,39 @@ def spatial_heatmap(
         ax.set_title(title, ha="left", va="bottom", x=0)
 
     plt.tight_layout()
+
+    return fig
+
+def spatial_heatmap_patches(
+        patches: List[PathPatch],
+        values: List[float],
+        show_legend_title: bool = True,
+        cmap: Colormap = "viridis",
+        colorbar_label: str = "",
+        title: str ="",
+        legend_min: float = None,
+        legend_max: float = None
+) -> Figure:
+    p = PatchCollection(patches=patches, cmap = cmap, alpha=1)
+    p.set_array(values)
+
+    fig, ax = plt.subplots()
+    ax.add_collection(p)
+    ax.autoscale(True)
+    ax.axis('equal')
+    ax.axis('off')
+
+    if show_legend_title:
+        # Plot colorbar
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
+
+        cbar = plt.colorbar(
+            p, cax=cax  # , format=mticker.StrMethodFormatter("{x:04.1f}")
+        )
+        cbar.outline.set_visible(False)
+        cbar.set_label(colorbar_label)
+
+        ax.set_title(title, ha="left", va="bottom", x=0)
 
     return fig

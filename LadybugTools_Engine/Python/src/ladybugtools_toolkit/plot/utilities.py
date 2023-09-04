@@ -9,16 +9,12 @@ import matplotlib.image as mimage
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
+from honeybee_radiance.sensorgrid import SensorGrid
 from ladybug.color import Colorset
-from matplotlib.colors import (
-    LinearSegmentedColormap,
-    cnames,
-    colorConverter,
-    is_color_like,
-    rgb2hex,
-    to_rgb,
-    to_rgba_array,
-)
+from matplotlib.colors import (LinearSegmentedColormap, cnames, colorConverter,
+                               is_color_like, rgb2hex, to_rgb, to_rgba_array)
+from matplotlib.patches import Patch, PathPatch
+from matplotlib.path import Path as MPLPath
 from matplotlib.tri import Triangulation
 from PIL import Image
 
@@ -607,3 +603,30 @@ def create_triangulation(
     plt.close(fig)
     triang.set_mask(maxi > alpha)
     return triang
+
+def sensorgrid_to_patches(sensor_grid: SensorGrid) -> List[PathPatch]:
+    """Takes a HB SensorGrid and returns a list of matplotlib Patch objects
+
+    Args:
+        sensor_grid (SensorGrid):
+            A single HB SensorGrid object
+
+    Returns:
+        List[Patch]:
+            A list of matplotlib Patch objects
+    """
+
+    mesh = sensor_grid.mesh
+    vertices = mesh.face_vertices
+    patches = []
+    for face in vertices:
+        face_vertices = []
+        for vertice in face:
+            x , y = vertice.x, vertice.y
+            face_vertices.append([x,y])
+        starting_vertices = face_vertices[0]
+        face_vertices.append(starting_vertices)
+        path = MPLPath(face_vertices)
+        patch = PathPatch(path, rasterized = True)
+        patches.append(patch)
+    return patches
