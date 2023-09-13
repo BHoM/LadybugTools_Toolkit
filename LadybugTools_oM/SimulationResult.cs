@@ -39,47 +39,27 @@ namespace BH.oM.LadybugTools
 
         // simulated properties
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedDownDirectIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedDownDiffuseIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedDownTotalIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
         public virtual CustomObject ShadedDownTemperature { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedUpDiffuseIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedUpDirectIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedUpTotalIrradiance { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
         public virtual CustomObject ShadedUpTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedLongwaveMeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual CustomObject ShadedRadiantTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedShortwaveMeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual CustomObject ShadedLongwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject ShadedShortwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
         public virtual CustomObject ShadedMeanRadiantTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedDownDiffuseIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedDownDirectIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedDownTotalIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
         public virtual CustomObject UnshadedDownTemperature { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedUpDiffuseIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedUpDirectIrradiance { get; set; } = new CustomObject();
-        [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedUpTotalIrradiance { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
         public virtual CustomObject UnshadedUpTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedLongwaveMeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual CustomObject UnshadedRadiantTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedShortwaveMeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual CustomObject UnshadedLongwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject UnshadedShortwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
         public virtual CustomObject UnshadedMeanRadiantTemperature { get; set; } = new CustomObject();
     }

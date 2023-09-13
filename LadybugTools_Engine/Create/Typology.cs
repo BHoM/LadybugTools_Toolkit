@@ -77,7 +77,7 @@ namespace BH.Engine.LadybugTools
 
             return new Typology()
             {
-                Name = name,
+                Name = rtnName,
                 Shelters = shelters.Where(s => s != null).ToList(),
                 EvaporativeCoolingEffect = Enumerable.Repeat(evaporativeCoolingEffect, 8760).ToList(),
                 WindSpeedMultiplier = Enumerable.Repeat(windSpeedMultiplier, 8760).ToList(),
