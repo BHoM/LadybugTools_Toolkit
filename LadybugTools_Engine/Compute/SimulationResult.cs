@@ -30,6 +30,7 @@ using System.Linq;
 using System.IO;
 using BH.oM.LadybugTools;
 using BH.Engine.Serialiser;
+using BH.Engine.Base;
 
 namespace BH.Engine.LadybugTools
 {
@@ -91,6 +92,12 @@ namespace BH.Engine.LadybugTools
             });
             string output = env.RunPythonString(pythonScript).Trim().Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
 
+            if (output.Substring(0, 12).Contains("error"))
+            {
+                BH.Engine.Base.Compute.RecordError(Serialiser.Convert.FromJson(output).PropertyValue("error").ToString());
+                return null;
+            }
+            
             // reload from Python results
             return (SimulationResult)Serialiser.Convert.FromJson(output);
         }
