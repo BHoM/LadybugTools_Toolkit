@@ -1,5 +1,8 @@
+from typing import List
+
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from ..helpers import validate_timeseries
@@ -23,6 +26,8 @@ def heatmap(
                 If True, show the colorbar. Defaults to True.
             title (str, optional):
                 The title of the plot. Defaults to None.
+            mask (List[bool], optional):
+                A list of booleans to mask the data. Defaults to None.
 
     Returns:
         plt.Axes:
@@ -44,6 +49,13 @@ def heatmap(
         pd.to_datetime([f"2017-01-01 {i}" for i in day_time_matrix.index])
     )
     z = day_time_matrix.values
+
+    if "mask" in kwargs:
+        if len(kwargs["mask"]) != len(series):
+            raise ValueError(
+                f"Length of mask ({len(kwargs['mask'])}) must match length of data ({len(series)})."
+            )
+        z = np.ma.masked_array(z, mask=kwargs.pop("mask"))
 
     # handle non-standard kwargs
     extend = kwargs.pop("extend", "neither")

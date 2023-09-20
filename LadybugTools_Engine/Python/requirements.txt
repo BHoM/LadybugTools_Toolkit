@@ -1,5 +1,4 @@
 case-converter
-ladybug-charts
 openpyxl
 pyarrow
 pylint
@@ -8,6 +7,10 @@ pytest-cov
 pytest-order
 scikit-learn
 scipy
+Sphinx
+sphinx_bootstrap_theme
+sphinxcontrib-fulltoc
+sphinxcontrib-napoleon
 tables
 tqdm
 xlrd

@@ -1080,6 +1080,13 @@ def utci_histogram(
     ax.set_xlim(xlim)
     ax.set_xlabel(series.name)
 
+    # set ylims
+    ylim = kwargs.pop(
+        "ylim",
+        ax.get_ylim(),
+    )
+    ax.set_ylim(ylim)
+
     # get positions for percentage labels
     if show_labels:
         counts = utci_categories.value_counts(series, density=False)

@@ -24,6 +24,7 @@ def spatial_heatmap(
     title: str = "",
     highlight_pts: Dict[str, Tuple[int]] = None,
     show_legend_title: bool = True,
+    clabels: bool = False,
 ) -> Figure:
     """Plot a spatial map of a variable using a triangulation and associated values.
 
@@ -61,6 +62,8 @@ def spatial_heatmap(
             index of the highlighted point.
         show_legend_title (bool, optional):
             A convenient flag to hide the legend and title.
+        clabels (bool, optional):
+            A flag to show contour labels. Defaults to False.
 
     Returns:
         Figure: A matplotlib Figure object.
@@ -120,7 +123,8 @@ def spatial_heatmap(
                     colors=contour_colors,
                     linewidths=contour_widths,
                 )
-                ax.clabel(tcl, inline=1, fontsize=10, colors=["k"])
+                if clabels:
+                    ax.clabel(tcl, inline=1, fontsize="small", colors=contour_colors)
                 tcls.append(tcl)
 
     if highlight_pts is not None:

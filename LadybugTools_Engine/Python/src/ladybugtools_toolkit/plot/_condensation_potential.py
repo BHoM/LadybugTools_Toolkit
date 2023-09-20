@@ -68,7 +68,7 @@ def condensation_potential(
     ax.set_title(
         create_title(
             kwargs.pop("title", None),
-            f"Condensation potential (for values between {min(dry_bulb_temperature.index):%b %Y} and {max(dry_bulb_temperature.index):%b %Y})",
+            f"Condensation potential",
         )
     )
 

@@ -521,13 +521,12 @@ def month_hour_binned(
             A list of labels for the hour bins. Defaults to None.
         agg (str, optional):
             The aggregation method to use for the data within each bin. Defaults to "mean".
-        **kwargs:
-            Additional keyword arguments to pass to the pandas.DataFrame.style.format method.
-            contrast_text (bool, optional):
-                If True, the text color will be chosen to contrast with the background color. Defaults to True.
-            round (int, optional):
-                The number of decimal places to round the data to. Defaults to 6.
 
+    Keyword Args:
+        contrast_text (bool, optional):
+            If True, the text color will be chosen to contrast with the background color. Defaults to True.
+        round (int, optional):
+            The number of decimal places to round the data to. Defaults to 6.
 
     Returns:
         pd.DataFrame:

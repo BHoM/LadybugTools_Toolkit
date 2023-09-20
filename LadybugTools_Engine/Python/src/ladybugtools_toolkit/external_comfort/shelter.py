@@ -86,9 +86,9 @@ class Shelter(BHoMObject):
     """A Shelter object, used to determine exposure to sun, sky and wind.
 
     Args:
-        vertices (List[List[float]]):
-            A list of planar [x, y, z] coordinates representing the vertices of the
-            object providing shelter..
+        vertices (List[Point3D]):
+            A list of coplanar ladybug Point3D objects representing the
+            vertices of the shelter object.
         wind_porosity (float, optional):
             The transmissivity of the shelter to wind. Defaults to 0.
         radiation_porosity (float, optional):

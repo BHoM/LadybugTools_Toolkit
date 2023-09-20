@@ -53,8 +53,12 @@ def test_simulation_result():
     """_"""
     res = SimulationResult(
         EPW_FILE, GROUND_MATERIAL, SHADE_MATERIAL, EXTERNAL_COMFORT_IDENTIFIER
-    )
-    assert res.run().is_run()
+    ).run()
+
+    # TODO - add value checks here for the result, to ensure variation is
+    # captured when upstream methods change
+
+    assert res.is_run()
 
 
 def test_to_dict():

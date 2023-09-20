@@ -192,6 +192,16 @@ class Categorical:
         return BoundaryNorm(boundaries=boundaries, ncolors=self.cmap.N)
 
     @property
+    def bins_finite(self) -> Tuple[float]:
+        """The finite bins excluding any which are infinite.
+
+        Returns:
+            Tuple[float]:
+                The finite bins.
+        """
+        return tuple(i for i in self.bins if not np.isinf(i))
+
+    @property
     def lb_colors(self) -> Tuple[Color]:
         """The ladybug colors.
 

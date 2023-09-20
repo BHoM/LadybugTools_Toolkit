@@ -323,12 +323,12 @@ class ExternalComfort(BHoMObject):
     def add_insitu_comfort_measures(
         self,
         overhead_shelter: bool = False,
-        wind_speed_multiplier: float = 1,
+        wind_speed_multiplier: Union[float, Tuple[float]] = 1,
         evaporative_cooling_effectiveness: Union[float, Tuple[float]] = 0,
         radiant_temperature_adjustment: Union[float, Tuple[float]] = 0,
         adjust_shelter_wind_porosity: float = None,
         adjust_shelter_radiation_porosity: float = None,
-        additional_air_movement: float = 0,
+        additional_air_movement: Union[float, Tuple[float]] = 0,
     ) -> ExternalComfort:
         """Apply varying levels of additional measures to the insitu comfort model, taking into account any existing measures that are in place already.
 
@@ -615,6 +615,7 @@ class ExternalComfort(BHoMObject):
         ax: plt.Axes = None,
         utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
         analysis_period: AnalysisPeriod = AnalysisPeriod(),
+        title: str = None,
         **kwargs,
     ) -> plt.Axes:
         """Create a histogram showing the annual hourly UTCI values associated with this Typology.
@@ -626,6 +627,9 @@ class ExternalComfort(BHoMObject):
                 The UTCI categories to use. Defaults to UTCI_DEFAULT_CATEGORIES.
             analysis_period (AnalysisPeriod, optional):
                 The analysis period to filter the results by. Defaults to AnalysisPeriod().
+            title (str, optional):
+                The title to use for the plot. Defaults to None which generates a title from the
+                Typology and AnalysisPeriod.
             **kwargs:
                 Additional keyword arguments to pass to the histogram function.
         Returns:
@@ -633,13 +637,16 @@ class ExternalComfort(BHoMObject):
                 A matplotlib Axes object.
         """
 
+        if title is None:
+            title = self.plot_title_string(analysis_period=analysis_period)
+
         return utci_histogram(
             utci_collection=self.universal_thermal_climate_index.filter_by_analysis_period(
                 analysis_period
             ),
             ax=ax,
             utci_categories=utci_categories,
-            title=self.plot_title_string(analysis_period=analysis_period),
+            title=title,
             **kwargs,
         )
 
@@ -689,7 +696,7 @@ class ExternalComfort(BHoMObject):
         return heatmap(
             series=collection_to_series(self.DryBulbTemperature),
             cmap=DBT_COLORMAP,
-            title=self.plot_title_string,
+            title=self.plot_title_string(),
             **kwargs,
         )
 
@@ -707,7 +714,7 @@ class ExternalComfort(BHoMObject):
         return heatmap(
             series=collection_to_series(self.RelativeHumidity),
             cmap=RH_COLORMAP,
-            title=self.plot_title_string,
+            title=self.plot_title_string(),
             **kwargs,
         )
 
@@ -725,7 +732,7 @@ class ExternalComfort(BHoMObject):
         return heatmap(
             series=collection_to_series(self.WindSpeed),
             cmap=WS_COLORMAP,
-            title=self.plot_title_string,
+            title=self.plot_title_string(),
             **kwargs,
         )
 
@@ -743,6 +750,6 @@ class ExternalComfort(BHoMObject):
         return heatmap(
             series=collection_to_series(self.MeanRadiantTemperature),
             cmap=MRT_COLORMAP,
-            title=self.plot_title_string,
+            title=self.plot_title_string(),
             **kwargs,
         )

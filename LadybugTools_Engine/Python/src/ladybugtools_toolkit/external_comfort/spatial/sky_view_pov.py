@@ -8,9 +8,10 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import BoundaryNorm, Colormap
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from ...helpers import figure_to_image
-from ...plot import skymatrix, sp
+from ...plot._skymatrix import skymatrix
+from ...plot._sunpath import sunpath as sp
 from ...plot.fisheye_sky import fisheye_sky
+from ...plot.utilities import figure_to_image
 
 
 def sky_view_pov(
@@ -69,12 +70,11 @@ def sky_view_pov(
         sunpath_img = ImageOps.mirror(
             figure_to_image(
                 sp(
-                    epw=epw,
+                    location=epw.location,
                     analysis_period=analysis_period,
                     data_collection=data_collection,
                     cmap=cmap,
                     norm=norm,
-                    show_title=False,
                     show_grid=False,
                     show_legend=False,
                 )

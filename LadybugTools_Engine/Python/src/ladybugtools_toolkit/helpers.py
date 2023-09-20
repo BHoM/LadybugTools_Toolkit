@@ -613,16 +613,26 @@ def sanitise_string(string: str) -> str:
 
 
 def stringify_df_header(columns: List[Any]) -> List[str]:
-    """Convert a list of objects into their string represenations. This
-    method is mostly used for making DataFrames parqeut serialisable.
+    """Convert a list of objects into their string representations. This method is mostly used for making DataFrames parqeut serialisable.
+
+    Args:
+        columns (List[Any]): The list of objects to be converted.
+
+    Returns:
+        List[str]: The list of strings.
     """
 
     return [str(i) for i in columns]
 
 
 def unstringify_df_header(columns: List[str]) -> List[Any]:
-    """Convert a list of strings into a set of objecst capable of being used
-    as DataFrame column headers.
+    """Convert a list of strings into a set of objects capable of being used as DataFrame column headers.
+
+    Args:
+        columns (List[str]): The list of strings to be converted.
+
+    Returns:
+        List[Any]: The list of objects.
     """
 
     evaled = []
@@ -635,6 +645,51 @@ def unstringify_df_header(columns: List[str]) -> List[Any]:
     if all("(" in i for i in str(evaled)):
         return pd.MultiIndex.from_tuples(evaled)
     return evaled
+
+
+def write_parquet(data: pd.DataFrame, path: Union[str, Path]) -> Path:
+    """Write a parquet file, and convert columns into strings.
+
+    Args:
+        data (pd.DataFrame): The data to be written.
+        path (Union[str, Path]): The path to the parquet file.
+
+    Returns:
+        Path: The path to the parquet file.
+    """
+    path = Path(path)
+
+    if isinstance(data.columns, pd.MultiIndex):
+        data.columns = [str(i) for i in data.columns]
+
+    print(f"Writing {path.as_posix()}")
+
+    data.to_parquet(path)
+
+    return path
+
+
+def read_parquet(path: Union[str, Path]) -> pd.DataFrame:
+    """Read a parquet file, and reinterpret columns as their automatically assigned datatype.
+
+    Args:
+        path (Union[str, Path]): The path to the parquet file.
+
+    Returns:
+        pd.DataFrame: A pandas DataFrame.
+    """
+
+    path = Path(path)
+
+    print(f"Reading {path.as_posix()}")
+
+    df = pd.read_parquet(path)
+    try:
+        df.columns = pd.MultiIndex.from_tuples([eval(i) for i in df.columns])
+    except:
+        print("yo")
+
+    return df
 
 
 def store_dataset(
@@ -706,8 +761,7 @@ def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
 
 
 class OpenMeteoVariable(Enum):
-    """An enumeration of the variables, and their metadata available
-    from OpenMeteo."""
+    """An enumeration of variables available from OpenMeteo, and their metadata for handling returned values."""
 
     TEMPERATURE_2M = auto()
     DEWPOINT_2M = auto()
@@ -1119,6 +1173,45 @@ def scrape_openmeteo(
     return pd.concat(new_df, axis=1)
 
 
+def get_soil_temperatures(
+    latitude: float,
+    longitude: float,
+    start_date: Union[datetime, str],
+    end_date: Union[datetime, str],
+    include_dbt: bool = False,
+) -> pd.DataFrame:
+    """Query Open-Meteo for soil temperature data.
+
+    Args:
+        latitude (float): The latitude of the target site, in degrees.
+        longitude (float): The longitude of the target site, in degrees.
+        start_date (Union[datetime, str]): The start-date from which records will be obtained.
+        end_date (Union[datetime, str]): The end-date beyond which records will be ignored.
+        include_dbt (bool, optional): Include dry bulb temperature in the output. Defaults to False.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing scraped data.
+    """
+
+    variables = [
+        OpenMeteoVariable.SOIL_TEMPERATURE_0_TO_7CM,
+        OpenMeteoVariable.SOIL_TEMPERATURE_7_TO_28CM,
+        OpenMeteoVariable.SOIL_TEMPERATURE_28_TO_100CM,
+        OpenMeteoVariable.SOIL_TEMPERATURE_100_TO_255CM,
+    ]
+    if include_dbt:
+        variables.append(OpenMeteoVariable.TEMPERATURE_2M)
+
+    return scrape_openmeteo(
+        latitude=latitude,
+        longitude=longitude,
+        start_date=start_date,
+        end_date=end_date,
+        variables=variables,
+        convert_units=True,
+    )
+
+
 def weibull_directional(
     binned_data: Dict[Tuple[float, float], List[float]]
 ) -> pd.DataFrame:
@@ -1148,12 +1241,13 @@ def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
 
     Returns:
         k (float):
-            Shape parameter
+            Shape parameter.
         loc (float):
             Location parameter.
         c (float):
             Scale parameter.
     """
+
     ws = np.array(wind_speeds)
     ws = ws[ws != 0]
     ws = ws[~np.isnan(ws)]
@@ -1258,29 +1352,38 @@ def wind_speed_at_height(
             The original height of the wind speed being translated.
         target_height (float):
             The target height of the wind speed being translated.
-        **kwargs:
-            Additional keyword arguments to be passed to the
-            wind_speed_at_height function. This includes:
-                terrain_roughness_length (float):
-                    A value describing how rough the ground is. Default is
-                    0.03 for Open flat terrain; grass, few isolated obstacles.
-                log_function (bool, optional):
-                    Set to True to used the log transformation method, or
-                    False for the exponent method. Defaults to True.
+
+    Keyword Args:
+        terrain_roughness_length (float):
+            A value describing how rough the ground is. Default is
+            0.03 for Open flat terrain; grass, few isolated obstacles.
+        log_function (bool, optional):
+            Set to True to used the log transformation method, or
+            False for the exponent method. Defaults to True.
 
     Notes:
         Terrain roughness lengths can be found in the following table:
-            | Terrain description                               |  z0 (m)   |
-            ----------------------------------------------------|-----------|
-            | Open sea, Fetch at least 5 km                     |    0.0002 |
-            | Mud flats, snow; no vegetation, no obstacles      |    0.005  |
-            | Open flat terrain; grass, few isolated obstacle   |    0.03   |
-            | Low crops; occasional large obstacles, x/H > 20   |    0.10   |
-            | High crops; scattered obstacles, 15 < x/H < 20    |    0.25   |
-            | parkland, bushes; numerous obstacles, x/H ≈ 10    |    0.5    |
-            | Regular large obstacle coverage (suburb, forest)  |    1.0    |
-            | City centre with high- and low-rise buildings     |  ≥ 2      |
-            ----------------------------------------------------------------|
+
+        +---------------------------------------------------+-----------+
+        | Terrain description                               |  z0 (m)   |
+        +===================================================+===========+
+        | Open sea, Fetch at least 5 km                     |    0.0002 |
+        +---------------------------------------------------+-----------+
+        | Mud flats, snow; no vegetation, no obstacles      |    0.005  |
+        +---------------------------------------------------+-----------+
+        | Open flat terrain; grass, few isolated obstacle   |    0.03   |
+        +---------------------------------------------------+-----------+
+        | Low crops; occasional large obstacles, x/H > 20   |    0.10   |
+        +---------------------------------------------------+-----------+
+        | High crops; scattered obstacles, 15 < x/H < 20    |    0.25   |
+        +---------------------------------------------------+-----------+
+        | Parkland, bushes; numerous obstacles, x/H ≈ 10    |    0.5    |
+        +---------------------------------------------------+-----------+
+        | Regular large obstacle coverage (suburb, forest)  |    1.0    |
+        +---------------------------------------------------+-----------+
+        | City centre with high- and low-rise buildings     |    ≥ 2    |
+        +---------------------------------------------------+-----------+
+
 
     Returns:
         float:
@@ -1318,14 +1421,14 @@ def temperature_at_height(
             The height of the reference temperature.
         target_height (float):
             The height to translate the reference temperature towards.
-        **kwargs:
-            Additional keyword arguments to be passed to the temperature_at_height function. This includes:
-            reduction_per_km_altitude_gain (float, optional):
-                The lapse rate of the atmosphere. Defaults to 0.0065 based
-                on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
-            lapse_rate (float, optional):
-                The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
-                conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
+
+    Keyword Args:
+        reduction_per_km_altitude_gain (float, optional):
+            The lapse rate of the atmosphere. Defaults to 0.0065 based
+            on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
+        lapse_rate (float, optional):
+            The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
+            conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
 
     Returns:
         float:
@@ -1351,14 +1454,10 @@ def radiation_at_height(
     reference_height: float,
     **kwargs,
 ) -> float:
-    """Calculate the radiation at a given height, given a reference radiation
-        and height.
+    """Calculate the radiation at a given height, given a reference radiation and height.
 
     References:
-        Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of
-        solar irradiance for correcting solar fluxes for changes in terrain
-        elevation. Earth Observation and Water Cycle Science Conference,
-        Nov 2009, Frascati, Italy. pp.S05.
+        Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of solar irradiance for correcting solar fluxes for changes in terrain elevation. Earth Observation and Water Cycle Science Conference, Nov 2009, Frascati, Italy. pp.S05.
 
     Args:
         reference_value (float):
@@ -1367,11 +1466,10 @@ def radiation_at_height(
             The height at which the radiation is required, in m.
         reference_height (float, optional):
             The height at which the reference radiation was measured.
-        **kwargs:
-            Additional keyword arguments to be passed to the
-            radiation_at_height function. This includes:
-                lapse_rate (float, optional):
-                    The lapse rate of the atmosphere. Defaults to 0.08.
+
+    Keyword Arguments:
+        lapse_rate (float, optional):
+            The lapse rate of the atmosphere. Defaults to 0.08.
 
     Returns:
         float:
@@ -1745,3 +1843,69 @@ def month_hour_binned_series(
     df = pd.DataFrame(values, index=col_labels, columns=row_labels).T
 
     return df
+
+
+def sunrise_sunset(location: Location) -> pd.DataFrame():
+    """Calculate sunrise and sunset times for a given location and year. Includes
+    civil, nautical and astronomical twilight.
+
+    Args:
+        location (Location): The location to calculate sunrise and sunset for.
+
+    Returns:
+        pd.DataFrame: A DataFrame with sunrise and sunset times for each day of the year.
+    """
+
+    idx = pd.date_range(f"2017-01-01", f"2017-12-31", freq="D")
+    sp = Sunpath.from_location(location)
+    df = pd.DataFrame(
+        [
+            {
+                **sp.calculate_sunrise_sunset_from_datetime(
+                    ix, depression=0.5334
+                ),  # actual sunrise/set
+                **{
+                    f"civil {k}".replace("sunrise", "twilight start").replace(
+                        "sunset", "twilight end"
+                    ): v
+                    for k, v in sp.calculate_sunrise_sunset_from_datetime(
+                        ix, depression=6
+                    ).items()
+                    if k != "noon"
+                },  # civil twilight
+                **{
+                    f"nautical {k}".replace("sunrise", "twilight start").replace(
+                        "sunset", "twilight end"
+                    ): v
+                    for k, v in sp.calculate_sunrise_sunset_from_datetime(
+                        ix, depression=12
+                    ).items()
+                    if k != "noon"
+                },  # nautical twilight
+                **{
+                    f"astronomical {k}".replace("sunrise", "twilight start").replace(
+                        "sunset", "twilight end"
+                    ): v
+                    for k, v in sp.calculate_sunrise_sunset_from_datetime(
+                        ix, depression=18
+                    ).items()
+                    if k != "noon"
+                },  # astronomical twilight
+            }
+            for ix in idx
+        ],
+        index=idx,
+    )
+    return df[
+        [
+            "astronomical twilight start",
+            "nautical twilight start",
+            "civil twilight start",
+            "sunrise",
+            "noon",
+            "sunset",
+            "civil twilight end",
+            "nautical twilight end",
+            "astronomical twilight end",
+        ]
+    ]

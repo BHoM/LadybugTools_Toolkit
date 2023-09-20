@@ -4,9 +4,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from ladybug.epw import EPW
 
-from ..helpers import figure_to_base64
 from ..ladybug_extension.datacollection import collection_to_series
 from ..plot import heatmap
+from ..plot.utilities import figure_to_base64
 
 
 def plot_example(epw_file: Path, output_type: str = "path") -> str:

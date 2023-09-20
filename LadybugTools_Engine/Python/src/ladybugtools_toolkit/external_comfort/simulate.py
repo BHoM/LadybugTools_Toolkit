@@ -929,7 +929,7 @@ class SimulationResult(BHoMObject):
                 0
             ].properties.energy.construction.outside_solar_reflectance,
             sky_exposure=0,
-            fraction_body_exposed=1,
+            fraction_body_exposed=0,
             solarcal_body_parameter=params,
         )
         sim_res.ShadedMeanRadiantTemperature = shaded_cal.mean_radiant_temperature
@@ -945,7 +945,7 @@ class SimulationResult(BHoMObject):
             direct_normal_solar=epw.direct_normal_radiation,
             diffuse_horizontal_solar=epw.diffuse_horizontal_radiation,
             horizontal_infrared=epw.horizontal_infrared_radiation_intensity,
-            surface_temperatures=sim_res.UnshadedRadiantTemperature,
+            surface_temperatures=sim_res.UnshadedDownTemperature,
             floor_reflectance=model.faces_by_identifier(["GROUND_ZONE_UP_SHADED"])[
                 0
             ].properties.energy.construction.outside_solar_reflectance,

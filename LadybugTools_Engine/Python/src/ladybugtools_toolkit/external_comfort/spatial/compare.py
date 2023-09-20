@@ -8,8 +8,8 @@ from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ...bhomutil.analytics import CONSOLE_LOGGER
-from ...helpers import create_triangulation
 from ...ladybug_extension.analysis_period import describe_analysis_period
+from ...plot.utilities import create_triangulation
 from .spatial_comfort import SpatialComfort, SpatialMetric
 
 

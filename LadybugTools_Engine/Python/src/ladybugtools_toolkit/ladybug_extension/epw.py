@@ -22,26 +22,18 @@ from ladybug.datatype.time import Time
 from ladybug.epw import EPW, EPWFields, MonthlyCollection
 from ladybug.header import Header
 from ladybug.location import Location
-from ladybug.psychrometrics import (
-    dew_point_from_db_wb,
-    enthalpy_from_db_hr,
-    humid_ratio_from_db_rh,
-    rel_humid_from_db_wb,
-    wet_bulb_from_db_rh,
-)
+from ladybug.psychrometrics import (dew_point_from_db_wb, enthalpy_from_db_hr,
+                                    humid_ratio_from_db_rh,
+                                    rel_humid_from_db_wb, wet_bulb_from_db_rh)
 from ladybug.skymodel import clearness_index as lb_ci
 from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
 from ..external_comfort.ground_temperature import hourly_ground_temperature
-from ..helpers import (
-    air_pressure_at_height,
-    radiation_at_height,
-    temperature_at_height,
-    timedelta_tostring,
-    wind_speed_at_height,
-)
+from ..helpers import (air_pressure_at_height, radiation_at_height,
+                       temperature_at_height, timedelta_tostring,
+                       wind_speed_at_height)
 from .analysis_period import analysis_period_to_datetimes
 from .datacollection import average as average_collection
 from .datacollection import collection_to_series
@@ -60,12 +52,12 @@ def epw_to_dataframe(
             An EPW object.
         include_additional (bool, optional):
             Set to False to not include additional calculated properties. Default is False.
-        **kwargs:
-            Additional keyword arguments to be passed to the to_dataframe method.
-            ground_temperature_depth (float):
-                The depth in m at which to calculate ground temperatures. Default is 0.5.
-            soil_diffusivity (float):
-                The soil diffusivity in m2/s. Default is 3.1e-7.
+
+    Keyword Arguments:
+        ground_temperature_depth (float):
+            The depth in m at which to calculate ground temperatures. Default is 0.5.
+        soil_diffusivity (float):
+            The soil diffusivity in m2/s. Default is 3.1e-7.
 
     Returns:
         pd.DataFrame:

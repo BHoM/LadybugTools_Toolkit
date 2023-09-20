@@ -27,6 +27,7 @@ def animation(
     image_files: List[Union[str, Path]],
     output_gif: Union[str, Path],
     ms_per_image: int = 333,
+    transparency_idx: int = 0,
 ) -> Path:
     """Create an animated gif from a set of images.
 
@@ -36,7 +37,9 @@ def animation(
         output_gif (Union[str, Path]):
             The output gif file to be created.
         ms_per_image (int, optional):
-            NUmber of milliseconds per image. Default is 333, for 3 images per second.
+            Number of milliseconds per image. Default is 333, for 3 images per second.
+        transparency_idx (int, optional):
+            The index of the color to be used as the transparent color. Default is 0.
 
     Returns:
         Path:
@@ -60,6 +63,8 @@ def animation(
         optimize=False,
         duration=ms_per_image,
         loop=0,
+        disposal=2,
+        transparency=transparency_idx,
     )
 
     return output_gif

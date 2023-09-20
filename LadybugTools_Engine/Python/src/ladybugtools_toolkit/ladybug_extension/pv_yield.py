@@ -66,6 +66,7 @@ class IrradianceUnit(Enum):
 @dataclass(init=True, repr=True, eq=True)
 class PVYieldMatrix:
     """Compute the annual cumulative radiation matrix per surface tilt and orientation, for a given Wea object.
+
     Args:
         wea (Wea):
             The Wea object for which this calculation is made.
@@ -80,6 +81,7 @@ class PVYieldMatrix:
             irradiance across the sky while an anisotropic sky places more
             diffuse irradiance near the solar disc.
             Set to True to use isotropic sky model. Default is False.
+
     Returns:
         pd.DataFrame:
             A table of insolation values for each simulated azimuth and tilt combo.
