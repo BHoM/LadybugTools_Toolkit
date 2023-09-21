@@ -22,9 +22,10 @@
 
 using BH.oM.Base.Attributes;
 using BH.oM.Python;
+using BH.oM.Python.Enums;
 using System.ComponentModel;
-using System.Collections.Generic;
 using System.IO;
+using BH.Engine.Python;
 
 namespace BH.Engine.LadybugTools
 {
@@ -32,37 +33,51 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Create the BHoM Python environment for LadybugTools_Toolkit. This creates a replica of what is found in the Pollination installed python environment, for extension using BHoM.")]
         [Input("run", "Run the installation process.")]
+        [Input("reinstall", "Reinstall the environment if it already exists.")]
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
-        public static PythonEnvironment InstallPythonEnv_LBT(bool run = false)
+        [PreviousVersion("6.3", "BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(System.Boolean)")]
+        public static PythonEnvironment InstallPythonEnv_LBT(bool run = false, bool reinstall = false)
         {
+            // check if referenced Python is installed
             string referencedExecutable = @"C:\Program Files\ladybug_tools\python\python.exe";
-
-            PythonEnvironment referencedEnvironment = Python.Compute.InstallReferencedVirtualenv(
-                name: Query.ToolkitName(),
-                executable: referencedExecutable,
-                localPackage: Path.Combine(Python.Query.CodeDirectory(), Query.ToolkitName()),
-                run: run
-            );
-
-            // reload environment to establish the new executable path
-            PythonEnvironment localEnvironment = Python.Query.VirtualEnv(Query.ToolkitName());
-
-            // check here to ensure that referenced executable is using same version as local BHoM environment executable
-            List<string> packagesToCheck = new List<string>() { "lbt-ladybug", "lbt-dragonfly", "lbt-honeybee", "lbt-recipes" };
-            foreach ( string package in packagesToCheck )
+            if (!File.Exists(referencedExecutable))
             {
-                string installed = Python.Compute.RunCommandStdout($"{Python.Modify.AddQuotesIfRequired(localEnvironment.Executable)} -m pip freeze | FindStr {package}");
-                string referenced = Python.Compute.RunCommandStdout($"{Python.Modify.AddQuotesIfRequired(referencedEnvironment.Executable)}  -m pip freeze | FindStr {package}");
-                if (installed != referenced)
-                {
-                    Base.Compute.RecordWarning($"BHoM environment {package} does not match referenced package version ({installed} != {referenced}). " +
-                        $"This can be caused by the BHoM version and installed version becoming out of sync. " +
-                        $"Try deleting the {Python.Query.VirtualEnvDirectory("LadybugTools_Toolkit")} directory and re-running the " +
-                        $"{System.Reflection.MethodBase.GetCurrentMethod().Name} method again to fix this.");
-                }
+                Base.Compute.RecordError($"Could not find referenced python executable at {referencedExecutable}. Please install Pollination try again.");
+                return null;
             }
 
-            return localEnvironment;
+            if (!run)
+                return null;
+
+            // find out whether this environment already exists
+            bool exists = Python.Query.VirtualEnvironmentExists(Query.ToolkitName());
+
+            if (reinstall)
+                Python.Compute.RemoveVirtualEnvironment(Query.ToolkitName());
+            
+            // obtain python version
+            PythonVersion pythonVersion = Python.Query.Version(referencedExecutable);
+
+            // create virtualenvironment
+            PythonEnvironment env = Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: true);
+
+            // return null if environment could not be created/loaded
+            if (env == null)
+                return null;
+
+            // install packages if this is a reinstall, or the environment did not originally exist
+            if (reinstall || !exists)
+            {
+                // install local package
+                env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName()));
+
+                // create requiremetns from referenced executable
+                string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
+                env.InstallRequirements(requirementsTxt);
+                File.Delete(requirementsTxt);
+            }
+
+            return env;
         }
     }
 }

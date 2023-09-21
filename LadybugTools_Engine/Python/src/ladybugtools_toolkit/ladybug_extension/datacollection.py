@@ -1,10 +1,12 @@
 import json
 import warnings
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datacollection import (
     BaseCollection,
     HourlyContinuousCollection,
@@ -17,8 +19,9 @@ from ladybug.datautil import (
     collections_to_csv,
     collections_to_json,
 )
+from ladybug.dt import DateTime
 
-from ..helpers import wind_direction_average
+from ..helpers import circular_weighted_mean, wind_direction_average
 from .analysis_period import analysis_period_to_datetimes
 from .analysis_period import describe_analysis_period as describe_analysis_period
 from .header import header_from_string as header_from_string
@@ -482,53 +485,54 @@ def summarise_collection(
     return descriptions
 
 
-def average(collections: List[BaseCollection]) -> BaseCollection:
+def average(
+    collections: List[BaseCollection], weights: List[float] = None
+) -> BaseCollection:
     """Create an Average of the given data collections.
 
     Args:
         collections (List[BaseCollection]):
             A list of collections.
+        weights (List[float], optional):
+            A list of weights for each collection. Defaults to None which evenly weights each collection.
 
     Returns:
         BaseCollection:
             The "Average" collection.
     """
 
-    # check all input collections are of the same underlying datatype
-    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
+    if len(collections) == 1:
+        return collections[0]
 
-    series_name = df.columns[0]
-    if len(np.unique(df.columns)) != 1:
-        raise ValueError('You cannot get the "average" across non-alike datatypes.')
-
-    # check if any collections input are angular, in which case, use a different method
-    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
-        # convert to radians if not already there
-        if "degree" in series_name.lower():
-            df = np.rad2deg(df)
-        angles = []
-        for _, row in df.iterrows():
-            angles.append(
-                np.round(
-                    np.arctan2(
-                        (1 / len(row) * np.sin(row)).sum(),
-                        (1 / len(row) * np.cos(row)).sum(),
-                    ),
-                    2,
-                )
+    for col in collections[1:]:
+        if col.header.data_type != collections[0].header.data_type:
+            raise ValueError(
+                f"You cannot get the average across non-alike datatypes ({col.header.unit} != {collections[0].header.unit})."
             )
-        angles = np.array(angles)
-        series = pd.Series(
-            np.where(angles < 0, (np.pi * 2) - -angles, angles),
-            index=df.index,
-            name=series_name,
-        )
-        if "degree" in series_name.lower():
-            series = np.rad2deg(series)
-    else:
-        series = df.mean(axis=1).rename(series_name)
 
-    return collection_from_series(series)
+    if weights is None:
+        weights = np.ones(len(collections)) / len(collections)
+    weights = np.array(weights)
+    if len(weights) != len(collections):
+        raise ValueError("The number of weights must match the number of collections.")
+    if (weights < 0).sum():
+        raise ValueError("Weights must be positive.")
+
+    # construct df
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
+    vals = None
+    if isinstance(collections[0].header.data_type, Angle):
+        vals = []
+        for _, row in df.iterrows():
+            vals.append(circular_weighted_mean(row, weights))
+    else:
+        vals = (
+            df.groupby(df.index)
+            .apply(lambda x: np.average(x, weights=weights, axis=1)[0])
+            .values.tolist()
+        )
+
+    return collections[0].get_aligned_collection(vals)
 
 
 def to_hourly(
@@ -548,7 +552,6 @@ def to_hourly(
         HourlyContinuousCollection:
             A Ladybug HourlyContinuousCollection object.
     """
-
     if method is None:
         method = "smooth"
 
@@ -574,3 +577,101 @@ def to_hourly(
         header=collection.header,
         values=series_annual.interpolate(method=interpolation_methods[method]).values,
     )
+
+
+def peak_time(collection: BaseCollection) -> Tuple[Any, Tuple[DateTime]]:
+    """Find the peak value within a collection, and the time, or times at which it occurs.
+
+    Args:
+        collection (BaseCollection):
+            A Ladybug DataCollection.
+
+    Returns:
+        peak_value, times (Tuple[Any, Tuple[DateTime]]):
+            The peak value and times it occurs.
+    """
+
+    peak_value = collection.max
+    times = []
+    for dt, v in list(zip(*[collection.datetimes, collection.values])):
+        if v == peak_value:
+            times.append(dt)
+
+    return peak_value, times
+
+
+def create_typical_day(
+    collection: HourlyContinuousCollection,
+    centroid: DateTime,
+    sample_size: int,
+    agg: str = "mean",
+) -> HourlyContinuousCollection:
+    """Create a single day representative of conditions centered about the centroid DateTime.
+
+    Args:
+        collection (HourlyContinuousCollection): The collection to sample from.
+        centroid (DateTime): The center date around which samples will be taken. The centroid will be included in the sample and more granular detail than "Date" will be ignored.
+        sample_size (int): The number of days about the centroid to sample from. If even, then this number will be increased by one to ensure that half-days are not sampled. A 10 day sample would include 5 days before and 5 days after the centroid.
+        agg (str, optional): The aggregation method to use. Defaults to "mean".
+
+    Returns:
+        HourlyContinuousCollection: The filtered sample. This will have the same header as the input collection but will be only 1-day long.
+    """
+
+    # check that the collection is hourly
+    if not isinstance(collection, HourlyContinuousCollection):
+        raise ValueError("The input collection must be hourly.")
+
+    if len(collection.header.analysis_period) < 8760:
+        raise ValueError("The input collection must be 1-year long.")
+
+    if collection.header.analysis_period.is_leap_year:
+        raise ValueError("The input collection must be non-leap year.")
+
+    ap = AnalysisPeriod(
+        st_month=centroid.month,
+        st_day=centroid.day,
+        end_month=centroid.month,
+        end_day=centroid.day,
+    )
+
+    if sample_size == 1:
+        return collection.filter_by_analysis_period(analysis_period=ap)
+
+    if sample_size % 2 == 0:
+        sample_size += 1
+
+    # convert collection to a series over several years
+    series = collection_to_series(collection)
+    idx = series.index
+    serieses = pd.concat([series, series, series], axis=0)
+    new_idx = []
+    for i in range(-1, 2, 1):
+        for ts in idx:
+            new_idx.append(
+                datetime(
+                    year=ts.year + i,
+                    month=ts.month,
+                    day=ts.day,
+                    hour=ts.hour,
+                    minute=ts.minute,
+                    second=ts.second,
+                )
+            )
+    serieses.index = new_idx
+
+    # get the start and end dates of the sample
+    center_date = DateTime(month=centroid.month, day=centroid.day)
+    start_date = center_date - timedelta(days=sample_size / 2)
+    end_date = center_date + timedelta(days=sample_size / 2)
+    sample = serieses.loc[start_date:end_date]
+    _base_col = collection.filter_by_analysis_period(
+        analysis_period=AnalysisPeriod(
+            st_month=centroid.month,
+            st_day=centroid.day,
+            end_month=centroid.month,
+            end_day=centroid.day,
+        )
+    )
+    _base_col._values = sample.groupby(sample.index.hour).agg(agg).values
+    return _base_col

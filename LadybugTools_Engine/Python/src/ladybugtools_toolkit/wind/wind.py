@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import calendar
-import concurrent.futures
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -16,8 +15,8 @@ from ladybug.epw import EPW
 from matplotlib.colors import Colormap
 from tqdm import tqdm
 
-from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject
+from ..categorical.categories import BEAUFORT_CATEGORIES
 from ..helpers import (
     OpenMeteoVariable,
     circular_weighted_mean,
@@ -32,15 +31,14 @@ from ..ladybug_extension.analysis_period import (
     AnalysisPeriod,
     analysis_period_to_boolean,
     analysis_period_to_datetimes,
-    describe_analysis_period,
 )
-from ..plot import (
+from ..plot import timeseries
+from ..plot._wind import (
     radial_histogram,
     wind_cumulative_probability,
     wind_matrix,
     wind_speed_frequency,
-    wind_timeseries,
-    wind_windrose,
+    windrose,
 )
 from .direction_bins import DirectionBins
 
@@ -274,9 +272,6 @@ class Wind(BHoMObject):
     ) -> Wind:
         """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
 
-        # align collections so that intersection only is created
-        df = pd.concat([i.df for i in wind_objects], axis=1)
-
         # create default weightings if None
         if weights is None:
             weights = [1 / len(wind_objects)] * len(wind_objects)
@@ -326,7 +321,7 @@ class Wind(BHoMObject):
             if arg_name == "height_above_ground":
                 if arg_value <= 0:
                     raise ValueError(f"{arg_name} must be greater than 0")
-            continue
+                continue
 
             # check that arg is iterable, and not a string
             try:
@@ -733,8 +728,8 @@ class Wind(BHoMObject):
         Args:
             speed_bins (List[float], optional):
                 A list of bins edges, between which wind speeds will be binned. Defaults to (0, 0.1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 99.9).
-            directions (int, optional):
-                The number of directions into which wind directions should be binned. Defaults to 8, centered around 0/north.
+            direction_bins (DirectionBins, optional):
+                A DirectionBins object. Defaults to DirectionBins().
             density (bool, optional):
                 Set to True to return density (0-1) instead of count. Defaults to False.
             include_counts (bool, optional):
@@ -778,14 +773,12 @@ class Wind(BHoMObject):
         """Calculate the parameters of an exponentiated Weibull continuous random variable.
 
         Returns:
-            x (float):
-                Fixed shape parameter (1).
             k (float):
-                Shape parameter 1.
-            λ (float):
+                Shape parameter
+            loc (float):
+                Location parameter.
+            c (float):
                 Scale parameter.
-            α (float):
-                Shape parameter 2.
         """
         return weibull_pdf(self.ws.tolist())
 
@@ -795,8 +788,8 @@ class Wind(BHoMObject):
         """Calculate directional weibull coefficients for the given number of directions.
 
         Args:
-            directions (int, optional):
-                The number of directions into which wind directions should be binned. Defaults to 8.
+            direction_bins (DirectionBins, optional):
+                A DirectionBins object. Defaults to DirectionBins().
 
         Returns:
             pd.DataFrame:
@@ -840,8 +833,8 @@ class Wind(BHoMObject):
         """Adjust wind speed values by a set of factors per direction.
 
         Args:
-            directions (int, optional):
-                The number of directions to bin wind-directions into. Defaults to 8.
+            direction_bins (DirectionBins):
+                The number of directions to bin wind-directions into.
             factors (Tuple[float], optional):
                 Adjustment factors per direction. Defaults to (i for i in range(8)).
 
@@ -890,6 +883,8 @@ class Wind(BHoMObject):
                 The value above which speed frequency will be be calculated.
             direction_bins (DirectionBins, optional):
                 A DirectionBins object defining the bins into which wind will be split according to direction.
+            agg (str, optional):
+                The aggregation method to use. Defaults to "max".
 
         Returns:
             pd.DataFrame:
@@ -988,138 +983,83 @@ class Wind(BHoMObject):
     # PLOTTING/VISUALISATION METHODS #
     ##################################
 
+    def plot_timeseries(self, ax: plt.Axes = None, color: str = "grey") -> plt.Axes:  # type: ignore
+        """Create a simple line plot of wind speed.
+
+        Args:
+            ax (plt.Axes, optional):
+                The axes to plot on. If None, the current axes will be used.
+            color (str, optional):
+                The color of the line to plot. Default is "blue".
+
+        Returns:
+            plt.Axes:
+                A matplotlib Axes object.
+
+        """
+
+        if ax is None:
+            ax = plt.gca()
+
+        timeseries(self.ws, ax=ax, color=color)
+        ax.set_title(str(self))
+
+        return ax
+
     def plot_windrose(
         self,
+        ax: plt.Axes = None,
         direction_bins: DirectionBins = DirectionBins(),
-        bins: List[float] = None,
+        bins: Union[int, List[float]] = BEAUFORT_CATEGORIES.bins,
         include_legend: bool = True,
         include_percentages: bool = False,
-        title: str = None,
-        cmap: Union[Colormap, str] = "YlGnBu",
         calm_threshold: float = 0.1,
-        include_calm_threshold: bool = True,
-    ) -> plt.Figure:  # type: ignore
+        **kwargs,
+    ) -> plt.Axes:  # type: ignore
         """Create a windrose.
 
         Args:
+            ax (plt.Axes, optional):
+                The axes to plot on. If None, the current axes will be used.
             direction_bins (DirectionBins, optional):
                 A DirectionBins object.
-            bins (List[float], optional):
-                Bins to sort data into.
+            bins (Union[int, List[float], CategoriesBase], optional):
+                Bins to sort data into. Defaults to Beaufort scale.
             include_legend (bool, optional):
                 Set to True to include the legend. Defaults to True.
             include_percentages (bool, optional):
                 Add bin totals as % to rose. Defaults to False.
-            title (str, optional):
-                Add a custom title to this plot.
             cmap (Union[Colormap, str], optional):
                 Use a custom colormap. Defaults to "YlGnBu".
+            include_calm_threshold (bool, optional):
+                Set to True to include the calm threshold in the legend. Defaults to True.
+            kwargs:
+                Additional keyword arguments to pass to the windrose function.
 
         Returns:
-            plt.Figure:
-                A Figure object.
+            plt.Axes:
+                A matplotlib Axes object.
         """
 
         # remove calm hours and store % calm
-        calm_percentage = self.calm(calm_threshold)
         new_w = self.filter_by_speed(
             min_speed=calm_threshold, max_speed=np.inf, inclusive=False
         )
 
-        if title is not None:
-            if include_calm_threshold:
-                ti = f"{title}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
-            else:
-                ti = f"{title}"
-        else:
-            if include_calm_threshold:
-                ti = f"{self}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
-            else:
-                ti = f"{self}"
+        if "cmap" not in kwargs:
+            kwargs["cmap"] = "YlGnBu"
 
-        return wind_windrose(
-            wind_direction=new_w.wd.tolist(),
+        return windrose(
+            wind_directions=new_w.wd.tolist(),
             data=new_w.ws.tolist(),
+            ax=ax,
             direction_bins=direction_bins,
             data_bins=bins,
-            cmap=cmap,
-            title=ti,
             include_legend=include_legend,
             include_percentages=include_percentages,
+            data_unit="m/s",
+            **kwargs,
         )
-
-    def plot_windroses_parallel(
-        self,
-        analysis_periods: List[AnalysisPeriod],
-        save_directory: Path,
-        prepend_file: str = "parallel",
-        direction_bins: DirectionBins = DirectionBins(),
-        bins: List[float] = None,
-        include_legend: bool = True,
-        include_percentages: bool = False,
-        cmap: Union[Colormap, str] = "YlGnBu",
-        calm_threshold: float = 0.1,
-    ) -> None:
-        """Generate a series of windroses in parallel for a set of analysis periods. This is useful for comparing windroses for different periods of time.
-
-        Args:
-            analysis_periods (List[AnalysisPeriod]):
-                A list of AnalysisPeriod objects.
-            save_directory (Path):
-                The directory to save the windroses to.
-            prepend_file (str, optional):
-                An identifier to prepedn the resultant images with. Defaults to "parallel".
-            direction_bins (DirectionBins, optional):
-                A DirectionBins object.
-            bins (List[float], optional):
-                Bins to sort data into.
-            include_legend (bool, optional):
-                Set to True to include the legend. Defaults to True.
-            include_percentages (bool, optional):
-                Add bin totals as % to rose. Defaults to False.
-            title (str, optional):
-                Add a custom title to this plot.
-            cmap (Union[Colormap, str], optional):
-                Use a custom colormap. Defaults to "YlGnBu".
-
-        """
-        save_directory = Path(save_directory)
-        if not save_directory.is_dir():
-            raise ValueError(f"{save_directory} is not a directory.")
-        if not save_directory.exists():
-            raise ValueError(f"{save_directory} does not exist.")
-
-        def _savefig(obj: Wind, ap: AnalysisPeriod):
-            sp = (
-                save_directory
-                / f"{prepend_file}_{describe_analysis_period(ap, save_path=True)}.png"
-            )
-            f = obj.filter_by_analysis_period(ap).plot_windrose(
-                direction_bins,
-                bins,
-                include_legend,
-                include_percentages,
-                describe_analysis_period(ap),
-                cmap,
-                calm_threshold,
-            )
-            f.savefig(
-                sp,
-                dpi=300,
-                transparent=True,
-            )
-            plt.close(f)
-            if not sp.exists():
-                raise RuntimeError(f"Failed to save {sp}")
-            return sp
-
-        results = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            for ap in analysis_periods:
-                results.append(executor.submit(_savefig, self, ap))
-
-        for result in results:
-            print(result.result())
 
     def plot_windhist(
         self,
@@ -1130,7 +1070,7 @@ class Wind(BHoMObject):
         title: str = None,
         cmap: Union[Colormap, str] = "magma_r",
         calm_threshold: float = 0.1,
-    ) -> plt.Figure:
+    ) -> plt.Axes:
         """_summary_
 
         Args:
@@ -1142,7 +1082,7 @@ class Wind(BHoMObject):
             cmap (Union[Colormap, str], optional): _description_. Defaults to "magma_r".
 
         Returns:
-            plt.Figure: _description_
+            plt.Axes: _description_
         """
 
         # remove calm hours and store % calm
@@ -1175,7 +1115,7 @@ class Wind(BHoMObject):
             cmap_label = "n-occurences"
             cbar_freq = False
 
-        fig = radial_histogram(
+        return radial_histogram(
             direction_angles,
             radial_bins,
             frequency_table.values,
@@ -1187,59 +1127,64 @@ class Wind(BHoMObject):
             title=ti,
         )
 
-        return fig
-
-    def plot_wind_matrix(self, ax: plt.Axes = None, title: str = None, cmap: Union[Colormap, str] = "YlGnBu", show_values: bool = False, speed_lims: Tuple[float] = None) -> plt.Axes:  # type: ignore
+    def plot_wind_matrix(
+        self,
+        ax: plt.Axes = None,
+        show_values: bool = False,
+        additional_data: pd.Series = None,
+        **kwargs,
+    ) -> plt.Axes:  # type: ignore
         """Create a plot showing the annual wind speed and direction bins using the month_time_average method."""
-        df = self.wind_matrix()
 
-        wind_speed_bins = df["speed"]
-        wind_direction_bins = df["direction"]
+        #                 title: str = None,
+        # cmap: Union[Colormap, str] = "YlGnBu",
+        # cbar_title: str = None,
 
-        if title is None:
-            title = f"{self}"
-        else:
-            title = f"{self}\n{title}"
+        cmap = kwargs.pop("cmap", "YlGnBu" if additional_data is None else "viridis")
+        cbar_title = kwargs.pop(
+            "cbar_title",
+            "Average speed (m/s)" if additional_data is None else additional_data.name,
+        )
+        title = kwargs.pop("title", str(self))
 
         return wind_matrix(
-            wind_speeds=wind_speed_bins,
-            wind_directions=wind_direction_bins,
+            wind_speeds=self.ws,
+            wind_directions=self.wd,
             ax=ax,
             cmap=cmap,
             title=title,
+            cbar_title=cbar_title,
             show_values=show_values,
-            speed_lims=speed_lims,
+            additional_data=additional_data,
+            **kwargs,
         )
 
-    def plot_timeseries(self, color: str = "grey") -> plt.Figure:  # type: ignore
-        """Create a simple line plot of wind speed.
-
-        Args:
-            color (str, optional):
-                The color of the line to plot. Default is "blue".
-
-        Returns:
-            plt.Figure:
-                A Figure object.
-
-        """
-        return wind_timeseries(self.ws, color=color, title=str(self))
-
-    def plot_speed_frequency(self, title: str = None) -> plt.Figure:  # type: ignore
+    def plot_speed_frequency(self, title: str = None, speed_bins: Union[List[float], int] = None) -> plt.Figure:  # type: ignore
         """Create a histogram showing wind speed frequency"""
+
+        # TODO - remake this figure generation as a plt.Axes object!
 
         if title is None:
             title = str(self)
         else:
             title = f"{self}\n{title}"
 
-        speed_bins = np.linspace(min(self.ws), np.quantile(self.ws, 0.999), 16)
+        if speed_bins is None:
+            speed_bins = np.linspace(min(self.ws), np.quantile(self.ws, 0.999), 16)
+        elif isinstance(speed_bins, int):
+            speed_bins = np.linspace(
+                min(self.ws), np.quantile(self.ws, 0.999), speed_bins
+            )
+        else:
+            pass
         percentiles = (0.5, 0.95)
+
+        # TODO - reimplement weibull_pdf plotting curve
 
         return wind_speed_frequency(
             self.ws.tolist(),
             speed_bins=speed_bins,
-            weibull=self.weibull_pdf(),
+            # weibull=self.weibull_pdf(),
             percentiles=percentiles,
             title=title,
         )
@@ -1281,3 +1226,46 @@ class Wind(BHoMObject):
     #         title=title if title is not None else str(self),
     #     )
     #     return fig
+
+
+# def weighted_wind_speed_direction(
+#     wind_speeds: List[float], wind_directions: List[float]
+# ) -> List[float]:
+#     """Return a speed-weighted average wind direction and speed for a set of input wind speeds and directions.
+
+#     Args:
+#         wind_speeds (List[float]):
+#             A collection of wind speeds, in m/s.
+#         wind_directions (List[float]):
+#             A collection of wind directions, in degrees from North (0).
+
+#     Returns:
+#         List[float]:
+#             A weighted average wind speed and direction.
+#     """
+#     warnings.warn("UNDER DEFVEKLOPMENT")
+#     # convert directions into XY vectors (including speed magnitude)
+#     wind_vectors = (
+#         np.array([angle_to_vector(d) for d in wind_directions]).T * wind_speeds
+#     ).T
+
+#     # create weights based on wind speed (0-1, higher speeds higher weighting)
+#     weights = np.array(wind_speeds) / np.array(wind_speeds).sum()
+
+#     # multiply by wind speeds (magnitude) to get the average wind vector (weighted by speed)
+#     resultant_wind_vector = np.average((wind_vectors.T).T, axis=0, weights=weights)
+
+#     # get unit vector and magnitude (wind_speed)
+#     resultant_wind_speed = np.linalg.norm(resultant_wind_vector)
+
+#     # determine new wind direction (angle from north)
+#     try:
+#         resultant_wind_direction = np.degrees(
+#             Vector2D.from_array(resultant_wind_vector).angle_counterclockwise(
+#                 Vector2D(0, 1)
+#             )
+#         )
+#     except:
+#         resultant_wind_direction = 0
+
+#     return resultant_wind_speed, resultant_wind_direction

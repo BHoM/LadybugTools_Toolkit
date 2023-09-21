@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import base64
-import colorsys
+import calendar
 import contextlib
 import copy
 import io
@@ -11,121 +10,115 @@ import re
 import urllib.request
 import warnings
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.datatype.temperature import WetBulbTemperature
-from ladybug.epw import (EPW, AnalysisPeriod, HourlyContinuousCollection,
-                         Location)
+from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
 from ladybug.psychrometrics import wet_bulb_from_db_rh
-from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
-                              estimate_illuminance_from_irradiance,
-                              get_extra_radiation, zhang_huang_solar,
-                              zhang_huang_solar_split)
+from ladybug.skymodel import (
+    calc_horizontal_infrared,
+    calc_sky_temperature,
+    estimate_illuminance_from_irradiance,
+    get_extra_radiation,
+    zhang_huang_solar,
+    zhang_huang_solar_split,
+)
 from ladybug.sunpath import Sunpath
-from matplotlib.colors import cnames, colorConverter, to_rgb
-from matplotlib.figure import Figure
-from matplotlib.tri.triangulation import Triangulation
-from PIL import Image
-from scipy.stats import exponweib
+from matplotlib.ticker import FuncFormatter
+from scipy.stats import weibull_min
 from tqdm import tqdm
 
 
-def relative_luminance(color: Any):
-    """Calculate the relative luminance of a color according to W3C standards
+@FuncFormatter
+def ZeroPadPercentFormatter(x: float) -> str:
+    """A matplotlib formatter for percentages that pads with zeros.
 
     Args:
+        x (float): The value to be formatted.
 
-    color : matplotlib color or sequence of matplotlib colors - Hex code,
-    rgb-tuple, or html color name.
-    Returns
-    -------
-    luminance : float(s) between 0 and 1
-    """
-    rgb = colorConverter.to_rgba_array(color)[:, :3]
-    rgb = np.where(rgb <= 0.03928, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
-    lum = rgb.dot([0.2126, 0.7152, 0.0722])
-    try:
-        return lum.item()
-    except ValueError:
-        return lum
-
-
-def contrasting_color(color: Any):
-    """Calculate the contrasting color for a given color.
-
-    Args:
-        color (Any): matplotlib color or sequence of matplotlib colors - Hex code,
-        rgb-tuple, or html color name.
     Returns:
-        str: String code of the contrasting color.
+        str: The formatted string.
     """
-    return ".15" if relative_luminance(color) > 0.408 else "w"
+
+    return f"{x:5.0%}"
 
 
-def default_analysis_periods() -> List[AnalysisPeriod]:
-    """A set of generic Analysis Period objects, keyed by name."""
+def default_hour_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning times of day."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
         aps = [
-            AnalysisPeriod(),
             AnalysisPeriod(st_hour=5, end_hour=12, timestep=1),
-            AnalysisPeriod(st_hour=12, end_hour=17, timestep=1),
-            AnalysisPeriod(st_hour=17, end_hour=21, timestep=1),
-            AnalysisPeriod(st_hour=21, end_hour=5, timestep=1),
+            AnalysisPeriod(st_hour=13, end_hour=17, timestep=1),
+            AnalysisPeriod(st_hour=18, end_hour=21, timestep=1),
+            AnalysisPeriod(st_hour=22, end_hour=4, timestep=1),
         ]
 
     return aps
 
 
-def animation(
-    image_files: List[Union[str, Path]],
-    output_gif: Union[str, Path],
-    ms_per_image: int = 333,
-) -> Path:
-    """Create an animated gif from a set of images.
+def default_month_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning month of year."""
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        aps = [
+            AnalysisPeriod(st_month=12, end_month=2),
+            AnalysisPeriod(st_month=3, end_month=5),
+            AnalysisPeriod(st_month=6, end_month=8),
+            AnalysisPeriod(st_month=9, end_month=11),
+        ]
 
-    Args:
-        image_files (List[Union[str, Path]]):
-            A list of image files.
-        output_gif (Union[str, Path]):
-            The output gif file to be created.
-        ms_per_image (int, optional):
-            NUmber of milliseconds per image. Default is 333, for 3 images per second.
+    return aps
 
-    Returns:
-        Path:
-            The animated gif.
 
-    """
+def default_combined_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning combinations of time of day and month of year."""
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        aps = []
+        for ap_time in default_hour_analysis_periods():
+            for ap_month in default_month_analysis_periods():
+                aps.append(
+                    AnalysisPeriod(
+                        st_month=ap_month.st_month,
+                        end_month=ap_month.end_month,
+                        st_hour=ap_time.st_hour,
+                        end_hour=ap_time.end_hour,
+                        timestep=ap_time.timestep,
+                    )
+                )
 
-    image_files = [Path(i) for i in image_files]
+    return aps
 
-    images = [Image.open(i) for i in image_files]
 
-    # create white background
-    background = Image.new("RGBA", images[0].size, (255, 255, 255))
+def default_analysis_periods() -> List[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning all predefined combinations of time of ady and month of year."""
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        aps = [
+            AnalysisPeriod(),
+        ]
+        aps.extend(default_month_analysis_periods())
+        aps.extend(default_hour_analysis_periods())
+        aps.extend(default_combined_analysis_periods())
 
-    images = [Image.alpha_composite(background, i) for i in images]
-
-    images[0].save(
-        output_gif,
-        save_all=True,
-        append_images=images[1:],
-        optimize=False,
-        duration=ms_per_image,
-        loop=0,
-    )
-
-    return output_gif
+    return aps
 
 
 def chunks(lst: List[Any], chunksize: int):
-    """Partition an iterable into lists of lenght "chunksize"."""
+    """Partition an iterable into lists of length "chunksize".
+
+    Args:
+        lst (List[Any]): The list to be partitioned.
+        chunksize (int): The size of each partition.
+
+    Yields:
+        List[Any]: A list of length "chunksize".
+    """
     for i in range(0, len(lst), chunksize):
         yield lst[i : i + chunksize]
 
@@ -375,117 +368,6 @@ def proximity_decay(
     raise ValueError(f"Unknown curve type: {decay_method}")
 
 
-def base64_to_image(base64_string: str, image_path: Path) -> Path:
-    """Convert a base64 encoded image into a file on disk.
-
-    Arguments:
-        base64_string (str):
-            A base64 string encoding of an image file.
-        image_path (Path):
-            The location where the image should be stored.
-
-    Returns:
-        Path:
-            The path to the image file.
-    """
-
-    # remove html pre-amble, if necessary
-    if base64_string.startswith("data:image"):
-        base64_string = base64_string.split(";")[-1]
-
-    with open(Path(image_path), "wb") as fp:
-        fp.write(base64.decodebytes(base64_string))
-
-    return image_path
-
-
-def image_to_base64(image_path: Path, html: bool = False) -> str:
-    """Load an image file from disk and convert to base64 string.
-
-    Arguments:
-        image_path (Path):
-            The file path for the image to be converted.
-        html (bool, optional):
-            Set to True to include the HTML preamble for a base64 encoded image. Default is False.
-
-    Returns:
-        str:
-            A base64 string encoding of the input image file.
-    """
-
-    # convert path string to Path object
-    image_path = Path(image_path).absolute()
-
-    # ensure format is supported
-    supported_formats = [".png", ".jpg", ".jpeg"]
-    if image_path.suffix not in supported_formats:
-        raise ValueError(
-            f"'{image_path.suffix}' format not supported. Use one of {supported_formats}"
-        )
-
-    # load image and convert to base64 string
-    with open(image_path, "rb") as image_file:
-        base64_string = base64.b64encode(image_file.read()).decode("utf-8")
-
-    if html:
-        content_type = f"data:image/{image_path.suffix.replace('.', '')}"
-        content_encoding = "utf-8"
-        return f"{content_type};charset={content_encoding};base64,{base64_string}"
-
-    return base64_string
-
-
-def figure_to_base64(figure: Figure, html: bool = False) -> str:
-    """Convert a matplotlib figure object into a base64 string.
-
-    Arguments:
-        figure (Figure):
-            A matplotlib figure object.
-        html (bool, optional):
-            Set to True to include the HTML preamble for a base64 encoded image. Default is False.
-
-    Returns:
-        str:
-            A base64 string encoding of the input figure object.
-    """
-
-    buffer = io.BytesIO()
-    figure.savefig(buffer)
-    buffer.seek(0)
-    base64_string = base64.b64encode(buffer.read()).decode("utf-8")
-
-    if html:
-        content_type = "data:image/png"
-        content_encoding = "utf-8"
-        return f"{content_type};charset={content_encoding};base64,{base64_string}"
-
-    return base64_string
-
-
-def figure_to_image(fig: Figure) -> Image:
-    """Convert a matplotlib Figure object into a PIL Image.
-
-    Args:
-        fig (Figure):
-            A matplotlib Figure object.
-
-    Returns:
-        Image:
-            A PIL Image.
-    """
-
-    # draw the renderer
-    fig.canvas.draw()
-
-    # Get the RGBA buffer from the figure
-    w, h = fig.canvas.get_width_height()
-    buf = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
-    buf.shape = (w, h, 4)
-    buf = np.roll(buf, 3, axis=2)
-
-    return Image.fromarray(buf)
-
-
 def timedelta_tostring(time_delta: timedelta) -> str:
     """timedelta objects don't have a nice string representation, so this function converts them.
 
@@ -712,6 +594,18 @@ def angle_from_north(vector: List[float]) -> float:
     return np.rad2deg((angle1 - angle2) % (2 * np.pi))
 
 
+def angle_to_vector(_angle_from_north: float) -> List[float]:
+    """Return the X, Y vector from of an angle from north at 0-degrees."""
+    if (_angle_from_north > 360) or (_angle_from_north < 0):
+        raise ValueError(
+            "angle_from_north must be between 0 and 360 degrees (inclusive)."
+        )
+
+    _angle_from_north = np.radians(_angle_from_north)
+
+    return np.sin(_angle_from_north), np.cos(_angle_from_north)
+
+
 def sanitise_string(string: str) -> str:
     """Sanitise a string so that only path-safe characters remain."""
     keep_characters = r"[^.A-Za-z0-9_-]"
@@ -812,46 +706,260 @@ def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
 
 
 class OpenMeteoVariable(Enum):
-    """An enumeration of the variables available from OpenMeteo."""
+    """An enumeration of the variables, and their metadata available
+    from OpenMeteo."""
 
-    TIME = "time"
-    TEMPERATURE_2M = "temperature_2m"
-    DEWPOINT_2M = "dewpoint_2m"
-    RELATIVEHUMIDITY_2M = "relativehumidity_2m"
-    SURFACE_PRESSURE = "surface_pressure"
-    SHORTWAVE_RADIATION = "shortwave_radiation"
-    DIRECT_RADIATION = "direct_radiation"
-    DIFFUSE_RADIATION = "diffuse_radiation"
-    WINDDIRECTION_10M = "winddirection_10m"
-    WINDSPEED_10M = "windspeed_10m"
-    CLOUDCOVER = "cloudcover"
-    WEATHERCODE = "weathercode"
-    PRECIPITATION = "precipitation"
-    RAIN = "rain"
-    SNOWFALL = "snowfall"
-    CLOUDCOVER_LOW = "cloudcover_low"
-    CLOUDCOVER_MID = "cloudcover_mid"
-    CLOUDCOVER_HIGH = "cloudcover_high"
-    DIRECT_NORMAL_IRRADIANCE = "direct_normal_irradiance"
-    WINDSPEED_100M = "windspeed_100m"
-    WINDDIRECTION_100M = "winddirection_100m"
-    WINDGUSTS_10M = "windgusts_10m"
-    ET0_FAO_EVAPOTRANSPIRATION = "et0_fao_evapotranspiration"
-    VAPOR_PRESSURE_DEFICIT = "vapor_pressure_deficit"
-    SOIL_TEMPERATURE_0_TO_7CM = "soil_temperature_0_to_7cm"
-    SOIL_TEMPERATURE_7_TO_28CM = "soil_temperature_7_to_28cm"
-    SOIL_TEMPERATURE_28_TO_100CM = "soil_temperature_28_to_100cm"
-    SOIL_TEMPERATURE_100_TO_255CM = "soil_temperature_100_to_255cm"
-    SOIL_MOISTURE_0_TO_7CM = "soil_moisture_0_to_7cm"
-    SOIL_MOISTURE_7_TO_28CM = "soil_moisture_7_to_28cm"
-    SOIL_MOISTURE_28_TO_100CM = "soil_moisture_28_to_100cm"
-    SOIL_MOISTURE_100_TO_255CM = "soil_moisture_100_to_255cm"
+    TEMPERATURE_2M = auto()
+    DEWPOINT_2M = auto()
+    RELATIVEHUMIDITY_2M = auto()
+    SURFACE_PRESSURE = auto()
+    SHORTWAVE_RADIATION = auto()
+    DIRECT_RADIATION = auto()
+    DIFFUSE_RADIATION = auto()
+    WINDDIRECTION_10M = auto()
+    WINDSPEED_10M = auto()
+    CLOUDCOVER = auto()
+    PRECIPITATION = auto()
+    RAIN = auto()
+    SNOWFALL = auto()
+    CLOUDCOVER_LOW = auto()
+    CLOUDCOVER_MID = auto()
+    CLOUDCOVER_HIGH = auto()
+    DIRECT_NORMAL_IRRADIANCE = auto()
+    WINDSPEED_100M = auto()
+    WINDDIRECTION_100M = auto()
+    WINDGUSTS_10M = auto()
+    ET0_FAO_EVAPOTRANSPIRATION = auto()
+    VAPOR_PRESSURE_DEFICIT = auto()
+    SOIL_TEMPERATURE_0_TO_7CM = auto()
+    SOIL_TEMPERATURE_7_TO_28CM = auto()
+    SOIL_TEMPERATURE_28_TO_100CM = auto()
+    SOIL_TEMPERATURE_100_TO_255CM = auto()
+    SOIL_MOISTURE_0_TO_7CM = auto()
+    SOIL_MOISTURE_7_TO_28CM = auto()
+    SOIL_MOISTURE_28_TO_100CM = auto()
+    SOIL_MOISTURE_100_TO_255CM = auto()
+
+    @staticmethod
+    def __properties__() -> Dict[str, Dict[str, Union[str, float]]]:
+        """A dictionary of the properties of each variable."""
+        return {
+            OpenMeteoVariable.TEMPERATURE_2M.value: {
+                "openmeteo_name": "temperature_2m",
+                "openmeteo_unit": "°C",
+                "target_name": "Dry Bulb Temperature",
+                "target_unit": "C",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.DEWPOINT_2M.value: {
+                "openmeteo_name": "dewpoint_2m",
+                "openmeteo_unit": "°C",
+                "target_name": "Dew Point Temperature",
+                "target_unit": "C",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.RELATIVEHUMIDITY_2M.value: {
+                "openmeteo_name": "relativehumidity_2m",
+                "openmeteo_unit": "%",
+                "target_name": "Relative Humidity",
+                "target_unit": "%",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SURFACE_PRESSURE.value: {
+                "openmeteo_name": "surface_pressure",
+                "openmeteo_unit": "hPa",
+                "target_name": "Atmospheric Station Pressure",
+                "target_unit": "Pa",
+                "target_multiplier": 100,
+            },
+            OpenMeteoVariable.SHORTWAVE_RADIATION.value: {
+                "openmeteo_name": "shortwave_radiation",
+                "openmeteo_unit": "W/m²",
+                "target_name": "Global Horizontal Radiation",
+                "target_unit": "Wh/m2",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.DIRECT_RADIATION.value: {
+                "openmeteo_name": "direct_radiation",
+                "openmeteo_unit": "W/m²",
+                "target_name": "Direct Horizontal Radiation",
+                "target_unit": "Wh/m2",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.DIFFUSE_RADIATION.value: {
+                "openmeteo_name": "diffuse_radiation",
+                "openmeteo_unit": "W/m²",
+                "target_name": "Diffuse Horizontal Radiation",
+                "target_unit": "Wh/m2",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.WINDDIRECTION_10M.value: {
+                "openmeteo_name": "winddirection_10m",
+                "openmeteo_unit": "°",
+                "target_name": "Wind Direction",
+                "target_unit": "degrees",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.WINDSPEED_10M.value: {
+                "openmeteo_name": "windspeed_10m",
+                "openmeteo_unit": "km/h",
+                "target_name": "Wind Speed",
+                "target_unit": "m/s",
+                "target_multiplier": 1 / 3.6,
+            },
+            OpenMeteoVariable.CLOUDCOVER.value: {
+                "openmeteo_name": "cloudcover",
+                "openmeteo_unit": "%",
+                "target_name": "Opaque Sky Cover",
+                "target_unit": "tenths",
+                "target_multiplier": 0.1,
+            },
+            OpenMeteoVariable.PRECIPITATION.value: {
+                "openmeteo_name": "precipitation",
+                "openmeteo_unit": "mm",
+                "target_name": "Precipitable Water",
+                "target_unit": "mm",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.RAIN.value: {
+                "openmeteo_name": "rain",
+                "openmeteo_unit": "mm",
+                "target_name": "Liquid Precipitation Depth",
+                "target_unit": "mm",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SNOWFALL.value: {
+                "openmeteo_name": "snowfall",
+                "openmeteo_unit": "cm",
+                "target_name": "Snow depth",
+                "target_unit": "cm",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.CLOUDCOVER_LOW.value: {
+                "openmeteo_name": "cloudcover_low",
+                "openmeteo_unit": "%",
+                "target_name": "Cloud Cover @<2km",
+                "target_unit": "tenths",
+                "target_multiplier": 0.1,
+            },
+            OpenMeteoVariable.CLOUDCOVER_MID.value: {
+                "openmeteo_name": "cloudcover_mid",
+                "openmeteo_unit": "%",
+                "target_name": "Cloud Cover @2-6km",
+                "target_unit": "tenths",
+                "target_multiplier": 0.1,
+            },
+            OpenMeteoVariable.CLOUDCOVER_HIGH.value: {
+                "openmeteo_name": "cloudcover_high",
+                "openmeteo_unit": "%",
+                "target_name": "Cloud Cover @>6km",
+                "target_unit": "tenths",
+                "target_multiplier": 0.1,
+            },
+            OpenMeteoVariable.DIRECT_NORMAL_IRRADIANCE.value: {
+                "openmeteo_name": "direct_normal_irradiance",
+                "openmeteo_unit": "W/m²",
+                "target_name": "Direct Normal Radiation",
+                "target_unit": "Wh/m2",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.WINDSPEED_100M.value: {
+                "openmeteo_name": "windspeed_100m",
+                "openmeteo_unit": "km/h",
+                "target_name": "Wind Speed @100m",
+                "target_unit": "m/s",
+                "target_multiplier": 1 / 3.6,
+            },
+            OpenMeteoVariable.WINDDIRECTION_100M.value: {
+                "openmeteo_name": "winddirection_100m",
+                "openmeteo_unit": "°",
+                "target_name": "Wind Direction @100m",
+                "target_unit": "degrees",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.WINDGUSTS_10M.value: {
+                "openmeteo_name": "windgusts_10m",
+                "openmeteo_unit": "km/h",
+                "target_name": "Wind Gusts @10m",
+                "target_unit": "m/s",
+                "target_multiplier": 1 / 3.6,
+            },
+            OpenMeteoVariable.ET0_FAO_EVAPOTRANSPIRATION.value: {
+                "openmeteo_name": "et0_fao_evapotranspiration",
+                "openmeteo_unit": "mm",
+                "target_name": "Evapotranspiration",
+                "target_unit": "mm/inch",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.VAPOR_PRESSURE_DEFICIT.value: {
+                "openmeteo_name": "vapor_pressure_deficit",
+                "openmeteo_unit": "kPa",
+                "target_name": "Vapor Pressure Deficit",
+                "target_unit": "Pa",
+                "target_multiplier": 0.001,
+            },
+            OpenMeteoVariable.SOIL_TEMPERATURE_0_TO_7CM.value: {
+                "openmeteo_name": "soil_temperature_0_to_7cm",
+                "openmeteo_unit": "°C",
+                "target_name": "Soil Temperature @0-7cm",
+                "target_unit": "C",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SOIL_TEMPERATURE_7_TO_28CM.value: {
+                "openmeteo_name": "soil_temperature_7_to_28cm",
+                "openmeteo_unit": "°C",
+                "target_name": "Soil Temperature @7-28cm",
+                "target_unit": "C",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SOIL_TEMPERATURE_28_TO_100CM.value: {
+                "openmeteo_name": "soil_temperature_28_to_100cm",
+                "openmeteo_unit": "°C",
+                "target_name": "Soil Temperature @28-100cm",
+                "target_unit": "C",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SOIL_TEMPERATURE_100_TO_255CM.value: {
+                "openmeteo_name": "soil_temperature_100_to_255cm",
+                "openmeteo_unit": "°C",
+                "target_name": "Soil Temperature @100-255cm",
+                "target_unit": "C",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SOIL_MOISTURE_0_TO_7CM.value: {
+                "openmeteo_name": "soil_moisture_0_to_7cm",
+                "openmeteo_unit": "m³/m³",
+                "target_name": "Soil Moisture @0-7cm",
+                "target_unit": "fraction",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SOIL_MOISTURE_7_TO_28CM.value: {
+                "openmeteo_name": "soil_moisture_7_to_28cm",
+                "openmeteo_unit": "m³/m³",
+                "target_name": "Soil Moisture @7-28cm",
+                "target_unit": "fraction",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SOIL_MOISTURE_28_TO_100CM.value: {
+                "openmeteo_name": "soil_moisture_28_to_100cm",
+                "openmeteo_unit": "m³/m³",
+                "target_name": "Soil Moisture @28-100cm",
+                "target_unit": "fraction",
+                "target_multiplier": 1,
+            },
+            OpenMeteoVariable.SOIL_MOISTURE_100_TO_255CM.value: {
+                "openmeteo_name": "soil_moisture_100_to_255cm",
+                "openmeteo_unit": "m³/m³",
+                "target_name": "Soil Moisture @100-255cm",
+                "target_unit": "fraction",
+                "target_multiplier": 1,
+            },
+        }
 
     @classmethod
     def from_string(cls, name: str) -> OpenMeteoVariable:
         """."""
         d = {
-            "time": cls.TIME,
             "temperature_2m": cls.TEMPERATURE_2M,
             "dewpoint_2m": cls.DEWPOINT_2M,
             "relativehumidity_2m": cls.RELATIVEHUMIDITY_2M,
@@ -862,7 +970,6 @@ class OpenMeteoVariable(Enum):
             "winddirection_10m": cls.WINDDIRECTION_10M,
             "windspeed_10m": cls.WINDSPEED_10M,
             "cloudcover": cls.CLOUDCOVER,
-            "weathercode": cls.WEATHERCODE,
             "precipitation": cls.PRECIPITATION,
             "rain": cls.RAIN,
             "snowfall": cls.SNOWFALL,
@@ -887,87 +994,46 @@ class OpenMeteoVariable(Enum):
         try:
             return d[name]
         except KeyError as e:
-            raise KeyError(e, f"{name} is not a known variable name.")
+            raise KeyError(e, f"{name} is not a known variable name.") from e
 
     @property
-    def conversion_name(self) -> str:
-        """Convert the enum value into a Ladybug dataype string representation (for this toolkit)."""
-        d = {
-            self.TIME.value: "Time (datetime)",
-            self.TEMPERATURE_2M.value: "Dry Bulb Temperature (C)",
-            self.DEWPOINT_2M.value: "Dew Point Temperature (C)",
-            self.RELATIVEHUMIDITY_2M.value: "Relative Humidity (%)",
-            self.SURFACE_PRESSURE.value: "Atmospheric Station Pressure (Pa)",
-            self.SHORTWAVE_RADIATION.value: "Global Horizontal Radiation (Wh/m2)",
-            self.DIRECT_RADIATION.value: "Direct Horizontal Radiation (Wh/m2)",
-            self.DIFFUSE_RADIATION.value: "Diffuse Horizontal Radiation (Wh/m2)",
-            self.WINDDIRECTION_10M.value: "Wind Direction (degrees)",
-            self.WINDSPEED_10M.value: "Wind Speed (m/s)",
-            self.CLOUDCOVER.value: "Opaque Sky Cover (tenths)",
-            self.WEATHERCODE.value: "Present Weather Codes (codes)",
-            self.PRECIPITATION.value: "Precipitable Water (mm)",
-            self.RAIN.value: "Liquid Precipitation Depth (mm)",
-            self.SNOWFALL.value: "Snow Depth (cm)",
-            self.CLOUDCOVER_LOW.value: "Cloud Cover @<2km (tenths)",
-            self.CLOUDCOVER_MID.value: "Cloud Cover @2-6km (tenths)",
-            self.CLOUDCOVER_HIGH.value: "Cloud Cover @>6km (tenths)",
-            self.DIRECT_NORMAL_IRRADIANCE.value: "Direct Normal Radiation (Wh/m2)",
-            self.WINDSPEED_100M.value: "Wind Speed @100m (m/s)",
-            self.WINDDIRECTION_100M.value: "Wind Direction @100m (degrees)",
-            self.WINDGUSTS_10M.value: "Wind Gusts (m/s)",
-            self.ET0_FAO_EVAPOTRANSPIRATION.value: "Evapotranspiration (mm/inch)",
-            self.VAPOR_PRESSURE_DEFICIT.value: "Vapor Pressure Deficit (Pa)",
-            self.SOIL_TEMPERATURE_0_TO_7CM.value: "Soil Temperature @0-7cm (C)",
-            self.SOIL_TEMPERATURE_7_TO_28CM.value: "Soil Temperature @7-28cm (C)",
-            self.SOIL_TEMPERATURE_28_TO_100CM.value: "Soil Temperature @28-100cm (C)",
-            self.SOIL_TEMPERATURE_100_TO_255CM.value: "Soil Temperature @100-255cm (C)",
-            self.SOIL_MOISTURE_0_TO_7CM.value: "Soil Moisture @0-7cm (fraction)",
-            self.SOIL_MOISTURE_7_TO_28CM.value: "Soil Moisture @7-28cm (fraction)",
-            self.SOIL_MOISTURE_28_TO_100CM.value: "Soil Moisture @28-100cm (fraction)",
-            self.SOIL_MOISTURE_100_TO_255CM.value: "Soil Moisture @100-255cm (fraction)",
-        }
-
-        return d[self.value]
+    def openmeteo_name(self) -> str:
+        """The name of the variable as provided by OpenMeteo."""
+        return self.__properties__()[self.value]["openmeteo_name"]
 
     @property
-    def conversion_factor(self) -> float:
-        """Factors to multiple returned data from OpenMeteo by to give EPW standard units."""
-        d = {
-            self.TIME.value: None,
-            self.TEMPERATURE_2M.value: 1,
-            self.DEWPOINT_2M.value: 1,
-            self.RELATIVEHUMIDITY_2M.value: 1,
-            self.SURFACE_PRESSURE.value: 100,
-            self.SHORTWAVE_RADIATION.value: 1,
-            self.DIRECT_RADIATION.value: 1,
-            self.DIFFUSE_RADIATION.value: 1,
-            self.WINDDIRECTION_10M.value: 1,
-            self.WINDSPEED_10M.value: 1 / 3.6,
-            self.CLOUDCOVER.value: 0.1,
-            self.WEATHERCODE.value: None,
-            self.PRECIPITATION.value: 1,
-            self.RAIN.value: 1,
-            self.SNOWFALL.value: 1,
-            self.CLOUDCOVER_LOW.value: 0.1,
-            self.CLOUDCOVER_MID.value: 0.1,
-            self.CLOUDCOVER_HIGH.value: 0.1,
-            self.DIRECT_NORMAL_IRRADIANCE.value: 1,
-            self.WINDSPEED_100M.value: 1 / 3.6,
-            self.WINDDIRECTION_100M.value: 1,
-            self.WINDGUSTS_10M.value: 1 / 3.6,
-            self.ET0_FAO_EVAPOTRANSPIRATION.value: 1,
-            self.VAPOR_PRESSURE_DEFICIT.value: 0.001,
-            self.SOIL_TEMPERATURE_0_TO_7CM.value: 1,
-            self.SOIL_TEMPERATURE_7_TO_28CM.value: 1,
-            self.SOIL_TEMPERATURE_28_TO_100CM.value: 1,
-            self.SOIL_TEMPERATURE_100_TO_255CM.value: 1,
-            self.SOIL_MOISTURE_0_TO_7CM.value: 1,
-            self.SOIL_MOISTURE_7_TO_28CM.value: 1,
-            self.SOIL_MOISTURE_28_TO_100CM.value: 1,
-            self.SOIL_MOISTURE_100_TO_255CM.value: 1,
-        }
+    def openmeteo_unit(self) -> str:
+        """The unit of the variable as provided by OpenMeteo."""
+        return self.__properties__()[self.value]["openmeteo_unit"]
 
-        return d[self.value]
+    @property
+    def openmeteo_table_name(self) -> str:
+        """The name of the column header when placed into dataframe."""
+        return f"{self.openmeteo_name} ({self.openmeteo_unit})"
+
+    @property
+    def target_table_name(self) -> str:
+        """The name of the target column header when placed into dataframe."""
+        return f"{self.target_name} ({self.target_unit})"
+
+    @property
+    def target_name(self) -> str:
+        """The target name to convert to."""
+        return self.__properties__()[self.value]["target_name"]
+
+    @property
+    def target_unit(self) -> str:
+        """The target unit to convert to."""
+        return self.__properties__()[self.value]["target_unit"]
+
+    @property
+    def target_multiplier(self) -> float:
+        """The multiplier to convert from OpenMeteo units to target units."""
+        return self.__properties__()[self.value]["target_multiplier"]
+
+    def convert(self, value: float) -> float:
+        """Convert the value from OpenMeteo units into target units."""
+        return value * self.target_multiplier
 
 
 def scrape_openmeteo(
@@ -975,7 +1041,7 @@ def scrape_openmeteo(
     longitude: float,
     start_date: Union[datetime, str],
     end_date: Union[datetime, str],
-    variables: List[OpenMeteoVariable],
+    variables: Tuple[OpenMeteoVariable] = None,
     convert_units: bool = False,
 ) -> pd.DataFrame:
     """Obtain historic hourly data from Open-Meteo.
@@ -986,12 +1052,12 @@ def scrape_openmeteo(
             The latitude of the target site, in degrees.
         longitude (float):
             The longitude of the target site, in degrees.
-        start_date Union[datetime, str]:
+        start_date (Union[datetime, str]):
             The start-date from which records will be obtained.
-        end_date Union[datetime, str]:
+        end_date (Union[datetime, str]):
             The end-date beyond which records will be ignored.
-        variables (List[OpenMeteoVariable]):
-            A list of variables to query.
+        variables (Tuple[OpenMeteoVariable]):
+            A list of variables to query. If None, then all variables will be queried.
         convert_units (bool, optional):
             Convert units output into more common units, and rename headers accordingly.
 
@@ -999,39 +1065,58 @@ def scrape_openmeteo(
         pd.DataFrame:
             A DataFrame containing scraped data.
     """
+
+    # sense checking, error handling and conversions
+    if latitude < -90 or latitude > 90:
+        raise ValueError("The latitude must be between -90 and 90 degrees.")
+    if longitude < -180 or longitude > 180:
+        raise ValueError("The longitude must be between -180 and 180 degrees.")
+
     if isinstance(start_date, str):
         start_date = datetime.strptime(start_date, "%Y-%m-%d")
     if isinstance(end_date, str):
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
-    var_strings = ",".join([i.value for i in variables if i.name.lower() != "time"])
+    if start_date > end_date:
+        raise ValueError("The start_date must be before the end_date.")
+
+    if variables is None:
+        variables = tuple(OpenMeteoVariable)
+    else:
+        if not all(isinstance(val, OpenMeteoVariable) for val in variables):
+            raise ValueError(
+                "All values in the variables tuple must be of type OpenMeteoVariable."
+            )
+
+    # construct query string
+    var_strings = ",".join([i.openmeteo_name for i in variables])
     query_string = f"https://archive-api.open-meteo.com/v1/era5?latitude={latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
 
+    # request data
     with urllib.request.urlopen(query_string) as url:
         data = json.load(url)
 
-    if not convert_units:
-        headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
-    else:
-        headers = [
-            OpenMeteoVariable.from_string(k).conversion_name
-            for (k, v) in data["hourly_units"].items()
-        ]
-
-    if not convert_units:
-        values = [v for k, v in data["hourly"].items()]
-    else:
-        values = []
-        for k, v in data["hourly"].items():
-            en = OpenMeteoVariable.from_string(k)
-            if en.conversion_factor is None:
-                values.append(v)
-            else:
-                values.append([i * en.conversion_factor for i in v])
+    # convert resultant data to dataframe
+    headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
+    values = [v for _, v in data["hourly"].items()]
     df = pd.DataFrame(np.array(values).T, columns=headers)
     df = df.set_index(df.columns[0])
+    df.index.name = None
     df.index = pd.to_datetime(df.index)
-    return df
+    df = df.apply(pd.to_numeric, errors="coerce")
+
+    if not convert_units:
+        return df
+
+    new_df = []
+    for i in OpenMeteoVariable:
+        try:
+            new_df.append(
+                i.convert(df[i.openmeteo_table_name]).rename(i.target_table_name)
+            )
+        except KeyError:
+            pass
+    return pd.concat(new_df, axis=1)
 
 
 def weibull_directional(
@@ -1045,60 +1130,58 @@ def weibull_directional(
         pd.DataFrame:
             A DataFrame with (direction_bin_low, direction_bin_high) as index, and weibull coefficients as columns.
     """
-    warnings.warn(
-        "This method was written by someone who doesn't actually know what thesse values mean. PLease don't trust them!"
-    )
     d = {}
     for (low, high), speeds in tqdm(
         binned_data.items(), desc="Calculating Weibull shape parameters"
     ):
         d[(low, high)] = weibull_pdf(speeds)
 
-    return pd.DataFrame.from_dict(d, orient="index", columns=["x", "k", "λ", "α"])
+    return pd.DataFrame.from_dict(d, orient="index", columns=["k", "loc", "c"])
 
 
 def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
-    """Calculate the parameters of an exponentiated Weibull continuous random variable.
+    """Estimate the two-parameter Weibull parameters for a set of wind speeds.
+
+    Args:
+        wind_speeds (List[float]):
+            A list of wind speeds.
+
     Returns:
-        x (float):
-            Shape parameter
-            scipy - mean
         k (float):
             Shape parameter
-            scipy - variance
-        λ (float):
+        loc (float):
+            Location parameter.
+        c (float):
             Scale parameter.
-            scipy - skew
-        α (float):
-            Shape parameter.
-            CFD - scale, c
-            scipy - kurtosis
     """
     ws = np.array(wind_speeds)
     ws = ws[ws != 0]
     ws = ws[~np.isnan(ws)]
+    if ws.min() < 0:
+        raise ValueError("Wind speeds must be positive.")
     try:
-        return exponweib.fit(ws, floc=0, f0=1)
+        return weibull_min.fit(ws)
     except ValueError as exc:
         warnings.warn(f"Not enough data to calculate Weibull parameters.\n{exc}")
-        return (1, np.nan, 0, np.nan)  # type: ignore
+        return (np.nan, np.nan, np.nan)  # type: ignore
 
 
-def circular_weighted_mean(angles: List[float], weights: List[float]):
+def circular_weighted_mean(angles: List[float], weights: List[float] = None):
     """Get the average angle from a set of weighted angles.
 
     Args:
         angles (List[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
         weights (List[float]):
-            A collection of weights, which must sum to 1.
+            A collection of weights, which must sum to 1. Defaults to None which will equally weight all angles.
 
     Returns:
         float:
             An average wind direction.
     """
-
     angles = np.array(angles)
+    if weights is None:
+        weights = np.ones_like(angles) / len(angles)
     weights = np.array(weights)
 
     if angles.shape != weights.shape:
@@ -1107,11 +1190,8 @@ def circular_weighted_mean(angles: List[float], weights: List[float]):
     if np.any(angles < 0) or np.any(angles > 360):
         raise ValueError("Input angles exist outside of expected range (0-360).")
 
-    if weights is None:
-        weights = np.ones_like(angles) / len(angles)
-
-    if sum(weights) != 1:
-        raise ValueError("weights must total 1.")
+    weights = np.array(weights)
+    weights = weights / sum(weights)
 
     x = y = 0.0
     for angle, weight in zip(angles, weights):
@@ -1172,7 +1252,7 @@ def wind_speed_at_height(
         as stated in an EPW file.
 
     Args:
-        reference_wind_speed (float):
+        reference_value (float):
             The speed to be translated.
         reference_height (float):
             The original height of the wind speed being translated.
@@ -1232,22 +1312,20 @@ def temperature_at_height(
         dry-bulb temperature at another height.
 
     Args:
-        reference_temperature (float):
+        reference_value (float):
             The temperature to translate.
         reference_height (float):
             The height of the reference temperature.
         target_height (float):
             The height to translate the reference temperature towards.
         **kwargs:
-            Additional keyword arguments to be passed to the
-            temperature_at_height function. This includes:
-                reduction_per_km_altitude_gain (float, optional):
-                    The lapse rate of the atmosphere. Defaults to 0.0065 based
-                    on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
-
-        lapse_rate (float, optional):
-            The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
-            conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
+            Additional keyword arguments to be passed to the temperature_at_height function. This includes:
+            reduction_per_km_altitude_gain (float, optional):
+                The lapse rate of the atmosphere. Defaults to 0.0065 based
+                on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
+            lapse_rate (float, optional):
+                The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
+                conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
 
     Returns:
         float:
@@ -1271,7 +1349,6 @@ def radiation_at_height(
     reference_value: float,
     target_height: float,
     reference_height: float,
-    lapse_rate: float = 0.08,
     **kwargs,
 ) -> float:
     """Calculate the radiation at a given height, given a reference radiation
@@ -1284,7 +1361,7 @@ def radiation_at_height(
         Nov 2009, Frascati, Italy. pp.S05.
 
     Args:
-        reference_radiation (float):
+        reference_value (float):
             The radiation at the reference height.
         target_height (float):
             The height at which the radiation is required, in m.
@@ -1316,7 +1393,7 @@ def air_pressure_at_height(
     """Calculate the air pressure at a given height, given a reference pressure and height.
 
     Args:
-        reference_pressure (float):
+        reference_value (float):
             The pressure at the reference height, in Pa.
         target_height (float):
             The height at which the pressure is required, in m.
@@ -1388,50 +1465,6 @@ def dry_bulb_temperature_at_height(
     return dbt_collection
 
 
-def tile_images(
-    imgs: Union[List[Path], List[Image.Image]], rows: int, cols: int
-) -> Image.Image:
-    """Tile a set of images into a grid.
-
-    Args:
-        imgs (Union[List[Path], List[Image.Image]]):
-            A list of images to tile.
-        rows (int):
-            The number of rows in the grid.
-        cols (int):
-            The number of columns in the grid.
-
-    Returns:
-        Image.Image:
-            A PIL image of the tiled images.
-    """
-
-    imgs = np.array([Path(i) for i in np.array(imgs).flatten()])
-
-    # open images if paths passed
-    imgs = [Image.open(img) if isinstance(img, Path) else img for img in imgs]
-
-    if len(imgs) != rows * cols:
-        raise ValueError(
-            f"The number of images given ({len(imgs)}) does not equal ({rows}*{cols})"
-        )
-
-    # ensure each image has the same dimensions
-    w, h = imgs[0].size
-    for img in imgs:
-        if img.size != (w, h):
-            raise ValueError("All images must have the same dimensions")
-
-    w, h = imgs[0].size
-    grid = Image.new("RGBA", size=(cols * w, rows * h))
-
-    for i, img in enumerate(imgs):
-        grid.paste(img, box=(i % cols * w, i // cols * h))
-        img.close()
-
-    return grid
-
-
 def validate_timeseries(
     obj: Any,
     is_annual: bool = False,
@@ -1472,133 +1505,6 @@ def validate_timeseries(
     if is_contiguous:
         if not obj.index.is_monotonic_increasing:
             raise ValueError("series is not contiguous")
-
-
-def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]:
-    """
-    Lightens the given color by multiplying (1-luminosity) by the given amount.
-
-    Args:
-        color (str):
-            A color-like string.
-        amount (float):
-            The amount of lightening to apply.
-
-    Returns:
-        Tuple[float]:
-            An RGB value.
-
-    Examples:
-    >> lighten_color('g', 0.3)
-    >> lighten_color('#F034A3', 0.6)
-    >> lighten_color((.3,.55,.1), 0.5)
-    """
-    try:
-        c = cnames[color]
-    except KeyError:
-        c = color
-    c = colorsys.rgb_to_hls(*to_rgb(c))
-    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
-
-
-def triangulation_area(triang: Triangulation) -> float:
-    """Calculate the area of a matplotlib Triangulation.
-
-    Args:
-        triang (Triangulation):
-            A matplotlib Triangulation object.
-
-    Returns:
-        float:
-            The area of the Triangulation in the units given.
-    """
-
-    triangles = triang.triangles
-    x, y = triang.x, triang.y
-    a, _ = triangles.shape
-    i = np.arange(a)
-    area = np.sum(
-        np.abs(
-            0.5
-            * (
-                (x[triangles[i, 1]] - x[triangles[i, 0]])
-                * (y[triangles[i, 2]] - y[triangles[i, 0]])
-                - (x[triangles[i, 2]] - x[triangles[i, 0]])
-                * (y[triangles[i, 1]] - y[triangles[i, 0]])
-            )
-        )
-    )
-
-    return area
-
-
-def create_triangulation(
-    x: List[float],
-    y: List[float],
-    alpha: float = None,
-    max_iterations: int = 250,
-    increment: float = 0.01,
-) -> Triangulation:
-    """Create a matplotlib Triangulation from a list of x and y coordinates, including a mask to
-        remove elements with edges larger than alpha.
-
-    Args:
-        x (List[float]):
-            A list of x coordinates.
-        y (List[float]):
-            A list of y coordinates.
-        alpha (float, optional):
-            A value to start alpha at.
-            Defaults to None, with an estimate made for a suitable starting point.
-        max_iterations (int, optional):
-            The number of iterations to run to check against triangulation validity.
-            Defaults to 250.
-        increment (int, optional):
-            The value by which to increment alpha by when searching for a valid triangulation.
-            Defaults to 0.01.
-
-    Returns:
-        Triangulation:
-            A matplotlib Triangulation object.
-    """
-
-    if alpha is None:
-        # TODO - add method here to automatically determine appropriate alpha value
-        alpha = 1.1
-
-    if len(x) != len(y):
-        raise ValueError("x and y must be the same length")
-
-    # Triangulate X, Y locations
-    triang = Triangulation(x, y)
-
-    xtri = x[triang.triangles] - np.roll(x[triang.triangles], 1, axis=1)
-    ytri = y[triang.triangles] - np.roll(y[triang.triangles], 1, axis=1)
-    maxi = np.max(np.sqrt(xtri**2 + ytri**2), axis=1)
-
-    # Iterate triangulation masking until a possible mask is found
-    count = 0
-    fig, ax = plt.subplots(1, 1)
-    synthetic_values = range(len(x))
-    success = False
-    while not success:
-        count += 1
-        try:
-            tr = copy.deepcopy(triang)
-            tr.set_mask(maxi > alpha)
-            ax.tricontour(tr, synthetic_values)
-            success = True
-        except ValueError:
-            alpha += increment
-        else:
-            break
-        if count > max_iterations:
-            raise ValueError(
-                f"Could not create a valid triangulation mask within {max_iterations}"
-            )
-    plt.close(fig)
-    triang.set_mask(maxi > alpha)
-    return triang
 
 
 def evaporative_cooling_effect(
@@ -1698,3 +1604,144 @@ def evaporative_cooling_effect_collection(
 
     return [dbt, rh]
 
+
+def remove_leap_days(
+    pd_object: Union[pd.DataFrame, pd.Series]
+) -> Union[pd.DataFrame, pd.Series]:
+    """A removal of all timesteps within a time-indexed pandas
+    object where the day is the 29th of February."""
+
+    if not isinstance(pd_object.index, pd.DatetimeIndex):
+        raise ValueError("The object provided should be datetime-indexed.")
+
+    mask = (pd_object.index.month == 2) & (pd_object.index.day == 29)
+
+    return pd_object[~mask]
+
+
+def month_hour_binned_series(
+    series: pd.Series,
+    month_bins: Tuple[Tuple[int]] = None,
+    hour_bins: Tuple[Tuple[int]] = None,
+    month_labels: Tuple[str] = None,
+    hour_labels: Tuple[str] = None,
+    agg: str = "mean",
+) -> pd.DataFrame:
+    """Bin a series by hour and month.
+
+    Args:
+        series (pd.Series):
+            A series with a datetime index.
+        hour_bins (Tuple[Tuple[int]], optional):
+            A list of lists of hours to bin by. Defaults to None which bins into the default_time_analysis_periods().
+        month_bins (Tuple[Tuple[int]], optional):
+            A list of lists of months to bin by. Defaults to None which bins into default_month_analysis_periods.
+        hour_labels (List[str], optional):
+            A list of labels to use for the hour bins. Defaults to None which just lists the hours in each bin.
+        month_labels (List[str], optional):
+            A list of labels to use for the month bins. Defaults to None which just lists the months in each bin.
+        agg (str, optional):
+            The aggregation method to use. Can be either "min", "mean", "median", "max" or "sum". Defaults to "mean".
+
+    Returns:
+        time_binned_df (pd.DataFrame):
+            A dataframe with the binned series.
+    """
+
+    # check that input dtype is pd.Series
+    if not isinstance(series, pd.Series):
+        raise ValueError("The series must be a pandas Series.")
+
+    # check that the series is time indexed
+    if not isinstance(series.index, pd.DatetimeIndex):
+        raise ValueError("The series must be a time series")
+
+    # check that the series is not empty
+    if series.empty:
+        raise ValueError("The series cannot be empty")
+
+    # check that the series contains 12-months worth of data at least
+    if len(np.unique(series.index.month)) < 12:
+        raise ValueError("The series must contain at least 12-months")
+
+    # check that the series has at least 24-values per day
+    if series.groupby(series.index.day_of_year).count().min() < 24:
+        raise ValueError("The series must contain at least 24-values per day")
+
+    # create generic month/hour sets for binning, from existing defaults if no input
+    if month_bins is None:
+        _months = np.arange(1, 13, 1)
+        month_bins = []
+        for ap in default_month_analysis_periods():
+            if ap.st_month == ap.end_month:
+                res = (ap.st_month,)
+            else:
+                length = ap.end_month - ap.st_month
+                res = tuple(np.roll(_months, -ap.st_month + 1)[: length + 1])
+            month_bins.append(res)
+        month_bins = tuple(month_bins)
+    if hour_bins is None:
+        _hours = np.arange(0, 24)
+        hour_bins = []
+        for ap in default_hour_analysis_periods():
+            if ap.st_hour == ap.end_hour:
+                res = (ap.st_hour,)
+            else:
+                length = ap.end_hour - ap.st_hour
+                res = tuple(np.roll(_hours, -ap.st_hour)[: length + 1])
+            hour_bins.append(res)
+        hour_bins = tuple(hour_bins)
+
+    # check for contiguity of time periods
+    flat_hours = [item for sublist in hour_bins for item in sublist]
+    flat_months = [item for sublist in month_bins for item in sublist]
+    if (max(flat_hours) != 23) or min(flat_hours) != 0:
+        raise ValueError("hour_bins hours must be in the range 0-23")
+    if (max(flat_months) != 12) or min(flat_months) != 1:
+        raise ValueError("month_bins hours must be in the range 1-12")
+    # cehck for duplicates
+    if len(set(flat_hours)) != len(flat_hours):
+        raise ValueError("hour_bins hours must not contain duplicates")
+    if len(set(flat_months)) != len(flat_months):
+        raise ValueError("month_bins hours must not contain duplicates")
+    if (set(flat_hours) != set(list(range(24)))) or (len(set(flat_hours)) != 24):
+        raise ValueError("Input hour_bins does not contain all hours of the day")
+    if (set(flat_months) != set(list(range(1, 13, 1)))) or (
+        len(set(flat_months)) != 12
+    ):
+        raise ValueError("Input month_bins does not contain all months of the year")
+
+    # create index/column labels
+    if month_labels:
+        if len(month_labels) != len(month_bins):
+            raise ValueError("month_labels must be the same length as month_bins")
+        col_labels = month_labels
+    else:
+        col_labels = []
+        for months in month_bins:
+            if len(months) == 1:
+                col_labels.append(calendar.month_abbr[months[0]])
+            else:
+                col_labels.append(
+                    f"{calendar.month_abbr[months[0]]} to {calendar.month_abbr[months[-1]]}"
+                )
+    if hour_labels:
+        if len(hour_labels) != len(hour_bins):
+            raise ValueError("hour_labels must be the same length as hour_bins")
+        row_labels = hour_labels
+    else:
+        row_labels = [f"{i[0]:02d}:00 ≤ t < {i[-1] + 1:02d}:00" for i in hour_bins]
+
+    # create indexing bins
+    values = []
+    for months in month_bins:
+        month_mask = series.index.month.isin(months)
+        inner_values = []
+        for hours in hour_bins:
+            mask = series.index.hour.isin(hours) & month_mask
+            aggregated = series.loc[mask].agg(agg)
+            inner_values.append(aggregated)
+        values.append(inner_values)
+    df = pd.DataFrame(values, index=col_labels, columns=row_labels).T
+
+    return df

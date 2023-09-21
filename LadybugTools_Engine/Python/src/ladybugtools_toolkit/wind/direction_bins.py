@@ -9,24 +9,24 @@ from ..helpers import angle_from_cardinal, cardinality, rolling_window
 
 
 class DirectionBins:
+    """An object containing directional binning data, used mainly for Wind data collections. These bins assume North is at 0-degrees.
+
+    Args:
+        directions (int, optional):
+            The number of direction bins that should be created. Defaults to 8.
+        centered (bool, optional):
+            Whether the data should be centered about North - True, or starting from North - False. Defaults to True.
+
+    Returns:
+        DirectionBins:
+            The resulting object.
+    """
+
     def __init__(
         self,
         directions: int = 8,
         centered: bool = True,
     ) -> DirectionBins:
-        """An object containing directional binning data, used mainly for Wind data collections. These bins assume North is at 0-degrees.
-
-        Args:
-            directions (int, optional):
-                The number of direction bins that should be created. Defaults to 8.
-            centered (bool, optional):
-                Whether the data should be centered about North - True, or starting from North - False. Defaults to True.
-
-        Returns:
-            DirectionBins:
-                The resulting object.
-        """
-
         self.directions = directions
         self.centered = centered
         self.bins = self.direction_bin_edges(self.directions, self.centered)

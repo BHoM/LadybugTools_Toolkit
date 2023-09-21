@@ -22,7 +22,7 @@ from ..ladybug_extension.datacollection import (
     collection_from_series,
     collection_to_series,
 )
-from ..plot.utci_heatmap_histogram import utci_heatmap_histogram
+from ..plot import utci_heatmap_histogram
 from .shelter import (
     Shelter,
     Shelters,

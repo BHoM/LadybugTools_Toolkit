@@ -34,6 +34,7 @@ from ladybug.sunpath import Sun, Sunpath
 from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
+from ..external_comfort.ground_temperature import hourly_ground_temperature
 from ..helpers import (
     air_pressure_at_height,
     radiation_at_height,
@@ -42,12 +43,16 @@ from ..helpers import (
     wind_speed_at_height,
 )
 from .analysis_period import analysis_period_to_datetimes
+from .datacollection import average as average_collection
 from .datacollection import collection_to_series
 from .header import header_to_string as header_to_string
+from .location import average_location
 from .location import location_to_string as location_to_string
 
 
-def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame:
+def epw_to_dataframe(
+    epw: EPW, include_additional: bool = False, **kwargs
+) -> pd.DataFrame:
     """Create a Pandas DataFrame from an EPW object, with option for including additional metrics.
 
     Args:
@@ -55,6 +60,12 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
             An EPW object.
         include_additional (bool, optional):
             Set to False to not include additional calculated properties. Default is False.
+        **kwargs:
+            Additional keyword arguments to be passed to the to_dataframe method.
+            ground_temperature_depth (float):
+                The depth in m at which to calculate ground temperatures. Default is 0.5.
+            soil_diffusivity (float):
+                The soil diffusivity in m2/s. Default is 3.1e-7.
 
     Returns:
         pd.DataFrame:
@@ -126,6 +137,13 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
     ent = enthalpy(epw, hr)
     wbt = wet_bulb_temperature(epw)
 
+    # Calculate ground temperatures
+    ground_temp = hourly_ground_temperature(
+        epw,
+        depth=kwargs.pop("ground_temperature_depth", 0.5),
+        soil_diffusivity=kwargs.pop("soil_diffusivity", 3.1e-7),
+    )
+
     # Add properties to DataFrame
     for collection in [
         eot,
@@ -141,6 +159,7 @@ def epw_to_dataframe(epw: EPW, include_additional: bool = False) -> pd.DataFrame
         hr,
         ent,
         wbt,
+        ground_temp,
     ]:
         s = collection_to_series(collection)
         s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
@@ -944,16 +963,16 @@ def seasonality_from_day_length_location(
         )
 
     shortest_day_length = timedelta_tostring(sun_times.day_length.min())
-    shortest_day = sun_times.day_length.idxmin()
+    _shortest_day = sun_times.day_length.idxmin()
     middlest_day_length = timedelta_tostring(sun_times.day_length.mean())
     longest_day_length = timedelta_tostring(sun_times.day_length.max())
-    longest_day = sun_times.day_length.idxmax()
+    _longest_day = sun_times.day_length.idxmax()
 
     months = pd.Timedelta(days=3 * 30)
 
-    if (longest_day + months).year != longest_day.year:
-        spring_equinox = shortest_day + months
-        autumn_equinox = shortest_day - months
+    if (_longest_day + months).year != _longest_day.year:
+        spring_equinox = _shortest_day + months
+        autumn_equinox = _shortest_day - months
 
         autumn_right = autumn_equinox + (months / 2)
         autumn_left = autumn_equinox - (months / 2)
@@ -966,8 +985,8 @@ def seasonality_from_day_length_location(
         winter_mask = (idx > autumn_right) & (idx <= spring_left)
 
     else:
-        spring_equinox = longest_day - months
-        autumn_equinox = longest_day + months
+        spring_equinox = _longest_day - months
+        autumn_equinox = _longest_day + months
 
         autumn_right = autumn_equinox + (months / 2)
         autumn_left = autumn_equinox - (months / 2)
@@ -1686,3 +1705,94 @@ def shortest_day(epw: EPW) -> datetime:
 
     s = pd.Series([i.altitude for i in suns], index=idx[:-1])
     return s[s > 0].resample("D").count().idxmin().to_pydatetime()
+
+
+def average_epw(
+    epws: List[EPW],
+    location: Location = None,
+    comments_1: str = "",
+    comments_2: str = "",
+    file_path: str = "synthetic.epw",
+    weights: List[float] = None,
+) -> EPW:
+    """For a set of input EPW files, construct an "average", with wind speeds and direction weighted based on speed."""
+    warnings.warn("UNDER DEVELOPMENT")
+    if weights is None:
+        weights = np.ones(len(epws))
+
+    # construct "empty" EPW
+    synthetic_epw = EPW.from_missing_values()
+
+    # set location data as average of all inputs
+    if location is None:
+        location = average_location([i.location for i in epws], weights=weights)
+    synthetic_epw.location = location
+
+    # set metadata
+    synthetic_epw.comments_1 = comments_1
+    synthetic_epw.comments_2 = comments_2
+    synthetic_epw._file_path = file_path
+
+    # set ground temperayture data
+    all_depths = []
+    for epw in epws:
+        all_depths.append(list(epw.monthly_ground_temperature.keys()))
+    all_depths = list(set(np.array(all_depths).flatten()))
+
+    d = {}
+    warnings.warn("ground temp avg not working yet")
+    for depth in all_depths:
+        collections = []
+        for n, epw in enumerate(epws):
+            collections.append(epw.monthly_ground_temperature[depth] * weights[n])
+
+        # get the average for the collections included
+        base = collections[0]
+        try:
+            for coll in collections[1:]:
+                base += coll
+        except:
+            pass
+        base = base / len(collections)
+        d[depth] = base
+    synthetic_epw.monthly_ground_temperature = d
+
+    # set "years" variable
+    synthetic_epw.years.values = epws[0].years.values
+
+    # set ground temperature variable
+
+    # set variables that are an average of all inputs
+    for var in [
+        "dry_bulb_temperature",
+        "dew_point_temperature",
+        "relative_humidity",
+        "atmospheric_station_pressure",
+        "extraterrestrial_horizontal_radiation",
+        "extraterrestrial_direct_normal_radiation",
+        "horizontal_infrared_radiation_intensity",
+        "global_horizontal_radiation",
+        "direct_normal_radiation",
+        "diffuse_horizontal_radiation",
+        "global_horizontal_illuminance",
+        "direct_normal_illuminance",
+        "diffuse_horizontal_illuminance",
+        "zenith_luminance",
+        "total_sky_cover",
+        "opaque_sky_cover",
+        "visibility",
+        "ceiling_height",
+        "precipitable_water",
+        "aerosol_optical_depth",
+        "snow_depth",
+        "days_since_last_snowfall",
+        "albedo",
+        "liquid_precipitation_depth",
+        "liquid_precipitation_quantity",
+        "wind_speed",
+        "wind_direction",
+    ]:
+        avg_col = average_collection([getattr(i, var) for i in epws], weights)
+        setattr(getattr(synthetic_epw, var), "values", avg_col.values)
+
+    return synthetic_epw
