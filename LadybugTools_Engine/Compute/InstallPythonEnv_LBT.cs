@@ -35,7 +35,6 @@ namespace BH.Engine.LadybugTools
         [Input("run", "Run the installation process.")]
         [Input("reinstall", "Reinstall the environment if it already exists.")]
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
-        [PreviousVersion("6.3", "BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(System.Boolean)")]
         public static PythonEnvironment InstallPythonEnv_LBT(bool run = false, bool reinstall = false)
         {
             // check if referenced Python is installed
