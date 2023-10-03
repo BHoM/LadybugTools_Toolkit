@@ -39,6 +39,7 @@ namespace BH.oM.LadybugTools
 
         // simulated properties
         [Description("The simulated property from this object.")]
+<<<<<<< HEAD
         public virtual CustomObject ShadedDownDirectIrradiance { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
         public virtual CustomObject ShadedDownDiffuseIrradiance { get; set; } = new CustomObject();
@@ -54,9 +55,19 @@ namespace BH.oM.LadybugTools
         public virtual CustomObject ShadedUpTotalIrradiance { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
         public virtual CustomObject ShadedUpTemperature { get; set; } = new CustomObject();
+=======
+        public virtual CustomObject ShadedDownTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedLongwaveMeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual CustomObject ShadedUpTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
+        public virtual CustomObject ShadedRadiantTemperature { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject ShadedLongwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+>>>>>>> 19bbfa46f3a8c77a9a97c818aff2b6653a5166aa
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject ShadedShortwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+<<<<<<< HEAD
         public virtual CustomObject ShadedShortwaveMeanRadiantTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
         public virtual CustomObject ShadedMeanRadiantTemperature { get; set; } = new CustomObject();
@@ -81,6 +92,20 @@ namespace BH.oM.LadybugTools
         [Description("The simulated property from this object.")]
         public virtual CustomObject UnshadedShortwaveMeanRadiantTemperature { get; set; } = new CustomObject();
         [Description("The simulated property from this object.")]
+=======
+        public virtual CustomObject ShadedMeanRadiantTemperature { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject UnshadedDownTemperature { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject UnshadedUpTemperature { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject UnshadedRadiantTemperature { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject UnshadedLongwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+        public virtual CustomObject UnshadedShortwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        [Description("The simulated property from this object.")]
+>>>>>>> 19bbfa46f3a8c77a9a97c818aff2b6653a5166aa
         public virtual CustomObject UnshadedMeanRadiantTemperature { get; set; } = new CustomObject();
     }
 }
