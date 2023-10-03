@@ -2,7 +2,7 @@ import numpy as np
 from .ladybug_extension.epw import wind_speed_at_height
 from ladybug.psychrometrics import saturated_vapor_pressure, wet_bulb_from_db_rh
 
-def equibtemp(
+def evaporation(
     t_sky: float, # sky temperature (C)
     depth: float,  # depth (m)
     u: float,  # wind speed (m s-1)
