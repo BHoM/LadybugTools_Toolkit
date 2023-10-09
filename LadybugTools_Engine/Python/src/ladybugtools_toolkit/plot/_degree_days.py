@@ -128,11 +128,13 @@ def degree_days(epw: EPW, heat_base: float = 18, cool_base: float = 23, **kwargs
             The temperature at which heating kicks in. Defaults to 18.
         cool_base (float, optional):
             The temperature at which cooling kicks in. Defaults to 23.
-        **kwargs:
-            Additional keyword arguments to pass to the matplotlib bar plot.
-            heat_color: The color of the heating degree days bars.
-            cool_color: The color of the cooling degree days bars.
-            figsize: The size of the figure.
+    Keyword Args:
+        heat_color (str):
+            The color of the heating degree days bars.
+        cool_color (str):
+            The color of the cooling degree days bars.
+        figsize (Tuple[float]):
+            The size of the figure.
 
     Returns:
         Figure:

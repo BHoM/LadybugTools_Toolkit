@@ -19,12 +19,17 @@ from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ..external_comfort.utci import (
-    UTCICategories,
-    feasible_comfort_category,
-    utci_comfort_categories,
-)
+from ..categorical.categories import Categorical
+
+# from ..external_comfort.utci import (
+#     UTCICategories,
+#     feasible_comfort_category,
+#     utci_comfort_categories,
+# )
+from ..external_comfort.utci.postprocess import shade_benefit_category
+from ..helpers import sunrise_sunset
 from ..ladybug_extension.analysis_period import describe_analysis_period as describe_ap
 from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.location import location_to_string
@@ -32,19 +37,26 @@ from ._heatmap import heatmap
 
 
 def utci_shade_benefit(
-    utci_shade_benefit_categories: pd.Series, **kwargs
+    unshaded_utci: Union[HourlyContinuousCollection, pd.Series],
+    shaded_utci: Union[HourlyContinuousCollection, pd.Series],
+    comfort_limits: Tuple[float] = (9, 26),
+    **kwargs,
 ) -> plt.Figure:
     """Plot the shade benefit category.
 
     Args:
-        utci_shade_benefit_categories (pd.Series):
-            A series containing shade benefit categories.
-        **kwargs:
-            Optional arguments to pass to the plot. These can include:
-                - title (str, optional):
-                    A title to add to the plot. Defaults to None.
-                - epw (EPW, optional):
-                    If included, plot the sun up hours. Defaults to None.
+        unshaded_utci (Union[HourlyContinuousCollection, pd.Series]):
+            A dataset containing unshaded UTCI values.
+        shaded_utci (Union[HourlyContinuousCollection, pd.Series]):
+            A dataset containing shaded UTCI values.
+        comfort_limits (Tuple[float], optional):
+            The range within which "comfort" is achieved. Defaults to (9, 26).
+
+    Keyword Args:
+        - title (str, optional):
+            A title to add to the plot. Defaults to None.
+        - epw (EPW, optional):
+            If included, plot the sun up hours. Defaults to None.
 
     Returns:
         plt.Figure:
@@ -55,19 +67,18 @@ def utci_shade_benefit(
         "This method is mostly broken, though it *nearly* works. Included here just to inspire someone to fix it! Please."
     )
 
-    if not isinstance(utci_shade_benefit_categories, pd.Series):
-        raise ValueError(
-            f"shade_benefit_categories must be of type pd.Series, it is currently {type(utci_shade_benefit_categories)}"
-        )
+    utci_shade_benefit_categories = shade_benefit_category(
+        unshaded_utci,
+        shaded_utci,
+        comfort_limits=comfort_limits,
+    )
 
     epw = kwargs.get("epw", None)
     title = kwargs.get("title", None)
 
     if epw is not None:
         if not isinstance(epw, EPW):
-            raise ValueError(
-                f"include_sun must be of type EPW, it is currently {type(epw)}"
-            )
+            raise ValueError(f"epw must be of type EPW, it is currently {type(epw)}")
         if len(epw.dry_bulb_temperature) != len(utci_shade_benefit_categories):
             raise ValueError(
                 f"Input sizes do not match ({len(utci_shade_benefit_categories)} != {len(epw.dry_bulb_temperature)})"
@@ -235,167 +246,167 @@ def utci_shade_benefit(
     return fig
 
 
-def utci_feasibility(
-    epw: EPW,
-    simplified: bool = False,
-    comfort_limits: tuple = (9, 26),
-    included_additional_moisture: bool = False,
-    analysis_periods: Union[AnalysisPeriod, Tuple[AnalysisPeriod]] = (AnalysisPeriod()),
-    met_rate_adjustment: float = None,
-) -> Figure:
-    """Plot the UTCI feasibility for each month of the year.
+# def utci_feasibility(
+#     epw: EPW,
+#     simplified: bool = False,
+#     comfort_limits: tuple = (9, 26),
+#     included_additional_moisture: bool = False,
+#     analysis_periods: Union[AnalysisPeriod, Tuple[AnalysisPeriod]] = (AnalysisPeriod()),
+#     met_rate_adjustment: float = None,
+# ) -> Figure:
+#     """Plot the UTCI feasibility for each month of the year.
 
-    Args:
-        epw (EPW):
-            An EPW object.
-        simplified (bool, optional):
-            Default is False.
-        comfort_limits (tuple, optional):
-            Default is (9, 26). Only used if simplified is True.
-        included_additional_moisture (bool, optional):
-            Default is False. If True, then include evap cooling in this analysis.
-        analysis_periods (Union[AnalysisPeriod, Tuple[AnalysisPeriod]], optional):
-            An AnalysisPeriod or a tuple of AnalysisPeriods to be used for the analysis.
-            Defaults to (AnalysisPeriod(),).
-        met_rate_adjustment (float, optional):
-            A value to be added to the metabolic rate of the UTCI model. This can be used
-            to account for changes in metabolic rate due to clothing, exercise, etc.
-            Defaults to None.
-    Returns:
-        Figure:
-            A matplotlib Figure object.
-    """
+#     Args:
+#         epw (EPW):
+#             An EPW object.
+#         simplified (bool, optional):
+#             Default is False.
+#         comfort_limits (tuple, optional):
+#             Default is (9, 26). Only used if simplified is True.
+#         included_additional_moisture (bool, optional):
+#             Default is False. If True, then include evap cooling in this analysis.
+#         analysis_periods (Union[AnalysisPeriod, Tuple[AnalysisPeriod]], optional):
+#             An AnalysisPeriod or a tuple of AnalysisPeriods to be used for the analysis.
+#             Defaults to (AnalysisPeriod(),).
+#         met_rate_adjustment (float, optional):
+#             A value to be added to the metabolic rate of the UTCI model. This can be used
+#             to account for changes in metabolic rate due to clothing, exercise, etc.
+#             Defaults to None.
+#     Returns:
+#         Figure:
+#             A matplotlib Figure object.
+#     """
 
-    df = feasible_comfort_category(
-        epw,
-        simplified=simplified,
-        comfort_limits=comfort_limits,
-        include_additional_moisture=included_additional_moisture,
-        analysis_periods=analysis_periods,
-        met_rate_adjustment_value=met_rate_adjustment,
-    )
+#     df = feasible_comfort_category(
+#         epw,
+#         simplified=simplified,
+#         comfort_limits=comfort_limits,
+#         include_additional_moisture=included_additional_moisture,
+#         analysis_periods=analysis_periods,
+#         met_rate_adjustment_value=met_rate_adjustment,
+#     )
 
-    labels, _ = utci_comfort_categories(
-        simplified=simplified,
-        comfort_limits=comfort_limits,
-        rtype="category",
-    )
-    colors, _ = utci_comfort_categories(
-        simplified=simplified,
-        comfort_limits=comfort_limits,
-        rtype="color",
-    )
+#     labels, _ = utci_comfort_categories(
+#         simplified=simplified,
+#         comfort_limits=comfort_limits,
+#         rtype="category",
+#     )
+#     colors, _ = utci_comfort_categories(
+#         simplified=simplified,
+#         comfort_limits=comfort_limits,
+#         rtype="color",
+#     )
 
-    fig, axes = plt.subplots(1, 12, figsize=(10, 4), sharey=True, sharex=False)
+#     fig, axes = plt.subplots(1, 12, figsize=(10, 4), sharey=True, sharex=False)
 
-    ypos = range(len(df))
-    for n, ax in enumerate(axes):
-        # get values
-        low = df.iloc[n].filter(regex="lowest")
-        high = df.iloc[n].filter(regex="highest")
-        ypos = range(len(low))
+#     ypos = range(len(df))
+#     for n, ax in enumerate(axes):
+#         # get values
+#         low = df.iloc[n].filter(regex="lowest")
+#         high = df.iloc[n].filter(regex="highest")
+#         ypos = range(len(low))
 
-        ax.barh(
-            ypos,
-            width=high.values - low.values,
-            left=low.values,
-            color=colors,
-            zorder=3,
-            alpha=0.8,
-        )
+#         ax.barh(
+#             ypos,
+#             width=high.values - low.values,
+#             left=low.values,
+#             color=colors,
+#             zorder=3,
+#             alpha=0.8,
+#         )
 
-        for rect in ax.patches:
-            width = rect.get_width()
-            height = rect.get_height()
-            _x = rect.get_x()
-            _y = rect.get_y()
-            if width == 0:
-                if _x == 1:
-                    # text saying 100% of hours are in this category
-                    ax.text(
-                        0.5,
-                        _y + (height / 2),
-                        textwrap.fill("All times", 15),
-                        ha="center",
-                        va="center",
-                        rotation=0,
-                        fontsize="xx-small",
-                        zorder=3,
-                    )
-                continue
+#         for rect in ax.patches:
+#             width = rect.get_width()
+#             height = rect.get_height()
+#             _x = rect.get_x()
+#             _y = rect.get_y()
+#             if width == 0:
+#                 if _x == 1:
+#                     # text saying 100% of hours are in this category
+#                     ax.text(
+#                         0.5,
+#                         _y + (height / 2),
+#                         textwrap.fill("All times", 15),
+#                         ha="center",
+#                         va="center",
+#                         rotation=0,
+#                         fontsize="xx-small",
+#                         zorder=3,
+#                     )
+#                 continue
 
-            ax.text(
-                _x - 0.03,
-                _y + (height),
-                f"{_x:0.1%}",
-                ha="right",
-                va="top",
-                rotation=90,
-                fontsize="xx-small",
-                zorder=3,
-            )
-            ax.text(
-                _x + width + 0.03,
-                _y + (height),
-                f"{_x + width:0.1%}",
-                ha="left",
-                va="top",
-                rotation=90,
-                fontsize="xx-small",
-                zorder=3,
-            )
+#             ax.text(
+#                 _x - 0.03,
+#                 _y + (height),
+#                 f"{_x:0.1%}",
+#                 ha="right",
+#                 va="top",
+#                 rotation=90,
+#                 fontsize="xx-small",
+#                 zorder=3,
+#             )
+#             ax.text(
+#                 _x + width + 0.03,
+#                 _y + (height),
+#                 f"{_x + width:0.1%}",
+#                 ha="left",
+#                 va="top",
+#                 rotation=90,
+#                 fontsize="xx-small",
+#                 zorder=3,
+#             )
 
-        if simplified:
-            for nn, i in enumerate(colors):
-                ax.axhspan(ymin=nn - 0.5, ymax=nn + 0.5, fc=i, alpha=0.2, zorder=1)
-        else:
-            for nn, i in enumerate(UTCICategories):
-                ax.axhspan(
-                    ymin=nn - 0.5, ymax=nn + 0.5, fc=i.color, alpha=0.2, zorder=1
-                )
+#         if simplified:
+#             for nn, i in enumerate(colors):
+#                 ax.axhspan(ymin=nn - 0.5, ymax=nn + 0.5, fc=i, alpha=0.2, zorder=1)
+#         else:
+#             for nn, i in enumerate(UTCICategories):
+#                 ax.axhspan(
+#                     ymin=nn - 0.5, ymax=nn + 0.5, fc=i.color, alpha=0.2, zorder=1
+#                 )
 
-        ax.set_xlim(-0.1, 1.1)
-        ax.set_ylim(-0.5, len(ypos) - 0.5)
-        for spine in ["left", "bottom"]:
-            ax.spines[spine].set_visible(False)
-        ax.tick_params(labelleft=False, left=False)
-        ax.set_xticks([-0.1, 0.5, 1.1])
-        ax.set_xticklabels(["", month_abbr[n + 1], ""])
-        ax.grid(False)
+#         ax.set_xlim(-0.1, 1.1)
+#         ax.set_ylim(-0.5, len(ypos) - 0.5)
+#         for spine in ["left", "bottom"]:
+#             ax.spines[spine].set_visible(False)
+#         ax.tick_params(labelleft=False, left=False)
+#         ax.set_xticks([-0.1, 0.5, 1.1])
+#         ax.set_xticklabels(["", month_abbr[n + 1], ""])
+#         ax.grid(False)
 
-        if n == 5:
-            handles = []
-            if simplified:
-                for col, lab in list(zip(*[["#3C65AF", "#2EB349", "#C31F25"], labels])):
-                    handles.append(mpatches.Patch(color=col, label=lab, alpha=0.3))
-            else:
-                for i in UTCICategories:
-                    handles.append(
-                        mpatches.Patch(color=i.color, label=i.value, alpha=0.3)
-                    )
+#         if n == 5:
+#             handles = []
+#             if simplified:
+#                 for col, lab in list(zip(*[["#3C65AF", "#2EB349", "#C31F25"], labels])):
+#                     handles.append(mpatches.Patch(color=col, label=lab, alpha=0.3))
+#             else:
+#                 for i in UTCICategories:
+#                     handles.append(
+#                         mpatches.Patch(color=i.color, label=i.value, alpha=0.3)
+#                     )
 
-            ax.legend(
-                handles=handles,
-                bbox_to_anchor=(0.5, -0.1),
-                loc="upper center",
-                ncol=3 if simplified else 4,
-                borderaxespad=0,
-                frameon=False,
-            )
+#             ax.legend(
+#                 handles=handles,
+#                 bbox_to_anchor=(0.5, -0.1),
+#                 loc="upper center",
+#                 ncol=3 if simplified else 4,
+#                 borderaxespad=0,
+#                 frameon=False,
+#             )
 
-        ti = f"{location_to_string(epw.location)}\nFeasible ranges of UTCI temperatures ({describe_ap(analysis_periods)})"
-        if met_rate_adjustment:
-            ti += f" with MET rate adjustment to {met_rate_adjustment} MET"
-        plt.suptitle(
-            textwrap.fill(ti, 90),
-            x=0.075,
-            y=0.9,
-            ha="left",
-            va="bottom",
-        )
+#         ti = f"{location_to_string(epw.location)}\nFeasible ranges of UTCI temperatures ({describe_ap(analysis_periods)})"
+#         if met_rate_adjustment:
+#             ti += f" with MET rate adjustment to {met_rate_adjustment} MET"
+#         plt.suptitle(
+#             textwrap.fill(ti, 90),
+#             x=0.075,
+#             y=0.9,
+#             ha="left",
+#             va="bottom",
+#         )
 
-    plt.tight_layout()
-    return fig
+#     plt.tight_layout()
+#     return fig
 
 
 def utci_distance_to_comfortable(

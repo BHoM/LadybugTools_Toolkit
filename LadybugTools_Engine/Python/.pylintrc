@@ -2,39 +2,50 @@
 load-plugins=pylint.extensions.docparams
 
 [BASIC]
-
 # Good variable names which should always be accepted, separated by a comma.
 good-names=a, ap, ax, b, c, cb, cc, cf, ch, ci, cl, d, df, dt, e, es, f, fp, fph, g, gs, h, ha, ha, hr, i, id, im, j, k, kw, kw, l, ls, m, ms, n, nn, o, p, pc, pt, q, r, rh, s, sd, sm, t, ta, ti, tk, tr, u, v, va, w, wd, wr, ws, x, xs, xx, xy, y, ys, yy, z, zs
+
+# suppress warnings for specific modules
 ignored-modules=win32api,cv2
 
 [FORMAT]
+# set the maximum number of characters on a single line
 max-line-length=120
 
+# set the maximum number of lines in a module before docstring checks apply
+docstring-min-length=10
+
 [MASTER]
+
+# disable all but a single rule
 ; pylint --disable=all --enable=W0611
 
+# Use multiple processes to speed up Pylint.
+jobs=4
 
+# disable specific warnings
 disable=
-    R0902, # too-many-instance-attributes
-    R0904, # too-many-public-methods
-    R0912, # too-many-branches
-    R0913, # too-many-arguments
-    R0914, # too-many-locals
-    R0915, # too-many-statements
-    C0103, # invalid-name
-    C0114, # missing-module-docstring
+    ; R0902, # too-many-instance-attributes
+    ; R0904, # too-many-public-methods
+    ; R0912, # too-many-branches
+    ; R0913, # too-many-arguments
+    ; R0914, # too-many-locals
+    ; R0915, # too-many-statements
+    ; C0103, # invalid-name
+    ; C0114, # missing-module-docstring
     ; C0115, # missing-class-docstring
-    C0301, # line-too-long
-    C0302, # too-many-lines
+    ; C0301, # line-too-long
+    ; C0302, # too-many-lines
     ; E1101, # no-member
     ; R0801, # duplicate-code
-    W0212, # protected-access
-    W0511, # fixme
-    W0702, # bare-except
-    W0703, # broad-except
-    W1203, # logging-fstring-interpolation
+    ; W0212, # protected-access
+    ; W0511, # fixme
+    ; W0702, # bare-except
+    ; W0703, # broad-except
+    ; W1203, # logging-fstring-interpolation
     ; W9006, # raise-missing-from
     ; W9015, # raise-missing-from
     ; W9017, # differing-param-doc
     ; W9018, # differing-type-doc
+    ; W0611, # unused-import
 

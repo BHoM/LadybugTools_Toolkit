@@ -2,6 +2,8 @@
 from pathlib import Path
 
 from honeybee.config import folders as hb_folders
+from honeybee.model import Model
+from ladybug.epw import EPW
 
 # set identifier for all downstream processes
 BASE_IDENTIFIER = "pytest"
@@ -21,8 +23,12 @@ SPATIAL_COMFORT_DIRECTORY = (
 
 # set source files used in testing
 MODEL_FILE = Path(__file__).parent / "assets" / "example.hbjson"
+MODEL_OBJ = Model.from_hbjson(MODEL_FILE)
+
 EPW_FILE = Path(__file__).parent / "assets" / "example.epw"
 EPW_CSV_FILE = (Path(__file__).parent / "assets" / "example.csv",)
+EPW_OBJ = EPW(EPW_FILE)
+
 RES_FILE = Path(__file__).parent / "assets" / "example.res"
 SQL_FILE = Path(__file__).parent / "assets" / "example.sql"
 ILL_FILE = Path(__file__).parent / "assets" / "example.ill"

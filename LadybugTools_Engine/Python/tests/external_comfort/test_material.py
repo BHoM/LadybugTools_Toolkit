@@ -1,72 +1,60 @@
-from ladybugtools_toolkit.external_comfort.material import (
-    EnergyMaterial,
-    EnergyMaterialVegetation,
-    Materials,
-    OpaqueMaterial,
-    OpaqueVegetationMaterial,
-    material_from_dict,
-)
+"""Test functions for the "material" module."""
 
-from .. import BASE_IDENTIFIER
-
-MATERIALS = [
-    OpaqueMaterial(BASE_IDENTIFIER, "source", 1, 1, 100, 100),
-    OpaqueVegetationMaterial(BASE_IDENTIFIER, "source", 1, 1, 100, 100),
-]
+import numpy as np
+import pytest
+from ladybugtools_toolkit.new_external_comfort.material import get_material, materials
 
 
-def test_to_dict():
-    """Test whether an object can be converted to a dictionary."""
-    for obj in MATERIALS:
-        obj_dict = obj.to_dict()
-        assert "_t" in obj_dict.keys()
-
-
-def test_to_json():
-    """Test whether an object can be converted to a json string."""
-    for obj in MATERIALS:
-        obj_json = obj.to_json()
-        assert '"_t":' in obj_json
-
-
-def test_from_dict_native():
-    """Test whether an object can be converted from a dictionary directly."""
-    for obj in MATERIALS:
-        new_obj = type(obj).from_dict(obj.to_dict())
-        assert isinstance(new_obj, type(obj))
-
-
-def test_from_json_native():
-    """Test whether an object can be converted from a json string directly."""
-    for obj in MATERIALS:
-        new_obj = type(obj).from_json(obj.to_json())
-        assert isinstance(new_obj, type(obj))
-
-
-def test_to_lbt():
+def test_lbt_materials():
     """_"""
-    for obj in MATERIALS:
-        assert isinstance(obj.to_lbt(), (EnergyMaterial, EnergyMaterialVegetation))
+    _materials = materials()
+    assert len(_materials) == 114
+    assert _materials[0].identifier == "Generic Roof Membrane"
+    assert _materials[-1].identifier == "Grassy Lawn"
+    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
+        4.06154874650346
+    )
 
 
-def test_from_lbt():
+def test_ice_tool_materials():
     """_"""
-    for obj in MATERIALS:
-        assert isinstance(
-            type(obj).from_lbt(obj.to_lbt()), (OpaqueMaterial, OpaqueVegetationMaterial)
-        )
+    _materials = materials()
+    assert len(_materials) == 39
+    assert _materials[0].identifier == "SD1 - Quartzite (Beige/brown/black New/Rough)"
+    assert _materials[-1].identifier == "WT1 - Water small (- -)"
+    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
+        1.498974358974359
+    )
 
 
-def test_material_from_dict():
+def test_custom_materials():
     """_"""
-    for obj in MATERIALS:
-        assert isinstance(
-            material_from_dict(obj.to_dict()),
-            (OpaqueMaterial, OpaqueVegetationMaterial),
-        )
+    _materials = materials()
+    assert len(_materials) == 3
+    assert _materials[0].identifier == "Fabric"
+    assert _materials[-1].identifier == "Travertine"
+    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
+        1.2033333333333334
+    )
 
 
 def test_materials():
     """_"""
-    for material in Materials:
-        assert isinstance(material.value, (OpaqueMaterial, OpaqueVegetationMaterial))
+    _materials = materials()
+    assert len(_materials) == 154
+    assert _materials[0].identifier == "Generic Roof Membrane"
+    assert _materials[-1].identifier == "WT1 - Water small (- -)"
+    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
+        3.4017114097493146
+    )
+
+
+def test_get_material():
+    """_"""
+    with pytest.raises(KeyError):
+        assert "Did you mean " in get_material("Dry Grass")
+
+    assert get_material("Dry Sand").identifier == "Dry Sand"
+    assert get_material("M01 100mm brick").specific_heat == pytest.approx(
+        789.4906206515565
+    )

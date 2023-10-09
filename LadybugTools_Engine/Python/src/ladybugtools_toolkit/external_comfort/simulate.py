@@ -16,22 +16,18 @@ import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
 from honeybee.model import Model
-from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
+from honeybee_energy.material.opaque import (EnergyMaterial,
+                                             EnergyMaterialVegetation)
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
-from honeybee_energy.simulation.parameter import (
-    RunPeriod,
-    ShadowCalculation,
-    SimulationControl,
-    SimulationOutput,
-    SimulationParameter,
-)
+from honeybee_energy.simulation.parameter import (RunPeriod, ShadowCalculation,
+                                                  SimulationControl,
+                                                  SimulationOutput,
+                                                  SimulationParameter)
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
 from ladybug.wea import Wea
-from ladybug_comfort.collection.solarcal import (
-    HorizontalRefSolarCal,
-    HorizontalSolarCal,
-    OutdoorSolarCal,
-)
+from ladybug_comfort.collection.solarcal import (HorizontalRefSolarCal,
+                                                 HorizontalSolarCal,
+                                                 OutdoorSolarCal)
 from ladybug_comfort.parameter.solarcal import SolarCalParameter
 from lbt_recipes.recipe import Recipe, RecipeSettings
 from matplotlib import pyplot as plt
@@ -39,26 +35,21 @@ from tqdm import tqdm
 
 from ..bhomutil.analytics import CONSOLE_LOGGER
 from ..bhomutil.bhom_object import BHoMObject
-from ..bhomutil.encoder import (
-    BHoMEncoder,
-    fix_bhom_jsondict,
-    inf_dtype_to_inf_str,
-    inf_str_to_inf_dtype,
-)
+from ..bhomutil.encoder import (BHoMEncoder, fix_bhom_jsondict,
+                                inf_dtype_to_inf_str, inf_str_to_inf_dtype)
 from ..helpers import evaporative_cooling_effect, sanitise_string
-from ..honeybee_extension.results import load_ill, load_res, load_sql, make_annual
+from ..honeybee_extension.results import (load_ill, load_res, load_sql,
+                                          make_annual)
 from ..ladybug_extension.analysis_period import describe_analysis_period
-from ..ladybug_extension.datacollection import (
-    average,
-    collection_from_series,
-    collection_to_series,
-)
+from ..ladybug_extension.datacollection import (collection_from_series,
+                                                collection_to_series)
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.epw import equality as epw_eq
 from ..ladybug_extension.epw import get_filename
 from . import QUEENBEE_PATH
 from .ground_temperature import energyplus_strings
-from .material import OpaqueMaterial, OpaqueVegetationMaterial, material_from_dict
+from .material import (OpaqueMaterial, OpaqueVegetationMaterial,
+                       material_from_dict)
 from .model import create_model
 from .model import equality as model_eq
 from .utci.calculate import utci
@@ -75,8 +66,6 @@ def working_directory(model: Model, create: bool = False) -> Path:
     Returns:
         Path: The simulation directory associated with the given model.
     """
-
-    hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"
 
     working_dir: Path = Path(hb_folders.default_simulation_folder) / model.identifier
     if create:
@@ -599,6 +588,7 @@ class SimulationResult(BHoMObject):
             temperature simulation.
     """
 
+    # pylint: disable=invalid-name
     EpwFile: Path = field(repr=False, compare=True)
     GroundMaterial: Union[OpaqueVegetationMaterial, OpaqueMaterial] = field(
         repr=False, compare=True
@@ -645,7 +635,7 @@ class SimulationResult(BHoMObject):
     UnshadedMeanRadiantTemperature: HourlyContinuousCollection = field(
         init=True, repr=False, compare=False, default=None
     )
-
+    # pylint: enable=invalid-name
     _t: str = field(
         init=False,
         repr=False,

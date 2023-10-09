@@ -8,7 +8,9 @@ import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from matplotlib.cm import ScalarMappable
+from matplotlib.collections import PatchCollection
 from matplotlib.colors import Colormap, Normalize
+from matplotlib.patches import Rectangle
 from scipy import stats
 
 from ..helpers import (
@@ -47,14 +49,16 @@ def windrose(
             Bins to sort data into. Defaults to 11 bins between the min/max data values.
         include_legend (bool, optional):
             Set to True to include the legend. Defaults to True.
-        **kwargs:
-            Additional keyword arguments to pass to the function.
-            data_unit (str, optional):
-                The unit of the data to add to the legend. Defaults to None.
-            ylim (Tuple[float], optional):
-                The minimum and maximum values for the y-axis. Defaults to None.
-            cmap (str, optional):
-                The name of the colormap to use. Defaults to "viridis".
+
+    Keyword Args:
+        data_unit (str, optional):
+            The unit of the data to add to the legend. Defaults to None.
+        ylim (Tuple[float], optional):
+            The minimum and maximum values for the y-axis. Defaults to None.
+        cmap (str, optional):
+            The name of the colormap to use. Defaults to "viridis".
+        opening (float, optional):
+            The opening angle of the windrose. Defaults to 0.
 
     Returns:
         plt.Figure:
@@ -63,6 +67,18 @@ def windrose(
 
     if ax is None:
         _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+
+    # HACK - a fix introduxced here to ensure that bar ends are curved when using a polar plot.
+    fig = plt.figure()
+    rect = [0.1, 0.1, 0.8, 0.8]
+    hist_ax = plt.Axes(fig, rect)
+    hist_ax.bar(np.array([1]), np.array([1]))
+    # END HACK
+
+    opening = kwargs.pop("opening", 0.0)
+    if opening >= 1 or opening < 0:
+        raise ValueError("The opening must be between 0 and 1.")
+    opening = 1 - opening
 
     title = [
         kwargs.pop("title", None),
@@ -98,9 +114,24 @@ def windrose(
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
 
-    # plot binned data
-    for theta, radii, bottom in zip(*[thetas, radiis, bottoms]):
-        _ = ax.bar(theta, radii, width=width, bottom=bottom, color=colors, zorder=2)
+    # # plot binned data
+    # for theta, radii, bottom in zip(*[thetas, radiis, bottoms]):
+    #     _ = ax.bar(theta, radii, width=width, bottom=bottom, color=colors, zorder=2)
+
+    patches = []
+    arr = []
+    width = 2 * np.pi / len(thetas)
+    for n, (k, v) in enumerate(binned_data.items()):
+        _x = thetas[n] - (np.deg2rad(direction_bins.bin_width) / 2 * opening)
+        _y = 0
+        for m, radii in enumerate(radiis[n]):
+            _color = colors[m]
+            arr.extend(np.linspace(0, 1, len(_data_bins) - 1))
+            patches.append(Rectangle(xy=(_x, _y), width=width * opening, height=radii))
+            _y += radii
+    pc = PatchCollection(patches, cmap=cmap, norm=plt.Normalize(0, 1))
+    pc.set_array(arr)
+    ax.add_collection(pc)
 
     # format plot area
     ax.spines["polar"].set_visible(False)
@@ -134,7 +165,11 @@ def windrose(
         **{"fontsize": "x-small"},
     )
 
-    ax.set_ylim(kwargs.pop("ylim", None))
+    ax.set_ylim(
+        kwargs.pop(
+            "ylim", ax.set_ylim(0, np.ceil(max([sum(i) for i in radiis]) / 10) * 10)
+        )
+    )
 
     # construct legend
     if include_legend:
