@@ -82,24 +82,56 @@ def simulate_surface_temperatures(
     epw = EPW(epw_file)
 
     sim_dir = simulation_directory(model)
+
+    # does the epw file already exist in the sim dir
+    epws_match = False
+    existing_epws = list(sim_dir.glob("*.epw"))
+    if len(existing_epws) >= 1:
+        for existing_epw in existing_epws:
+            if epw_equality(epw, EPW(existing_epw), include_header=True):
+                # print(
+                #     f"{epw} is the same as {EPW(existing_epw)} ({existing_epw.relative_to(sim_dir)})"
+                # )
+                epws_match = True
+            else:
+                # print(
+                #     f"{epw} is not the same as {EPW(existing_epw)} ({existing_epw.relative_to(sim_dir)}) and will be removed"
+                # )
+                existing_epw.unlink()
     saved_epw = (sim_dir / epw_file.name).as_posix()
     epw.save(saved_epw)
 
+    # do the models match
+    models_match = False
+    existing_models = list(sim_dir.glob("*.hbjson"))
+    if len(existing_models) >= 1:
+        for existing_model in existing_models:
+            if model_equality(
+                model, Model.from_hbjson(existing_model), include_identifier=True
+            ):
+                # print(
+                #     f"{model} is the same as {Model.from_hbjson(existing_model)} ({existing_model.relative_to(sim_dir)})"
+                # )
+                models_match = True
+            else:
+                # print(
+                #     f"{model} is not the same as {Model.from_hbjson(existing_model)} ({existing_model.relative_to(sim_dir)}) and will be removed"
+                # )
+                existing_model.unlink()
+
+    # does the sql_path exist
     sql_path = sim_dir / "run" / "eplusout.sql"
+    sql_exists = sql_path.exists()
 
     # check for existing results and reload if they exist
     if not all(
         [
-            sql_path.exists(),
-            model_equality(
-                model,
-                Model.from_hbjson(list(sim_dir.glob("*.hbjson"))[0]),
-                include_identifier=True,
-            ),
-            epw_equality(epw, EPW(saved_epw), include_header=True),
+            sql_exists,
+            models_match,
+            epws_match,
         ]
     ):
-        print("Simulating ...")  # TODO - replace with console logger
+        # print("Simulating ...")  # TODO - replace with console logger
         model_json = sim_dir / f"{model.identifier}.hbjson"
         with open(model_json, "w", encoding="utf-8") as fp:
             json.dump(model.to_dict(triangulate_sub_faces=True), fp)
@@ -144,12 +176,15 @@ def simulate_surface_temperatures(
         with open(idf, "r", encoding="utf-8") as fp:
             idf_string = fp.read()
         idf_string += f"\n\n{energyplus_strings(epw)}"
+
         with open(idf, "w", encoding="utf-8") as fp:
             idf_string = fp.write(idf_string)
 
         run_idf(idf, epw.file_path, silent=False)
+
     else:
-        print("Reloading ...")  # TODO - replace with console logger
+        # print("Reloading ...")  # TODO - replace with console logger
+        pass
     df = load_sql(sql_path)
 
     if remove_dir:
