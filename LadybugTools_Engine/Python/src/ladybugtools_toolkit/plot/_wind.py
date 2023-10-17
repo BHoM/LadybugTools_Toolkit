@@ -1,6 +1,10 @@
+"""Methods for plotting wind data."""
+
+# pylint: disable=E0401
 import calendar
 import warnings
-from typing import List, Tuple, Union
+
+# pylint: enable=E0401
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -22,43 +26,46 @@ from ..helpers import (
 from ..wind.direction_bins import DirectionBins
 from .utilities import annotate_imshow, contrasting_color
 
-# TODO - add Climate Consultant-style "wind wheel" plot here (http://2.bp.blogspot.com/-F27rpZL4VSs/VngYxXsYaTI/AAAAAAAACAc/yoGXmk13uf8/s1600/CC-graphics%2B-%2BWind%2BWheel.jpg)
+# TODO - add Climate Consultant-style "wind wheel" plot here
+# (http://2.bp.blogspot.com/-F27rpZL4VSs/VngYxXsYaTI/AAAAAAAACAc/yoGXmk13uf8/s1600/CC-graphics%2B-%2BWind%2BWheel.jpg)
+
+# TODO - so many fixes needed in here
 
 
 def windrose(
-    wind_directions: List[float],
-    data: List[float] = None,
+    wind_directions: list[float],
+    data: list[float] = None,
     ax: plt.Axes = None,
     direction_bins: DirectionBins = DirectionBins(),
-    data_bins: Union[int, List[float]] = 11,
+    data_bins: int | list[float] = 11,
     include_legend: bool = True,
     **kwargs,
 ) -> plt.Axes:
     """Plot a windrose for a collection of wind speeds and directions.
 
     Args:
-        wind_directions (List[float]):
+        wind_directions (list[float]):
             A collection of wind-directions.
-        data (List[float]):
+        data (list[float]):
             A collection of direction-associated data.
         ax (plt.Axes, optional):
             The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
         direction_bins (DirectionBins, optional):
             A DirectionBins object.
-        data_bins (Union[int, List[float]], optional):
+        data_bins (Union[int, list[float]], optional):
             Bins to sort data into. Defaults to 11 bins between the min/max data values.
         include_legend (bool, optional):
             Set to True to include the legend. Defaults to True.
-
-    Keyword Args:
-        data_unit (str, optional):
-            The unit of the data to add to the legend. Defaults to None.
-        ylim (Tuple[float], optional):
-            The minimum and maximum values for the y-axis. Defaults to None.
-        cmap (str, optional):
-            The name of the colormap to use. Defaults to "viridis".
-        opening (float, optional):
-            The opening angle of the windrose. Defaults to 0.
+        **kwargs:
+            Additional keyword arguments to pass to the function. These include:
+            data_unit (str, optional):
+                The unit of the data to add to the legend. Defaults to None.
+            ylim (tuple[float], optional):
+                The minimum and maximum values for the y-axis. Defaults to None.
+            cmap (str, optional):
+                The name of the colormap to use. Defaults to "viridis".
+            opening (float, optional):
+                The opening angle of the windrose. Defaults to 0.
 
     Returns:
         plt.Figure:
@@ -68,12 +75,12 @@ def windrose(
     if ax is None:
         _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
-    # HACK - a fix introduxced here to ensure that bar ends are curved when using a polar plot.
+    # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
     fig = plt.figure()
     rect = [0.1, 0.1, 0.8, 0.8]
     hist_ax = plt.Axes(fig, rect)
     hist_ax.bar(np.array([1]), np.array([1]))
-    # END HACK
+    # HACK end
 
     opening = kwargs.pop("opening", 0.0)
     if opening >= 1 or opening < 0:
@@ -86,7 +93,7 @@ def windrose(
     ax.set_title("\n".join([i for i in title if i is not None]))
 
     # set data binning defaults
-    _data_bins: List[float] = data_bins
+    _data_bins: list[float] = data_bins
     if isinstance(data_bins, int):
         _data_bins = np.linspace(min(data), max(data), data_bins + 1)
 
@@ -105,7 +112,7 @@ def windrose(
     radiis = []
     for _, values in binned_data.items():
         radiis.append(np.histogram(a=values, bins=_data_bins)[0])
-    bottoms = np.vstack(
+    _ = np.vstack(
         [[0] * len(direction_bins.midpoints), np.array(radiis).cumsum(axis=1).T]
     )[:-1].T
     colors = [cmap(i) for i in np.linspace(0, 1, len(_data_bins) - 1)]
@@ -115,13 +122,13 @@ def windrose(
     ax.set_theta_direction(-1)
 
     # # plot binned data
-    # for theta, radii, bottom in zip(*[thetas, radiis, bottoms]):
+    # for theta, radii, bottom in zip(*[thetas, radiis, _]):
     #     _ = ax.bar(theta, radii, width=width, bottom=bottom, color=colors, zorder=2)
 
     patches = []
     arr = []
     width = 2 * np.pi / len(thetas)
-    for n, (k, v) in enumerate(binned_data.items()):
+    for n, (_, _) in enumerate(binned_data.items()):
         _x = thetas[n] - (np.deg2rad(direction_bins.bin_width) / 2 * opening)
         _y = 0
         for m, radii in enumerate(radiis[n]):
@@ -167,7 +174,7 @@ def windrose(
 
     ax.set_ylim(
         kwargs.pop(
-            "ylim", ax.set_ylim(0, np.ceil(max([sum(i) for i in radiis]) / 10) * 10)
+            "ylim", ax.set_ylim(0, np.ceil(max(sum(i) for i in radiis) / 10) * 10)
         )
     )
 
@@ -211,7 +218,8 @@ def wind_matrix(
         ax (plt.Axes, optional):
             The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
         additional_data (pd.Series, optional):
-            A list of time-indexed additional data values to plot as a heatmap, aligning with the wind speeds and directions. Defaults to None.
+            A list of time-indexed additional data values to plot as a heatmap,
+            aligning with the wind speeds and directions. Defaults to None.
         show_values (bool, optional):
             Show the values in the matrix. Defaults to False.
         **kwargs:
@@ -270,7 +278,8 @@ def wind_matrix(
         ]
     ):
         raise ValueError(
-            "The wind_speeds and wind_directions must cover all months of the year, and all hours of the day, and align with each other."
+            "The wind_speeds and wind_directions must cover all months of the "
+            "year, and all hours of the day, and align with each other."
         )
 
     if additional_data is None:
@@ -364,23 +373,23 @@ def wind_matrix(
 
 
 def wind_speed_direction_frequency(
-    wind_speed: List[float],
-    wind_direction: List[float],
+    wind_speed: list[float],
+    wind_direction: list[float],
     ax: plt.Axes = None,
-    speed_bins: List[float] = None,
+    speed_bins: list[float] = None,
     n_directions: float = 8,
     **kwargs,
 ) -> plt.Axes:
     """Create an image containing a matrix of wind speed/direction frequencies.
 
     Args:
-        wind_speed (List[float]):
+        wind_speed (list[float]):
             A list if wind speeds to process.
-        wind_direction (List[float]):
+        wind_direction (list[float]):
             A list of wind directions to process.
         ax (plt.Axes, optional):
             The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
-        speed_bins (List[float], optional):
+        speed_bins (list[float], optional):
             A set of bins into which wind speed will be sorted. Defaults to None which divides the
             range 0-MAX into 10 bins.
         n_directions (float, optional):
@@ -480,23 +489,23 @@ def wind_speed_direction_frequency(
 
 
 def wind_cumulative_probability(
-    wind_speeds: Tuple[float],
+    wind_speeds: tuple[float],
     ax: plt.Axes = None,
-    speed_bins: Tuple[float] = None,
-    percentiles: Tuple[float] = None,
+    speed_bins: tuple[float] = None,
+    percentiles: tuple[float] = None,
     **kwargs,
 ) -> plt.Axes:
     """Plot a cumulative probability graph, showing binned wind speeds in a cumulative
         frequency histogram.
 
     Args:
-        wind_speeds (List[float]):
+        wind_speeds (list[float]):
             A list of wind speeds.
         ax (plt.Axes, optional):
             A matplotlib Axes object. Defaults to None.
-        speed_bins (List[float], optional):
+        speed_bins (list[float], optional):
             A set of bin edges to categorise the wind speeds into. Defaults to None.
-        percentiles (List[float], optional):
+        percentiles (list[float], optional):
             A list of percentiles to show on the chart. Defaults to None.
         **kwargs:
             Additional keyword arguments to pass to the plotting function.
@@ -527,7 +536,7 @@ def wind_cumulative_probability(
         x = x[: idxmax + 1]
         y = y[: idxmax + 1]
 
-    ax.plot(x, y, c="grey")
+    ax.plot(x, y, c="grey", **kwargs)
     ax.set_xlim(0, max(x))
     ax.set_xlabel("Wind Speed (m/s)")
     ax.set_ylabel("Frequency")
@@ -560,7 +569,7 @@ def wind_cumulative_probability(
 def seasonal_speed(
     wind_speeds: pd.Series,
     ax: plt.Axes = None,
-    percentiles: Tuple[float] = (0.1, 0.25, 0.75, 0.9),  # type: ignore
+    percentiles: tuple[float] = (0.1, 0.25, 0.75, 0.9),  # type: ignore
     color: str = "black",
     title: str = "",
     **kwargs,
@@ -570,12 +579,14 @@ def seasonal_speed(
     Args:
         wind_speeds (pd.Series):
             A time-indexed collection of wind speeds.
-        percentiles (Tuple[float], optional):
+        percentiles (tuple[float], optional):
             A list of percentiles to show on the chart. Defaults to (0.1, 0.25, 0.75, 0.9).
         color (str, optional):
             The color of the plot. Defaults to "black".
         title (str, optional):
             A title to add to the resulting plot. Defaults to None.
+        **kwargs:
+            Additional keyword arguments to pass to the plotting function.
 
     Returns:
         plt.Figure:
@@ -637,25 +648,25 @@ def seasonal_speed(
 
 
 def wind_speed_frequency(
-    wind_speeds: List[float],
+    wind_speeds: list[float],
     ax: plt.Axes = None,
-    speed_bins: List[float] = None,
-    # weibull: Union[bool, Tuple[float]] = False,
-    percentiles: Tuple[float] = (),
+    speed_bins: list[float] = None,
+    # weibull: Union[bool, tuple[float]] = False,
+    percentiles: tuple[float] = (),
     **kwargs,
 ) -> plt.Axes:
     """Plot the wind-speed/frequency histogram for collection of wind speeds.
 
     Args:
-        wind_speeds (List[float]):
+        wind_speeds (list[float]):
             A collection of wind speeds.
         ax (plt.Axes, optional):
             A matplotlib Axes object to plot on. Defaults to None.
-        speed_bins (List[float], optional):
+        speed_bins (list[float], optional):
             A set of bins to fit the input wind speeds into. Defaults to None.
-        weibull (Union[bool, Tuple[float]], optional):
+        weibull (Union[bool, tuple[float]], optional):
             Include the weibull curve on the plot. Defaults to False.
-        percentiles (Tuple[float], optional):
+        percentiles (tuple[float], optional):
             A list of percentiles to show on the chart. Defaults to None.
         **kwargs:
             Additional keyword arguments to pass to the matplotlib hist function.
@@ -716,11 +727,11 @@ def wind_speed_frequency(
 
 
 def radial_histogram(
-    radial_values: List[float],
-    radial_bins: List[float],
-    values: List[List[float]],
+    radial_values: list[float],
+    radial_bins: list[float],
+    values: list[list[float]],
     ax: plt.Axes = None,
-    cmap: Union[Colormap, str] = None,
+    cmap: Colormap | str = None,
     include_labels: bool = False,
     include_cbar: bool = True,
     cmap_label: str = None,
@@ -731,9 +742,9 @@ def radial_histogram(
     """Create a radial 2d heatmap-histogram.
 
     Args:
-        radial_values (List[float]): _description_
-        radial_bins (List[float]): _description_
-        values (List[List[float]]): _description_
+        radial_values (list[float]): _description_
+        radial_bins (list[float]): _description_
+        values (list[list[float]]): _description_
         cmap (Union[Colormap, str], optional): _description_. Defaults to None.
         include_labels (bool, optional): _description_. Defaults to False.
         include_cbar (bool, optional): _description_. Defaults to True.
@@ -748,7 +759,7 @@ def radial_histogram(
         plt.Axes: _description_
     """
 
-    warnings.warn(f"This method is not fully formed!")
+    warnings.warn("This method is not fully formed!")
 
     # TODO - deal with kwargs
 

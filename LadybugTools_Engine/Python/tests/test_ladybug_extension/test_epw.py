@@ -24,9 +24,7 @@ from ladybugtools_toolkit.ladybug_extension.epw import (
     wet_bulb_temperature,
 )
 
-from .. import EPW_FILE
-
-EPW_OBJ = EPW(EPW_FILE)
+from .. import EPW_OBJ
 
 
 def test_to_dataframe():
@@ -37,10 +35,7 @@ def test_to_dataframe():
 
 def test_from_dataframe():
     """_"""
-    CSV_FILE = EPW_FILE.with_suffix(".csv")
     df = epw_to_dataframe(EPW_OBJ, include_additional=False)
-    df.to_csv(CSV_FILE)
-    df = pd.read_csv(CSV_FILE, index_col=0, parse_dates=True, header=[0, 1, 2])
     assert isinstance(epw_from_dataframe(df), EPW)
 
 

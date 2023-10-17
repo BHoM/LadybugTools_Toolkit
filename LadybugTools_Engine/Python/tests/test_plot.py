@@ -4,16 +4,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.epw import EPW
 from ladybug_comfort.collection.utci import UTCI
-from ladybugtools_toolkit.external_comfort.material import Materials
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-from ladybugtools_toolkit.plot import diurnal, heatmap, sunpath, windrose
+from ladybugtools_toolkit.plot._diurnal import diurnal
+from ladybugtools_toolkit.plot._heatmap import heatmap
+from ladybugtools_toolkit.plot._sunpath import sunpath
 from ladybugtools_toolkit.plot._utci import (
     utci_comfort_band_comparison,
     utci_comparison_diurnal_day,
     utci_day_comfort_metrics,
-    utci_distance_to_comfortable,
     utci_heatmap,
     utci_heatmap_difference,
     utci_heatmap_histogram,
@@ -21,6 +20,7 @@ from ladybugtools_toolkit.plot._utci import (
     utci_journey,
     utci_pie,
 )
+from ladybugtools_toolkit.plot._wind import windrose
 from ladybugtools_toolkit.plot.colormaps import colormap_sequential
 from ladybugtools_toolkit.plot.spatial_heatmap import spatial_heatmap
 from ladybugtools_toolkit.plot.utilities import (
@@ -30,11 +30,8 @@ from ladybugtools_toolkit.plot.utilities import (
     relative_luminance,
 )
 
-from . import EPW_FILE
+from . import EPW_OBJ
 
-EPW_OBJ = EPW(EPW_FILE)
-
-GROUND_MATERIAL = Materials.LBT_AsphaltPavement.value
 LB_UTCI_COLLECTION = UTCI(
     EPW_OBJ.dry_bulb_temperature,
     EPW_OBJ.relative_humidity,
@@ -195,12 +192,6 @@ def test_utci_day_comfort_metrics():
         ),
         plt.Axes,
     )
-    plt.close("all")
-
-
-def test_utci_distance_to_comfortable():
-    """_"""
-    assert isinstance(utci_distance_to_comfortable(LB_UTCI_COLLECTION), plt.Axes)
     plt.close("all")
 
 

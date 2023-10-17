@@ -1,46 +1,46 @@
-from typing import Dict, List, Tuple, Union
+"""Methods for plotting spatial heatmaps."""
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
-from matplotlib.tri.triangulation import Triangulation
+from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def spatial_heatmap(
-    triangulations: List[Triangulation],
-    values: List[List[float]],
-    levels: Union[List[float], int] = None,
-    contours: List[float] = None,
-    contour_colors: List[str] = None,
-    contour_widths: List[float] = None,
+    triangulations: list[Triangulation],
+    values: list[list[float]],
+    levels: list[float] | int = None,
+    contours: list[float] = None,
+    contour_colors: list[str] = None,
+    contour_widths: list[float] = None,
     cmap: Colormap = "viridis",
     extend: str = "neither",
     norm: BoundaryNorm = None,
-    xlims: List[float] = None,
-    ylims: List[float] = None,
+    xlims: list[float] = None,
+    ylims: list[float] = None,
     colorbar_label: str = "",
     title: str = "",
-    highlight_pts: Dict[str, Tuple[int]] = None,
+    highlight_pts: dict[str, tuple[int]] = None,
     show_legend_title: bool = True,
     clabels: bool = False,
 ) -> Figure:
     """Plot a spatial map of a variable using a triangulation and associated values.
 
     Args:
-        triangulations (List[Triangulation]):
+        triangulations (list[Triangulation]):
             A list of triangulations to plot.
-        values (List[List[float]]):
+        values (list[list[float]]):
             A list of values, corresponding with the triangulations and their respective indices.
-        levels (Union[List[float], int], optional):
+        levels (list[float] | int, optional):
             The number of levels to include in the colorbar. Defaults to None which will use
             10-steps between the min/max for all given values.
-        contours (List[float], optional):
+        contours (list[float], optional):
             Add contours at the given values to the spatial plot. Defaults to None.
-        contour_colors (List[str], optional):
+        contour_colors (list[str], optional):
             Color each of the listed contours. Defaults to None.
-        contour_widths (List[float], optional):
+        contour_widths (list[float], optional):
             The width each of the listed contours. Defaults to None.
         cmap (Colormap, optional):
             The colormap to use for this plot. Defaults to "viridis".
@@ -49,15 +49,15 @@ def spatial_heatmap(
         norm (BoundaryNorm, optional):
             A matplotlib BoundaryNorm object containing colormap boundary mapping information.
             Defaults to None.
-        xlims (List[float], optional):
+        xlims (list[float], optional):
             The x-limit for the plot. Defaults to None.
-        ylims (List[float], optional):
+        ylims (list[float], optional):
             The y-limit for the plot. Defaults to None.
         colorbar_label (str, optional):
             A label to be placed next to the colorbar. Defaults to "".
         title (str, optional):
             The title to be placed on the plot. Defaults to "".
-        highlight_pts (Dict[str, int], optional):
+        highlight_pts (dict[str, int], optional):
             A set of points (and their names) to indicate on the spatial plot. Value is the int
             index of the highlighted point.
         show_legend_title (bool, optional):

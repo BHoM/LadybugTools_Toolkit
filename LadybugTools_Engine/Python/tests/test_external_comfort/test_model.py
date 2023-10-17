@@ -4,8 +4,8 @@ import pytest
 from honeybee.model import Model
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.shade import ShadeConstruction
-from ladybugtools_toolkit.new_external_comfort.material import get_material
-from ladybugtools_toolkit.new_external_comfort.model import (
+from ladybugtools_toolkit.external_comfort.material import get_material
+from ladybugtools_toolkit.external_comfort.model import (
     _GROUND_THICKNESS,
     _SHADE_HEIGHT_ABOVE_GROUND,
     _SHADE_THICKNESS,
@@ -23,69 +23,78 @@ from ladybugtools_toolkit.new_external_comfort.model import (
     single_layer_construction,
 )
 
+from .test_material import TEST_GROUND_MATERIAL, TEST_SHADE_MATERIAL
+
 
 def test_single_layer_construction():
     """_"""
-    material = get_material("Fabric")
-    construction = single_layer_construction(material)
+    construction = single_layer_construction(TEST_SHADE_MATERIAL)
     assert isinstance(construction, OpaqueConstruction)
-    assert construction.identifier == "Fabric"
-    assert construction.materials[0].identifier == "Fabric"
+    assert construction.identifier == TEST_SHADE_MATERIAL.identifier
+    assert construction.materials[0].identifier == TEST_SHADE_MATERIAL.identifier
 
 
 def test_opaque_to_shade():
     """_"""
-    opaque = single_layer_construction(get_material("Concrete Pavement"))
+    opaque = single_layer_construction(TEST_GROUND_MATERIAL)
     shade = opaque_to_shade(opaque)
     assert isinstance(shade, ShadeConstruction)
-    assert shade.identifier == "Concrete Pavement"
+    assert shade.identifier == f"{TEST_GROUND_MATERIAL.identifier}_shade"
     assert shade.solar_reflectance == opaque.outside_solar_reflectance
 
 
 def test_ground_zone():
     """_"""
     assert (
-        _ground_zone(
-            single_layer_construction(get_material("Concrete Pavement"))
-        ).volume
+        _ground_zone(single_layer_construction(TEST_GROUND_MATERIAL)).volume
         == _GROUND_THICKNESS * _ZONE_DEPTH * _ZONE_WIDTH
     )
-    with pytest.raises(AssertionError):
+
+
+def test_ground_zone_bad():
+    """_"""
+    with pytest.raises((AssertionError, TypeError)):
         _ground_zone("not_a_construction")
 
 
 def test_shade_valence():
     """_"""
     assert (
-        _shade_valence(single_layer_construction(get_material("Fabric")))[0].area
+        _shade_valence(single_layer_construction(TEST_SHADE_MATERIAL))[0].area
         == _ZONE_DEPTH * _SHADE_HEIGHT_ABOVE_GROUND
     )
-    with pytest.raises(AssertionError):
+
+
+def test_shade_valence_bad():
+    with pytest.raises((AssertionError, TypeError)):
         _shade_valence("not_a_construction")
 
 
 def test_shade_zone():
     """_"""
     assert (
-        _shade_zone(single_layer_construction(get_material("Fabric"))).volume
+        _shade_zone(single_layer_construction(TEST_SHADE_MATERIAL)).volume
         == _ZONE_DEPTH * _ZONE_WIDTH * _SHADE_THICKNESS
     )
-    with pytest.raises(AssertionError):
+
+
+def test_shade_zone_bad():
+    with pytest.raises((AssertionError, TypeError)):
         _shade_zone("not_a_construction")
 
 
 def test_create_model():
     """_"""
     default_model = create_model(
-        ground_material=get_material("Concrete Pavement"),
-        shade_material=get_material("Fabric"),
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
     )
     assert isinstance(default_model, Model)
     assert default_model.identifier == "unnamed"
 
     named_model = create_model(
-        ground_material=get_material("Concrete Pavement"),
-        shade_material=get_material("Fabric"),
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
         identifier="test_name",
     )
     assert named_model.identifier == "test_name"
@@ -93,48 +102,45 @@ def test_create_model():
 
 def test_get_ground_material():
     """_"""
-    ground_material = get_material("Concrete Pavement")
     model = create_model(
-        ground_material=ground_material,
-        shade_material=get_material("Fabric"),
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
     )
-    assert get_ground_material(model) == ground_material
+    assert get_ground_material(model) == TEST_GROUND_MATERIAL
 
 
 def test_get_ground_reflectance():
     """_"""
-    ground_material = get_material("Concrete Pavement")
     model = create_model(
-        ground_material=ground_material,
-        shade_material=get_material("Fabric"),
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
     )
-    assert get_ground_reflectance(model) == ground_material.solar_reflectance
+    assert get_ground_reflectance(model) == TEST_GROUND_MATERIAL.solar_reflectance
 
 
 def test_get_shade_material():
     """_"""
-    shade_material = get_material("Fabric")
     model = create_model(
-        ground_material=get_material("Concrete Pavement"),
-        shade_material=shade_material,
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
     )
-    assert get_shade_material(model) == shade_material
+    assert get_shade_material(model) == TEST_SHADE_MATERIAL
 
 
 def test_model_equality():
     """_"""
     model_1 = create_model(
-        ground_material=get_material("Concrete Pavement"),
-        shade_material=get_material("Fabric"),
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
     )
     model_2 = create_model(
-        ground_material=get_material("Concrete Pavement"),
-        shade_material=get_material("Fabric"),
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
         identifier="text_name",
     )
     model_3 = create_model(
-        ground_material=get_material("Concrete Pavement"),
-        shade_material=get_material("Concrete Pavement"),
+        ground_material=TEST_GROUND_MATERIAL,
+        shade_material=TEST_GROUND_MATERIAL,
     )
 
     assert model_equality(model_1, model_2, include_identifier=False)

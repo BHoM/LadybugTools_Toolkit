@@ -1,11 +1,10 @@
-import calendar
+"""Methods for plotting degree days from EPW files."""
+import calendar  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 from ladybug.epw import EPW
 
 from ..ladybug_extension.epw import EPW, degree_time
-
-# from .utilities import add_bar_labels
 
 
 def cooling_degree_days(
@@ -48,7 +47,6 @@ def cooling_degree_days(
     ax.set_ylabel(clg.columns[0])
     plt.setp(ax.get_xticklabels(), rotation=0, ha="center")
     ax.grid(visible=True, which="major", axis="both", ls="--", lw=1, alpha=0.2)
-    # add_bar_labels(ax, orientation="vertical", threshold=)
 
     ax.text(
         1,
@@ -128,13 +126,14 @@ def degree_days(epw: EPW, heat_base: float = 18, cool_base: float = 23, **kwargs
             The temperature at which heating kicks in. Defaults to 18.
         cool_base (float, optional):
             The temperature at which cooling kicks in. Defaults to 23.
-    Keyword Args:
-        heat_color (str):
-            The color of the heating degree days bars.
-        cool_color (str):
-            The color of the cooling degree days bars.
-        figsize (Tuple[float]):
-            The size of the figure.
+        **kwargs:
+            Additional keyword arguments to pass to the plot. These can include:
+            heat_color (str):
+                The color of the heating degree days bars.
+            cool_color (str):
+                The color of the cooling degree days bars.
+            figsize (Tuple[float]):
+                The size of the figure.
 
     Returns:
         Figure:

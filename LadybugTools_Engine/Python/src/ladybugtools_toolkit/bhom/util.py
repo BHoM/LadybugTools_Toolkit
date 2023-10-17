@@ -1,8 +1,10 @@
 """General utility functions."""
+# pylint: disable=E0401
 import configparser
 from datetime import datetime
 from pathlib import Path
 
+# pylint: enable=E0401
 import psutil
 from win32api import HIWORD, LOWORD, GetFileVersionInfo
 

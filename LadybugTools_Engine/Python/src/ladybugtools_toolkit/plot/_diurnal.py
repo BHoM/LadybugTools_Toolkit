@@ -1,6 +1,10 @@
+"""Methods for plotting diurnal profiles from time-indexed data."""
+
+# pylint: disable=E0401
 import calendar
 import textwrap
-from typing import List
+
+# pylint: enable=E0401
 
 import matplotlib.collections as mcollections
 import matplotlib.lines as mlines
@@ -104,7 +108,7 @@ def diurnal(
             if i[1] == 0:
                 major_ticklabels.append(f"{calendar.month_abbr[i[0]]}")
             elif i[1] == 12:
-                major_ticklabels.append(f"")
+                major_ticklabels.append("")
     else:
         raise ValueError("period must be one of 'daily', 'weekly', or 'monthly'")
 
@@ -218,18 +222,18 @@ def diurnal(
 
 
 def stacked_diurnals(
-    datasets: List[pd.Series], period: str = "monthly", **kwargs
+    datasets: list[pd.Series], period: str = "monthly", **kwargs
 ) -> plt.Figure:
     """Create a matplotlib figure with stacked diurnal profiles.
 
     Args:
-        datasets (List[pd.Series]):
+        datasets (list[pd.Series]):
             A list of time-indexed Pandas Series objects.
         period (str, optional):
             The period to aggregate over. Must be one of "dailyy", "weekly", or "monthly". Defaults to "monthly".
         **kwargs (Dict[str, Any], optional):
             Additional keyword arguments to pass to the matplotlib plotting function.
-            colors (List[str], optional):
+            colors (list[str], optional):
                 A list of colors to use for the plots. Defaults to None, which uses the default diurnal color.
 
     Returns:

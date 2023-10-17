@@ -1,12 +1,13 @@
-from __future__ import annotations
+"""Methods for calculating PV yield."""
 
-import copy
+# pylint: disable=E0401
 import itertools
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Tuple
+
+# pylint: enable=E0401
 
 import matplotlib.ticker as mticker
 import numpy as np
@@ -15,7 +16,7 @@ from ladybug.wea import EPW, AnalysisPeriod, Wea
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from .analysis_period import (
+from .analysisperiod import (
     analysis_period_to_boolean,
     analysis_period_to_datetimes,
     describe_analysis_period,
@@ -93,13 +94,13 @@ class PVYieldMatrix:
     ground_reflectance: float = field(init=True, repr=True, default=0.2)
     isotropic: bool = field(init=True, repr=True, default=False)
     ###########
-    _calculated_irradiance: Tuple[Tuple[Tuple[float]]] = field(
+    _calculated_irradiance: tuple[tuple[tuple[float]]] = field(
         init=False, repr=False, default=None
     )
-    _total: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
-    _direct: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
-    _diffuse: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
-    _reflected: Tuple[Tuple[float]] = field(init=False, repr=False, default=None)
+    _total: tuple[tuple[float]] = field(init=False, repr=False, default=None)
+    _direct: tuple[tuple[float]] = field(init=False, repr=False, default=None)
+    _diffuse: tuple[tuple[float]] = field(init=False, repr=False, default=None)
+    _reflected: tuple[tuple[float]] = field(init=False, repr=False, default=None)
 
     def __post_init__(self):
         if self.n_altitudes <= 2:
@@ -113,23 +114,23 @@ class PVYieldMatrix:
             else self._calculated_irradiance
         )
         #####
-        self._total = tuple([i[0] for i in self._calculated_irradiance])
-        self._direct = tuple([i[1] for i in self._calculated_irradiance])
-        self._diffuse = tuple([i[2] for i in self._calculated_irradiance])
-        self._reflected = tuple([i[3] for i in self._calculated_irradiance])
+        self._total = tuple(i[0] for i in self._calculated_irradiance)
+        self._direct = tuple(i[1] for i in self._calculated_irradiance)
+        self._diffuse = tuple(i[2] for i in self._calculated_irradiance)
+        self._reflected = tuple(i[3] for i in self._calculated_irradiance)
 
     @property
-    def altitudes(self) -> Tuple[float]:
+    def altitudes(self) -> tuple[float]:
         """The altitudes to calculate."""
         return np.linspace(0, 90, self.n_altitudes)
 
     @property
-    def azimuths(self) -> Tuple[float]:
+    def azimuths(self) -> tuple[float]:
         """The azimuths to calculate."""
         return np.linspace(0, 360, self.n_azimuths)
 
     @property
-    def _alt_az_combinations(self) -> Tuple[Tuple[float]]:
+    def _alt_az_combinations(self) -> tuple[tuple[float]]:
         """The combinations of azimuths and altitudes to calculate."""
         return np.array(list(itertools.product(self.altitudes, self.azimuths)))
 
@@ -279,7 +280,7 @@ class PVYieldMatrix:
 
         return temp
 
-    def _calculate_irradiance(self) -> Tuple[Tuple[Tuple[float]]]:
+    def _calculate_irradiance(self) -> tuple[tuple[tuple[float]]]:
         """Calculate the irradiance in W/m2 for each combination of tilt and orientation."""
         results = []
         pbar = tqdm(self._alt_az_combinations)
@@ -294,7 +295,7 @@ class PVYieldMatrix:
 
         return results
 
-    def _calculate_irradiance_threaded(self) -> Tuple[Tuple[Tuple[float]]]:
+    def _calculate_irradiance_threaded(self) -> tuple[tuple[tuple[float]]]:
         def task(alt_az):
             _alt, _az = alt_az
             result = self.wea.directional_irradiance(
@@ -319,7 +320,8 @@ class PVYieldMatrix:
         irradiance_unit: IrradianceUnit = IrradianceUnit.WH_M2,
         **kwargs,
     ) -> plt.Axes:
-        """Plot the total, direct, diffuse and reflected irradiance for each combination of tilt and orientation, within the given analysis period."""
+        """Plot the total, direct, diffuse and reflected irradiance for each
+        combination of tilt and orientation, within the given analysis period."""
 
         if ax is None:
             ax = plt.gca()
@@ -351,7 +353,8 @@ class PVYieldMatrix:
         # set defaults for plot kwargs
         title = kwargs.pop(
             "title",
-            f"{location_to_string(self.wea.location)}\n{describe_analysis_period(analysis_period)} ({irradiance_type.to_string()}, {agg})",
+            f"{location_to_string(self.wea.location)}\n"
+            f"{describe_analysis_period(analysis_period)} ({irradiance_type.to_string()}, {agg})",
         )
         quantiles = kwargs.pop("quantiles", [0.25, 0.5, 0.75, 0.95])
 
@@ -436,7 +439,7 @@ class PVYieldMatrix:
     @classmethod
     def from_epw(
         cls, epw: EPW, n_altitudes: int = 10, n_azimuths: int = 19
-    ) -> PVYieldMatrix:
+    ) -> "PVYieldMatrix":
         """Create this object from an EPW file.
 
         Args:
@@ -458,7 +461,9 @@ class PVYieldMatrix:
         )
 
     @classmethod
-    def from_epw_file(cls, epw_file: str, n_altitudes: int = 10, n_azimuths: int = 19):
+    def from_epw_file(
+        cls, epw_file: str, n_altitudes: int = 10, n_azimuths: int = 19
+    ) -> "PVYieldMatrix":
         """Create this object from an EPW file.
 
         Args:

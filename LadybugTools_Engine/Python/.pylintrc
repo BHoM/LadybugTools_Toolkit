@@ -16,6 +16,7 @@ max-line-length=120
 docstring-min-length=10
 
 [MASTER]
+extension-pkg-whitelist = pydantic
 
 # disable all but a single rule
 ; pylint --disable=all --enable=W0611
@@ -25,19 +26,20 @@ jobs=4
 
 # disable specific warnings
 disable=
-    ; R0902, # too-many-instance-attributes
-    ; R0904, # too-many-public-methods
-    ; R0912, # too-many-branches
-    ; R0913, # too-many-arguments
-    ; R0914, # too-many-locals
-    ; R0915, # too-many-statements
+    R0902, # too-many-instance-attributes
+    R0904, # too-many-public-methods
+    R0903, # too-few-public-methods
+    R0912, # too-many-branches
+    R0913, # too-many-arguments
+    R0914, # too-many-locals
+    R0915, # too-many-statements
     ; C0103, # invalid-name
     ; C0114, # missing-module-docstring
     ; C0115, # missing-class-docstring
     ; C0301, # line-too-long
     ; C0302, # too-many-lines
     ; E1101, # no-member
-    ; R0801, # duplicate-code
+    R0801, # duplicate-code
     ; W0212, # protected-access
     ; W0511, # fixme
     ; W0702, # bare-except
@@ -48,4 +50,3 @@ disable=
     ; W9017, # differing-param-doc
     ; W9018, # differing-type-doc
     ; W0611, # unused-import
-

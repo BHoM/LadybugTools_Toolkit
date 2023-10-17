@@ -1,5 +1,6 @@
-from __future__ import annotations
-
+"""Helper methods used throughout the ladybugtools_toolkit."""
+# pylint: disable=C0302
+# pylint: disable=E0401
 import calendar
 import contextlib
 import copy
@@ -12,7 +13,9 @@ import warnings
 from datetime import datetime, timedelta
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
@@ -28,26 +31,11 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
-from matplotlib.ticker import FuncFormatter
 from scipy.stats import weibull_min
 from tqdm import tqdm
 
 
-@FuncFormatter
-def ZeroPadPercentFormatter(x: float) -> str:
-    """A matplotlib formatter for percentages that pads with zeros.
-
-    Args:
-        x (float): The value to be formatted.
-
-    Returns:
-        str: The formatted string.
-    """
-
-    return f"{x:5.0%}"
-
-
-def default_hour_analysis_periods() -> List[AnalysisPeriod]:
+def default_hour_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning times of day."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -61,7 +49,7 @@ def default_hour_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def default_month_analysis_periods() -> List[AnalysisPeriod]:
+def default_month_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning month of year."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -75,7 +63,7 @@ def default_month_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def default_combined_analysis_periods() -> List[AnalysisPeriod]:
+def default_combined_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning combinations of time of day and month of year."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -95,8 +83,9 @@ def default_combined_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def default_analysis_periods() -> List[AnalysisPeriod]:
-    """A set of generic Analysis Period objects, spanning all predefined combinations of time of ady and month of year."""
+def default_analysis_periods() -> list[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning all predefined
+    combinations of time of day and month of year."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
         aps = [
@@ -109,15 +98,15 @@ def default_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def chunks(lst: List[Any], chunksize: int):
+def chunks(lst: list[Any], chunksize: int):
     """Partition an iterable into lists of length "chunksize".
 
     Args:
-        lst (List[Any]): The list to be partitioned.
+        lst (list[Any]): The list to be partitioned.
         chunksize (int): The size of each partition.
 
     Yields:
-        List[Any]: A list of length "chunksize".
+        list[Any]: A list of length "chunksize".
     """
     for i in range(0, len(lst), chunksize):
         yield lst[i : i + chunksize]
@@ -131,7 +120,7 @@ def scrape_weather(
     resample: bool = False,
 ) -> pd.DataFrame:
     """Scrape historic data from global airport weather stations using their ICAO codes
-        (https://en.wikipedia.org/wiki/List_of_airports_by_IATA_and_ICAO_code)
+        (https://en.wikipedia.org/wiki/list_of_airports_by_IATA_and_ICAO_code)
 
     Args:
         station (str):
@@ -158,7 +147,34 @@ def scrape_weather(
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
     # Scrape data from source website (https://mesonet.agron.iastate.edu/request/download.phtml)
-    uri = f"https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station={station}&year1={start_date.year}&month1={start_date.month}&day1={start_date.day}&year2={end_date.year}&month2={end_date.month}&day2={end_date.day}&tz=Etc%2FUTC&format=onlycomma&latlon=yes&elev=yes&missing=null&trace=null&direct=no&data=tmpc&data=dwpc&data=relh&data=drct&data=sknt&data=alti&data=p01m&data=vsby&data=skyc1&data=skyc2&data=skyc3"
+    uri = (
+        "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
+        f"station={station}&"
+        f"year1={start_date.year}&"
+        f"month1={start_date.month}&"
+        f"day1={start_date.day}&"
+        f"year2={end_date.year}&"
+        f"month2={end_date.month}&"
+        f"day2={end_date.day}&"
+        "tz=Etc%2FUTC&"
+        "format=onlycomma&"
+        "latlon=yes&"
+        "elev=yes&"
+        "missing=null&"
+        "trace=null&"
+        "direct=no&"
+        "data=tmpc&"
+        "data=dwpc&"
+        "data=relh&"
+        "data=drct&"
+        "data=sknt&"
+        "data=alti&"
+        "data=p01m&"
+        "data=vsby&"
+        "data=skyc1&"
+        "data=skyc2&"
+        "data=skyc3"
+    )
     df = pd.read_csv(
         uri,
         header=0,
@@ -305,11 +321,11 @@ def scrape_weather(
     return df
 
 
-def rolling_window(array: List[Any], window: int):
+def rolling_window(array: list[Any], window: int):
     """Throwaway function here to roll a window along a list.
 
     Args:
-        array (List[Any]):
+        array (list[Any]):
             A 1D list of some kind.
         window (int):
             The size of the window to apply to the list.
@@ -319,7 +335,7 @@ def rolling_window(array: List[Any], window: int):
         returns [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]]
 
     Returns:
-        List[List[Any]]:
+        list[list[Any]]:
             The resulting, "windowed" list.
     """
 
@@ -577,11 +593,11 @@ def angle_from_cardinal(cardinal_direction: str) -> float:
     return lookup[cardinal_direction]
 
 
-def angle_from_north(vector: List[float]) -> float:
+def angle_from_north(vector: list[float]) -> float:
     """For an X, Y vector, determine the clockwise angle to north at [0, 1].
 
     Args:
-        vector (List[float]):
+        vector (list[float]):
             A vector of length 2.
 
     Returns:
@@ -594,7 +610,7 @@ def angle_from_north(vector: List[float]) -> float:
     return np.rad2deg((angle1 - angle2) % (2 * np.pi))
 
 
-def angle_to_vector(_angle_from_north: float) -> List[float]:
+def angle_to_vector(_angle_from_north: float) -> list[float]:
     """Return the X, Y vector from of an angle from north at 0-degrees."""
     if (_angle_from_north > 360) or (_angle_from_north < 0):
         raise ValueError(
@@ -612,27 +628,28 @@ def sanitise_string(string: str) -> str:
     return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
 
 
-def stringify_df_header(columns: List[Any]) -> List[str]:
-    """Convert a list of objects into their string representations. This method is mostly used for making DataFrames parqeut serialisable.
+def stringify_df_header(columns: list[Any]) -> list[str]:
+    """Convert a list of objects into their string representations.
+    This method is mostly used for making DataFrames parqeut serialisable.
 
     Args:
-        columns (List[Any]): The list of objects to be converted.
+        columns (list[Any]): The list of objects to be converted.
 
     Returns:
-        List[str]: The list of strings.
+        list[str]: The list of strings.
     """
 
     return [str(i) for i in columns]
 
 
-def unstringify_df_header(columns: List[str]) -> List[Any]:
+def unstringify_df_header(columns: list[str]) -> list[Any]:
     """Convert a list of strings into a set of objects capable of being used as DataFrame column headers.
 
     Args:
-        columns (List[str]): The list of strings to be converted.
+        columns (list[str]): The list of strings to be converted.
 
     Returns:
-        List[Any]: The list of objects.
+        list[Any]: The list of objects.
     """
 
     evaled = []
@@ -647,12 +664,12 @@ def unstringify_df_header(columns: List[str]) -> List[Any]:
     return evaled
 
 
-def write_parquet(data: pd.DataFrame, path: Union[str, Path]) -> Path:
+def write_parquet(data: pd.DataFrame, path: Path) -> Path:
     """Write a parquet file, and convert columns into strings.
 
     Args:
         data (pd.DataFrame): The data to be written.
-        path (Union[str, Path]): The path to the parquet file.
+        path (Path): The path to the parquet file.
 
     Returns:
         Path: The path to the parquet file.
@@ -669,11 +686,12 @@ def write_parquet(data: pd.DataFrame, path: Union[str, Path]) -> Path:
     return path
 
 
-def read_parquet(path: Union[str, Path]) -> pd.DataFrame:
-    """Read a parquet file, and reinterpret columns as their automatically assigned datatype.
+def read_parquet(path: Path) -> pd.DataFrame:
+    """Read a parquet file, and reinterpret columns as their automatically
+    assigned datatype.
 
     Args:
-        path (Union[str, Path]): The path to the parquet file.
+        path (Path): The path to the parquet file.
 
     Returns:
         pd.DataFrame: A pandas DataFrame.
@@ -685,8 +703,10 @@ def read_parquet(path: Union[str, Path]) -> pd.DataFrame:
 
     df = pd.read_parquet(path)
     try:
-        df.columns = pd.MultiIndex.from_tuples([eval(i) for i in df.columns])
-    except:
+        df.columns = pd.MultiIndex.from_tuples(
+            [eval(i) for i in df.columns]  # pylint: disable=eval-used
+        )
+    except Exception as _:  # pylint: disable=broad-except
         print("yo")
 
     return df
@@ -695,7 +715,8 @@ def read_parquet(path: Union[str, Path]) -> pd.DataFrame:
 def store_dataset(
     dataframe: pd.DataFrame, target_path: Path, downcast: bool = True
 ) -> Path:
-    """Serialise a pandas DataFrame as a parquet file, including pre-processing to ensure it is serialisable, and optional downcasting to samller dtypes.
+    """Serialise a pandas DataFrame as a parquet file, including pre-processing
+    to ensure it is serialisable, and optional downcasting to samller dtypes.
 
     Args:
         dataframe (pd.DataFrame):
@@ -795,7 +816,7 @@ class OpenMeteoVariable(Enum):
     SOIL_MOISTURE_100_TO_255CM = auto()
 
     @staticmethod
-    def __properties__() -> Dict[str, Dict[str, Union[str, float]]]:
+    def __properties__() -> dict[str, dict[str, str | float]]:
         """A dictionary of the properties of each variable."""
         return {
             OpenMeteoVariable.TEMPERATURE_2M.value: {
@@ -1011,7 +1032,7 @@ class OpenMeteoVariable(Enum):
         }
 
     @classmethod
-    def from_string(cls, name: str) -> OpenMeteoVariable:
+    def from_string(cls, name: str) -> "OpenMeteoVariable":
         """."""
         d = {
             "temperature_2m": cls.TEMPERATURE_2M,
@@ -1093,9 +1114,9 @@ class OpenMeteoVariable(Enum):
 def scrape_openmeteo(
     latitude: float,
     longitude: float,
-    start_date: Union[datetime, str],
-    end_date: Union[datetime, str],
-    variables: Tuple[OpenMeteoVariable] = None,
+    start_date: datetime | str,
+    end_date: datetime | str,
+    variables: tuple[OpenMeteoVariable] = None,
     convert_units: bool = False,
 ) -> pd.DataFrame:
     """Obtain historic hourly data from Open-Meteo.
@@ -1106,11 +1127,11 @@ def scrape_openmeteo(
             The latitude of the target site, in degrees.
         longitude (float):
             The longitude of the target site, in degrees.
-        start_date (Union[datetime, str]):
+        start_date (datetime | str):
             The start-date from which records will be obtained.
-        end_date (Union[datetime, str]):
+        end_date (datetime | str):
             The end-date beyond which records will be ignored.
-        variables (Tuple[OpenMeteoVariable]):
+        variables (tuple[OpenMeteoVariable]):
             A list of variables to query. If None, then all variables will be queried.
         convert_units (bool, optional):
             Convert units output into more common units, and rename headers accordingly.
@@ -1144,7 +1165,11 @@ def scrape_openmeteo(
 
     # construct query string
     var_strings = ",".join([i.openmeteo_name for i in variables])
-    query_string = f"https://archive-api.open-meteo.com/v1/era5?latitude={latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
+    query_string = (
+        "https://archive-api.open-meteo.com/v1/era5?latitude="
+        f"{latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&"
+        f"end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
+    )
 
     # request data
     with urllib.request.urlopen(query_string) as url:
@@ -1176,21 +1201,27 @@ def scrape_openmeteo(
 def get_soil_temperatures(
     latitude: float,
     longitude: float,
-    start_date: Union[datetime, str],
-    end_date: Union[datetime, str],
+    start_date: datetime | str,
+    end_date: datetime | str,
     include_dbt: bool = False,
 ) -> pd.DataFrame:
     """Query Open-Meteo for soil temperature data.
 
     Args:
-        latitude (float): The latitude of the target site, in degrees.
-        longitude (float): The longitude of the target site, in degrees.
-        start_date (Union[datetime, str]): The start-date from which records will be obtained.
-        end_date (Union[datetime, str]): The end-date beyond which records will be ignored.
-        include_dbt (bool, optional): Include dry bulb temperature in the output. Defaults to False.
+        latitude (float):
+            The latitude of the target site, in degrees.
+        longitude (float):
+            The longitude of the target site, in degrees.
+        start_date (datetime | str):
+            The start-date from which records will be obtained.
+        end_date (datetime | str):
+            The end-date beyond which records will be ignored.
+        include_dbt (bool, optional):
+            Include dry bulb temperature in the output. Defaults to False.
 
     Returns:
-        pd.DataFrame: A DataFrame containing scraped data.
+        pd.DataFrame:
+            A DataFrame containing scraped data.
     """
 
     variables = [
@@ -1213,15 +1244,18 @@ def get_soil_temperatures(
 
 
 def weibull_directional(
-    binned_data: Dict[Tuple[float, float], List[float]]
+    binned_data: dict[tuple[float, float], list[float]]
 ) -> pd.DataFrame:
-    """Calculate the weibull coefficients for a given set of binned data in the form {(low, high): [speeds], (low, high): [speeds]}, binned by the number of directions specified.
+    """Calculate the weibull coefficients for a given set of binned data in the form
+    {(low, high): [speeds], (low, high): [speeds]}, binned by the number of
+    directions specified.
     Args:
-        binned_data (Dict[Tuple[float, float], List[float]]):
+        binned_data (dict[tuple[float, float], list[float]]):
             A dictionary of binned wind speed data.
     Returns:
         pd.DataFrame:
-            A DataFrame with (direction_bin_low, direction_bin_high) as index, and weibull coefficients as columns.
+            A DataFrame with (direction_bin_low, direction_bin_high) as index,
+            and weibull coefficients as columns.
     """
     d = {}
     for (low, high), speeds in tqdm(
@@ -1232,11 +1266,11 @@ def weibull_directional(
     return pd.DataFrame.from_dict(d, orient="index", columns=["k", "loc", "c"])
 
 
-def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
+def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
     """Estimate the two-parameter Weibull parameters for a set of wind speeds.
 
     Args:
-        wind_speeds (List[float]):
+        wind_speeds (list[float]):
             A list of wind speeds.
 
     Returns:
@@ -1260,13 +1294,13 @@ def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
         return (np.nan, np.nan, np.nan)  # type: ignore
 
 
-def circular_weighted_mean(angles: List[float], weights: List[float] = None):
+def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     """Get the average angle from a set of weighted angles.
 
     Args:
-        angles (List[float]):
+        angles (list[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
-        weights (List[float]):
+        weights (list[float]):
             A collection of weights, which must sum to 1. Defaults to None which will equally weight all angles.
 
     Returns:
@@ -1300,11 +1334,11 @@ def circular_weighted_mean(angles: List[float], weights: List[float] = None):
     return mean
 
 
-def wind_direction_average(angles: List[float]) -> float:
+def wind_direction_average(angles: list[float]) -> float:
     """Get the average wind direction from a set of wind directions.
 
     Args:
-        angles (List[float]):
+        angles (list[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
 
     Returns:
@@ -1353,13 +1387,14 @@ def wind_speed_at_height(
         target_height (float):
             The target height of the wind speed being translated.
 
-    Keyword Args:
-        terrain_roughness_length (float):
-            A value describing how rough the ground is. Default is
-            0.03 for Open flat terrain; grass, few isolated obstacles.
-        log_function (bool, optional):
-            Set to True to used the log transformation method, or
-            False for the exponent method. Defaults to True.
+        **kwargs:
+            Additional keyword arguments to pass to the translation method. These include:
+            terrain_roughness_length (float):
+                A value describing how rough the ground is. Default is
+                0.03 for Open flat terrain; grass, few isolated obstacles.
+            log_function (bool, optional):
+                Set to True to used the log transformation method, or
+                False for the exponent method. Defaults to True.
 
     Notes:
         Terrain roughness lengths can be found in the following table:
@@ -1411,6 +1446,7 @@ def temperature_at_height(
     target_height: float,
     **kwargs,
 ) -> float:
+    # pylint: disable=C0301
     """Estimate the dry-bulb temperature at a given height from a referenced
         dry-bulb temperature at another height.
 
@@ -1421,23 +1457,25 @@ def temperature_at_height(
             The height of the reference temperature.
         target_height (float):
             The height to translate the reference temperature towards.
-
-    Keyword Args:
-        reduction_per_km_altitude_gain (float, optional):
-            The lapse rate of the atmosphere. Defaults to 0.0065 based
-            on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
-        lapse_rate (float, optional):
-            The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
-            conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
+        **kwargs:
+            Additional keyword arguments to pass to the translation method. These include:
+            reduction_per_km_altitude_gain (float, optional):
+                The lapse rate of the atmosphere. Defaults to 0.0065 based
+                on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
+            lapse_rate (float, optional):
+                The degrees C reduction for every 1 altitude gain. Default is 0.0065C for clear
+                conditions (or 6.5C per 1km). This would be nearer 0.0098C/m if cloudy/moist air conditions.
 
     Returns:
         float:
             A translated air temperature.
     """
+    # pylint: enable=C0301
 
     if (target_height > 8000) or (reference_height > 8000):
         warnings.warn(
-            "The heights input into this calculation exist partially above the egde of the troposphere. This method is only valid below 8000m."
+            "The heights input into this calculation exist partially above "
+            "the egde of the troposphere. This method is only valid below 8000m."
         )
 
     lapse_rate = kwargs.get("lapse_rate", 0.0065)
@@ -1454,10 +1492,14 @@ def radiation_at_height(
     reference_height: float,
     **kwargs,
 ) -> float:
-    """Calculate the radiation at a given height, given a reference radiation and height.
+    """Calculate the radiation at a given height, given a reference
+    radiation and height.
 
     References:
-        Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of solar irradiance for correcting solar fluxes for changes in terrain elevation. Earth Observation and Water Cycle Science Conference, Nov 2009, Frascati, Italy. pp.S05.
+        Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of
+        solar irradiance for correcting solar fluxes for changes in terrain
+        elevation. Earth Observation and Water Cycle Science Conference, Nov
+        2009, Frascati, Italy. pp.S05.
 
     Args:
         reference_value (float):
@@ -1466,10 +1508,10 @@ def radiation_at_height(
             The height at which the radiation is required, in m.
         reference_height (float, optional):
             The height at which the reference radiation was measured.
-
-    Keyword Arguments:
-        lapse_rate (float, optional):
-            The lapse rate of the atmosphere. Defaults to 0.08.
+        **kwargs:
+            Additional keyword arguments to pass to the translation method. These include:
+            lapse_rate (float, optional):
+                The lapse rate of the atmosphere. Defaults to 0.08.
 
     Returns:
         float:
@@ -1610,7 +1652,7 @@ def evaporative_cooling_effect(
     relative_humidity: float,
     evaporative_cooling_effectiveness: float,
     atmospheric_pressure: float = None,
-) -> List[float]:
+) -> list[float]:
     """
     For the inputs, calculate the effective DBT and RH values for the evaporative cooling
     effectiveness given.
@@ -1627,7 +1669,7 @@ def evaporative_cooling_effect(
             A pressure in Pa. Default is pressure at sea level (101325 Pa).
 
     Returns:
-        effective_dry_bulb_temperature, effective_relative_humidity (List[float]):
+        effective_dry_bulb_temperature, effective_relative_humidity (list[float]):
             A list of two values for the effective dry bulb temperature and relative humidity.
     """
 
@@ -1655,7 +1697,7 @@ def evaporative_cooling_effect(
 
 def evaporative_cooling_effect_collection(
     epw: EPW, evaporative_cooling_effectiveness: float = 0.3
-) -> List[HourlyContinuousCollection]:
+) -> list[HourlyContinuousCollection]:
     """Calculate the effective DBT and RH considering effects of evaporative cooling.
 
     Args:
@@ -1666,7 +1708,7 @@ def evaporative_cooling_effect_collection(
             of Misting.
 
     Returns:
-        List[HourlyContinuousCollection]:
+        list[HourlyContinuousCollection]:
             Adjusted dry-bulb temperature and relative humidity collections incorporating
             evaporative cooling effect.
     """
@@ -1703,9 +1745,7 @@ def evaporative_cooling_effect_collection(
     return [dbt, rh]
 
 
-def remove_leap_days(
-    pd_object: Union[pd.DataFrame, pd.Series]
-) -> Union[pd.DataFrame, pd.Series]:
+def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     """A removal of all timesteps within a time-indexed pandas
     object where the day is the 29th of February."""
 
@@ -1719,10 +1759,10 @@ def remove_leap_days(
 
 def month_hour_binned_series(
     series: pd.Series,
-    month_bins: Tuple[Tuple[int]] = None,
-    hour_bins: Tuple[Tuple[int]] = None,
-    month_labels: Tuple[str] = None,
-    hour_labels: Tuple[str] = None,
+    month_bins: tuple[tuple[int]] = None,
+    hour_bins: tuple[tuple[int]] = None,
+    month_labels: tuple[str] = None,
+    hour_labels: tuple[str] = None,
     agg: str = "mean",
 ) -> pd.DataFrame:
     """Bin a series by hour and month.
@@ -1730,13 +1770,13 @@ def month_hour_binned_series(
     Args:
         series (pd.Series):
             A series with a datetime index.
-        hour_bins (Tuple[Tuple[int]], optional):
+        hour_bins (tuple[tuple[int]], optional):
             A list of lists of hours to bin by. Defaults to None which bins into the default_time_analysis_periods().
-        month_bins (Tuple[Tuple[int]], optional):
+        month_bins (tuple[tuple[int]], optional):
             A list of lists of months to bin by. Defaults to None which bins into default_month_analysis_periods.
-        hour_labels (List[str], optional):
+        hour_labels (list[str], optional):
             A list of labels to use for the hour bins. Defaults to None which just lists the hours in each bin.
-        month_labels (List[str], optional):
+        month_labels (list[str], optional):
             A list of labels to use for the month bins. Defaults to None which just lists the months in each bin.
         agg (str, optional):
             The aggregation method to use. Can be either "min", "mean", "median", "max" or "sum". Defaults to "mean".
@@ -1797,7 +1837,7 @@ def month_hour_binned_series(
         raise ValueError("hour_bins hours must be in the range 0-23")
     if (max(flat_months) != 12) or min(flat_months) != 1:
         raise ValueError("month_bins hours must be in the range 1-12")
-    # cehck for duplicates
+    # check for duplicates
     if len(set(flat_hours)) != len(flat_hours):
         raise ValueError("hour_bins hours must not contain duplicates")
     if len(set(flat_months)) != len(flat_months):
@@ -1856,7 +1896,7 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
         pd.DataFrame: A DataFrame with sunrise and sunset times for each day of the year.
     """
 
-    idx = pd.date_range(f"2017-01-01", f"2017-12-31", freq="D")
+    idx = pd.date_range("2017-01-01", "2017-12-31", freq="D")
     sp = Sunpath.from_location(location)
     df = pd.DataFrame(
         [

@@ -1,4 +1,6 @@
-"""Root for the example_toolkit.bhom subpackage."""
+"""Root for the bhom subpackage."""
 
 from .analytics import decorator_factory
-from .encoding import keys_to_pascalcase, keys_to_snakecase
+from .log import console_logger
+
+CONSOLE_LOGGER = console_logger()

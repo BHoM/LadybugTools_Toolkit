@@ -1,4 +1,5 @@
 """BHoM analytics decorator."""
+# pylint: disable=E0401
 import inspect
 import json
 import sys
@@ -6,10 +7,11 @@ import uuid
 from functools import wraps
 from typing import Any, Callable
 
-from .log import get_logger
+# pylint: enable=E0401
+from .log import analytics_logger
 from .util import bhom_version, csharp_ticks, toolkit_name
 
-LOGGER = get_logger()
+LOGGER = analytics_logger()
 BHoM_VERSION = bhom_version()
 
 
@@ -67,7 +69,8 @@ def decorator_factory(disable: bool = False) -> Callable:
                 "FileName": "",
                 "Fragments": [],
                 "Name": "",
-                # TODO - get project properties from another function/logging method (or from BHoM DLL analytics capture ...)
+                # TODO - get project properties from another function/logging
+                # method (or from BHoM DLL analytics capture ...)
                 "ProjectID": "",
                 "SelectedItem": {
                     "MethodName": function.__name__,
@@ -90,9 +93,7 @@ def decorator_factory(disable: bool = False) -> Callable:
                 exec_metadata["Errors"].extend(sys.exc_info())
                 raise exc
             finally:
-                pass
-                # TODO - uncomment
-                # LOGGER.info(json.dumps(exec_metadata, default=str, indent=None))
+                LOGGER.info(json.dumps(exec_metadata, default=str, indent=None))
 
             return result
 

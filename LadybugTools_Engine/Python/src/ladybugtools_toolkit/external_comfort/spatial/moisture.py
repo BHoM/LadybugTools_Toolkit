@@ -1,22 +1,24 @@
-from __future__ import annotations
+"""Methods for handling moisture."""
 
+# pylint: disable=E0401
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW
 from scipy.spatial.distance import cdist
 
-from ...bhomutil.analytics import CONSOLE_LOGGER
+from ...bhom import CONSOLE_LOGGER
 from ...helpers import angle_from_north, proximity_decay
 from ...ladybug_extension.datacollection import collection_to_series
 from ...ladybug_extension.epw import unique_wind_speed_direction
 
 
 class MoistureSource:
-    # TODO - convert this object into a BHoMObject  # pylint: disable=fixme
     """An object defining where moisture is present in a spatial thermal comfort simulation
 
     Args:
@@ -24,11 +26,11 @@ class MoistureSource:
             The ID of this moisture source.
         magnitude (float):
             The evaporative cooling effectiveness of this moisture source.
-        point_indices (List[int]):
+        point_indices (list[int]):
             The point indices (related to a list of points) where this moisture source is applied.
         decay_function: (str):
             The method with which moisture effects will "drop off" at distance from the emitter.
-        schedule (List[int]):
+        schedule (list[int]):
             A list of hours in the year where the moisture emitter will be active. If empty, then
             the moisture source will not be active for all hours of the year.
     """
@@ -37,10 +39,10 @@ class MoistureSource:
         self,
         identifier: str,
         magnitude: float,
-        point_indices: List[int],
+        point_indices: list[int],
         decay_function: str,
-        schedule: List[int],
-    ) -> MoistureSource:
+        schedule: list[int],
+    ) -> "MoistureSource":
         self.identifier = identifier
         self.magnitude = magnitude
         self.point_indices = np.array(point_indices)
@@ -50,14 +52,14 @@ class MoistureSource:
         self.schedule = np.array(schedule)
 
     @classmethod
-    def from_json(cls, json_file: Path) -> List[MoistureSource]:
+    def from_json(cls, json_file: Path) -> list["MoistureSource"]:
         """Create a set of MoistureSource objects from a json file.
 
         Args:
             json_file (Path): A file containing MoistureSource objects in json format.
 
         Returns:
-            List[MoistureSource]: A list of MoistureSource objects.
+            list[MoistureSource]: A list of MoistureSource objects.
         """
 
         with open(json_file, "r", encoding="utf-8") as fp:
@@ -70,11 +72,11 @@ class MoistureSource:
         return objs
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, Any]) -> MoistureSource:
+    def from_dict(cls, dictionary: dict[str, Any]) -> "MoistureSource":
         """Create a MoistureSource object from a dict.
 
         Args:
-            dictionary (Dict[str, Any]): _description_
+            dictionary (dict[str, Any]): _description_
 
         Returns:
             MoistureSource: _description_
@@ -90,11 +92,11 @@ class MoistureSource:
     def __repr__(self) -> str:
         return f"MoistureSource(id={self.identifier})"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Return this object as a dictionary
 
         Returns:
-            Dict: The dict representation of this object.
+            dict: The dict representation of this object.
         """
 
         return {
@@ -106,12 +108,12 @@ class MoistureSource:
         }
 
     def moisture_source_points(
-        self, spatial_points: List[List[float]]
-    ) -> List[List[float]]:
+        self, spatial_points: list[list[float]]
+    ) -> list[list[float]]:
         """Return a subset of a list, containing the point X,Y locations of moisture sources."""
         return np.array(spatial_points[self.point_indices])
 
-    def point_distances(self, spatial_points: List[List[float]]) -> List[List[float]]:
+    def point_distances(self, spatial_points: list[list[float]]) -> list[list[float]]:
         """Return the distance from each moisture_source pt to each other point in the input list"""
 
         # get the domain and source points
@@ -123,7 +125,7 @@ class MoistureSource:
 
         return distances
 
-    def point_angles(self, spatial_points: List[List[float]]) -> List[List[float]]:
+    def point_angles(self, spatial_points: list[list[float]]) -> list[list[float]]:
         """Return the relative north angle from each moisture_source pt to each other point in the
         input list"""
 
@@ -141,24 +143,24 @@ class MoistureSource:
 
     def plume(
         self,
-        point_distances: List[List[float]],
-        point_angles: List[List[float]],
+        point_distances: list[list[float]],
+        point_angles: list[list[float]],
         wind_speed: float,
         wind_direction: float,
         plume_width: float = 25,
-    ) -> List[float]:
+    ) -> list[float]:
         """Calculate the spatial moisture plume from a single location to other locations under
             given wind speed and direction.
 
         Args:
-            point_distances (List[List[float]]): An array of distances to other points.
-            point_angles (List[List[float]]): An array of angles to other points.
+            point_distances (list[list[float]]): An array of distances to other points.
+            point_angles (list[list[float]]): An array of angles to other points.
             wind_speed (float): A value describing current wind speed.
             wind_direction (float): A value describing current wind direction
             plume_width (float, optional): The spread of the plume to be generated. Defaults to 25.
 
         Returns:
-            List[float]: _description_
+            list[float]: _description_
         """
 
         # get downwind angles
@@ -183,11 +185,11 @@ class MoistureSource:
 
     def spatial_moisture(
         self,
-        spatial_points: List[List[float]],
+        spatial_points: list[list[float]],
         epw: EPW,
         plume_width: float = 25,
         simulation_directory: Path = None,
-    ) -> Dict[Tuple(float), List[List[float]]]:
+    ) -> dict[tuple(float), list[list[float]]]:
         """Calculate the spatial moisture thingy."""
         if simulation_directory is not None:
             output_dir = simulation_directory / "moisture"
@@ -219,8 +221,10 @@ class MoistureSource:
         moisture_matrix = []
         for n, (ws, wd) in enumerate(list(zip(*[epw.wind_speed, epw.wind_direction]))):
             CONSOLE_LOGGER.info(
-                f"[{simulation_directory.stem}] - Calculating moisture effectiveness data for {self.identifier} ({n/8760:03.2%})",
-                end="\r",
+                (
+                    f"[{simulation_directory.stem}] - Calculating moisture "
+                    f"effectiveness data for {self.identifier} ({n/8760:03.2%})"
+                )
             )
             if n not in self.schedule:
                 moisture_matrix.append(np.zeros_like(pt_distances[0]))
@@ -260,17 +264,19 @@ def moisture_directory(simulation_directory: Path) -> Path:
 
     if not (simulation_directory / "moisture").exists():
         raise FileNotFoundError(
-            f'No "moisture" directory exists in {simulation_directory}. For this method to work, '
-            + 'you need a moisture directory containing a JSON file named "moisture_sources.json". The file contains a list of '
-            + 'MoistureSource objects in the format [{"id": "name_of_moisture_source", '
-            + '"magnitude": 0.3, "point_indices": [0, 1, 2], "decay_function": "linear", '
-            + '"schedule": []}]'
+            (
+                f'No "moisture" directory exists in {simulation_directory}. For this method to work, '
+                'you need a moisture directory containing a JSON file named "moisture_sources.json". The file '
+                'contains a list of MoistureSource objects in the format [{"id": "name_of_moisture_source", '
+                '"magnitude": 0.3, "point_indices": [0, 1, 2], "decay_function": "linear", '
+                '"schedule": []}]'
+            )
         )
 
     return simulation_directory / "moisture"
 
 
-def load_moisture_sources(simulation_directory: Path) -> List[MoistureSource]:
+def load_moisture_sources(simulation_directory: Path) -> list[MoistureSource]:
     """Get/create the moisture directory for a spatial simulation.
 
     Args:
@@ -278,7 +284,7 @@ def load_moisture_sources(simulation_directory: Path) -> List[MoistureSource]:
             The associated simulation directory.
 
     Returns:
-        List[MoistureSource]:
+        list[MoistureSource]:
             A list of moisture sources in the simulation directory.
     """
 

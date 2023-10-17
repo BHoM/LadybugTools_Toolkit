@@ -1,4 +1,6 @@
-from datetime import datetime
+"""Methods for manipulating Ladybug datetime objects."""
+
+from datetime import datetime  # pylint: disable=E0401
 
 from ladybug.dt import DateTime
 

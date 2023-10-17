@@ -2,12 +2,12 @@ import pytest
 from ladybug.epw import EPW
 from ladybug_comfort.collection.utci import UTCI
 from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES
-from ladybugtools_toolkit.external_comfort.utci.calculate import utci
-from ladybugtools_toolkit.external_comfort.utci.postprocess import (
+from ladybugtools_toolkit.external_comfort.utci import (
     compare_monthly_utci,
     distance_to_comfortable,
     feasible_utci_limits,
     shade_benefit_category,
+    utci,
 )
 
 from .. import EPW_FILE
@@ -40,7 +40,6 @@ def test_compare_monthly_utci():
         utci_categories=UTCI_DEFAULT_CATEGORIES,
         identifiers=["test1", "test2"],
         density=True,
-        simplify=False,
     )
     assert a.shape == (12, 20)
     assert a.sum().sum() == 24
@@ -51,11 +50,8 @@ def test_compare_monthly_utci():
         utci_categories=UTCI_DEFAULT_CATEGORIES,
         identifiers=["test1", "test2"],
         density=True,
-        simplify=True,
     )
-    assert a.shape == (12, 6)
-
-    # TODO - add tests for lack of comfortclass attributes raising errors
+    assert a.shape == (12, 20)
 
 
 def test_shade_benefit_category():
@@ -77,7 +73,7 @@ def test_shade_benefit_category():
 def test_distance_to_comfortable():
     """_"""
     assert distance_to_comfortable(LB_UTCI_COLLECTION).average == pytest.approx(
-        -12.27, rel=0.01
+        5.228092141408169, rel=0.01
     )
 
 

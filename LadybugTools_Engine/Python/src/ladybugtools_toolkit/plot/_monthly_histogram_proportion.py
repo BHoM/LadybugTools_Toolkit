@@ -1,5 +1,5 @@
-import calendar
-from typing import List
+"""Methods for plotting binned data per-month."""
+import calendar  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -11,9 +11,9 @@ from .utilities import contrasting_color
 
 def monthly_histogram_proportion(
     series: pd.Series,
-    bins: List[float],
+    bins: list[float],
     ax: plt.Axes = None,
-    labels: List[str] = None,
+    labels: list[str] = None,
     show_year_in_label: bool = False,
     show_labels: bool = False,
     **kwargs,
@@ -23,11 +23,11 @@ def monthly_histogram_proportion(
     Args:
         series (pd.Series):
             The pandas Series to plot. Must have a datetime index.
-        bins (List[float]):
+        bins (list[float]):
             The bins to use for the histogram.
         ax (plt.Axes, optional):
             An optional plt.Axes object to populate. Defaults to None, which creates a new plt.Axes object.
-        labels (List[str], optional):
+        labels (list[str], optional):
             The labels to use for the histogram. Defaults to None, which uses the bin edges.
         show_year_in_label (bool, optional):
             Whether to show the year in the x-axis label. Defaults to False.

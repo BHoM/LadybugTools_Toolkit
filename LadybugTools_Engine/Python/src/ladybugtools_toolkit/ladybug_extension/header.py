@@ -1,3 +1,5 @@
+"""Methods for manipulating Ladybug header objects."""
+
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype import TYPESDICT

@@ -6,9 +6,7 @@ from ladybugtools_toolkit.ladybug_extension.datacollection import (
     collection_to_series,
 )
 
-from .. import EPW_FILE
-
-EPW_OBJ = EPW(EPW_FILE)
+from .. import EPW_OBJ
 
 SERIES_GOOD = pd.Series(
     data=EPW_OBJ.dry_bulb_temperature.values,

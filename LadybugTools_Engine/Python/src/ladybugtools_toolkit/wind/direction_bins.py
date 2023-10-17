@@ -1,7 +1,4 @@
-from __future__ import annotations
-
-from typing import Dict, List, Tuple
-
+"""Methods for binning wind data by direction."""
 import numpy as np
 import pandas as pd
 
@@ -9,13 +6,15 @@ from ..helpers import angle_from_cardinal, cardinality, rolling_window
 
 
 class DirectionBins:
-    """An object containing directional binning data, used mainly for Wind data collections. These bins assume North is at 0-degrees.
+    """An object containing directional binning data, used mainly for Wind data
+    collections. These bins assume North is at 0-degrees.
 
     Args:
         directions (int, optional):
             The number of direction bins that should be created. Defaults to 8.
         centered (bool, optional):
-            Whether the data should be centered about North - True, or starting from North - False. Defaults to True.
+            Whether the data should be centered about North - True, or starting from
+            North - False. Defaults to True.
 
     Returns:
         DirectionBins:
@@ -26,7 +25,7 @@ class DirectionBins:
         self,
         directions: int = 8,
         centered: bool = True,
-    ) -> DirectionBins:
+    ) -> "DirectionBins":
         self.directions = directions
         self.centered = centered
         self.bins = self.direction_bin_edges(self.directions, self.centered)
@@ -35,17 +34,17 @@ class DirectionBins:
         return self.directions
 
     @property
-    def lows(self) -> List[float]:
+    def lows(self) -> list[float]:
         """The "left-most" edge of the direction bins."""
         return self.bins.T[0]
 
     @property
-    def highs(self) -> List[float]:
+    def highs(self) -> list[float]:
         """The "right-most" edge of the direction bins."""
         return self.bins.T[1]
 
     @property
-    def midpoints(self) -> List[float]:
+    def midpoints(self) -> list[float]:
         """The mipoints within the direction bins."""
         if self.is_split:
             return np.concatenate([[0], np.mean(self.bins, axis=1)[1:-1]])
@@ -62,12 +61,12 @@ class DirectionBins:
         return len(self.bins) != self.directions
 
     @property
-    def cardinal_directions(self) -> List[str]:
+    def cardinal_directions(self) -> list[str]:
         """The direction bins as cardinal directions."""
         return [cardinality(i, directions=32) for i in self.midpoints]
 
     @staticmethod
-    def direction_bin_edges(directions: int, centered: bool) -> List[List[float]]:
+    def direction_bin_edges(directions: int, centered: bool) -> list[list[float]]:
         """Create a list of start/end points for wind directions, each bin increasing from the previous one.
             This method assumes that North is at 0 degrees.
             If the direction bins cross North then the bins returned are all increasing, with the one crossing north
@@ -77,10 +76,11 @@ class DirectionBins:
             directions (int, optional):
                 The number of directions to bin wind data into.
             centered (bool, optional):
-                Whether the data should be centered about North - True, or starting from North - False. Defaults to True.
+                Whether the data should be centered about North - True, or starting from
+                North - False. Defaults to True.
 
         Returns:
-            List[List[float]]:
+            list[list[float]]:
                 A set of bin edges.
         """
 
@@ -121,18 +121,18 @@ class DirectionBins:
         return pd.IntervalIndex.from_arrays(self.lows, self.highs, closed="left")
 
     def bin_data(
-        self, direction_data: List[float], other_data: List[float] = None
-    ) -> Dict[Tuple[float], List[float]]:
+        self, direction_data: list[float], other_data: list[float] = None
+    ) -> dict[tuple[float], list[float]]:
         """Bin a set of input data, including combination of split bins if present.
 
         Args:
-            direction_data (List[float]):
+            direction_data (list[float]):
                 A list of wind directions.
-            other_data (List[float], optional):
+            other_data (list[float], optional):
                 A list of other data to bin by direction. If None, then direction_data will be used.
 
         Returns:
-            Dict[Tuple[float], List[float]]:
+            dict[tuple[float], list[float]]:
                 A dictionary indexed by direction bin edges, and containing values.
         """
 
@@ -166,12 +166,12 @@ class DirectionBins:
         return d
 
     def prevailing(
-        self, direction_data: List[float], n: int, as_angle: bool = False
-    ) -> List[str]:
+        self, direction_data: list[float], n: int, as_angle: bool = False
+    ) -> list[str]:
         """Given a list of wind directions, return the n-prevailing directions.
 
         Args:
-            direction_data (List[float]):
+            direction_data (list[float]):
                 A set of wind directions.
             n (int):
                 The number of prevailing directions to return.
@@ -179,7 +179,7 @@ class DirectionBins:
                 Return the previaling directions as angles. Defaults to False.
 
         Returns:
-            List[str]: _description_
+            list[str]: _description_
         """
         d = self.bin_data(direction_data)
         dd = {}

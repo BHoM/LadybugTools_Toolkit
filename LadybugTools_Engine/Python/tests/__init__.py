@@ -23,7 +23,7 @@ SPATIAL_COMFORT_DIRECTORY = (
 
 # set source files used in testing
 MODEL_FILE = Path(__file__).parent / "assets" / "example.hbjson"
-MODEL_OBJ = Model.from_hbjson(MODEL_FILE)
+MODEL_OBJ: Model = Model.from_hbjson(MODEL_FILE)
 
 EPW_FILE = Path(__file__).parent / "assets" / "example.epw"
 EPW_CSV_FILE = (Path(__file__).parent / "assets" / "example.csv",)

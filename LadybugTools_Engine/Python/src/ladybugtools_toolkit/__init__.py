@@ -1,6 +1,10 @@
-﻿import getpass
+﻿"""Base module for the ladybugtools_toolkit package."""
+# pylint: disable=E0401
+import getpass
 import os
 from pathlib import Path
+
+# pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 

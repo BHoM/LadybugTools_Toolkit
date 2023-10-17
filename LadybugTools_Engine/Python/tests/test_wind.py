@@ -4,9 +4,7 @@ from ladybug.epw import EPW, AnalysisPeriod
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.wind.wind import DirectionBins, Wind
 
-from . import EPW_FILE
-
-EPW_OBJ = EPW(EPW_FILE)
+from . import EPW_OBJ, EPW_FILE
 
 
 def test_direction_bins():

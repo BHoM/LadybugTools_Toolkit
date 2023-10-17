@@ -1,5 +1,10 @@
+"""Methods for calculating ground temperature values from EPW files."""
+
+# pylint: disable=E0401
 import inspect
 from warnings import warn
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
@@ -8,16 +13,12 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybug.epw import EPW
 
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-    to_hourly,
-)
+from .datacollection import collection_from_series, collection_to_series, to_hourly
 
 
 def energyplus_strings(epw: EPW) -> str:
-    """Generate strings to add into EnergyPlus simulation for more accurate
-        ground surface temperature results.
+    """Generate strings to add into EnergyPlus simulation for slightly more
+    accurate ground surface temperature results.
 
     Args:
         epw (EPW):
@@ -52,8 +53,8 @@ def energyplus_strings(epw: EPW) -> str:
 
 
 def eplus_otherside_coefficient(epw: EPW) -> str:
-    """Generate strings to add into EnergyPlus simulation for annual-hourly ground temperature
-        values applied to sub-ground surfaces.
+    """Generate strings to add into EnergyPlus simulation for annual-hourly
+    ground temperature values applied to sub-ground surfaces.
 
     Args:
         epw (EPW):
@@ -94,8 +95,10 @@ def eplus_otherside_coefficient(epw: EPW) -> str:
 def ground_temperature_at_depth(
     epw: EPW, depth: float, soil_diffusivity: float = 0.31e-6
 ) -> HourlyContinuousCollection:
+    # pylint: disable=W1401,C0301
     """Construct annual hourly ground temperature at given depth.
-    This method uses the IEC 60287-3-1 method for approximating soil temperature.
+    This method uses the IEC 60287-3-1 method for approximating soil
+    temperature.
 
     Args:
         epw (EPW):
@@ -103,8 +106,8 @@ def ground_temperature_at_depth(
         depth (float):
             The depth at which the ground temperature will be calculated.
         soil_diffusivity (float, optional):
-            Soil diffusivity value. Common values available from the table below.
-            Defaults to 0.31e-6.
+            Soil diffusivity value. Common values available from the table
+            below. Defaults to 0.31e-6.
 
     Example:
         Below is a table from https://dx.doi.org/10.3390%2Fs16030306 detailing suitable diffusivity
@@ -164,6 +167,7 @@ def ground_temperature_at_depth(
         HourlyContinuousCollection:
             A data collection containing ground temperature values.
     """
+    # pylint: enable=W1401,C0301
 
     try:
         return to_hourly(epw.monthly_ground_temperature[depth])
@@ -211,8 +215,9 @@ def ground_temperature_at_depth(
 def hourly_ground_temperature(
     epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
 ) -> HourlyContinuousCollection:
-    """Return the hourly ground temperature values from the EPW file (upsampled from any
-        available monthly values), or approximate these if not available.
+    """Return the hourly ground temperature values from the EPW file
+    (upsampled from any available monthly values), or approximate these if
+    not available.
 
     Args:
         epw (EPW):
@@ -258,9 +263,9 @@ def monthly_ground_temperature(
         return epw.monthly_ground_temperature[depth]
     except KeyError:
         warn(
-            f"The input EPW doesn't contain any monthly ground temperatures at {depth}m. An "
-            "approximation method will be used to determine ground temperature at that depth "
-            "based on ambient dry-bulb."
+            "The input EPW doesn't contain any monthly ground temperatures "
+            f"at {depth}m. An approximation method will be used to determine "
+            "ground temperature at that depth based on ambient dry-bulb."
         )
         return ground_temperature_at_depth(
             epw, depth, soil_diffusivity

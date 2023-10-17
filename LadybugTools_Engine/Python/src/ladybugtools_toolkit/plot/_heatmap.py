@@ -1,4 +1,4 @@
-from typing import List
+"""Methods for plotting heatmaps from time-indexed data."""
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -80,7 +80,7 @@ def heatmap(
     ax.yaxis_date()
     ax.yaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 
-    ax.tick_params(labelleft=True, labelright=True, labelbottom=True)
+    ax.tick_params(labelleft=True, labelbottom=True)
     plt.setp(ax.get_xticklabels(), ha="left")
 
     for spine in ["top", "bottom", "left", "right"]:
@@ -101,6 +101,7 @@ def heatmap(
             aspect=100,
             pad=0.075,
             extend=extend,
+            label=series.name,
         )
         cb.outline.set_visible(False)
 

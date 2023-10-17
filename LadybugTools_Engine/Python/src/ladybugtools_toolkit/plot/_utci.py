@@ -1,8 +1,11 @@
+"""Plot methods for UTCI datasets"""
+# pylint: disable=C0302
+# pylint: disable=E0401
 import calendar
 import textwrap
-import warnings
 from calendar import month_abbr
-from typing import List, Tuple
+
+# pylint enable=E0401
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -17,95 +20,34 @@ from matplotlib.ticker import PercentFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import make_interp_spline
 
-from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical, ComfortClass
-from ..external_comfort.utci.postprocess import distance_to_comfortable
+from ..categorical.categories import (
+    UTCI_DEFAULT_CATEGORIES,
+    CategoricalComfort,
+    ComfortClass,
+)
 from ..ladybug_extension.datacollection import collection_to_series
 from ._heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
-from .utilities import (
-    add_bar_labels,
-    average_color,
-    colormap_sequential,
-    contrasting_color,
-    lighten_color,
-)
-
-
-def utci_distance_to_comfortable(
-    utci_collection: HourlyContinuousCollection,
-    ax: plt.Axes = None,
-    comfort_thresholds: Tuple[float] = (9, 26),
-    distance_to_comfort_band_centroid: bool = False,
-    **kwargs,
-) -> plt.Axes:
-    """Plot the distance (in C) to comfortable for a given Ladybug HourlyContinuousCollection
-        containing UTCI values - using a different, less funky colour-scheme.
-
-    Args:
-        utci_collection (HourlyContinuousCollection):
-            A Ladybug Universal Thermal Climate Index HourlyContinuousCollection object.
-        ax (plt.Axes, optional):
-            The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
-        comfort_thresholds (List[float], optional):
-            The comfortable band of UTCI temperatures. Defaults to [9, 26].
-        distance_to_comfort_band_centroid (bool, optional):
-            If True, the distance to the centroid of the comfort band is plotted. If False, the
-            distance to the edge of the comfort band is plotted. Defaults to False.
-        **kwargs (Dict[str, Any], optional):
-            Additional keyword arguments to pass to the matplotlib plotting function.
-    Returns:
-        plt.Axes:
-            A matplotlib Axes object.
-    """
-
-    if len(comfort_thresholds) != 2:
-        raise ValueError("comfort_thresholds must be a list of length 2.")
-
-    if len(set(comfort_thresholds)) != 2:
-        raise ValueError("comfort_thresholds must contain two unique values.")
-
-    if comfort_thresholds[0] > comfort_thresholds[1]:
-        warnings.warn("comfort_thresholds are not increasing. Swapping the values.")
-
-    if not isinstance(
-        utci_collection.header.data_type, LB_UniversalThermalClimateIndex
-    ):
-        raise ValueError("This method only works for UTCI data.")
-
-    if ax is None:
-        ax = plt.gca()
-
-    new_collection = distance_to_comfortable(
-        utci_values=utci_collection,
-        comfort_thresholds=comfort_thresholds,
-        distance_to_comfort_band_centroid=distance_to_comfort_band_centroid,
-    )
-    ti = collection_to_series(new_collection).name
-    return heatmap(
-        collection_to_series(new_collection),
-        cmap=kwargs.get("cmap", colormap_sequential("#00A9E0", "w", "#ba000d")),
-        title="\n".join([i for i in [kwargs.pop("title", None), ti] if i is not None]),
-        vmin=kwargs.get("vmin", -20),
-        vmax=kwargs.get("vmax", 20),
-    )
+from .utilities import add_bar_labels, average_color, contrasting_color, lighten_color
 
 
 def utci_comfort_band_comparison(
-    utci_collections: Tuple[HourlyContinuousCollection],
+    utci_collections: tuple[HourlyContinuousCollection],
     ax: plt.Axes = None,
-    identifiers: Tuple[str] = None,
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    identifiers: tuple[str] = None,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     density: bool = True,
     **kwargs,
 ) -> plt.Axes:
-    """Create a proportional bar chart showing how different UTCI collections compare in terms of time within each comfort band.
+    """Create a proportional bar chart showing how different UTCI collections
+    compare in terms of time within each comfort band.
 
     Args:
-        utci_collections (List[HourlyContinuousCollection]):
+        utci_collections (list[HourlyContinuousCollection]):
             A list of UTCI collections.
         ax (plt.Axes, optional):
             The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
-        identifiers (List[str], optional):
+        identifiers (list[str], optional):
             A list of names to give each collection. Defaults to None.
         utci_categories (Categories, optional):
             The UTCI categories to use. Defaults to UTCI_DEFAULT_CATEGORIES.
@@ -265,12 +207,16 @@ def utci_day_comfort_metrics(
     axes[0].set_ylabel("UTCI")
     (b,) = axes[1].plot(dbt.loc[dt], c="red", alpha=0.75, label="DBT", ls="--")
     axes[1].set_ylabel("DBT")
+    axes[1].grid(False)
     (c,) = axes[2].plot(mrt.loc[dt], c="orange", alpha=0.75, label="MRT", ls="--")
     axes[2].set_ylabel("MRT")
+    axes[2].grid(False)
     (d,) = axes[3].plot(rh.loc[dt], c="blue", alpha=0.75, label="RH", ls="--")
     axes[3].set_ylabel("RH")
+    axes[3].grid(False)
     (e,) = axes[4].plot(ws.loc[dt], c="green", alpha=0.75, label="WS", ls="--")
     axes[4].set_ylabel("WS")
+    axes[4].grid(False)
 
     axes[0].spines["right"].set_visible(False)
 
@@ -293,12 +239,12 @@ def utci_day_comfort_metrics(
 
 
 def utci_comparison_diurnal_day(
-    utci_collections: List[HourlyContinuousCollection],
+    utci_collections: list[HourlyContinuousCollection],
     ax: plt.Axes = None,
     month: int = 6,
-    collection_ids: List[str] = None,
+    collection_ids: list[str] = None,
     agg: str = "mean",
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     show_legend: bool = True,
     categories_in_legend: bool = True,
     **kwargs,
@@ -306,13 +252,13 @@ def utci_comparison_diurnal_day(
     """Plot a set of UTCI collections on a single figure for monthly diurnal periods.
 
     Args:
-        utci_collections (List[HourlyContinuousCollection]):
+        utci_collections (list[HourlyContinuousCollection]):
             A list of UTCI collections.
         ax (plt.Axes, optional):
             The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
         month (int, optional):
             The month to get the typical day from. Default is 6.
-        collection_ids (List[str], optional):
+        collection_ids (list[str], optional):
             A list of descriptions for each of the input collections. Defaults to None.
         agg (str, optional):
             How to generate the "typical" day. Defualt is "mean" which uses the mean for each timestep in that month.
@@ -324,7 +270,7 @@ def utci_comparison_diurnal_day(
             If True, add the UTCI categories to the legend. Defaults to True.
         **kwargs:
             Additional keyword arguments to pass to the matplotlib plot function.
-            ylims (List[float], optional):
+            ylims (list[float], optional):
                 The y-axis limits. Defaults to None which just uses the min/ax of the fiven collections.
 
     Returns:
@@ -360,7 +306,7 @@ def utci_comparison_diurnal_day(
         [collection_to_series(i) for i in utci_collections], axis=1, keys=collection_ids
     )
     ylim = kwargs.pop("ylim", [df.min().min(), df.max().max()])
-    df_agg = df.groupby([df.index.month, df.index.hour], axis=0).agg(agg).loc[month]
+    df_agg = df.groupby([df.index.month, df.index.hour]).agg(agg).loc[month]
     df_agg.index = range(24)
     # add a final value to close the day
     df_agg.loc[24] = df_agg.loc[0]
@@ -475,7 +421,7 @@ def utci_pie(
     ax: plt.Axes = None,
     show_legend: bool = True,
     show_values: bool = False,
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     **kwargs,
 ) -> plt.Axes:
     """Create a figure showing the UTCI proportion for the given analysis period.
@@ -547,13 +493,13 @@ def utci_pie(
 
 
 def utci_journey(
-    utci_values: Tuple[float],
+    utci_values: tuple[float],
     ax: plt.Axes = None,
-    names: Tuple[str] = None,
+    names: tuple[str] = None,
     curve: bool = False,
     show_legend: bool = False,
     show_grid: bool = False,
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     **kwargs,
 ) -> plt.Axes:
     """Create a figure showing the pseudo-journey between different UTCI conditions at a
@@ -564,7 +510,7 @@ def utci_journey(
             A list of UTCI values.
         ax (plt.Axes, optional):
             The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
-        names (List[str], optional):
+        names (list[str], optional):
             A list of names to label each value with. Defaults to None.
         curve (bool, optional):
             Whether to plot the pseudo-journey as a spline. Defaults to False.
@@ -683,7 +629,7 @@ def utci_journey(
 def utci_heatmap(
     utci_collection: HourlyContinuousCollection,
     ax: plt.Axes = None,
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     **kwargs,
 ) -> plt.Axes:
     """Create a heatmap showing the annual hourly UTCI for this HourlyContinuousCollection.
@@ -716,7 +662,7 @@ def utci_heatmap(
 def utci_monthly_histogram(
     utci_collection: HourlyContinuousCollection,
     ax: plt.Axes = None,
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     show_labels: bool = False,
     show_summary: bool = False,
     show_legend: bool = False,
@@ -769,79 +715,57 @@ def utci_monthly_histogram(
 
     if show_summary:
         # Add header percentages for bar plot - and check that ComfortClass is available on object using that if it is
-        try:
-            if len(utci_categories.comfort_classes) != len(
-                utci_categories.interval_index
-            ):
-                raise ValueError(
-                    "Monkey-patched comfort_class attributes are not the same length as the categories within this Category object."
-                )
-            if len(set(utci_categories.comfort_classes)) != 3:
-                raise ValueError(
-                    "utci_categories.comfort_classes must have exactly 3 unique values to be used in this method."
-                )
-            # get avg "cold", "hot", "comfortable" colors
-            cold_color = average_color(
-                [
-                    utci_categories.colors[n]
-                    for n, i in enumerate(utci_categories.comfort_classes)
-                    if i.value == ComfortClass.TOO_COLD.value
-                ]
-            )
-            hot_color = average_color(
-                [
-                    utci_categories.colors[n]
-                    for n, i in enumerate(utci_categories.comfort_classes)
-                    if i.value == ComfortClass.TOO_HOT.value
-                ]
-            )
-            comfortable_color = average_color(
-                [
-                    utci_categories.colors[n]
-                    for n, i in enumerate(utci_categories.comfort_classes)
-                    if i.value == ComfortClass.COMFORTABLE.value
-                ]
-            )
+        # get avg "cold", "hot", "comfortable" colors
+        cold_color = average_color(
+            [
+                utci_categories.colors[n]
+                for n, i in enumerate(utci_categories.comfort_classes)
+                if i.value == ComfortClass.TOO_COLD.value
+            ]
+        )
+        hot_color = average_color(
+            [
+                utci_categories.colors[n]
+                for n, i in enumerate(utci_categories.comfort_classes)
+                if i.value == ComfortClass.TOO_HOT.value
+            ]
+        )
+        comfortable_color = average_color(
+            [
+                utci_categories.colors[n]
+                for n, i in enumerate(utci_categories.comfort_classes)
+                if i.value == ComfortClass.COMFORTABLE.value
+            ]
+        )
 
-            cold_stress = []
-            no_stress = []
-            heat_stress = []
-            for n, col in t.iteritems():
-                cs = 0
-                ns = 0
-                hs = 0
-                for nn, i in enumerate(col):
-                    if (
-                        utci_categories.comfort_classes[nn].value
-                        == ComfortClass.TOO_COLD.value
-                    ):
-                        cs += i
-                    elif (
-                        utci_categories.comfort_classes[nn].value
-                        == ComfortClass.COMFORTABLE.value
-                    ):
-                        ns += i
-                    elif (
-                        utci_categories.comfort_classes[nn].value
-                        == ComfortClass.TOO_HOT.value
-                    ):
-                        hs += i
-                    else:
-                        raise ValueError("How'd you get here?")
-                cold_stress.append(cs)
-                no_stress.append(ns)
-                heat_stress.append(hs)
-        except AttributeError:
-            warnings.warn(
-                'No ComfortClass found on given "utci_categories", defaulting to regex lookup of hot/cold names for categories to determine comfort.'
-            )
-            cold_stress = t.T.filter(regex="(?i)cool|cold|chill").sum(axis=1)
-            heat_stress = t.T.filter(regex="(?i)heat|hot").sum(axis=1)
-            no_stress = 1 - cold_stress - heat_stress
-
-            cold_color = "#3C65AF"
-            hot_color = "#C31F25"
-            comfortable_color = "#2EB349"
+        cold_stress = []
+        no_stress = []
+        heat_stress = []
+        for n, col in t.items():
+            cs = 0
+            ns = 0
+            hs = 0
+            for nn, i in enumerate(col):
+                if (
+                    utci_categories.comfort_classes[nn].value
+                    == ComfortClass.TOO_COLD.value
+                ):
+                    cs += i
+                elif (
+                    utci_categories.comfort_classes[nn].value
+                    == ComfortClass.COMFORTABLE.value
+                ):
+                    ns += i
+                elif (
+                    utci_categories.comfort_classes[nn].value
+                    == ComfortClass.TOO_HOT.value
+                ):
+                    hs += i
+                else:
+                    raise ValueError("How'd you get here?")
+            cold_stress.append(cs)
+            no_stress.append(ns)
+            heat_stress.append(hs)
 
         for n, (i, j, k) in enumerate(zip(*[cold_stress, no_stress, heat_stress])):
             ax.text(
@@ -890,7 +814,7 @@ def utci_monthly_histogram(
 
 def utci_heatmap_histogram(
     utci_collection: HourlyContinuousCollection,
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     show_colorbar: bool = True,
     **kwargs,
 ) -> Figure:
@@ -995,7 +919,7 @@ def utci_heatmap_histogram(
 def utci_histogram(
     utci_collection: HourlyContinuousCollection,
     ax: plt.Axes = None,
-    utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     show_labels: bool = False,
     **kwargs,
 ) -> plt.Axes:

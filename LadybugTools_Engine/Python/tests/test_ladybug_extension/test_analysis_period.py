@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybugtools_toolkit.ladybug_extension.analysis_period import (
+from ladybugtools_toolkit.ladybug_extension.analysisperiod import (
     analysis_period_from_datetimes,
     analysis_period_to_datetimes,
     describe_analysis_period,

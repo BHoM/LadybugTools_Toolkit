@@ -1,6 +1,10 @@
+"""Categorical objects for grouping data into bins."""
+# pylint: disable=E0401
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Tuple, Union
+from enum import Enum, auto
+from typing import Any
 
+# pylint: enable=E0401
 import numpy as np
 import pandas as pd
 from ladybug.legend import Color
@@ -24,20 +28,20 @@ class Categorical:
     """A class to hold categorical data.
 
     Args:
-        bins (Tuple[float], optional):
-            The bin edges for the categories. These are righ-inclusive, with the exception of the first bin which is
+        bins (tuple[float], optional):
+            The bin edges for the categories. These are right-inclusive, with the exception of the first bin which is
             also left-inclusive.
-        bin_names (Tuple[str], optional):
+        bin_names (tuple[str], optional):
             The names of the categories.
-        colors (Tuple[Union[str, Tuple]], optional):
+        colors (tuple[str | tuple], optional):
             The colors of the categories.
         name (str, optional):
             The name of the categories.
     """
 
-    bins: Tuple[float] = field(default_factory=tuple, repr=False)
-    bin_names: Tuple[str] = field(default_factory=tuple)
-    colors: Tuple[str] = field(default_factory=tuple, repr=True)
+    bins: tuple[float] = field(default_factory=tuple, repr=False)
+    bin_names: tuple[str] = field(default_factory=tuple)
+    colors: tuple[str] = field(default_factory=tuple, repr=True)
     name: str = field(default="GenericCategories")
 
     def __post_init__(self):
@@ -59,7 +63,9 @@ class Categorical:
         # ensure the number of bins, colors and bin names are consistent
         if len(set([len(self.bin_names), len(self.colors), (len(self.bins) - 1)])) > 1:
             raise ValueError(
-                f"The number of colors ({len(self.colors)}) and bin names ({len(self.bin_names)}) must be one less than the number of bins ({len(self.bins) - 1})."
+                f"The number of colors ({len(self.colors)}) and bin names "
+                f"({len(self.bin_names)}) must be one less than the number of "
+                f"bins ({len(self.bins) - 1})."
             )
 
     def __repr__(self):
@@ -81,19 +87,19 @@ class Categorical:
     @classmethod
     def from_cmap(
         cls,
-        bins: Tuple[float],
+        bins: tuple[float],
         cmap: Colormap,
-        bin_names: Tuple[str] = (),
+        bin_names: tuple[str] = (),
         name: str = "",
     ):
         """Create a categorical from a colormap.
 
         Args:
-            bins (Tuple[float]):
+            bins (tuple[float]):
                 The bin edges for the categories.
             cmap (Colormap):
                 The colormap to use.
-            bin_names (Tuple[str], optional):
+            bin_names (tuple[str], optional):
                 The names for each of the bins. Defaults to () which names each bin using its boundaries.
             name (str, optional):
                 The name for this categories object. Defaults to "" which uses the colormap name.
@@ -130,7 +136,7 @@ class Categorical:
         return pd.IntervalIndex.from_breaks(self.bins)
 
     @property
-    def descriptions(self) -> List[str]:
+    def descriptions(self) -> list[str]:
         """The descriptions of the categories.
 
         Returns:
@@ -192,7 +198,7 @@ class Categorical:
         return BoundaryNorm(boundaries=boundaries, ncolors=self.cmap.N)
 
     @property
-    def bins_finite(self) -> Tuple[float]:
+    def bins_finite(self) -> tuple[float]:
         """The finite bins excluding any which are infinite.
 
         Returns:
@@ -202,11 +208,11 @@ class Categorical:
         return tuple(i for i in self.bins if not np.isinf(i))
 
     @property
-    def lb_colors(self) -> Tuple[Color]:
+    def lb_colors(self) -> tuple[Color]:
         """The ladybug colors.
 
         Returns:
-            Tuple[Color]:
+            tuple[Color]:
                 The ladybug color objects.
         """
         return tuple(
@@ -217,21 +223,21 @@ class Categorical:
         )
 
     @property
-    def _bin_name_interval(self) -> Dict[str, pd.Interval]:
+    def _bin_name_interval(self) -> dict[str, pd.Interval]:
         """The bin name to interval dictionary.
 
         Returns:
-            Dict[str, pd.Interval]:
+            dict[str, pd.Interval]:
                 The bin name to interval dictionary.
         """
         return dict(zip(self.bin_names, self.interval_index))
 
     @property
-    def _interval_bin_name(self) -> Dict[pd.Interval, str]:
+    def _interval_bin_name(self) -> dict[pd.Interval, str]:
         """The interval to bin name dictionary.
 
         Returns:
-            Dict[pd.Interval, str]:
+            dict[pd.Interval, str]:
                 The interval to bin name dictionary.
         """
         return dict(zip(self.interval_index, self.bin_names))
@@ -275,11 +281,11 @@ class Categorical:
         """
         return dict(zip(self.bin_names, self.colors))[bin_name]
 
-    def get_color(self, value: Union[float, int], as_array: bool = False) -> str:
+    def get_color(self, value: float | int, as_array: bool = False) -> str:
         """Return the color associated with the categorised value.
 
         Args:
-            value (Union[float, int]):
+            value (float | int):
                 The value to get the color for.
             as_array (bool, optional):
                 Whether to return the color as an array or a hex string.
@@ -290,7 +296,8 @@ class Categorical:
         """
         if value <= self.bins[0] or value > self.bins[-1]:
             raise ValueError(
-                f"The input value/s are outside the range of the categories ({min(self).left} < x <= {max(self).right})."
+                "The input value/s are outside the range of the categories "
+                f"({min(self).left} < x <= {max(self).right})."
             )
         color = self.cmap(self.norm(value))
         if not as_array:
@@ -386,7 +393,7 @@ class Categorical:
         result_density = result / result.sum()
 
         statements = []
-        for desc, (idx, val) in list(zip(*[self.bin_names, result.iteritems()])):
+        for desc, (idx, val) in list(zip(*[self.bin_names, result.items()])):
             statements.append(
                 f'"{desc}" occurs {val} times ({result_density[idx]:0.1%}*{len(data)}).'
             )
@@ -428,3 +435,72 @@ class Categorical:
             labels.append(description if verbose else iidx)
         lgd = ax.legend(handles=handles, labels=labels, **kwargs)
         return lgd
+
+
+class ComfortClass(Enum):
+    """Thermal comfort categories."""
+
+    TOO_COLD = auto()
+    COMFORTABLE = auto()
+    TOO_HOT = auto()
+
+    @property
+    def color(self) -> str:
+        """Get the associatd color."""
+        d = {
+            ComfortClass.TOO_COLD: "#3C65AF",
+            ComfortClass.COMFORTABLE: "#2EB349",
+            ComfortClass.TOO_HOT: "#C31F25",
+        }
+        return d[self]
+
+    @property
+    def text(self) -> str:
+        """Get the associated text."""
+        d = {
+            ComfortClass.TOO_COLD: "Too cold",
+            ComfortClass.COMFORTABLE: "Comfortable",
+            ComfortClass.TOO_HOT: "Too hot",
+        }
+        return d[self]
+
+
+@dataclass(init=True, repr=True)
+class CategoricalComfort(Categorical):
+    """A class to hold categorical comfort data.
+
+    Args:
+        comfort_classes (tuple[ComfortClass]):
+            The comfort classes to use.
+    """
+
+    comfort_classes: tuple[ComfortClass] = field(default_factory=tuple, repr=False)
+
+    def __post_init__(self):
+        if len(self.comfort_classes) == 0:
+            raise ValueError("The comfort classes cannot be empty.")
+        if len(self.comfort_classes) != len(self):
+            raise ValueError(
+                "The number of comfort classes must match the number of bins."
+            )
+        return super().__post_init__()
+
+    def simplify(self) -> Categorical:
+        """Return a simplified version of this object based on teh assigned comfort clases.
+
+        Returns:
+            Categorical:
+                The simplified categorical comfort.
+        """
+        d = {}
+        for comfort_class, bin_left in list(zip(*[self.comfort_classes, self.bins])):
+            if comfort_class in d:
+                continue
+            d[comfort_class] = bin_left
+
+        return Categorical(
+            bins=list(d.values()) + [self.bins[-1]],
+            bin_names=[i.text for i in ComfortClass],
+            colors=[i.color for i in ComfortClass],
+            name=self.name + " (simplified)",
+        )

@@ -1,8 +1,10 @@
+"""Base shelter object for use in external comfort calculations."""
+# pylint: disable=E0401
 import json
-from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
 from typing import Any
+
+# pylint: enable=E0401
 
 import honeybee.dictutil as hb_dict_util
 import honeybee_energy.dictutil as energy_dict_util
@@ -23,139 +25,120 @@ from ladybug_geometry.geometry3d import (
 )
 from matplotlib.figure import Figure
 from mpl_toolkits import mplot3d
+from pydantic import BaseModel, Field, root_validator, validator
 
-from ..bhom import decorator_factory, keys_to_pascalcase, keys_to_snakecase
+from ..bhom import decorator_factory
 from ..ladybug_extension.epw import sun_position_list
 
-SENSOR_HEIGHT = 1.2
+SENSOR_LOCATION = Point3D(0, 0, 1.2)
 
 
-# pylint: disable=too-few-public-methods
-class ShelterDecoder(json.JSONDecoder):
-    def default(self, o):
-        match o:
-            case o if isinstance(o, dict):
-                if "type" in o:
-                    if o["type"] == "Point3D":
-                        return Point3D.from_dict(o)
-                    raise ValueError(f"Unknown \"type\": {o['type']}")
-            case _:
-                return super().default(o)
+class Shelter(BaseModel):
+    """_"""
 
-
-class ShelterEncoder(json.JSONEncoder):
-    def default(self, o):
-        match o:
-            case o if isinstance(o, (Point3D)):
-                return o.to_dict()
-            case _:
-                return super().default(o)
-
-
-# pylint: enable=too-few-public-methods
-
-
-@dataclass(init=True, repr=True, eq=True)
-class Shelter:
-
-    """A Shelter object, used to determine exposure to sun, sky and wind.
-
-    Args:
-        vertices (List[Point3D]):
-            A list of coplanar ladybug Point3D objects representing the
-            vertices of the shelter object.
-        wind_porosity (tuple[float], optional):
-            The transmissivity of the shelter to wind. Defaults to 0.
-        radiation_porosity (tuple[float], optional):
-            The transmissivity of the shelter to radiation (from surfaces, sky
-            and sun). Defaults to 0.
-
-    Returns:
-        Shelter: A Shelter object.
-    """
-
-    vertices: tuple[Point3D] = field(
-        init=True, repr=False
-    )  # a list of xyz coordinates representing the vertices of the sheltering object
-    wind_porosity: float | tuple[float] = field(
-        init=True, repr=True, compare=True, default=None
+    vertices: list[Point3D] = Field(alias="Vertices", min_items=3)
+    wind_porosity: list[float] = Field(
+        alias="WindPorosity",
+        min_items=8760,
+        max_items=8760,
+        default=(0,) * 8760,
+        ge=0,
+        le=1,
+        repr=False,
     )
-    radiation_porosity: float | tuple[float] = field(
-        init=True, repr=True, compare=True, default=None
+    radiation_porosity: list[float] = Field(
+        alias="RadiationPorosity",
+        min_items=8760,
+        max_items=8760,
+        default=(0,) * 8760,
+        ge=0,
+        le=1,
+        repr=False,
     )
 
-    _t: str = field(
-        init=False, repr=False, compare=True, default="BH.oM.LadybugTools.Shelter"
-    )
-
-    def __post_init__(self) -> None:
-        if self.vertices is None:
-            raise ValueError("vertices cannot be None")
-
-        if len(self.vertices) < 3:
-            raise ValueError("vertices must contain at least 3 points")
-
-        _plane = Plane.from_three_points(*self.vertices[:3])
-        for vertex in self.vertices[3:]:
-            if not np.isclose(a=_plane.distance_to_point(point=vertex), b=0):
-                raise ValueError(
-                    "All vertices must be coplanar. Please check your input."
-                )
-
-        # validate wind porosity
-        if self.wind_porosity is None:
-            self.wind_porosity = np.zeros(8760)
-        elif isinstance(self.wind_porosity, (float, int)):
-            self.wind_porosity = np.full(8760, self.wind_porosity)
-        if len(self.wind_porosity) != 8760:
-            raise ValueError(
-                "wind_porosity must be a float or a list/tuple of 8760 values"
-            )
-
-        self.wind_porosity = np.atleast_1d(self.wind_porosity)
-
-        if sum(self.wind_porosity > 1) + sum(self.wind_porosity < 0) != 0:
-            raise ValueError("wind_porosity values must be between 0 and 1")
-
-        # validate radiation porosity
-        if self.radiation_porosity is None:
-            self.radiation_porosity = np.zeros(8760)
-        elif isinstance(self.radiation_porosity, (float, int)):
-            self.radiation_porosity = np.full(8760, self.radiation_porosity)
-        if len(self.radiation_porosity) != 8760:
-            raise ValueError(
-                "radiation_porosity must be a float or a list/tuple of 8760 values"
-            )
-
-        self.radiation_porosity = np.atleast_1d(self.radiation_porosity)
-
-        if sum(self.radiation_porosity > 1) + sum(self.radiation_porosity < 0) != 0:
-            raise ValueError("radiation_porosity values must be between 0 and 1")
-
-        # check that the shelter has some effect
+    @root_validator(allow_reuse=True)
+    @classmethod
+    def validate_shelter_porosity(cls, values):
+        """_"""
         if all(
-            [self.wind_porosity.sum() == 8760, self.radiation_porosity.sum() == 8760]
+            [
+                sum(values["wind_porosity"]) == 8760,
+                sum(values["radiation_porosity"]) == 8760,
+            ]
         ):
             raise ValueError(
                 "This shelter would have no effect as it does not impact wind or radiation exposure."
             )
+        return values
 
-    def __repr__(self) -> str:
-        return (
-            f"Shelter(vertices={len(self.vertices)}, "
-            f"wind_porosity={self.wind_porosity.mean()}(avg), "
-            f"radiation_porosity={self.radiation_porosity.mean()}(avg))"
-        )
+    class Config:
+        """_"""
+
+        arbitrary_types_allowed = True
+        allow_population_by_field_name = True
+        json_encoders = {
+            Point3D: lambda v: v.to_dict(),
+        }
+
+    @validator("vertices", pre=True, each_item=True, allow_reuse=True)
+    @classmethod
+    def validate_vertices(cls, value) -> Point3D:  # pylint: disable=E0213
+        """_"""
+        if not isinstance(value, dict):
+            return value
+        if "type" not in value:
+            return value
+        if value["type"] == "Point3D":
+            return Point3D.from_dict(value)
+        return value
+
+    # pylint: disable=E0213
+    @validator("vertices", allow_reuse=True)
+    @classmethod
+    def validate_vertices_planarity(cls, value) -> list[Point3D]:
+        """_"""
+        _plane = Plane.from_three_points(*value[:3])
+        for vertex in value[3:]:
+            if not np.isclose(a=_plane.distance_to_point(point=vertex), b=0):
+                raise ValueError(
+                    "All vertices must be coplanar. Please check your input."
+                )
+        return value
+
+    # pylint: enable=E0213
+
+    @property
+    def min_wind_porosity(self) -> float:
+        return min(self.wind_porosity)
+
+    @property
+    def average_wind_porosity(self) -> float:
+        return np.mean(self.wind_porosity)
+
+    @property
+    def max_wind_porosity(self) -> float:
+        return max(self.wind_porosity)
+
+    @property
+    def min_radiation_porosity(self) -> float:
+        return min(self.radiation_porosity)
+
+    @property
+    def average_radiation_porosity(self) -> float:
+        return np.mean(self.radiation_porosity)
+
+    @property
+    def max_radiation_porosity(self) -> float:
+        return max(self.radiation_porosity)
 
     @classmethod
-    @decorator_factory(disable=False)
     def from_overhead_linear(
         cls,
         width: float = 3,
         height_above_ground: float = 3.5,
         length: float = 2000,
-        wind_porosity: float = 0,
-        radiation_porosity: float = 0,
+        wind_porosity: list[float] = (0,) * 8760,
+        radiation_porosity: list[float] = (0,) * 8760,
         angle: float = 0,
     ) -> "Shelter":
         """Create a linear shelter object oriented north-south, which is
@@ -183,9 +166,9 @@ class Shelter:
             Shelter: A Shelter object.
         """
 
-        if height_above_ground <= SENSOR_HEIGHT:
+        if height_above_ground <= SENSOR_LOCATION.z:
             raise ValueError(
-                f"height_above_ground must be greater than {SENSOR_HEIGHT}"
+                f"height_above_ground must be greater than {SENSOR_LOCATION.z}"
             )
 
         origin = Point3D()
@@ -210,13 +193,12 @@ class Shelter:
         )
 
     @classmethod
-    @decorator_factory(disable=False)
     def from_overhead_circle(
         cls,
         radius: float = 1.5,
         height_above_ground: float = 3.5,
-        wind_porosity: float = 0,
-        radiation_porosity: float = 0,
+        wind_porosity: list[float] = (0,) * 8760,
+        radiation_porosity: list[float] = (0,) * 8760,
     ) -> "Shelter":
         """Create a circular overhead shelter object.
 
@@ -238,9 +220,9 @@ class Shelter:
         if radius <= 0:
             raise ValueError("radius must be greater than 0")
 
-        if height_above_ground <= SENSOR_HEIGHT:
+        if height_above_ground <= SENSOR_LOCATION.z:
             raise ValueError(
-                f"height_above_ground must be greater than {SENSOR_HEIGHT}"
+                f"height_above_ground must be greater than {SENSOR_LOCATION.z}"
             )
 
         return cls(
@@ -254,14 +236,13 @@ class Shelter:
         )
 
     @classmethod
-    @decorator_factory(disable=False)
     def from_adjacent_wall(
         cls,
         distance_from_wall: float = 1.5,
         wall_height: float = 2,
         wall_length: float = 3,
-        wind_porosity: float = 0,
-        radiation_porosity: float = 0,
+        wind_porosity: list[float] = (0,) * 8760,
+        radiation_porosity: list[float] = (0,) * 8760,
         angle: float = 0,
     ) -> "Shelter":
         """Create a shelter object representative of an adjacent wall.
@@ -308,9 +289,11 @@ class Shelter:
         )
 
     @classmethod
-    @decorator_factory(disable=False)
     def from_lb_face3d(
-        cls, face: Face3D, wind_porosity: float = 0, radiation_porosity: float = 0
+        cls,
+        face: Face3D,
+        wind_porosity: list[float] = (0,) * 8760,
+        radiation_porosity: list[float] = (0,) * 8760,
     ) -> "Shelter":
         """Create a shelter object from a Ladybug Face3D object."""
         return cls(
@@ -320,15 +303,14 @@ class Shelter:
         )
 
     @classmethod
-    @decorator_factory(disable=False)
     def from_hb_face(cls, face: Face) -> "Shelter":
         """Create a shelter object from a Honeybee Face object."""
         vertices = face.vertices
         wind_porosity = 0
         radiation_porosity = (
-            0
+            (0,) * 8760
             if face.properties.radiance.modifier.is_opaque
-            else face.properties.radiance.modifier.average_transmittance
+            else (face.properties.radiance.modifier.average_transmittance,) * 8760
         )
         return cls(
             vertices=vertices,
@@ -337,7 +319,6 @@ class Shelter:
         )
 
     @classmethod
-    @decorator_factory(disable=False)
     def from_hb_shade(cls, shade: Shade) -> "Shelter":
         """Create a shelter object from a Honeybee Shade object.
 
@@ -358,8 +339,8 @@ class Shelter:
                 shade.properties.energy.transmittance_schedule.data_collection.values
             )
         except AttributeError:
-            radiation_porosity = 0
-            wind_porosity = 0
+            radiation_porosity = (0,) * 8760
+            wind_porosity = (0,) * 8760
         return cls(
             vertices=vertices,
             wind_porosity=wind_porosity,
@@ -367,7 +348,6 @@ class Shelter:
         )
 
     @classmethod
-    @decorator_factory(disable=False)
     def from_hbjson(cls, hbjson_file: Path) -> list["Shelter"]:
         """Generate Shelter objects from a Honeybee JSON file.
 
@@ -409,7 +389,6 @@ class Shelter:
                 shelters.append(cls.from_hb_face(obj))
         return shelters
 
-    @decorator_factory(disable=False)
     def to_hbjson(self, hbjson_path: Path) -> Path:
         """Convert this object to a Honeybee JSON file.
 
@@ -427,11 +406,6 @@ class Shelter:
         return hbjson_path
 
     @property
-    def origin(self) -> Point3D:
-        """Create the origin point, representing an analytical person-point."""
-        return Point3D(z=SENSOR_HEIGHT)
-
-    @property
     def face3d(self) -> Face3D:
         """Create the face of the shelter object."""
         return Face3D(self.vertices)
@@ -440,77 +414,14 @@ class Shelter:
     def hb_shade(self) -> Shade:
         """Create a Honeybee Shade object from this shelter object."""
         shd = Shade.from_vertices(identifier="shade", vertices=self.vertices)
-        # pylint disable=no-member
-        shd.properties.energy.transmittance_schedule = ScheduleFixedInterval(
-            "porosity", (self.radiation_porosity + self.wind_porosity) / 2
+        shd.properties.energy.transmittance_schedule = (  # pylint: disable=no-member
+            ScheduleFixedInterval(
+                "porosity",
+                np.mean([self.radiation_porosity, self.wind_porosity], axis=0),
+            )
         )
-        # pylint enable=no-member
         return shd
 
-    @decorator_factory(disable=False)
-    def to_dict(self) -> dict[str, Any]:
-        """Create a dictionary representation of this object.
-
-        Returns:
-            dict: A dictionary representation of this object.
-        """
-
-        obj_dict = {
-            "vertices": [i.to_dict() for i in self.vertices],
-            "wind_porosity": self.wind_porosity.tolist(),
-            "radiation_porosity": self.radiation_porosity.tolist(),
-            "_t": self._t,
-        }
-
-        return keys_to_pascalcase(obj_dict)
-
-    @classmethod
-    @decorator_factory(disable=False)
-    def from_dict(cls, dictionary: dict[str, Any]):
-        """Create this object from its dictionary representation.
-
-        Args:
-            dictionary (dict): A dictionary representation of this object.
-
-        Returns:
-            obj: This object.
-        """
-
-        dictionary.pop("_t", None)
-        dictionary = keys_to_snakecase(dictionary)
-
-        dictionary["vertices"] = [Point3D.from_dict(i) for i in dictionary["vertices"]]
-
-        return cls(**dictionary)
-
-    @decorator_factory(disable=False)
-    def to_json(self, **kwargs) -> str:
-        """Create a JSON representation of this object.
-
-        Keyword Args:
-            kwargs: Additional keyword arguments to pass to json.dumps.
-
-        Returns:
-            str: A JSON representation of this object.
-        """
-
-        return json.dumps(self.to_dict(), cls=ShelterEncoder, **kwargs)
-
-    @classmethod
-    @decorator_factory(disable=False)
-    def from_json(cls, json_string: str) -> "Shelter":
-        """Create this object from its JSON representation.
-
-        Args:
-            json_string (str): A JSON representation of this object.
-
-        Returns:
-            obj: This object.
-        """
-
-        return cls.from_dict(json.loads(json_string, cls=ShelterDecoder))
-
-    @decorator_factory(disable=False)
     def rotate(self, angle: float, center: Point3D = Point3D()) -> "Shelter":
         """Rotate the shelter about 0, 0, 0 by the given angle in degrees clockwise from north at 0.
 
@@ -531,7 +442,6 @@ class Shelter:
             self.radiation_porosity,
         )
 
-    @decorator_factory(disable=False)
     def move(self, vector: Vector3D) -> "Shelter":
         """Move the shelter by the given vector.
 
@@ -549,14 +459,12 @@ class Shelter:
             self.radiation_porosity,
         )
 
-    @decorator_factory(disable=False)
     def set_porosity(self, porosity: float) -> "Shelter":
         """Return this shelter with an adjusted porosity value applied to both wind and radiation components."""
         return Shelter(
             vertices=self.vertices, radiation_porosity=porosity, wind_porosity=porosity
         )
 
-    @decorator_factory(disable=False)
     def annual_sky_exposure(self, include_radiation_porosity: bool = True) -> float:
         """Determine the proportion of sky the analytical point is exposed to.
             Also account for radiation_porosity in that exposure.
@@ -569,20 +477,24 @@ class Shelter:
             float:
                 A value between 0 and 1 denoting the proportion of sky exposure.
         """
+
+        _radiation_porosity = np.array(self.radiation_porosity)
+
         view_sphere = ViewSphere()
         rays = [
-            Ray3D(self.origin, vector) for vector in view_sphere.reinhart_dome_vectors
+            Ray3D(SENSOR_LOCATION, vector)
+            for vector in view_sphere.reinhart_dome_vectors
         ]
         n_intersections = sum(bool(self.face3d.intersect_line_ray(ray)) for ray in rays)
         if include_radiation_porosity:
-            return 1 - ((n_intersections / len(rays)) * (1 - self.radiation_porosity))
+            return 1 - ((n_intersections / len(rays)) * (1 - _radiation_porosity))
         return 1 - (n_intersections / len(rays))
 
-    @decorator_factory(disable=False)
     def annual_sun_exposure(
         self, epw: EPW, include_radiation_porosity: bool = True
     ) -> list[float]:
-        """Calculate annual hourly sun exposure. Overnight hours where sun is below horizon default to np.nan sun visibility.
+        """Calculate annual hourly sun exposure. Overnight hours where sun is
+        below horizon default to np.nan sun visibility.
 
         Args:
             epw (EPW):
@@ -595,12 +507,15 @@ class Shelter:
             List[float]:
                 A list of annual hourly values denoting sun exposure values.
         """
-        if all(self.radiation_porosity == 1):
+
+        _radiation_porosity = np.array(self.radiation_porosity)
+
+        if all(_radiation_porosity == 1):
             return epw.wind_speed.values
 
         _sun_exposure = []
         for radiation_porosity, sun in list(
-            zip(*[self.radiation_porosity, sun_position_list(epw)])
+            zip(*[_radiation_porosity, sun_position_list(epw)])
         ):
             if sun.altitude < 0:
                 _sun_exposure.append(np.nan)
@@ -610,7 +525,9 @@ class Shelter:
                 _sun_exposure.append(1)
                 continue
 
-            ray = Ray3D(self.origin, (sun.position_3d() - self.origin).normalize())
+            ray = Ray3D(
+                SENSOR_LOCATION, (sun.position_3d() - SENSOR_LOCATION).normalize()
+            )
 
             if self.face3d.intersect_line_ray(ray) is None:
                 _sun_exposure.append(1)
@@ -667,7 +584,7 @@ class Shelter:
         wind_direction_vector = Vector3D(
             np.sin(wind_direction_rad), np.cos(wind_direction_rad)
         )  # TODO - check that this is going the right direction
-        wind_direction_plane = Plane(n=wind_direction_vector, o=self.origin)
+        wind_direction_plane = Plane(n=wind_direction_vector, o=SENSOR_LOCATION)
 
         # check that the shelter is not in the opposite direction to the wind
         if not any(wind_direction_plane.is_point_above(i) for i in self.vertices):
@@ -675,7 +592,7 @@ class Shelter:
             return 1
 
         # check if shelter is too high to impact wind
-        if all(i.z > self.origin.z + 5 for i in self.vertices):
+        if all(i.z > SENSOR_LOCATION.z + 5 for i in self.vertices):
             # the shelter is too high to impact wind, no multiplier needed
             return 1
 
@@ -688,18 +605,20 @@ class Shelter:
             # TODO - if shelter angled, approximate funneling towards/away from ground effect
             return 1
 
-        wind_ray = Ray3D(p=self.origin, v=wind_direction_vector)
+        wind_ray = Ray3D(p=SENSOR_LOCATION, v=wind_direction_vector)
         wind_rays = []
         for az_angle in np.deg2rad(
             np.linspace(
                 -obstruction_band_width / 2, obstruction_band_width / 2, n_samples_xy
             )
         ):
-            wr = wind_ray.rotate_xy(origin=self.origin, angle=az_angle)
+            wr = wind_ray.rotate_xy(origin=SENSOR_LOCATION, angle=az_angle)
             for rotation in np.deg2rad(np.linspace(0, 180, n_samples_rotational)):
                 wind_rays.append(
                     wr.rotate(
-                        origin=self.origin, angle=rotation, axis=wind_direction_vector
+                        origin=SENSOR_LOCATION,
+                        angle=rotation,
+                        axis=wind_direction_vector,
                     )
                 )
 
@@ -720,10 +639,9 @@ class Shelter:
         # calculate the resultant multiplier
         return (
             (porosity * sum(intersections))
-            + (edge_acceleration_factor * sum([not i for i in intersections]))
+            + (edge_acceleration_factor * sum(not i for i in intersections))
         ) / len(intersections)
 
-    @decorator_factory(disable=False)
     def annual_wind_speed(
         self,
         epw: EPW,
@@ -743,7 +661,9 @@ class Shelter:
                 A list of annual hourly values denoting sun exposure values.
         """
 
-        if all(self.wind_porosity == 1):
+        _wind_porosity = np.array(self.wind_porosity)
+
+        if all(_wind_porosity == 1):
             return epw.wind_speed.values
 
         _wind_speed = []
@@ -752,7 +672,7 @@ class Shelter:
                 *[
                     epw.wind_speed,
                     epw.wind_direction,
-                    self.wind_porosity,
+                    _wind_porosity,
                 ]
             )
         ):
@@ -769,7 +689,6 @@ class Shelter:
 
         return _wind_speed
 
-    @decorator_factory(disable=False)
     def visualise(
         self,
         ax: plt.Axes = None,
@@ -802,7 +721,7 @@ class Shelter:
 
         # TODO - make this use the Ladybug-Matplotlib renderer when it is ready
 
-        ax.scatter(*self.origin.to_array(), c="red")
+        ax.scatter(*SENSOR_LOCATION.to_array(), c="red")
 
         # add shelter as a polygon
         vtx = np.array([i.to_array() for i in self.face3d.vertices])
@@ -835,47 +754,43 @@ class Shelter:
         ax.set_zlabel("z")
 
         # set lims
-        ax.set_xlim(
-            lim_kwargs.get("xlim", (min(i[0] for i in vtx), max(i[0] for i in vtx)))
-        )
-        ax.set_ylim(
-            lim_kwargs.get("ylim", (min(i[1] for i in vtx), max(i[1] for i in vtx)))
-        )
+        ax.set_xlim(lim_kwargs.get("xlim", (-10, 10)))
+        ax.set_ylim(lim_kwargs.get("ylim", (-10, 10)))
 
         # pylint: disable=no-member
-        ax.set_zlim(
-            lim_kwargs.get("zlim", (min(i[2] for i in vtx), max(i[2] for i in vtx)))
-        )
+        ax.set_zlim(lim_kwargs.get("zlim", (0, 20)))
         # pylint: enable=no-member
 
         ax.set_aspect("equal")
-        # ax.autoscale()
 
         return fig
 
 
+@decorator_factory()
 def annual_sky_exposure(
     shelters: list[Shelter], include_radiation_porosity: bool = True
 ) -> list[float]:
-    """Determine the proportion of sky the analytical point is exposed to under a combination of shelters. Also account for radiation_porosity in that exposure.
+    """Determine the proportion of sky the analytical point is exposed to
+    under a combination of shelters. Also account for radiation_porosity in
+    that exposure.
 
     Args:
         shelters (List[Shelter]):
             A list of shelter objects.
         include_radiation_porosity (bool, optional):
-            If True, then increase exposure according to shelter porosity. Defaults to True.
+            If True, then increase exposure according to shelter porosity.
+            Defaults to True.
 
     Returns:
         float:
             A value between 0 and 1 denoting the proportion of sky exposure.
     """
-    if len(shelters) == 0:
-        return 1
+    if not bool(shelters):
+        return [1] * 8760
 
     view_sphere = ViewSphere()
     rays = [
-        Ray3D(shelters[0].origin, vector)
-        for vector in view_sphere.reinhart_dome_vectors
+        Ray3D(SENSOR_LOCATION, vector) for vector in view_sphere.reinhart_dome_vectors
     ]
 
     results = []
@@ -891,10 +806,12 @@ def annual_sky_exposure(
     return results.sum(axis=0) / (len(rays) * len(shelters))
 
 
+@decorator_factory()
 def annual_sun_exposure(
     shelters: list[Shelter], epw: EPW, include_radiation_porosity: bool = True
 ) -> list[float]:
-    """Calculate annual hourly sun exposure under a set of shelters. Where sun is below horizon default to 0 sun visibility.
+    """Calculate annual hourly sun exposure under a set of shelters. Where sun
+    is below horizon default to 0 sun visibility.
 
     Args:
         shelters (List[Shelter]):
@@ -902,13 +819,15 @@ def annual_sun_exposure(
         epw (EPW):
             A Ladybug EPW object.
         include_radiation_porosity (bool, optional):
-            If True, then increase exposure according to shelter porosity. Defaults to True.
+            If True, then increase exposure according to shelter porosity.
+            Defaults to True.
 
     Returns:
         List[float]:
             A list of annual hourly values denoting sun exposure values.
     """
-
+    if not bool(shelters):
+        return [np.nan if i == 0 else 1 for i in epw.global_horizontal_radiation]
     result = np.ones_like(shelters[0].radiation_porosity)
     for shelter in shelters:
         result = result * shelter.annual_sun_exposure(
@@ -917,6 +836,7 @@ def annual_sun_exposure(
     return result
 
 
+@decorator_factory()
 def annual_wind_speed(
     shelters: list[Shelter],
     epw: EPW,
@@ -937,7 +857,8 @@ def annual_wind_speed(
 
     Returns:
         List[float]:
-            A resultant list of EPW aligned wind speeds subject to obstruction from the shelter.
+            A resultant list of EPW aligned wind speeds subject to obstruction
+            from the shelter.
     """
     if not bool(shelters):
         return epw.wind_speed.values
@@ -948,6 +869,7 @@ def annual_wind_speed(
     return np.array(results).min(axis=0)
 
 
+@decorator_factory()
 def write_shelters_to_hbjson(shelters: list[Shelter], hbjson_path: Path) -> Path:
     """Create a Honeybee JSON file from a list of Shelter objects.
 
@@ -964,115 +886,6 @@ def write_shelters_to_hbjson(shelters: list[Shelter], hbjson_path: Path) -> Path
     name = hbjson_path.stem
     directory = hbjson_path.parent
     Model(identifier="Shelters", orphaned_faces=[i.face3d for i in shelters]).to_hbjson(
-        name=name, parent=directory
+        name=name, folder=directory
     )
     return hbjson_path
-
-
-class Shelters(Enum):
-    """A list of pre-defined Shelter forms."""
-
-    NORTH_SOUTH_LINEAR = Shelter.from_overhead_linear(
-        width=3,
-        height_above_ground=3.5,
-        length=2000,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=0,
-    )
-    EAST_WEST_LINEAR = Shelter.from_overhead_linear(
-        width=3,
-        height_above_ground=3.5,
-        length=2000,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=90,
-    )
-    NORTHEAST_SOUTHWEST_LINEAR = Shelter.from_overhead_linear(
-        width=3,
-        height_above_ground=3.5,
-        length=2000,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=45,
-    )
-    NORTHWEST_SOUTHEAST_LINEAR = Shelter.from_overhead_linear(
-        width=3,
-        height_above_ground=3.5,
-        length=2000,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=135,
-    )
-
-    OVERHEAD_SMALL = Shelter.from_overhead_circle(
-        radius=1.5, height_above_ground=3.5, wind_porosity=0, radiation_porosity=0
-    )
-    OVERHEAD_LARGE = Shelter.from_overhead_circle(
-        radius=5, height_above_ground=3.5, wind_porosity=0, radiation_porosity=0
-    )
-
-    NORTH = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=0,
-    )
-    NORTHEAST = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=45,
-    )
-    EAST = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=90,
-    )
-    SOUTHEAST = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=135,
-    )
-    SOUTH = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=180,
-    )
-    SOUTHWEST = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=225,
-    )
-    WEST = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=270,
-    )
-    NORTHWEST = Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        wind_porosity=0,
-        radiation_porosity=0,
-        angle=315,
-    )

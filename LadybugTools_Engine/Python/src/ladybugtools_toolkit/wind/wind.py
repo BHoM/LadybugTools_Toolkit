@@ -1,11 +1,14 @@
-from __future__ import annotations
+"""Methods for working with time-indexed wind data."""
 
+# pylint: disable=E0401
 import calendar
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any
+
+# pylint: enable=E0401
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +18,6 @@ from ladybug.epw import EPW
 from matplotlib.colors import Colormap
 from tqdm import tqdm
 
-from ..bhomutil.bhom_object import BHoMObject
 from ..categorical.categories import BEAUFORT_CATEGORIES
 from ..helpers import (
     OpenMeteoVariable,
@@ -27,12 +29,12 @@ from ..helpers import (
     wind_direction_average,
     wind_speed_at_height,
 )
-from ..ladybug_extension.analysis_period import (
+from ..ladybug_extension.analysisperiod import (
     AnalysisPeriod,
     analysis_period_to_boolean,
     analysis_period_to_datetimes,
 )
-from ..plot import timeseries
+from ..plot._timeseries import timeseries
 from ..plot._wind import (
     radial_histogram,
     wind_cumulative_probability,
@@ -44,27 +46,27 @@ from .direction_bins import DirectionBins
 
 
 @dataclass(init=True, repr=True, eq=True)
-class Wind(BHoMObject):
+class Wind:
     """An object containing historic, time-indexed wind data.
 
     Args:
-        wind_speeds (List[Union[int, float, np.number]]):
+        wind_speeds (list[int | float | np.number]):
             An iterable of wind speeds in m/s.
-        wind_directions (List[Union[int, float, np.number]]):
+        wind_directions (list[int | float | np.number]):
             An iterable of wind directions in degrees from North (with North at 0-degrees).
-        datetimes (Union[pd.DatetimeIndex, List[Union[datetime, np.datetime64, pd.Timestamp]]]):
+        datetimes (Union[pd.DatetimeIndex, list[Union[datetime, np.datetime64, pd.Timestamp]]]):
             An iterable of datetime-like objects.
         height_above_ground (float, optional):
             The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
     """
 
-    wind_speeds: List[Union[int, float, np.number]] = field(
+    wind_speeds: list[int | float | np.number] = field(
         init=True, compare=True, repr=False
     )
-    wind_directions: List[Union[int, float, np.number]] = field(
+    wind_directions: list[int | float | np.number] = field(
         init=True, compare=True, repr=False
     )
-    datetimes: List[datetime] = field(init=True, compare=True, repr=False)
+    datetimes: list[datetime] = field(init=True, compare=True, repr=False)
     height_above_ground: float = field(init=True, compare=True, repr=False, default=10)
 
     def __post_init__(self):
@@ -75,17 +77,17 @@ class Wind(BHoMObject):
             self.height_above_ground,
         )
 
-        self.datetimes: List[datetime] = pd.to_datetime(self.datetimes)
+        self.datetimes: list[datetime] = pd.to_datetime(self.datetimes)
         self.wind_speeds = pd.Series(
             self.wind_speeds, index=self.datetimes, name="speed"
-        ).sort_index()
+        ).sort_index(inplace=False)
         self.wind_directions = pd.Series(
             self.wind_directions, index=self.datetimes, name="direction"
-        ).sort_index()
+        ).sort_index(inplace=False)
         self.df = pd.concat([self.ws, self.wd], axis=1)
 
-        # wrap methods within this class
-        super().__post_init__()
+        # # wrap methods within this class
+        # super().__post_init__()
 
     ##################
     # DUNDER METHODS #
@@ -96,7 +98,11 @@ class Wind(BHoMObject):
 
     def __repr__(self) -> str:
         """The printable representation of the given object"""
-        return f"{self.__class__.__name__}({min(self.df.index):%Y-%m-%d} to {max(self.df.index):%Y-%m-%d}, n={len(self)} @{self.freq}, @{self.height_above_ground}m)"
+        return (
+            f"{self.__class__.__name__}({min(self.df.index):%Y-%m-%d} to "
+            f"{max(self.df.index):%Y-%m-%d}, n={len(self)} @{self.freq}, "
+            f"@{self.height_above_ground}m)"
+        )
 
     ##############
     # PROPERTIES #
@@ -121,11 +127,11 @@ class Wind(BHoMObject):
         return self.wind_directions
 
     @property
-    def calm_datetimes(self) -> List[datetime]:
+    def calm_datetimes(self) -> list[datetime]:
         """Return the datetimes where wind speed is < 0.1.
 
         Returns:
-            List[datetime]:
+            list[datetime]:
                 "Calm" wind datetimes.
         """
         return self.wind_speeds[self.wind_speeds <= 0.1].index.tolist()
@@ -141,7 +147,7 @@ class Wind(BHoMObject):
         wind_speed_column: Any,
         wind_direction_column: Any,
         height_above_ground: float = 10,
-    ) -> Wind:
+    ) -> "Wind":
         """Create a Wind object from a Pandas DataFrame, with WindSpeed and WindDirection columns.
 
         Args:
@@ -179,15 +185,15 @@ class Wind(BHoMObject):
     @classmethod
     def from_csv(
         cls,
-        csv_path: Union[str, Path],
+        csv_path: Path,
         wind_speed_column: str,
         wind_direction_column: str,
         height_above_ground: float = 10,
-    ) -> Wind:
+    ) -> "Wind":
         """Create a Wind object from a csv containing wind speed and direction columns.
 
         Args:
-            csv_path (Union[str, Path]):
+            csv_path (Path):
                 The path to the CSV file containing speed and direction columns, and a datetime index.
             wind_speed_column (str):
                 The name of the column where wind-speed data exists.
@@ -205,11 +211,11 @@ class Wind(BHoMObject):
         )
 
     @classmethod
-    def from_epw(cls, epw: Union[str, Path, EPW]) -> Wind:
+    def from_epw(cls, epw: Path | EPW) -> "Wind":
         """Create a Wind object from an EPW file or object.
 
         Args:
-            epw (Union[str, Path, EPW]):
+            epw (Path | EPW):
                 The path to the EPW file, or an EPW object.
         """
 
@@ -228,9 +234,9 @@ class Wind(BHoMObject):
         cls,
         latitude: float,
         longitude: float,
-        start_date: Union[datetime, str],
-        end_date: Union[datetime, str],
-    ) -> Wind:
+        start_date: datetime | str,
+        end_date: datetime | str,
+    ) -> "Wind":
         """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
 
         Args:
@@ -238,9 +244,9 @@ class Wind(BHoMObject):
                 The latitude of the target site, in degrees.
             longitude (float):
                 The longitude of the target site, in degrees.
-            start_date (Union[datetime, str]):
+            start_date (datetime | str):
                 The start-date from which records will be obtained.
-            end_date (Union[datetime, str]):
+            end_date (datetime | str):
                 The end-date beyond which records will be ignored.
         """
         if isinstance(start_date, str):
@@ -268,8 +274,8 @@ class Wind(BHoMObject):
 
     @classmethod
     def from_average(
-        cls, wind_objects: List[Wind], weights: List[float] = None
-    ) -> Wind:
+        cls, wind_objects: list["Wind"], weights: list[float] = None
+    ) -> "Wind":
         """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
 
         # create default weightings if None
@@ -375,7 +381,8 @@ class Wind(BHoMObject):
         # check that inputs are the same shape/size
         if not len(wind_speeds) == len(wind_directions) == len(datetimes):
             raise ValueError(
-                f"wind_speeds, wind_directions and datetimes must be the same length. ({len(wind_speeds)} != {len(wind_directions)} != {len(datetimes)})."
+                "wind_speeds, wind_directions and datetimes must be the same length. "
+                f"({len(wind_speeds)} != {len(wind_directions)} != {len(datetimes)})."
             )
 
     ###################
@@ -415,7 +422,7 @@ class Wind(BHoMObject):
         """
         return self.ws.quantile(percentile)
 
-    def resample(self, rule: Union[pd.DateOffset, pd.Timedelta, str]) -> Wind:
+    def resample(self, rule: pd.DateOffset | pd.Timedelta | str) -> "Wind":
         """Resample the wind data collection to a different timestep. If upsampling then 0m/s
             and prevailing winds will be added to the data. If downsampling, then the average
             speed and direction will be used.
@@ -476,7 +483,7 @@ class Wind(BHoMObject):
         direction_bins: DirectionBins = DirectionBins(),
         n: int = 1,
         as_angle: bool = False,
-    ) -> Union[List[float], List[str]]:
+    ) -> list[float] | list[str]:
         """Calculate the prevailing wind direction/s for this object.
 
         Args:
@@ -488,7 +495,7 @@ class Wind(BHoMObject):
                 Return directions as an angle or as a cardinal direction. Default is False to return cardinal direction.
 
         Returns:
-            Union[List[float], List[str]]:
+            list[float] | list[str]:
                 A list of wind directions.
         """
 
@@ -497,14 +504,14 @@ class Wind(BHoMObject):
     def probabilities(
         self,
         direction_bins: DirectionBins = DirectionBins(),
-        percentiles: Tuple[float, float] = (0.5, 0.95),
+        percentiles: tuple[float, float] = (0.5, 0.95),
     ) -> pd.DataFrame:
         """Calculate the probabilities of wind speeds at the given percentiles, for the direction bins specified.
 
         Args:
             direction_bins (DirectionBins, optional):
                 A DirectionBins object. Defaults to DirectionBins().
-            percentiles (Tuple[float, float], optional):
+            percentiles (tuple[float, float], optional):
                 A tuple of floats between 0-1 describing percentiles. Defaults to (0.5, 0.95).
 
         Returns:
@@ -528,8 +535,8 @@ class Wind(BHoMObject):
 
     def filter_by_analysis_period(
         self,
-        analysis_period: Union[AnalysisPeriod, Tuple[AnalysisPeriod]],
-    ) -> Wind:
+        analysis_period: AnalysisPeriod | tuple[AnalysisPeriod],
+    ) -> "Wind":
         """Filter the current object by a ladybug AnalysisPeriod object.
 
         Args:
@@ -569,7 +576,7 @@ class Wind(BHoMObject):
             height_above_ground=self.height_above_ground,
         )
 
-    def filter_by_boolean_mask(self, mask: Tuple[bool]) -> Wind:
+    def filter_by_boolean_mask(self, mask: tuple[bool]) -> "Wind":
         """Filter the current object by a boolean mask.
 
         Returns:
@@ -591,18 +598,18 @@ class Wind(BHoMObject):
 
     def filter_by_time(
         self,
-        months: Tuple[float] = tuple(range(1, 13, 1)),  # type: ignore
-        hours: Tuple[int] = tuple(range(0, 24, 1)),  # type: ignore
-        years: Tuple[int] = tuple(range(1900, 2100, 1)),
-    ) -> Wind:
+        months: tuple[float] = tuple(range(1, 13, 1)),  # type: ignore
+        hours: tuple[int] = tuple(range(0, 24, 1)),  # type: ignore
+        years: tuple[int] = tuple(range(1900, 2100, 1)),
+    ) -> "Wind":
         """Filter the current object by month and hour.
 
         Args:
-            months (List[int], optional):
+            months (list[int], optional):
                 A list of months. Defaults to all months.
-            hours (List[int], optional):
+            hours (list[int], optional):
                 A list of hours. Defaults to all hours.
-            years (Tuple[int], optional):
+            years (tuple[int], optional):
                 A list of years to include. Default to all years since 1900.
 
         Returns:
@@ -640,7 +647,7 @@ class Wind(BHoMObject):
 
     def filter_by_direction(
         self, left_angle: float = 0, right_angle: float = 360, inclusive: bool = True
-    ) -> Wind:
+    ) -> "Wind":
         """Filter the current object by wind direction, based on the angle as observed from a location.
 
         Args:
@@ -682,7 +689,7 @@ class Wind(BHoMObject):
 
     def filter_by_speed(
         self, min_speed: float = 0, max_speed: float = 999, inclusive: bool = True
-    ) -> Wind:
+    ) -> "Wind":
         """Filter the current object by wind speed, based on given low-high limit values.
 
         Args:
@@ -718,7 +725,7 @@ class Wind(BHoMObject):
 
     def frequency_table(
         self,
-        speed_bins: Tuple[float] = (0, 0.1) + tuple(range(2, 39, 2)) + (np.inf,),
+        speed_bins: tuple[float] = (0, 0.1) + tuple(range(2, 39, 2)) + (np.inf,),
         direction_bins: DirectionBins = DirectionBins(),
         density: bool = False,
         include_counts: bool = False,
@@ -726,8 +733,9 @@ class Wind(BHoMObject):
         """Create a table with wind direction per rows, and wind speed per column.
 
         Args:
-            speed_bins (List[float], optional):
-                A list of bins edges, between which wind speeds will be binned. Defaults to (0, 0.1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 99.9).
+            speed_bins (list[float], optional):
+                A list of bins edges, between which wind speeds will be binned.
+                Defaults to (0, 0.1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 99.9).
             direction_bins (DirectionBins, optional):
                 A DirectionBins object. Defaults to DirectionBins().
             density (bool, optional):
@@ -769,7 +777,7 @@ class Wind(BHoMObject):
 
         return df.T
 
-    def weibull_pdf(self) -> Tuple[float]:
+    def weibull_pdf(self) -> tuple[float]:
         """Calculate the parameters of an exponentiated Weibull continuous random variable.
 
         Returns:
@@ -803,7 +811,7 @@ class Wind(BHoMObject):
         target_height: float,
         terrain_roughness_length: float = 1,
         log_function: bool = True,
-    ) -> Wind:
+    ) -> "Wind":
         """Translate the object to a different height above ground.
 
         Args:
@@ -828,14 +836,14 @@ class Wind(BHoMObject):
         return Wind(ws.tolist(), self.wd.tolist(), self.datetimes, target_height)  # type: ignore
 
     def apply_directional_factors(
-        self, direction_bins: DirectionBins, factors: Tuple[float]
-    ) -> Wind:
+        self, direction_bins: DirectionBins, factors: tuple[float]
+    ) -> "Wind":
         """Adjust wind speed values by a set of factors per direction.
 
         Args:
             direction_bins (DirectionBins):
                 The number of directions to bin wind-directions into.
-            factors (Tuple[float], optional):
+            factors (tuple[float], optional):
                 Adjustment factors per direction. Defaults to (i for i in range(8)).
 
         Returns:
@@ -927,11 +935,11 @@ class Wind(BHoMObject):
 
         return df
 
-    def to_csv(self, csv_path: Union[str, Path]) -> Path:
+    def to_csv(self, csv_path: Path) -> Path:
         """Save this object as a csv file.
 
         Args:
-            csv_path (Union[str, Path]):
+            csv_path (Path):
                 The path containing the CSV file.
 
         Returns:
@@ -1010,7 +1018,7 @@ class Wind(BHoMObject):
         self,
         ax: plt.Axes = None,
         direction_bins: DirectionBins = DirectionBins(),
-        bins: Union[int, List[float]] = BEAUFORT_CATEGORIES.bins,
+        bins: int | list[float] = BEAUFORT_CATEGORIES.bins,
         include_legend: bool = True,
         include_percentages: bool = False,
         calm_threshold: float = 0.1,
@@ -1023,13 +1031,13 @@ class Wind(BHoMObject):
                 The axes to plot on. If None, the current axes will be used.
             direction_bins (DirectionBins, optional):
                 A DirectionBins object.
-            bins (Union[int, List[float], CategoriesBase], optional):
+            bins (int | list[float] | CategoriesBase, optional):
                 Bins to sort data into. Defaults to Beaufort scale.
             include_legend (bool, optional):
                 Set to True to include the legend. Defaults to True.
             include_percentages (bool, optional):
                 Add bin totals as % to rose. Defaults to False.
-            cmap (Union[Colormap, str], optional):
+            cmap (Colormap | str, optional):
                 Use a custom colormap. Defaults to "YlGnBu".
             include_calm_threshold (bool, optional):
                 Set to True to include the calm threshold in the legend. Defaults to True.
@@ -1064,22 +1072,30 @@ class Wind(BHoMObject):
     def plot_windhist(
         self,
         direction_bins: DirectionBins = DirectionBins(),
-        speed_bins: List[float] = None,
+        speed_bins: list[float] = None,
         density: bool = False,
         include_cbar: bool = True,
         title: str = None,
-        cmap: Union[Colormap, str] = "magma_r",
+        cmap: Colormap | str = "magma_r",
         calm_threshold: float = 0.1,
     ) -> plt.Axes:
         """_summary_
 
         Args:
-            direction_bins (DirectionBins, optional): _description_. Defaults to DirectionBins().
-            speed_bins (List[float], optional): _description_. Defaults to None.
-            density (bool, optional): _description_. Defaults to False.
-            include_cbar (bool, optional): _description_. Defaults to True.
-            title (str, optional): _description_. Defaults to None.
-            cmap (Union[Colormap, str], optional): _description_. Defaults to "magma_r".
+            direction_bins (DirectionBins, optional):
+                The direction bins to use. Defaults to DirectionBins().
+            speed_bins (list[float], optional):
+                The speed bins to use. Defaults to None.
+            density (bool, optional):
+                Whether to return density or count. Defaults to False for count.
+            include_cbar (bool, optional):
+                Show colorbar. Defaults to True.
+            title (str, optional):
+                Add a title. Defaults to None.
+            cmap (Union[Colormap, str], optional):
+                Set the colormap. Defaults to "magma_r".
+            calm_threshold (float, optional):
+                The calm threshold to use. Defaults to 0.1.
 
         Returns:
             plt.Axes: _description_
@@ -1159,7 +1175,9 @@ class Wind(BHoMObject):
             **kwargs,
         )
 
-    def plot_speed_frequency(self, title: str = None, speed_bins: Union[List[float], int] = None) -> plt.Figure:  # type: ignore
+    def plot_speed_frequency(
+        self, title: str = None, speed_bins: list[float] | int = None
+    ) -> plt.Figure:
         """Create a histogram showing wind speed frequency"""
 
         # TODO - remake this figure generation as a plt.Axes object!
@@ -1190,7 +1208,7 @@ class Wind(BHoMObject):
         )
 
     def plot_cumulative_probability(
-        self, percentiles: Tuple[float] = (0.5, 0.95), title: str = None
+        self, percentiles: tuple[float] = (0.5, 0.95), title: str = None
     ) -> plt.Figure:  # type: ignore
         """Create a cumulative probability plot"""
 
@@ -1208,10 +1226,10 @@ class Wind(BHoMObject):
 
     # def plot_windrose_matrix(
     #     self,
-    #     month_bins: Tuple[List[int]],
-    #     hour_bins: Tuple[List[int]],
+    #     month_bins: tuple[list[int]],
+    #     hour_bins: tuple[list[int]],
     #     direction_bins: DirectionBins = DirectionBins(),
-    #     data_bins: List[float] = None,
+    #     data_bins: list[float] = None,
     #     title: str = None,
     # ) -> plt.Figure:
     #     """Create a plot showing the annual wind direction in a matrix of month and hour bins."""
@@ -1229,18 +1247,18 @@ class Wind(BHoMObject):
 
 
 # def weighted_wind_speed_direction(
-#     wind_speeds: List[float], wind_directions: List[float]
-# ) -> List[float]:
+#     wind_speeds: list[float], wind_directions: list[float]
+# ) -> list[float]:
 #     """Return a speed-weighted average wind direction and speed for a set of input wind speeds and directions.
 
 #     Args:
-#         wind_speeds (List[float]):
+#         wind_speeds (list[float]):
 #             A collection of wind speeds, in m/s.
-#         wind_directions (List[float]):
+#         wind_directions (list[float]):
 #             A collection of wind directions, in degrees from North (0).
 
 #     Returns:
-#         List[float]:
+#         list[float]:
 #             A weighted average wind speed and direction.
 #     """
 #     warnings.warn("UNDER DEFVEKLOPMENT")

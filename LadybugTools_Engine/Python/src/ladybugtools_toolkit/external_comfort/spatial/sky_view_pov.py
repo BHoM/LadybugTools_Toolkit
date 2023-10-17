@@ -1,4 +1,4 @@
-from typing import Union
+"""Methods for visualising sky-view at a given location."""
 
 from honeybee.model import Model
 from ladybug.datacollection import HourlyContinuousCollection
@@ -19,7 +19,7 @@ def sky_view_pov(
     sensor: Point3D,
     epw: EPW,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
-    cmap: Union[Colormap, str] = "viridis",
+    cmap: Colormap | str = "viridis",
     norm: BoundaryNorm = None,
     data_collection: HourlyContinuousCollection = None,
     density: int = 1,
@@ -120,7 +120,7 @@ def sky_view_pov(
                 (255, 255, 255),
                 font=font,
             )
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             draw.text(
                 (5, 5),
                 title,

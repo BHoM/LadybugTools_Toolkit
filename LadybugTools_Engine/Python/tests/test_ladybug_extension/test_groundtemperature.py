@@ -1,13 +1,11 @@
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.ground_temperature import (
+from ladybugtools_toolkit.ladybug_extension.groundtemperature import (
     ground_temperature_at_depth,
     hourly_ground_temperature,
     monthly_ground_temperature,
 )
 
-from .. import EPW_FILE
-
-EPW_OBJ = EPW(EPW_FILE)
+from .. import EPW_OBJ
 
 
 def test_ground_temperature_at_depth():

@@ -1,5 +1,6 @@
-import warnings
-from typing import Tuple, Union
+"""Methods for plotting Ladybug Geometry objects."""
+# TODO - add more to this module
+import warnings  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,22 +17,33 @@ from ladybug_geometry.geometry2d import (
 
 
 def plot_lb_geo_2d(
-    lb_geometry: Tuple[
-        Union[
-            Mesh2D,
-            Polygon2D,
-            Point2D,
-            Vector2D,
-            LineSegment2D,
-            Arc2D,
-            Polyline2D,
-            Ray2D,
-        ]
+    lb_geometry: tuple[
+        Mesh2D
+        | Polygon2D
+        | Point2D
+        | Vector2D
+        | LineSegment2D
+        | Arc2D
+        | Polyline2D
+        | Ray2D
     ],
     ax: plt.Axes = None,
     **kwargs,
 ) -> plt.Axes:
-    """Example method for creating 2D geometry from LB Geometry objects."""
+    """Example method for creating 2D geometry from LB Geometry objects.
+
+    Args:
+        lb_geometry (tuple[Mesh2D | Polygon2D | Point2D | Vector2D | LineSegment2D | Arc2D | Polyline2D | Ray2D]):
+            A tuple of LB Geometry objects.
+        ax (plt.Axes, optional):
+            A matplotlib Axes object to plot on. Defaults to None.
+        **kwargs:
+            Keyword arguments to pass to the matplotlib plotting methods.
+
+    Returns:
+        plt.Axes:
+            The matplotlib Axes object.
+    """
     warnings.warn(
         "This method is undeveloped and needs splitting into multiple methods."
     )

@@ -1,6 +1,10 @@
+"""Methods for manipulating Ladybug analysis periods."""
+
+# pylint: disable=E0401
 import calendar
 from datetime import datetime
-from typing import List, Union
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
@@ -15,10 +19,12 @@ def analysis_period_to_datetimes(
     """Convert an AnalysisPeriod object into a Pandas DatetimeIndex.
 
     Args:
-        analysis_period (AnalysisPeriod): An AnalysisPeriod object.
+        analysis_period (AnalysisPeriod):
+            An AnalysisPeriod object.
 
     Returns:
-        pd.DatetimeIndex: A Pandas DatetimeIndex object.
+        pd.DatetimeIndex:
+            A Pandas DatetimeIndex object.
     """
 
     datetimes = pd.to_datetime(analysis_period.datetimes)
@@ -27,15 +33,19 @@ def analysis_period_to_datetimes(
 
 
 def analysis_period_to_boolean(
-    analysis_periods: Union[List[AnalysisPeriod], AnalysisPeriod],
-) -> List[bool]:
-    """Convert an AnalysisPeriod object into a list of booleans where values within the Period are also within a default whole analysis period of the same interval.
+    analysis_periods: list[AnalysisPeriod] | AnalysisPeriod,
+) -> list[bool]:
+    """Convert an AnalysisPeriod object into a list of booleans where values
+    within the Period are also within a default whole analysis period of the
+    same interval.
 
     Args:
-        analysis_periods (List[AnalysisPeriod]): A list of AnalysisPeriod objects.
+        analysis_periods (list[AnalysisPeriod]):
+            A list of AnalysisPeriod objects.
 
     Returns:
-        List[bool]: A list of booleans
+        list[bool]:
+            A list of booleans
     """
 
     if isinstance(analysis_periods, AnalysisPeriod):
@@ -53,7 +63,9 @@ def analysis_period_to_boolean(
         AnalysisPeriod(timestep=analysis_periods[0].timestep)
     )
 
-    # for each analysis period in analysis_periods, create a list of booleans where values within the Period are also within a default whole analysis period of the same interval
+    # for each analysis period in analysis_periods, create a list of booleans
+    # where values within the Period are also within a default whole analysis
+    # period of the same interval
     bools = []
     for ap in analysis_periods:
         bools.append(generic_datetimes.isin(analysis_period_to_datetimes(ap)))
@@ -61,14 +73,17 @@ def analysis_period_to_boolean(
     return np.any(bools, axis=0)
 
 
-def analysis_period_from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
-    """Convert a list of datetimes (in order from earliest to latest) into an AnalysisPeriod object.
+def analysis_period_from_datetimes(datetimes: list[datetime]) -> AnalysisPeriod:
+    """Convert a list of datetimes (in order from earliest to latest) into an
+    AnalysisPeriod object.
 
     Args:
-        datetimes (List[datetime]): A list of datetimes.
+        datetimes (list[datetime]):
+            qA list of datetimes.
 
     Returns:
-        AnalysisPeriod: An AnalysisPeriod object.
+        AnalysisPeriod:
+            An AnalysisPeriod object.
     """
 
     inferred_timestep = (60 * 60) / (datetimes[1] - datetimes[0]).seconds
@@ -89,19 +104,23 @@ def analysis_period_from_datetimes(datetimes: List[datetime]) -> AnalysisPeriod:
 
 
 def describe_analysis_period(
-    analysis_period: List[AnalysisPeriod],
+    analysis_period: list[AnalysisPeriod],
     save_path: bool = False,
     include_timestep: bool = False,
 ) -> str:
     """Create a description of the given analysis period.
 
     Args:
-        analysis_period (AnalysisPeriod): A Ladybug analysis period.
-        save_path (bool, optional): If True, create a path-safe string from the analysis period.
-        include_timestep (bool, optional): If True, include the timestep in the description.
+        analysis_period (AnalysisPeriod):
+            A Ladybug analysis period.
+        save_path (bool, optional):
+            If True, create a path-safe string from the analysis period.
+        include_timestep (bool, optional):
+            If True, include the timestep in the description.
 
     Returns:
-        str: A description of the analysis period.
+        str:
+            A description of the analysis period.
     """
 
     if isinstance(analysis_period, AnalysisPeriod):
@@ -134,13 +153,24 @@ def describe_analysis_period(
             raise ValueError("Only one analysis period can be used for a save path.")
         analysis_period = analysis_period[0]
         if include_timestep:
-            return f"{analysis_period.st_month:02}{analysis_period.st_day:02}_{analysis_period.end_month:02}{analysis_period.end_day:02}_{analysis_period.st_hour:02}_{analysis_period.end_hour:02}_{analysis_period.timestep:02}"
-        return f"{analysis_period.st_month:02}{analysis_period.st_day:02}_{analysis_period.end_month:02}{analysis_period.end_day:02}_{analysis_period.st_hour:02}_{analysis_period.end_hour:02}"
+            return (
+                f"{analysis_period.st_month:02}{analysis_period.st_day:02}_"
+                f"{analysis_period.end_month:02}{analysis_period.end_day:02}_"
+                f"{analysis_period.st_hour:02}_{analysis_period.end_hour:02}_"
+                f"{analysis_period.timestep:02}"
+            )
+        return (
+            f"{analysis_period.st_month:02}{analysis_period.st_day:02}_"
+            f"{analysis_period.end_month:02}{analysis_period.end_day:02}_"
+            f"{analysis_period.st_hour:02}_{analysis_period.end_hour:02}"
+        )
 
     base_str = []
     for ap in analysis_period:
         base_str.append(
-            f"{calendar.month_abbr[ap.st_month]} {ap.st_day:02} to {calendar.month_abbr[ap.end_month]} {ap.end_day:02} between {ap.st_hour:02}:00 and {ap.end_hour:02}:59"
+            f"{calendar.month_abbr[ap.st_month]} {ap.st_day:02} to "
+            f"{calendar.month_abbr[ap.end_month]} {ap.end_day:02} between "
+            f"{ap.st_hour:02}:00 and {ap.end_hour:02}:59"
         )
     base_str = ", and ".join(base_str)
 
@@ -151,12 +181,12 @@ def describe_analysis_period(
 
 
 def do_analysis_periods_represent_entire_year(
-    analysis_periods: List[AnalysisPeriod],
+    analysis_periods: list[AnalysisPeriod],
 ) -> bool:
     """Check a list of analysis periods to see if they represent an entire year.
 
     Args:
-        analysis_periods (List[AnalysisPeriod]):
+        analysis_periods (list[AnalysisPeriod]):
             A list of analysis periods.
 
     Returns:
@@ -167,7 +197,8 @@ def do_analysis_periods_represent_entire_year(
     """
     if any(ap.end_hour < ap.st_hour for ap in analysis_periods):
         raise ValueError(
-            "To combine time periods crossing midnight, AnalysisPeriod should be split into two parts - one for either side of midnight."
+            "To combine time periods crossing midnight, AnalysisPeriod should "
+            "be split into two parts - one for either side of midnight."
         )
 
     # Validation
@@ -178,7 +209,8 @@ def do_analysis_periods_represent_entire_year(
         ap.is_leap_year != analysis_periods[0].is_leap_year for ap in analysis_periods
     ):
         raise ValueError(
-            "All input analysis periods must be either leap year, or not leap year. Mixed leapedness is not allowed."
+            "All input analysis periods must be either leap year, or not leap "
+            "year. Mixed leapedness is not allowed."
         )
 
     target_datetimes = analysis_period_to_datetimes(AnalysisPeriod())
@@ -194,17 +226,23 @@ def do_analysis_periods_represent_entire_year(
     if actual_timesteps > target_timesteps:
         duplicates = actual_datetimes[actual_datetimes.duplicated()]
         raise ValueError(
-            f"The number of timesteps contained within the input analysis periods is greater than {target_timesteps}. Duplicate timesteps are {duplicates}"
+            "The number of timesteps contained within the input analysis "
+            f"periods is greater than {target_timesteps}. Duplicate timesteps "
+            f"are {duplicates}"
         )
     if actual_timesteps < target_timesteps:
+        # pylint: disable=E1125
         missing = (
             pd.DatetimeIndex(list(set(target_datetimes) - set(actual_datetimes)))
             .to_series()
             .sort_index()
             .index
         )
+        # pylint: enable=E1125
         raise ValueError(
-            f"The number of timesteps contained within the input analysis periods is less than {target_timesteps}. Missing timesteps are {missing}"
+            "The number of timesteps contained within the input analysis "
+            f"periods is less than {target_timesteps}. Missing timesteps "
+            f"are {missing}"
         )
 
     return True

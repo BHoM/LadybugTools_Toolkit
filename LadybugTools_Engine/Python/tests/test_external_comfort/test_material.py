@@ -2,12 +2,21 @@
 
 import numpy as np
 import pytest
-from ladybugtools_toolkit.new_external_comfort.material import get_material, materials
+from ladybugtools_toolkit.external_comfort.material import (
+    _custom_materials,
+    _ice_tool_materials,
+    _lbt_materials,
+    get_material,
+    materials,
+)
+
+TEST_GROUND_MATERIAL = get_material("Concrete Pavement")
+TEST_SHADE_MATERIAL = get_material("Fabric")
 
 
 def test_lbt_materials():
     """_"""
-    _materials = materials()
+    _materials = _lbt_materials()
     assert len(_materials) == 114
     assert _materials[0].identifier == "Generic Roof Membrane"
     assert _materials[-1].identifier == "Grassy Lawn"
@@ -18,7 +27,7 @@ def test_lbt_materials():
 
 def test_ice_tool_materials():
     """_"""
-    _materials = materials()
+    _materials = _ice_tool_materials()
     assert len(_materials) == 39
     assert _materials[0].identifier == "SD1 - Quartzite (Beige/brown/black New/Rough)"
     assert _materials[-1].identifier == "WT1 - Water small (- -)"
@@ -29,7 +38,7 @@ def test_ice_tool_materials():
 
 def test_custom_materials():
     """_"""
-    _materials = materials()
+    _materials = _custom_materials()
     assert len(_materials) == 3
     assert _materials[0].identifier == "Fabric"
     assert _materials[-1].identifier == "Travertine"

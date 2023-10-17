@@ -1,14 +1,8 @@
-from warnings import warn
+"""Methods for calculating the Solar Reflective Index (SRI) of materials and constructions."""
 
 import numpy as np
-import pandas as pd
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.material.opaque import EnergyMaterial
-from ladybug.epw import EPW
-from sklearn.linear_model import LinearRegression
-
-from ..ladybug_extension.datacollection import collection_to_array
-from ..ladybug_extension.epw import collection_to_series, sun_up_bool
 
 
 def calculate_sri(

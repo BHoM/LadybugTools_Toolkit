@@ -1,7 +1,11 @@
+"""Methods for determining the Koeppen climate classification of a location."""
+
+# pylint: disable=E0401
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Tuple, Union
+
+# pylint: enable=E0401
 
 import pandas as pd
 from ladybug.epw import EPW, Location
@@ -281,12 +285,12 @@ class KoeppenClimateClassifications(Enum):
 
 
 def koeppen_classification(
-    arg: Union[EPW, Location, str, Path, Tuple[float]]
+    arg: EPW | Location | Path | tuple[float],
 ) -> KoeppenClassification:
     """For the given EPW object, return a dict containing Koeppen climate classification data
 
     Args:koeppenAS
-        arg (Union[EPW, str, Path, Tuple[float]):
+        arg (EPW | Location | Path | tuple[float]):
             An EPW object, or a tuple of (latitude, longitude) values, or a string or Path to an EPW file.
 
     Returns:
@@ -304,7 +308,8 @@ def koeppen_classification(
         location = Location(latitude=arg[0], longitude=arg[1])
     else:
         raise TypeError(
-            f"Expected an EPW object, a tuple of (latitude, longitude) values, or a string or Path to an EPW file. Got {type(arg)}"
+            "Expected an EPW object, a tuple of (latitude, longitude) values, "
+            f"or a string or Path to an EPW file. Got {type(arg)}"
         )
 
     # Load koeppen climate lookup dataset
