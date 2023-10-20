@@ -7,6 +7,7 @@ import warnings
 
 import numpy as np
 
+from ..bhom import decorator_factory
 from ._typologybase import Typology
 from .shelter import (
     east_wall,
@@ -26,12 +27,14 @@ from .shelter import (
 )
 
 
+@decorator_factory()
 def openfield() -> Typology:
     return Typology(
         name="Openfield",
     )
 
 
+@decorator_factory()
 def enclosed() -> Typology:
     return Typology(
         name="Enclosed",
@@ -45,6 +48,7 @@ def enclosed() -> Typology:
     )
 
 
+@decorator_factory()
 def porous_enclosure() -> Typology:
     return Typology(
         name="Porous enclosure",
@@ -58,6 +62,7 @@ def porous_enclosure() -> Typology:
     )
 
 
+@decorator_factory()
 def sky_shelter() -> Typology:
     return Typology(
         name="Sky-shelter",
@@ -67,6 +72,7 @@ def sky_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def fritted_sky_shelter() -> Typology:
     return Typology(
         name="Fritted sky-shelter",
@@ -76,6 +82,7 @@ def fritted_sky_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def near_water() -> Typology:
     return Typology(
         name="Near water",
@@ -83,6 +90,7 @@ def near_water() -> Typology:
     )
 
 
+@decorator_factory()
 def misting() -> Typology:
     return Typology(
         name="Misting",
@@ -90,6 +98,7 @@ def misting() -> Typology:
     )
 
 
+@decorator_factory()
 def pdec() -> Typology:
     return Typology(
         name="PDEC",
@@ -97,6 +106,7 @@ def pdec() -> Typology:
     )
 
 
+@decorator_factory()
 def north_shelter() -> Typology:
     return Typology(
         name="North shelter",
@@ -106,18 +116,22 @@ def north_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def northeast_shelter() -> Typology:
     return Typology(name="Northeast shelter", shelters=[northeast_wall()])
 
 
+@decorator_factory()
 def east_shelter() -> Typology:
     return Typology(name="East shelter", shelters=[east_wall()])
 
 
+@decorator_factory()
 def southeast_shelter() -> Typology:
     return Typology(name="Southeast shelter", shelters=[southeast_wall()])
 
 
+@decorator_factory()
 def south_shelter() -> Typology:
     return Typology(
         name="South shelter",
@@ -127,18 +141,22 @@ def south_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def southwest_shelter() -> Typology:
     return Typology(name="Southwest shelter", shelters=[southwest_wall()])
 
 
+@decorator_factory()
 def west_shelter() -> Typology:
     return Typology(name="West shelter", shelters=[west_wall()])
 
 
+@decorator_factory()
 def northwest_shelter() -> Typology:
     return Typology(name="Northwest shelter", shelters=[northwest_wall()])
 
 
+@decorator_factory()
 def north_shelter_with_canopy() -> Typology:
     return Typology(
         name="North shelter with canopy",
@@ -149,6 +167,7 @@ def north_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def northeast_shelter_with_canopy() -> Typology:
     return Typology(
         name="Northeast shelter with canopy",
@@ -159,6 +178,7 @@ def northeast_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def east_shelter_with_canopy() -> Typology:
     return Typology(
         name="East shelter with canopy",
@@ -169,6 +189,7 @@ def east_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def southeast_shelter_with_canopy() -> Typology:
     return Typology(
         name="Southeast shelter with canopy",
@@ -179,6 +200,7 @@ def southeast_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def south_shelter_with_canopy() -> Typology:
     return Typology(
         name="South shelter with canopy",
@@ -189,6 +211,7 @@ def south_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def southwest_shelter_with_canopy() -> Typology:
     return Typology(
         name="Southwest shelter with canopy",
@@ -199,6 +222,7 @@ def southwest_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def west_shelter_with_canopy() -> Typology:
     return Typology(
         name="West shelter with canopy",
@@ -209,6 +233,7 @@ def west_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def northwest_shelter_with_canopy() -> Typology:
     return Typology(
         name="Northwest shelter with canopy",
@@ -219,6 +244,7 @@ def northwest_shelter_with_canopy() -> Typology:
     )
 
 
+@decorator_factory()
 def north_south_linear_shelter() -> Typology:
     return Typology(
         name="North-south linear overhead shelter",
@@ -228,6 +254,7 @@ def north_south_linear_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def northeast_southwest_linear_shelter() -> Typology:
     return Typology(
         name="Northeast-southwest linear overhead shelter",
@@ -237,6 +264,7 @@ def northeast_southwest_linear_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def east_west_linear_shelter() -> Typology:
     return Typology(
         name="East-west linear overhead shelter",
@@ -246,6 +274,7 @@ def east_west_linear_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def northwest_southeast_linear_shelter() -> Typology:
     return Typology(
         name="Northwest-southeast linear overhead shelter",
@@ -255,6 +284,7 @@ def northwest_southeast_linear_shelter() -> Typology:
     )
 
 
+@decorator_factory()
 def combine_typologies(
     typologies: list[Typology],
     evaporative_cooling_effect_weights: list[float] = None,

@@ -490,6 +490,7 @@ class SimulationResult(BaseModel):
             axis=1,
         )
 
+    @decorator_factory()
     def description(self) -> str:
         """_"""
         return (

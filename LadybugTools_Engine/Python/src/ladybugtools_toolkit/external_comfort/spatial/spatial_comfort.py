@@ -119,13 +119,13 @@ class SpatialComfort:
         self._unshaded_utci = utci(
             self.simulation_result.epw.dry_bulb_temperature,
             self.simulation_result.epw.relative_humidity,
-            self.simulation_result.UnshadedMeanRadiantTemperature,
+            self.simulation_result.unshaded_mean_radiant_temperature,
             self.simulation_result.epw.wind_speed,
         )
         self._shaded_utci = utci(
             self.simulation_result.epw.dry_bulb_temperature,
             self.simulation_result.epw.relative_humidity,
-            self.simulation_result.ShadedMeanRadiantTemperature,
+            self.simulation_result.shaded_mean_radiant_temperature,
             self.simulation_result.epw.wind_speed,
         )
 
@@ -487,8 +487,8 @@ class SpatialComfort:
 
             CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
             df = shaded_unshaded_interpolation(
-                unshaded_value=self.simulation_result.UnshadedMeanRadiantTemperature.values,
-                shaded_value=self.simulation_result.ShadedMeanRadiantTemperature.values,
+                unshaded_value=self.simulation_result.unshaded_mean_radiant_temperature.values,
+                shaded_value=self.simulation_result.shaded_mean_radiant_temperature.values,
                 total_irradiance=self.irradiance_total.values,
                 sky_view=self.sky_view.squeeze().values,
                 sun_up=[
@@ -692,7 +692,7 @@ class SpatialComfort:
 
     def calculate_comfortable_time_percentage(
         self,
-        analysis_periods: tuple(AnalysisPeriod) = (AnalysisPeriod(),),
+        analysis_periods: tuple[AnalysisPeriod] = (AnalysisPeriod(),),
         comfort_limits: tuple[float] = (9, 26),
     ) -> pd.Series:
         """Calculate the proportion of comfortable hours for each point in the Spatial case."""

@@ -1,7 +1,6 @@
-import warnings
-
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pytest
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug_comfort.collection.utci import UTCI
@@ -20,7 +19,6 @@ from ladybugtools_toolkit.plot._utci import (
     utci_journey,
     utci_pie,
 )
-from ladybugtools_toolkit.plot._wind import windrose
 from ladybugtools_toolkit.plot.colormaps import colormap_sequential
 from ladybugtools_toolkit.plot.spatial_heatmap import spatial_heatmap
 from ladybugtools_toolkit.plot.utilities import (
@@ -28,6 +26,9 @@ from ladybugtools_toolkit.plot.utilities import (
     create_triangulation,
     lighten_color,
     relative_luminance,
+)
+from ladybugtools_toolkit.plot._radiant_cooling_potential import (
+    radiant_cooling_potential,
 )
 
 from . import EPW_OBJ
@@ -121,6 +122,19 @@ def test_spatial_heatmap():
     plt.close("all")
 
 
+def test_radiant_cooling_potential():
+    """_"""
+    # create a pandas series of dew point temperature
+    dpt = collection_to_series(EPW_OBJ.dew_point_temperature)
+
+    # call the function
+    ax = radiant_cooling_potential(dpt)
+
+    # check that the returned object is a matplotlib axes
+    assert isinstance(ax, plt.Axes)
+    plt.close("all")
+
+
 def test_sunpath():
     """_"""
     assert isinstance(
@@ -182,8 +196,8 @@ def test_utci_day_comfort_metrics():
         utci_day_comfort_metrics(
             collection_to_series(LB_UTCI_COLLECTION),
             collection_to_series(EPW_OBJ.dry_bulb_temperature),
-            collection_to_series(EPW_OBJ.dry_bulb_temperature).rename(
-                "Mean Radiant Temperature (C)"
+            collection_to_series(
+                EPW_OBJ.dry_bulb_temperature, "Mean Radiant Temperature (C)"
             ),
             collection_to_series(EPW_OBJ.relative_humidity),
             collection_to_series(EPW_OBJ.wind_speed),
@@ -245,24 +259,6 @@ def test_utci_comfort_band_comparison():
         utci_comfort_band_comparison([LB_UTCI_COLLECTION, LB_UTCI_COLLECTION + 1]),
         plt.Axes,
     )
-    plt.close("all")
-
-
-def test_windrose():
-    """_"""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        assert isinstance(
-            windrose(
-                wind_directions=EPW_OBJ.wind_direction.values,
-                data=EPW_OBJ.wind_speed.values,
-                ax=None,
-                data_bins=[0, 90, 180, 270, 360],
-                include_legend=False,
-                include_percentages=True,
-            ),
-            plt.Axes,
-        )
     plt.close("all")
 
 

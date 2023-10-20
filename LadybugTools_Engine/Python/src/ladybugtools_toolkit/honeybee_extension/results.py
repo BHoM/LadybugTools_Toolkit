@@ -11,11 +11,11 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 from ladybug.sql import SQLiteResult
-
+from ..bhom import decorator_factory
 from ..ladybug_extension.datacollection import collection_to_series
 
 
-def load_files(func: Callable, files: list[Path]) -> pd.DataFrame:
+def _load_files(func: Callable, files: list[Path]) -> pd.DataFrame:
     """Load a set of input files and combine into a DataFrame with filename as header.
 
     Args:
@@ -48,7 +48,7 @@ def load_files(func: Callable, files: list[Path]) -> pd.DataFrame:
     return pd.concat([func(i) for i in files], axis=1).sort_index(axis=1)
 
 
-def load_ill_file(ill_file: Path, sun_up_hours_file: Path = None) -> pd.DataFrame:
+def _load_ill_file(ill_file: Path, sun_up_hours_file: Path = None) -> pd.DataFrame:
     """Load a Radiance .ill file and return a DataFrame with the data.
 
     Args:
@@ -71,6 +71,7 @@ def load_ill_file(ill_file: Path, sun_up_hours_file: Path = None) -> pd.DataFram
     return df
 
 
+@decorator_factory()
 def load_ill(ill_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .ill file, or list of Radiance .ill files and return a combined DataFrame with the data.
 
@@ -82,10 +83,10 @@ def load_ill(ill_files: Path | list[Path]) -> pd.DataFrame:
         pd.DataFrame:
             A DataFrame containing the data from the input .ill files.
     """
-    return load_files(load_ill_file, ill_files)
+    return _load_files(_load_ill_file, ill_files)
 
 
-def load_npy_file(npy_file: Path) -> pd.DataFrame:
+def _load_npy_file(npy_file: Path) -> pd.DataFrame:
     """Load a Honeybee-Radiance .npy file and return a DataFrame with the data.
 
     Args:
@@ -110,6 +111,7 @@ def load_npy_file(npy_file: Path) -> pd.DataFrame:
     return df
 
 
+@decorator_factory()
 def load_npy(npy_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Honeybee-Radiance .npy file, or list of Honeybee-Radiance
     .npy files and return a combined DataFrame with the data.
@@ -120,10 +122,10 @@ def load_npy(npy_files: Path | list[Path]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .npy files.
     """
-    return load_files(load_npy_file, npy_files)
+    return _load_files(_load_npy_file, npy_files)
 
 
-def load_pts_file(pts_file: Path) -> pd.DataFrame:
+def _load_pts_file(pts_file: Path) -> pd.DataFrame:
     """Load a Radiance .pts file and return a DataFrame with the data.
 
     Args:
@@ -140,6 +142,7 @@ def load_pts_file(pts_file: Path) -> pd.DataFrame:
     return df
 
 
+@decorator_factory()
 def load_pts(pts_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .pts file, or list of Radiance .pts files and return a combined DataFrame with the data.
 
@@ -149,10 +152,10 @@ def load_pts(pts_files: Path | list[Path]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .pts files.
     """
-    return load_files(load_pts_file, pts_files)
+    return _load_files(_load_pts_file, pts_files)
 
 
-def load_res_file(res_file: Path) -> pd.Series:
+def _load_res_file(res_file: Path) -> pd.Series:
     """Load a Radiance .res file and return a DataFrame with the data.
 
     NOTE: This also works with daylight metrics files (da, cda, udi, udi_lower and udi_upper).
@@ -169,6 +172,7 @@ def load_res_file(res_file: Path) -> pd.Series:
     return series
 
 
+@decorator_factory()
 def load_res(res_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .res file, or list of Radiance .res files and return a combined DataFrame with the data.
 
@@ -180,10 +184,10 @@ def load_res(res_files: Path | list[Path]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .res files.
     """
-    return load_files(load_res_file, res_files)
+    return _load_files(_load_res_file, res_files)
 
 
-def load_sql_file(sql_file: Path) -> pd.DataFrame:
+def _load_sql_file(sql_file: Path) -> pd.DataFrame:
     """Return a DataFrame with hourly values along rows and variables along columns.
 
     Args:
@@ -243,6 +247,7 @@ def load_sql_file(sql_file: Path) -> pd.DataFrame:
     return df
 
 
+@decorator_factory()
 def load_sql(sql_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single EnergyPlus .sql file, or list of EnergyPlus .sql
     files and return a combined DataFrame with the data.
@@ -253,9 +258,10 @@ def load_sql(sql_files: Path | list[Path]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .sql files.
     """
-    return load_files(load_sql_file, sql_files)
+    return _load_files(_load_sql_file, sql_files)
 
 
+@decorator_factory()
 def load_sun_up_hours(sun_up_hours_file: Path, year: int = 2017) -> pd.DatetimeIndex:
     """Load a HB-Radiance generated sun-up-hours.txt file and return a DatetimeIndex with the data.
 
@@ -279,6 +285,7 @@ def load_sun_up_hours(sun_up_hours_file: Path, year: int = 2017) -> pd.DatetimeI
     return index
 
 
+@decorator_factory()
 def make_annual(df: pd.DataFrame) -> pd.DataFrame:
     """Convert a DataFrame with partial annual data to a DataFrame with annual data.
 

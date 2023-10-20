@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from ..bhom import decorator_factory
 from ..helpers import validate_timeseries
 
 
+@decorator_factory()
 def heatmap(
     series: pd.Series,
     ax: plt.Axes = None,

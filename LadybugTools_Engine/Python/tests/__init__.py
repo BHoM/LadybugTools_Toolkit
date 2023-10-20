@@ -12,18 +12,20 @@ BASE_IDENTIFIER = "pytest"
 hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"
 
 # set identifiers for ExternalComfort simulation and SpatialComfort simulation
-EXTERNAL_COMFORT_IDENTIFIER = f"{BASE_IDENTIFIER}_EC"
+EXTERNAL_COMFORT_IDENTIFIER = f"{BASE_IDENTIFIER}_external_comfort"
 EXTERNAL_COMFORT_DIRECTORY = (
     Path(hb_folders.default_simulation_folder) / EXTERNAL_COMFORT_IDENTIFIER
 )
-SPATIAL_COMFORT_IDENTIFIER = f"{BASE_IDENTIFIER}_SC"
+SPATIAL_COMFORT_IDENTIFIER = f"{BASE_IDENTIFIER}_spatial_comfort"
 SPATIAL_COMFORT_DIRECTORY = (
     Path(hb_folders.default_simulation_folder) / SPATIAL_COMFORT_IDENTIFIER
 )
 
 # set source files used in testing
-MODEL_FILE = Path(__file__).parent / "assets" / "example.hbjson"
-MODEL_OBJ: Model = Model.from_hbjson(MODEL_FILE)
+SPATIAL_COMFORT_MODEL_FILE = (
+    Path(__file__).parent / "assets" / "example_spatial_comfort.hbjson"
+)
+SPATIAL_COMFORT_MODEL_OBJ: Model = Model.from_hbjson(SPATIAL_COMFORT_MODEL_FILE)
 
 EPW_FILE = Path(__file__).parent / "assets" / "example.epw"
 EPW_CSV_FILE = (Path(__file__).parent / "assets" / "example.csv",)

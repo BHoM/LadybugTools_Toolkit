@@ -3,6 +3,7 @@
 
 # pylint: disable=E0401
 import warnings
+from calendar import month_abbr
 from concurrent.futures import ProcessPoolExecutor
 
 # pylint: enable=E0401
@@ -20,6 +21,7 @@ from ladybug_comfort.collection.utci import UTCI
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
+from ..bhom import decorator_factory
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoricalComfort
 from ..helpers import evaporative_cooling_effect, month_hour_binned_series
 from ..ladybug_extension.datacollection import (
@@ -736,6 +738,7 @@ def _utci_collection(
     ).universal_thermal_climate_index
 
 
+@decorator_factory()
 def utci_parallel(
     ta: np.ndarray, tr: np.ndarray, vel: np.ndarray, rh: np.ndarray
 ) -> np.ndarray:
@@ -780,6 +783,7 @@ def utci_parallel(
     return np.concatenate(results).reshape(ta.shape)
 
 
+@decorator_factory()
 def utci(
     air_temperature: HourlyContinuousCollection
     | pd.DataFrame
@@ -891,6 +895,7 @@ def utci(
         ) from e
 
 
+@decorator_factory()
 def compare_monthly_utci(
     utci_collections: list[HourlyContinuousCollection],
     utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
@@ -950,6 +955,7 @@ def compare_monthly_utci(
     return df
 
 
+@decorator_factory()
 def shade_benefit_category(
     unshaded_utci: HourlyContinuousCollection | pd.Series,
     shaded_utci: HourlyContinuousCollection | pd.Series,
@@ -1037,6 +1043,7 @@ def shade_benefit_category(
     return pd.Series(shade_categories, index=unshaded_utci.index)
 
 
+@decorator_factory()
 def distance_to_comfortable(
     utci_value: int
     | float
@@ -1126,6 +1133,7 @@ def distance_to_comfortable(
     return distance
 
 
+@decorator_factory()
 def feasible_utci_limits(
     epw: EPW, include_additional_moisture: float = 0, as_dataframe: bool = False
 ) -> tuple[HourlyContinuousCollection] | pd.DataFrame:
@@ -1220,12 +1228,12 @@ def feasible_utci_limits(
     return min_utci, max_utci
 
 
+@decorator_factory()
 def feasible_utci_category_limits(
     epw: EPW,
     include_additional_moisture: float = 0,
     utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
     density: bool = False,
-    simplify: bool = False,
     mask: list[bool] = None,
 ):
     """Calculate the upper and lower proportional limits of UTCI categories
@@ -1241,10 +1249,6 @@ def feasible_utci_category_limits(
             A set of categories to use for the comparison.
         density (bool, optional):
             Return the proportion of time rather than the number of hours.
-            Defaults to False.
-        simplify (bool, optional):
-            Simplify the summary table to use the "ComfortClass" of the UTCI
-            categories (where these attribtues have been added to the object).
             Defaults to False.
         mask (list[bool], optional):
             A list of booleans to mask the data. Defaults to None.
@@ -1263,84 +1267,29 @@ def feasible_utci_category_limits(
         if lims.index.month.nunique() != 12:
             raise ValueError("Masked data include at least one value per month.")
 
-    df = pd.concat(
-        [
-            utci_categories.timeseries_summary_monthly(lims.lowest, density=density),
-            utci_categories.timeseries_summary_monthly(lims.highest, density=density),
-        ],
-        axis=1,
-        keys=lims.columns,
-    )
     df = (
-        df.sort_index(axis=1)
+        pd.concat(
+            [
+                utci_categories.timeseries_summary_monthly(
+                    lims.lowest, density=density
+                ),
+                utci_categories.timeseries_summary_monthly(
+                    lims.highest, density=density
+                ),
+            ],
+            axis=1,
+            keys=lims.columns,
+        )
         .reorder_levels([1, 0], axis=1)
         .sort_index(axis=1, ascending=[True, False])
     )
-    df = df.rename(
-        columns=utci_categories._interval_bin_name  # pylint: disable=protected-access
-    )
 
-    if simplify:
-        try:
-            if len(utci_categories.comfort_classes) != len(
-                utci_categories.interval_index
-            ):
-                raise ValueError(
-                    "Monkey-patched comfort_class attributes are not the same "
-                    "length as the categories within this Category object."
-                )
-            if set(["Too cold", "Comfortable", "Too hot"]) != set(
-                i.value for i in utci_categories.comfort_classes
-            ):
-                raise ValueError(
-                    "Monkey-patched comfort_class attributes should contain "
-                    'values of either "Too cold", "Comfortable" or "Too hot".'
-                )
-
-            ddd = {
-                i: cc
-                for cc, i in list(
-                    zip(*[utci_categories.comfort_classes, utci_categories.bin_names])
-                )
-            }
-            cc_header = []
-            for col, _ in df.items():
-                cc_header.append(ddd[col[0]].value)
-
-            df.columns = pd.MultiIndex.from_arrays(
-                [
-                    df.columns.get_level_values(0),
-                    df.columns.get_level_values(1),
-                    cc_header,
-                ],
-                names=["Category", "Identifier", "ComfortClass"],
-            )
-            df = df.groupby(
-                [
-                    df.columns.get_level_values("ComfortClass"),
-                    df.columns.get_level_values("Identifier"),
-                ],
-                axis=1,
-            ).sum()
-            df = df.sort_index(axis=1, ascending=[True, False])
-            df = df.reindex(
-                columns=df.columns.reindex(
-                    ["Too cold", "Comfortable", "Too hot"], level=0
-                )[0]
-            )
-
-            return df
-
-        except AttributeError as exc:
-            raise AttributeError(
-                'No ComfortClass found on given "utci_categories", you cannot '
-                "use these categories for a simplified summary until you add "
-                "these."
-            ) from exc
+    df.index = [month_abbr[i] for i in df.index]
 
     return df
 
 
+@decorator_factory()
 def month_hour_binned(
     utci_data: pd.Series | HourlyContinuousCollection,
     month_bins: tuple[tuple[int]] = None,
@@ -1392,6 +1341,7 @@ def month_hour_binned(
     return df
 
 
+@decorator_factory()
 def met_rate_adjustment(
     utci_collection: HourlyContinuousCollection, met: float
 ) -> HourlyContinuousCollection:

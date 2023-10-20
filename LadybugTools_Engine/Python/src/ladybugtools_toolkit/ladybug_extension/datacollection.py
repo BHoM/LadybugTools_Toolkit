@@ -25,13 +25,14 @@ from ladybug.datautil import (
     collections_to_json,
 )
 from ladybug.dt import DateTime
-
+from ..bhom import decorator_factory
 from ..helpers import circular_weighted_mean, wind_direction_average
 from .analysisperiod import analysis_period_to_datetimes
 from .analysisperiod import describe_analysis_period
 from .header import header_from_string, header_to_string
 
 
+@decorator_factory()
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
 
@@ -58,6 +59,7 @@ def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Ser
     )
 
 
+@decorator_factory()
 def collection_to_json(
     collections: list[BaseCollection], json_path: Path, indent: int = None
 ) -> Path:
@@ -97,6 +99,7 @@ def collection_to_json(
     )
 
 
+@decorator_factory()
 def collection_to_csv(collections: list[BaseCollection], csv_path: Path) -> Path:
     """Save Ladybug BaseCollection-like objects into a CSV file.
 
@@ -128,6 +131,7 @@ def collection_to_csv(collections: list[BaseCollection], csv_path: Path) -> Path
     )
 
 
+@decorator_factory()
 def collection_to_array(collection: BaseCollection) -> np.ndarray:
     """Convert a Ladybug BaseCollection-like object into a numpy array.
 
@@ -141,6 +145,7 @@ def collection_to_array(collection: BaseCollection) -> np.ndarray:
     return np.array(collection.values)
 
 
+@decorator_factory()
 def percentile(
     collections: list[BaseCollection], nth_percentile: float
 ) -> BaseCollection:
@@ -175,6 +180,7 @@ def percentile(
     )
 
 
+@decorator_factory()
 def minimum(collections: list[BaseCollection]) -> BaseCollection:
     """Create a Minimum of the given data collections.
 
@@ -200,6 +206,7 @@ def minimum(collections: list[BaseCollection]) -> BaseCollection:
     return collection_from_series(df.min(axis=1).rename(series_name))
 
 
+@decorator_factory()
 def maximum(collections: list[BaseCollection]) -> BaseCollection:
     """Create a Maximum of the given data collections.
 
@@ -225,6 +232,7 @@ def maximum(collections: list[BaseCollection]) -> BaseCollection:
     return collection_from_series(df.max(axis=1).rename(series_name))
 
 
+@decorator_factory()
 def collection_from_series(series: pd.Series) -> BaseCollection:
     """Convert a Pandas Series object into a Ladybug BaseCollection-like object.
 
@@ -269,6 +277,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
     raise ValueError("The series must be hourly or monthly.")
 
 
+@decorator_factory()
 def collection_from_json(json_path: Path) -> list[BaseCollection]:
     """Load a JSON containing serialised Ladybug BaseCollection-like objects.
 
@@ -288,6 +297,7 @@ def collection_from_json(json_path: Path) -> list[BaseCollection]:
     return collections_from_json(json_path.as_posix())
 
 
+@decorator_factory()
 def collection_from_dict(dictionary: dict[str, Any]) -> BaseCollection:
     """Convert a JSON compliant dictionary object into a ladybug EPW.
 
@@ -314,6 +324,7 @@ def collection_from_dict(dictionary: dict[str, Any]) -> BaseCollection:
     # pylint: enable=broad-exception-caught
 
 
+@decorator_factory()
 def collection_from_csv(csv_path: Path) -> list[BaseCollection]:
     """Load a CSV containing serialised Ladybug BaseCollection-like objects.
 
@@ -333,6 +344,7 @@ def collection_from_csv(csv_path: Path) -> list[BaseCollection]:
     return collections_from_csv(csv_path.as_posix())
 
 
+@decorator_factory()
 def summarise_collection(
     collection: BaseCollection,
     _n_common: int = 3,
@@ -503,6 +515,7 @@ def summarise_collection(
     return descriptions
 
 
+@decorator_factory()
 def average(
     collections: list[BaseCollection], weights: list[float] = None
 ) -> BaseCollection:
@@ -555,6 +568,7 @@ def average(
     return collections[0].get_aligned_collection(vals)
 
 
+@decorator_factory()
 def to_hourly(
     collection: MonthlyCollection, method: str = None
 ) -> HourlyContinuousCollection:
@@ -599,6 +613,7 @@ def to_hourly(
     )
 
 
+@decorator_factory()
 def peak_time(collection: BaseCollection) -> tuple[Any, tuple[DateTime]]:
     """Find the peak value within a collection, and the time, or times at which it occurs.
 
@@ -620,6 +635,7 @@ def peak_time(collection: BaseCollection) -> tuple[Any, tuple[DateTime]]:
     return peak_value, times
 
 
+@decorator_factory()
 def create_typical_day(
     collection: HourlyContinuousCollection,
     centroid: DateTime,

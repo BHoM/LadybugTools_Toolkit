@@ -9,6 +9,7 @@ from ladybug.location import Location
 from ladybug.sunpath import Sunpath
 from matplotlib.colors import BoundaryNorm, Colormap
 
+from ..bhom import decorator_factory
 from ..ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
     describe_analysis_period,
@@ -17,6 +18,7 @@ from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.location import location_to_string
 
 
+@decorator_factory()
 def sunpath(
     location: Location,
     ax: plt.Axes = None,

@@ -1,10 +1,11 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
-from ladybug.epw import EPW, AnalysisPeriod
+from ladybug.epw import AnalysisPeriod
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-from ladybugtools_toolkit.wind.wind import DirectionBins, Wind
+from ladybugtools_toolkit.wind import DirectionBins, Wind
 
-from . import EPW_OBJ, EPW_FILE
+from . import EPW_OBJ
 
 
 def test_direction_bins():
@@ -137,3 +138,52 @@ def test_wind_functions():
         w.apply_directional_factors(direction_bins=db, factors=[0, 1, 20, 0]).ws.sum()
         == 201354.6
     )
+
+
+def test_plot_windrose():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    assert isinstance(w.plot_windrose(), plt.Axes)
+    plt.close("all")
+
+
+def test_plot_timeseries():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    assert isinstance(w.plot_timeseries(), plt.Axes)
+    plt.close("all")
+
+
+def test_plot_windhist():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    assert isinstance(w.plot_windhist(), plt.Axes)
+    plt.close("all")
+
+
+def test_plot_windhist_radial():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    assert isinstance(w.plot_windhist_radial(), plt.Axes)
+    plt.close("all")
+
+
+def test_plot_wind_matrix():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    assert isinstance(w.plot_wind_matrix(), plt.Axes)
+    plt.close("all")
+
+
+def test_plot_speed_frequency():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    assert isinstance(w.plot_speed_frequency(), plt.Axes)
+    plt.close("all")
+
+
+def test_plot_cumulative_density():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    assert isinstance(w.plot_cumulative_density(), plt.Axes)
+    plt.close("all")

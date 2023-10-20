@@ -33,8 +33,10 @@ from ladybug.skymodel import (
 from ladybug.sunpath import Sunpath
 from scipy.stats import weibull_min
 from tqdm import tqdm
+from .bhom import decorator_factory
 
 
+@decorator_factory()
 def default_hour_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning times of day."""
     f = io.StringIO()
@@ -49,6 +51,7 @@ def default_hour_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
+@decorator_factory()
 def default_month_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning month of year."""
     f = io.StringIO()
@@ -63,6 +66,7 @@ def default_month_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
+@decorator_factory()
 def default_combined_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning combinations of time of day and month of year."""
     f = io.StringIO()
@@ -83,6 +87,7 @@ def default_combined_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
+@decorator_factory()
 def default_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning all predefined
     combinations of time of day and month of year."""
@@ -98,6 +103,7 @@ def default_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
+@decorator_factory()
 def chunks(lst: list[Any], chunksize: int):
     """Partition an iterable into lists of length "chunksize".
 
@@ -112,6 +118,7 @@ def chunks(lst: list[Any], chunksize: int):
         yield lst[i : i + chunksize]
 
 
+@decorator_factory()
 def scrape_weather(
     station: str,
     start_date: str = "1970-01-01",
@@ -321,6 +328,7 @@ def scrape_weather(
     return df
 
 
+@decorator_factory()
 def rolling_window(array: list[Any], window: int):
     """Throwaway function here to roll a window along a list.
 
@@ -348,6 +356,7 @@ def rolling_window(array: list[Any], window: int):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
+@decorator_factory()
 def proximity_decay(
     value: float,
     distance_to_value: float,
@@ -384,6 +393,7 @@ def proximity_decay(
     raise ValueError(f"Unknown curve type: {decay_method}")
 
 
+@decorator_factory()
 def timedelta_tostring(time_delta: timedelta) -> str:
     """timedelta objects don't have a nice string representation, so this function converts them.
 
@@ -400,6 +410,7 @@ def timedelta_tostring(time_delta: timedelta) -> str:
     return f"{hours:02d}:{minutes:02d}"
 
 
+@decorator_factory()
 def decay_rate_smoother(
     series: pd.Series,
     difference_threshold: float = -10,
@@ -450,6 +461,7 @@ def decay_rate_smoother(
     return new_series
 
 
+@decorator_factory()
 def cardinality(direction_angle: float, directions: int = 16):
     """Returns the cardinal orientation of a given angle, where that angle is related to north at
         0 degrees.
@@ -539,6 +551,7 @@ def cardinality(direction_angle: float, directions: int = 16):
     return arr[(val % directions)]
 
 
+@decorator_factory()
 def angle_from_cardinal(cardinal_direction: str) -> float:
     """
     For a given cardinal direction, return the corresponding angle in degrees.
@@ -610,24 +623,32 @@ def angle_from_north(vector: list[float]) -> float:
     return np.rad2deg((angle1 - angle2) % (2 * np.pi))
 
 
-def angle_to_vector(_angle_from_north: float) -> list[float]:
-    """Return the X, Y vector from of an angle from north at 0-degrees."""
-    if (_angle_from_north > 360) or (_angle_from_north < 0):
-        raise ValueError(
-            "angle_from_north must be between 0 and 360 degrees (inclusive)."
-        )
+def angle_to_vector(clockwise_angle_from_north: float) -> list[float]:
+    """Return the X, Y vector from of an angle from north at 0-degrees.
+    
+    Args:
+        clockwise_angle_from_north (float):
+            The angle from north in degrees clockwise from [0, 360], though
+            any number can be input here for angles greater than a full circle.
+    
+    Returns:
+        list[float]:
+            A vector of length 2.
+    """
 
-    _angle_from_north = np.radians(_angle_from_north)
+    clockwise_angle_from_north = np.radians(clockwise_angle_from_north)
 
-    return np.sin(_angle_from_north), np.cos(_angle_from_north)
+    return np.sin(clockwise_angle_from_north), np.cos(clockwise_angle_from_north)
 
 
+@decorator_factory()
 def sanitise_string(string: str) -> str:
     """Sanitise a string so that only path-safe characters remain."""
     keep_characters = r"[^.A-Za-z0-9_-]"
     return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
 
 
+@decorator_factory()
 def stringify_df_header(columns: list[Any]) -> list[str]:
     """Convert a list of objects into their string representations.
     This method is mostly used for making DataFrames parqeut serialisable.
@@ -642,6 +663,7 @@ def stringify_df_header(columns: list[Any]) -> list[str]:
     return [str(i) for i in columns]
 
 
+@decorator_factory()
 def unstringify_df_header(columns: list[str]) -> list[Any]:
     """Convert a list of strings into a set of objects capable of being used as DataFrame column headers.
 
@@ -664,6 +686,7 @@ def unstringify_df_header(columns: list[str]) -> list[Any]:
     return evaled
 
 
+@decorator_factory()
 def write_parquet(data: pd.DataFrame, path: Path) -> Path:
     """Write a parquet file, and convert columns into strings.
 
@@ -686,6 +709,7 @@ def write_parquet(data: pd.DataFrame, path: Path) -> Path:
     return path
 
 
+@decorator_factory()
 def read_parquet(path: Path) -> pd.DataFrame:
     """Read a parquet file, and reinterpret columns as their automatically
     assigned datatype.
@@ -712,6 +736,7 @@ def read_parquet(path: Path) -> pd.DataFrame:
     return df
 
 
+@decorator_factory()
 def store_dataset(
     dataframe: pd.DataFrame, target_path: Path, downcast: bool = True
 ) -> Path:
@@ -753,6 +778,7 @@ def store_dataset(
     return target_path
 
 
+@decorator_factory()
 def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
     """Read a stored dataset, including upcasting to float64.
 
@@ -1111,6 +1137,7 @@ class OpenMeteoVariable(Enum):
         return value * self.target_multiplier
 
 
+@decorator_factory()
 def scrape_openmeteo(
     latitude: float,
     longitude: float,
@@ -1198,6 +1225,7 @@ def scrape_openmeteo(
     return pd.concat(new_df, axis=1)
 
 
+@decorator_factory()
 def get_soil_temperatures(
     latitude: float,
     longitude: float,
@@ -1243,6 +1271,7 @@ def get_soil_temperatures(
     )
 
 
+@decorator_factory()
 def weibull_directional(
     binned_data: dict[tuple[float, float], list[float]]
 ) -> pd.DataFrame:
@@ -1266,6 +1295,7 @@ def weibull_directional(
     return pd.DataFrame.from_dict(d, orient="index", columns=["k", "loc", "c"])
 
 
+@decorator_factory()
 def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
     """Estimate the two-parameter Weibull parameters for a set of wind speeds.
 
@@ -1294,6 +1324,7 @@ def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
         return (np.nan, np.nan, np.nan)  # type: ignore
 
 
+@decorator_factory()
 def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     """Get the average angle from a set of weighted angles.
 
@@ -1334,6 +1365,7 @@ def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     return mean
 
 
+@decorator_factory()
 def wind_direction_average(angles: list[float]) -> float:
     """Get the average wind direction from a set of wind directions.
 
@@ -1370,6 +1402,7 @@ def wind_direction_average(angles: list[float]) -> float:
     return np.degrees(average_angle)
 
 
+@decorator_factory()
 def wind_speed_at_height(
     reference_value: float,
     reference_height: float,
@@ -1440,6 +1473,7 @@ def wind_speed_at_height(
     )
 
 
+@decorator_factory()
 def temperature_at_height(
     reference_value: float,
     reference_height: float,
@@ -1486,6 +1520,7 @@ def temperature_at_height(
     return reference_value - (height_difference * lapse_rate)
 
 
+@decorator_factory()
 def radiation_at_height(
     reference_value: float,
     target_height: float,
@@ -1525,6 +1560,7 @@ def radiation_at_height(
     return reference_value + increase
 
 
+@decorator_factory()
 def air_pressure_at_height(
     reference_value: float,
     target_height: float,
@@ -1550,6 +1586,7 @@ def air_pressure_at_height(
     )
 
 
+@decorator_factory()
 def target_wind_speed_collection(
     epw: EPW, target_average_wind_speed: float, target_height: float
 ) -> HourlyContinuousCollection:
@@ -1585,6 +1622,7 @@ def target_wind_speed_collection(
     return epw.wind_speed * adjustment_factor
 
 
+@decorator_factory()
 def dry_bulb_temperature_at_height(
     epw: EPW, target_height: float
 ) -> HourlyContinuousCollection:
@@ -1605,6 +1643,7 @@ def dry_bulb_temperature_at_height(
     return dbt_collection
 
 
+@decorator_factory()
 def validate_timeseries(
     obj: Any,
     is_annual: bool = False,
@@ -1647,6 +1686,7 @@ def validate_timeseries(
             raise ValueError("series is not contiguous")
 
 
+@decorator_factory()
 def evaporative_cooling_effect(
     dry_bulb_temperature: float,
     relative_humidity: float,
@@ -1695,6 +1735,7 @@ def evaporative_cooling_effect(
     return [new_dbt, new_rh]
 
 
+@decorator_factory()
 def evaporative_cooling_effect_collection(
     epw: EPW, evaporative_cooling_effectiveness: float = 0.3
 ) -> list[HourlyContinuousCollection]:
@@ -1745,6 +1786,7 @@ def evaporative_cooling_effect_collection(
     return [dbt, rh]
 
 
+@decorator_factory()
 def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     """A removal of all timesteps within a time-indexed pandas
     object where the day is the 29th of February."""
@@ -1757,6 +1799,7 @@ def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.S
     return pd_object[~mask]
 
 
+@decorator_factory()
 def month_hour_binned_series(
     series: pd.Series,
     month_bins: tuple[tuple[int]] = None,
@@ -1885,6 +1928,7 @@ def month_hour_binned_series(
     return df
 
 
+@decorator_factory()
 def sunrise_sunset(location: Location) -> pd.DataFrame():
     """Calculate sunrise and sunset times for a given location and year. Includes
     civil, nautical and astronomical twilight.
@@ -1951,6 +1995,7 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
     ]
 
 
+@decorator_factory()
 def safe_filename(filename: str) -> str:
     """Remove all non-alphanumeric characters from a filename."""
     return "".join(

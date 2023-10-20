@@ -1,8 +1,16 @@
-"""Methods for binning wind data by direction."""
+"""Methods for working with time-indexed wind data."""
+
 import numpy as np
 import pandas as pd
 
-from ..helpers import angle_from_cardinal, cardinality, rolling_window
+from .bhom import decorator_factory
+
+
+from .helpers import (
+    angle_from_cardinal,
+    cardinality,
+    rolling_window,
+)
 
 
 class DirectionBins:
@@ -32,6 +40,9 @@ class DirectionBins:
 
     def __len__(self) -> int:
         return self.directions
+
+    def __str__(self) -> str:
+        return f"DirectionBins_{self.directions}_{self.centered}"
 
     @property
     def lows(self) -> list[float]:
@@ -120,6 +131,7 @@ class DirectionBins:
         """The direction bins as a pandasa IntervalIdex."""
         return pd.IntervalIndex.from_arrays(self.lows, self.highs, closed="left")
 
+    @decorator_factory()
     def bin_data(
         self, direction_data: list[float], other_data: list[float] = None
     ) -> dict[tuple[float], list[float]]:
@@ -161,10 +173,11 @@ class DirectionBins:
             combined_bin = d[bin_labels[0]] + d[bin_labels[-1]]
             d = {
                 **{(bin_labels[-1][0], bin_labels[0][1]): combined_bin},
-                **{k: v for k, v in list(d.items())[1:-1]},
+                **dict(list(d.items())[1:-1]),
             }
         return d
 
+    @decorator_factory()
     def prevailing(
         self, direction_data: list[float], n: int, as_angle: bool = False
     ) -> list[str]:
@@ -189,7 +202,7 @@ class DirectionBins:
         s.index = self.cardinal_directions
         s = s.sort_values(ascending=False)
 
-        cardinal_directions = s.index[:n]
+        cardinal_directions = s.index[:n].tolist()
         if as_angle:
             return [angle_from_cardinal(i) for i in cardinal_directions]
         return cardinal_directions

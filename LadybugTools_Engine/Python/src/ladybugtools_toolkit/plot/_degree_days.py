@@ -4,9 +4,11 @@ import calendar  # pylint: disable=E0401
 import matplotlib.pyplot as plt
 from ladybug.epw import EPW
 
+from ..bhom import decorator_factory
 from ..ladybug_extension.epw import EPW, degree_time
 
 
+@decorator_factory()
 def cooling_degree_days(
     epw: EPW, ax: plt.Axes = None, cool_base: float = 23, **kwargs
 ) -> plt.Axes:
@@ -60,6 +62,7 @@ def cooling_degree_days(
     return ax
 
 
+@decorator_factory()
 def heating_degree_days(
     epw: EPW, ax: plt.Axes = None, heat_base: float = 18, **kwargs
 ) -> plt.Axes:
@@ -116,6 +119,7 @@ def heating_degree_days(
     return ax
 
 
+@decorator_factory()
 def degree_days(epw: EPW, heat_base: float = 18, cool_base: float = 23, **kwargs):
     """Plot the heating/cooling degree days from a given EPW object.
 

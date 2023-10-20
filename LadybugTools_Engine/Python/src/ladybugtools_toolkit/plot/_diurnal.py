@@ -14,9 +14,11 @@ import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 
+from ..bhom import decorator_factory
 from .utilities import create_title
 
 
+@decorator_factory()
 def diurnal(
     series: pd.Series,
     ax: plt.Axes = None,
@@ -221,6 +223,7 @@ def diurnal(
     return ax
 
 
+@decorator_factory()
 def stacked_diurnals(
     datasets: list[pd.Series], period: str = "monthly", **kwargs
 ) -> plt.Figure:

@@ -19,7 +19,7 @@ from matplotlib.colors import (
     to_rgba,
 )
 from matplotlib.legend import Legend
-
+from ..bhom import decorator_factory
 from ..helpers import rolling_window
 
 
@@ -143,7 +143,15 @@ class Categorical:
             List[str]:
                 The descriptions of the categories.
         """
-        return [f"{i.left}<x<={i.right}" for i in self]
+        return [f"{i.left} to {i.right}" for i in self]
+
+    @property
+    def bin_names_detailed(self) -> list[str]:
+        """The detailed bin names."""
+        return [
+            f"{nom} ({desc})"
+            for desc, nom in list(zip(*[self.descriptions, self.bin_names]))
+        ]
 
     @property
     def cmap(self) -> Colormap:
@@ -233,6 +241,16 @@ class Categorical:
         return dict(zip(self.bin_names, self.interval_index))
 
     @property
+    def _detailed_bin_name_interval(self) -> dict[str, pd.Interval]:
+        """The bin name to interval dictionary.
+
+        Returns:
+            dict[str, pd.Interval]:
+                The bin name to interval dictionary.
+        """
+        return dict(zip(self.bin_names_detailed, self.interval_index))
+
+    @property
     def _interval_bin_name(self) -> dict[pd.Interval, str]:
         """The interval to bin name dictionary.
 
@@ -242,6 +260,7 @@ class Categorical:
         """
         return dict(zip(self.interval_index, self.bin_names))
 
+    @decorator_factory()
     def interval_from_bin_name(self, bin_name: str) -> pd.Interval:
         """Return the interval from the bin name.
 
@@ -253,8 +272,12 @@ class Categorical:
             pd.Interval:
                 The interval associated with the bin name.
         """
-        return self._bin_name_interval[bin_name]
+        try:
+            return self._bin_name_interval[bin_name]
+        except KeyError:
+            return self._detailed_bin_name_interval[bin_name]
 
+    @decorator_factory()
     def bin_name_from_interval(self, interval: pd.Interval) -> str:
         """Return the bin name from the interval.
 
@@ -268,6 +291,7 @@ class Categorical:
         """
         return self._interval_bin_name[interval]
 
+    @decorator_factory()
     def color_from_bin_name(self, bin_name: str) -> str:
         """Return the color from the bin name.
 
@@ -281,6 +305,7 @@ class Categorical:
         """
         return dict(zip(self.bin_names, self.colors))[bin_name]
 
+    @decorator_factory()
     def get_color(self, value: float | int, as_array: bool = False) -> str:
         """Return the color associated with the categorised value.
 
@@ -304,6 +329,7 @@ class Categorical:
             return to_hex(color)
         return color
 
+    @decorator_factory()
     def categorise(self, data: Any) -> pd.Categorical:
         """Categorise the data.
 
@@ -316,7 +342,7 @@ class Categorical:
                 The categorised data.
         """
         categorical = pd.cut(
-            data, self.bins, labels=self.bin_names, include_lowest=True
+            data, self.bins, labels=self.bin_names_detailed, include_lowest=True
         )
         if categorical.isna().any():
             raise ValueError(
@@ -324,6 +350,7 @@ class Categorical:
             )
         return categorical
 
+    @decorator_factory()
     def value_counts(
         self,
         data: Any,
@@ -341,11 +368,12 @@ class Categorical:
             pd.Series:
                 The number of counts within each categorical bin.
         """
-        result = self.categorise(data).value_counts()[list(self.bin_names)]
+        result = self.categorise(data).value_counts()[list(self.bin_names_detailed)]
         if density:
             return result / len(data)
         return result
 
+    @decorator_factory()
     def timeseries_summary_monthly(
         self, series: pd.Series, density: bool = False
     ) -> pd.DataFrame:
@@ -361,6 +389,7 @@ class Categorical:
             pd.DataFrame:
                 A table summary of the categories over each month
         """
+
         if not isinstance(series, pd.Series):
             raise ValueError("The series must be a pandas series.")
 
@@ -369,12 +398,14 @@ class Categorical:
 
         counts = (
             self.categorise(series).groupby(series.index.month).value_counts().unstack()
-        ).sort_index(axis=0)[list(self.bin_names)]
+        ).sort_index(axis=0)
+        counts.columns.name = None
         counts.index.name = "Month"
         if density:
             return counts.div(counts.sum(axis=1), axis=0)
         return counts
 
+    @decorator_factory()
     def summarise(
         self,
         data: Any,
@@ -399,6 +430,7 @@ class Categorical:
             )
         return "\n".join(statements)
 
+    @decorator_factory()
     def create_legend(
         self, ax: plt.Axes = None, verbose: bool = True, **kwargs
     ) -> Legend:
@@ -485,6 +517,7 @@ class CategoricalComfort(Categorical):
             )
         return super().__post_init__()
 
+    @decorator_factory()
     def simplify(self) -> Categorical:
         """Return a simplified version of this object based on teh assigned comfort clases.
 

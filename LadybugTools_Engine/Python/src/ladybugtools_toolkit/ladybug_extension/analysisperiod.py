@@ -9,10 +9,11 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
-
+from ..bhom import decorator_factory
 from .dt import lb_datetime_from_datetime
 
 
+@decorator_factory()
 def analysis_period_to_datetimes(
     analysis_period: AnalysisPeriod,
 ) -> pd.DatetimeIndex:
@@ -32,6 +33,7 @@ def analysis_period_to_datetimes(
     return datetimes
 
 
+@decorator_factory()
 def analysis_period_to_boolean(
     analysis_periods: list[AnalysisPeriod] | AnalysisPeriod,
 ) -> list[bool]:
@@ -73,6 +75,7 @@ def analysis_period_to_boolean(
     return np.any(bools, axis=0)
 
 
+@decorator_factory()
 def analysis_period_from_datetimes(datetimes: list[datetime]) -> AnalysisPeriod:
     """Convert a list of datetimes (in order from earliest to latest) into an
     AnalysisPeriod object.
@@ -103,6 +106,7 @@ def analysis_period_from_datetimes(datetimes: list[datetime]) -> AnalysisPeriod:
     return analysis_period
 
 
+@decorator_factory()
 def describe_analysis_period(
     analysis_period: list[AnalysisPeriod],
     save_path: bool = False,
@@ -180,6 +184,12 @@ def describe_analysis_period(
     return base_str
 
 
+def analysis_period_from_description(description_str: str) -> AnalysisPeriod:
+    # TODO: implement this, based on the output from the method above to recreate the analysis period
+    raise NotImplementedError()
+
+
+@decorator_factory()
 def do_analysis_periods_represent_entire_year(
     analysis_periods: list[AnalysisPeriod],
 ) -> bool:

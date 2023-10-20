@@ -7,9 +7,11 @@ import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 
+from ..bhom import decorator_factory
 from .utilities import create_title
 
 
+@decorator_factory()
 def condensation_potential(
     dry_bulb_temperature: pd.Series,
     dew_point_temperature: pd.Series,

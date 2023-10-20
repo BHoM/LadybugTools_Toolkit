@@ -14,6 +14,7 @@ from honeybee_energy.material.opaque import (
 from honeybee_radiance.sensorgrid import Sensor, SensorGrid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
 
+from ..bhom import decorator_factory
 from .material import _material_equality
 
 _ZONE_WIDTH = 10
@@ -23,6 +24,7 @@ _SHADE_HEIGHT_ABOVE_GROUND = 3
 _SHADE_THICKNESS = 0.2
 
 
+@decorator_factory()
 def opaque_to_shade(construction: OpaqueConstruction) -> ShadeConstruction:
     """Convert a Honeybee OpaqueConstruction to a Honeybee ShadeConstruction.
 
@@ -49,6 +51,7 @@ def opaque_to_shade(construction: OpaqueConstruction) -> ShadeConstruction:
     )
 
 
+@decorator_factory()
 def single_layer_construction(
     material: _EnergyMaterialOpaqueBase,
 ) -> OpaqueConstruction:
@@ -373,6 +376,7 @@ def create_model(
     return model
 
 
+@decorator_factory()
 def get_ground_material(model: Model) -> _EnergyMaterialOpaqueBase:
     """Get the ground material from a model.
 
@@ -393,6 +397,7 @@ def get_ground_material(model: Model) -> _EnergyMaterialOpaqueBase:
     ].properties.energy.construction.materials[0]
 
 
+@decorator_factory()
 def get_shade_material(model: Model) -> _EnergyMaterialOpaqueBase:
     """Get the shade material from a model.
 
@@ -413,6 +418,7 @@ def get_shade_material(model: Model) -> _EnergyMaterialOpaqueBase:
     ].properties.energy.construction.materials[0]
 
 
+@decorator_factory()
 def get_ground_reflectance(model: Model) -> float:
     """Get the ground/floor reflectance from a model.
 
@@ -432,6 +438,7 @@ def get_ground_reflectance(model: Model) -> float:
     return _material.solar_reflectance
 
 
+@decorator_factory()
 def model_equality(
     model0: Model, model1: Model, include_identifier: bool = False
 ) -> bool:

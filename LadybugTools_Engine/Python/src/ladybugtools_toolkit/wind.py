@@ -10,16 +10,30 @@ from typing import Any
 
 # pylint: enable=E0401
 
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
+import matplotlib.ticker as mticker
+
 import pandas as pd
+
 from ladybug.dt import DateTime
 from ladybug.epw import EPW
-from matplotlib.colors import Colormap
+
 from tqdm import tqdm
 
-from ..categorical.categories import BEAUFORT_CATEGORIES
-from ..helpers import (
+from .bhom import decorator_factory
+
+
+from .plot.utilities import contrasting_color, format_polar_plot
+from .categorical.categories import BEAUFORT_CATEGORIES
+from .helpers import (
+    angle_from_north,
+    angle_to_vector,
     OpenMeteoVariable,
     circular_weighted_mean,
     rolling_window,
@@ -29,20 +43,13 @@ from ..helpers import (
     wind_direction_average,
     wind_speed_at_height,
 )
-from ..ladybug_extension.analysisperiod import (
+from .ladybug_extension.analysisperiod import (
     AnalysisPeriod,
     analysis_period_to_boolean,
     analysis_period_to_datetimes,
 )
-from ..plot._timeseries import timeseries
-from ..plot._wind import (
-    radial_histogram,
-    wind_cumulative_probability,
-    wind_matrix,
-    wind_speed_frequency,
-    windrose,
-)
-from .direction_bins import DirectionBins
+from .plot._timeseries import timeseries
+from .directionbins import DirectionBins
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -88,10 +95,6 @@ class Wind:
 
         # # wrap methods within this class
         # super().__post_init__()
-
-    ##################
-    # DUNDER METHODS #
-    ##################
 
     def __len__(self) -> int:
         return len(self.df)
@@ -189,6 +192,7 @@ class Wind:
         wind_speed_column: str,
         wind_direction_column: str,
         height_above_ground: float = 10,
+        **kwargs,
     ) -> "Wind":
         """Create a Wind object from a csv containing wind speed and direction columns.
 
@@ -201,8 +205,10 @@ class Wind:
                 The name of the column where wind-direction data exists.
             height_above_ground (float, optional):
                 Defaults to 10m.
+            **kwargs:
+                Additional keyword arguments passed to pd.read_csv.
         """
-        df = pd.read_csv(csv_path, index_col=0, header=0, parse_dates=True)
+        df = pd.read_csv(csv_path, **kwargs)
         return Wind.from_dataframe(
             df,
             wind_speed_column=wind_speed_column,
@@ -302,6 +308,37 @@ class Wind:
             np.average([i.height_above_ground for i in wind_objects], weights=weights),
         )
 
+    @classmethod
+    def from_wind_uv(
+        cls,
+        u: list[int | float | np.number],
+        v: list[int | float | np.number],
+        datetimes: list[datetime],
+        height_above_ground: float = 10,
+    ) -> "Wind":
+        """Create a Wind object from a set of U, V wind components.
+
+        Args:
+            u (list[int | float | np.number]):
+                An iterable of U (eastward) wind components in m/s.
+            v (list[int | float | np.number]):
+                An iterable of V (northward) wind components in m/s.
+            datetimes (list[datetime]):
+                An iterable of datetime-like objects.
+            height_above_ground (float, optional):
+                The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
+
+        Returns:
+            Wind:
+                A Wind object!
+        """
+
+        # convert UV into angle and magnitude
+        wind_direction = angle_from_north(v, u)
+        wind_speed = np.sqrt(np.square(u) + np.square(v))
+
+        return cls(wind_speed, wind_direction, datetimes, height_above_ground)
+
     ##################
     # STATIC METHODS #
     ##################
@@ -389,26 +426,32 @@ class Wind:
     # GENERAL METHODS #
     ###################
 
+    @decorator_factory()
     def mean(self) -> float:
         """Return the mean wind speed for this object."""
         return self.ws.mean()
 
+    @decorator_factory()
     def min(self) -> float:
         """Return the min wind speed for this object."""
         return self.ws.min()
 
+    @decorator_factory()
     def max(self) -> float:
         """Return the max wind speed for this object."""
         return self.ws.max()
 
+    @decorator_factory()
     def median(self) -> float:
         """Return the median wind speed for this object."""
         return self.ws.median()
 
+    @decorator_factory()
     def calm(self, threshold: float = 0.1) -> float:
         """Return the proportion of timesteps "calm" (i.e. wind-speed ≤ 0.1)."""
         return (self.ws <= threshold).sum() / len(self.ws)
 
+    @decorator_factory()
     def percentile(self, percentile: float) -> float:
         """Calculate the wind speed at the given percentile.
 
@@ -422,6 +465,7 @@ class Wind:
         """
         return self.ws.quantile(percentile)
 
+    @decorator_factory()
     def resample(self, rule: pd.DateOffset | pd.Timedelta | str) -> "Wind":
         """Resample the wind data collection to a different timestep. If upsampling then 0m/s
             and prevailing winds will be added to the data. If downsampling, then the average
@@ -478,6 +522,7 @@ class Wind:
             self.height_above_ground,
         )
 
+    @decorator_factory()
     def prevailing(
         self,
         direction_bins: DirectionBins = DirectionBins(),
@@ -501,6 +546,22 @@ class Wind:
 
         return direction_bins.prevailing(self.wd.tolist(), n, as_angle)
 
+    @decorator_factory()
+    def vectors(self) -> list[list[float]]:
+        """Convenience method for calculating wind vectors for each wind direction."""
+        return np.array(angle_to_vector(self.wind_directions.values)).T
+
+    @decorator_factory()
+    def average_direction(self) -> tuple[float, float]:
+        """Calculate the average speed and direction for this object.
+
+        Returns:
+            tuple[float, float]:
+                A tuple containing the average speed and direction.
+        """
+        return angle_from_north(self.vectors().mean(axis=0))
+
+    @decorator_factory()
     def probabilities(
         self,
         direction_bins: DirectionBins = DirectionBins(),
@@ -533,6 +594,7 @@ class Wind:
         )
         return df.T
 
+    @decorator_factory()
     def filter_by_analysis_period(
         self,
         analysis_period: AnalysisPeriod | tuple[AnalysisPeriod],
@@ -576,6 +638,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
+    @decorator_factory()
     def filter_by_boolean_mask(self, mask: tuple[bool]) -> "Wind":
         """Filter the current object by a boolean mask.
 
@@ -596,6 +659,7 @@ class Wind:
             self.height_above_ground,
         )
 
+    @decorator_factory()
     def filter_by_time(
         self,
         months: tuple[float] = tuple(range(1, 13, 1)),  # type: ignore
@@ -645,6 +709,7 @@ class Wind:
             self.height_above_ground,
         )
 
+    @decorator_factory()
     def filter_by_direction(
         self, left_angle: float = 0, right_angle: float = 360, inclusive: bool = True
     ) -> "Wind":
@@ -687,6 +752,7 @@ class Wind:
             self.height_above_ground,
         )
 
+    @decorator_factory()
     def filter_by_speed(
         self, min_speed: float = 0, max_speed: float = 999, inclusive: bool = True
     ) -> "Wind":
@@ -723,9 +789,10 @@ class Wind:
             self.height_above_ground,
         )
 
+    @decorator_factory()
     def frequency_table(
         self,
-        speed_bins: tuple[float] = (0, 0.1) + tuple(range(2, 39, 2)) + (np.inf,),
+        speed_bins: tuple[float] = None,
         direction_bins: DirectionBins = DirectionBins(),
         density: bool = False,
         include_counts: bool = False,
@@ -747,6 +814,9 @@ class Wind:
             pd.DataFrame:
                 A frequency table.
         """
+
+        if speed_bins is None:
+            speed_bins = np.linspace(0, self.ws.max() + 1, 21)
 
         if direction_bins.directions <= 3:
             raise ValueError(
@@ -777,6 +847,17 @@ class Wind:
 
         return df.T
 
+    @decorator_factory()
+    def cumulative_density_function(
+        self,
+        speed_bins: tuple[float] = None,
+        direction_bins: DirectionBins = DirectionBins(),
+    ) -> pd.DataFrame:
+        return self.frequency_table(
+            speed_bins=speed_bins, density=True, direction_bins=direction_bins
+        ).cumsum(axis=0)
+
+    @decorator_factory()
     def weibull_pdf(self) -> tuple[float]:
         """Calculate the parameters of an exponentiated Weibull continuous random variable.
 
@@ -790,6 +871,7 @@ class Wind:
         """
         return weibull_pdf(self.ws.tolist())
 
+    @decorator_factory()
     def weibull_directional(
         self, direction_bins: DirectionBins = DirectionBins()
     ) -> pd.DataFrame:
@@ -806,6 +888,7 @@ class Wind:
         binned_data = direction_bins.bin_data(self.wd.tolist(), self.ws.tolist())
         return weibull_directional(binned_data)
 
+    @decorator_factory()
     def to_height(
         self,
         target_height: float,
@@ -835,6 +918,7 @@ class Wind:
         )
         return Wind(ws.tolist(), self.wd.tolist(), self.datetimes, target_height)  # type: ignore
 
+    @decorator_factory()
     def apply_directional_factors(
         self, direction_bins: DirectionBins, factors: tuple[float]
     ) -> "Wind":
@@ -878,6 +962,7 @@ class Wind:
             ws.tolist(), self.wd.tolist(), self.datetimes, self.height_above_ground
         )
 
+    @decorator_factory()
     def exceedance(
         self,
         limit_value: float,
@@ -935,6 +1020,7 @@ class Wind:
 
         return df
 
+    @decorator_factory()
     def to_csv(self, csv_path: Path) -> Path:
         """Save this object as a csv file.
 
@@ -950,6 +1036,7 @@ class Wind:
         self.df.to_csv(csv_path)
         return csv_path
 
+    @decorator_factory()
     def wind_matrix(self) -> pd.DataFrame:
         """Calculate average wind speed and direction for each month and hour of day in a pandas DataFrame.
         Returns:
@@ -991,6 +1078,7 @@ class Wind:
     # PLOTTING/VISUALISATION METHODS #
     ##################################
 
+    @decorator_factory()
     def plot_timeseries(self, ax: plt.Axes = None, color: str = "grey") -> plt.Axes:  # type: ignore
         """Create a simple line plot of wind speed.
 
@@ -1009,281 +1097,531 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        timeseries(self.ws, ax=ax, color=color)
+        data = self.ws
+
+        timeseries(data, ax=ax, color=color)
+        _, yhigh = ax.get_ylim()
+        ax.set_ylim(0, yhigh)
         ax.set_title(str(self))
+        ax.set_ylabel("Wind speed (m/s)")
 
         return ax
 
+    @decorator_factory()
     def plot_windrose(
         self,
         ax: plt.Axes = None,
+        data: list[float] = None,
         direction_bins: DirectionBins = DirectionBins(),
-        bins: int | list[float] = BEAUFORT_CATEGORIES.bins,
+        data_bins: int | list[float] = 11,
         include_legend: bool = True,
-        include_percentages: bool = False,
-        calm_threshold: float = 0.1,
         **kwargs,
-    ) -> plt.Axes:  # type: ignore
-        """Create a windrose.
+    ) -> plt.Axes:
+        """Plot a windrose for a collection of wind speeds and directions.
 
         Args:
             ax (plt.Axes, optional):
-                The axes to plot on. If None, the current axes will be used.
+                The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
+            data (list[float]):
+                A collection of direction-associated data.
             direction_bins (DirectionBins, optional):
                 A DirectionBins object.
-            bins (int | list[float] | CategoriesBase, optional):
-                Bins to sort data into. Defaults to Beaufort scale.
+            data_bins (Union[int, list[float]], optional):
+                Bins to sort data into. Defaults to 11 bins between the min/max data values.
             include_legend (bool, optional):
                 Set to True to include the legend. Defaults to True.
-            include_percentages (bool, optional):
-                Add bin totals as % to rose. Defaults to False.
-            cmap (Colormap | str, optional):
-                Use a custom colormap. Defaults to "YlGnBu".
-            include_calm_threshold (bool, optional):
-                Set to True to include the calm threshold in the legend. Defaults to True.
-            kwargs:
-                Additional keyword arguments to pass to the windrose function.
+            **kwargs:
+                Additional keyword arguments to pass to the function. These include:
+                data_unit (str, optional):
+                    The unit of the data to add to the legend. Defaults to None.
+                ylim (tuple[float], optional):
+                    The minimum and maximum values for the y-axis. Defaults to None.
+                cmap (str, optional):
+                    The name of the colormap to use. Defaults to "viridis".
+                opening (float, optional):
+                    The opening angle of the windrose. Defaults to 0.
+                alpha (float, optional):
+                    The alpha value of the windrose. Defaults to 1.
+
+        Returns:
+            plt.Axes:
+                A Axes object.
+        """
+
+        if ax is None:
+            _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+
+        if not data:
+            data = self.ws
+
+        if len(data) != len(self.wd):
+            raise ValueError(
+                f"The length of the data ({len(data)}) must match the length of the wind-directions ({len(self.wd)})."
+            )
+
+        # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
+        fig = plt.figure()
+        rect = [0.1, 0.1, 0.8, 0.8]
+        hist_ax = plt.Axes(fig, rect)
+        hist_ax.bar(np.array([1]), np.array([1]))
+        # HACK end
+
+        opening = kwargs.pop("opening", 0.0)
+        if opening >= 1 or opening < 0:
+            raise ValueError("The opening must be between 0 and 1.")
+        opening = 1 - opening
+
+        title = [
+            kwargs.pop("title", None),
+        ]
+        ax.set_title("\n".join([i for i in title if i is not None]))
+
+        # set data binning defaults
+        _data_bins: list[float] = data_bins
+        if isinstance(data_bins, int):
+            _data_bins = np.linspace(min(data), max(data), data_bins + 1)
+
+        # get colormap
+        cmap = plt.get_cmap(
+            kwargs.pop(
+                "cmap",
+                BEAUFORT_CATEGORIES.cmap,
+            )
+        )
+
+        # bin input data
+        thetas = np.deg2rad(direction_bins.midpoints)
+        width = np.deg2rad(direction_bins.bin_width)
+        binned_data = direction_bins.bin_data(self.wd, data)
+        radiis = []
+        for _, values in binned_data.items():
+            radiis.append(np.histogram(a=values, bins=_data_bins)[0])
+        _ = np.vstack(
+            [[0] * len(direction_bins.midpoints), np.array(radiis).cumsum(axis=1).T]
+        )[:-1].T
+        colors = [cmap(i) for i in np.linspace(0, 1, len(_data_bins) - 1)]
+
+        patches = []
+        arr = []
+        width = 2 * np.pi / len(thetas)
+        for n, (_, _) in enumerate(binned_data.items()):
+            _x = thetas[n] - (np.deg2rad(direction_bins.bin_width) / 2 * opening)
+            _y = 0
+            for m, radii in enumerate(radiis[n]):
+                _color = colors[m]
+                arr.extend(np.linspace(0, 1, len(_data_bins) - 1))
+                patches.append(
+                    Rectangle(
+                        xy=(_x, _y),
+                        width=width * opening,
+                        height=radii,
+                        alpha=kwargs.get("alpha", 1),
+                    )
+                )
+                _y += radii
+        pc = PatchCollection(patches, cmap=cmap, norm=plt.Normalize(0, 1))
+        pc.set_array(arr)
+        ax.add_collection(pc)
+
+        format_polar_plot(ax)
+
+        ax.set_ylim(
+            kwargs.pop(
+                "ylim", ax.set_ylim(0, np.ceil(max(sum(i) for i in radiis) / 10) * 10)
+            )
+        )
+
+        # construct legend
+        if include_legend:
+            handles = [
+                mpatches.Patch(color=colors[n], label=f"{i} to {j}")
+                for n, (i, j) in enumerate(rolling_window(_data_bins, 2))
+            ]
+            _ = ax.legend(
+                handles=handles,
+                bbox_to_anchor=(1.1, 0.5),
+                loc="center left",
+                ncol=1,
+                borderaxespad=0,
+                frameon=False,
+                fontsize="small",
+                title=kwargs.pop("data_unit", None),
+            )
+
+        return ax
+
+    @decorator_factory()
+    def plot_windhist(
+        self,
+        ax: plt.Axes = None,
+        **kwargs,
+    ) -> plt.Axes:
+        """Plot a 2D-histogram for a collection of wind speeds and directions.
+
+        Args:
+            ax (plt.Axes, optional):
+                The axis to plot results on. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the function. These include:
+                ...
 
         Returns:
             plt.Axes:
                 A matplotlib Axes object.
         """
 
-        # remove calm hours and store % calm
-        new_w = self.filter_by_speed(
-            min_speed=calm_threshold, max_speed=np.inf, inclusive=False
+        if ax is None:
+            ax = plt.gca()
+
+        direction_bins = kwargs.pop("direction_bins", DirectionBins())
+        speed_bins = np.linspace(0, self.ws.max() + 1, 21)
+        mtx = self.frequency_table(
+            direction_bins=direction_bins, speed_bins=speed_bins, density=True
         )
 
-        if "cmap" not in kwargs:
-            kwargs["cmap"] = "YlGnBu"
+        # get edges for x's and y's
+        x_width = direction_bins.bin_width
+        x = np.sort(
+            np.stack(
+                [
+                    direction_bins.midpoints - (x_width / 2),
+                    direction_bins.midpoints + (x_width / 2),
+                ]
+            ).flatten()
+        )
+        y = np.array([np.array(i) for i in mtx.index]).flatten()
+        z = mtx.values.repeat(2, axis=1).repeat(2, axis=0) * 100
 
-        return windrose(
-            wind_directions=new_w.wd.tolist(),
-            data=new_w.ws.tolist(),
-            ax=ax,
-            direction_bins=direction_bins,
-            data_bins=bins,
-            include_legend=include_legend,
-            include_percentages=include_percentages,
-            data_unit="m/s",
+        ax.set_xlabel("Wind direction (degrees)")
+        ax.set_ylabel("Wind speed (m/s)")
+        title = [
+            kwargs.pop("title", str(self)),
+        ]
+        ax.set_title("\n".join([i for i in title if i is not None]))
+
+        pcm = ax.pcolormesh(
+            x,
+            y,
+            z[:-1, :-1],
             **kwargs,
         )
+        plt.colorbar(pcm, label="Frequency (%)")
 
-    def plot_windhist(
+        return ax
+
+    @decorator_factory()
+    def plot_windhist_radial(
         self,
-        direction_bins: DirectionBins = DirectionBins(),
-        speed_bins: list[float] = None,
-        density: bool = False,
-        include_cbar: bool = True,
-        title: str = None,
-        cmap: Colormap | str = "magma_r",
-        calm_threshold: float = 0.1,
+        ax: plt.Axes = None,
+        **kwargs,
     ) -> plt.Axes:
-        """_summary_
+        """Plot a wind histogram for a collection of wind speeds and directions.
 
         Args:
-            direction_bins (DirectionBins, optional):
-                The direction bins to use. Defaults to DirectionBins().
-            speed_bins (list[float], optional):
-                The speed bins to use. Defaults to None.
-            density (bool, optional):
-                Whether to return density or count. Defaults to False for count.
-            include_cbar (bool, optional):
-                Show colorbar. Defaults to True.
-            title (str, optional):
-                Add a title. Defaults to None.
-            cmap (Union[Colormap, str], optional):
-                Set the colormap. Defaults to "magma_r".
-            calm_threshold (float, optional):
-                The calm threshold to use. Defaults to 0.1.
+            ax (plt.Axes, optional):
+                The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
+            **kwargs:
+                Additional keyword arguments to pass to the function. These include:
+                cmap (str, optional):
+                    The name of the colormap to use. Defaults to "viridis".
+                direction_bins (DirectionBins, optional):
+                    A DirectionBins object. Defaults to DirectionBins().
+                speed_bins (list[float], optional):
+                    A list of bins edges, between which wind speeds will be binned.
+                title (str, optional):
+                    Add a title. Defaults to None.
 
         Returns:
-            plt.Axes: _description_
+            plt.Axes:
+                A matplotlib Axes object.
         """
 
-        # remove calm hours and store % calm
-        calm_percentage = self.calm(calm_threshold)
-        new_w = self.filter_by_speed(
-            min_speed=calm_threshold, max_speed=np.inf, inclusive=False
+        if ax is None:
+            _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+
+        # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
+        fig = plt.figure()
+        rect = [0.1, 0.1, 0.8, 0.8]
+        hist_ax = plt.Axes(fig, rect)
+        hist_ax.bar(np.array([1]), np.array([1]))
+        # HACK end
+
+        title = [
+            kwargs.pop("title", None),
+        ]
+        ax.set_title("\n".join([i for i in title if i is not None]))
+
+        direction_bins = kwargs.pop("direction_bins", DirectionBins())
+        speed_bins = kwargs.pop(
+            "speed_bins",
+            np.linspace(0, self.ws.max() + 1, 21),
+        )
+        cmap = plt.get_cmap(
+            kwargs.pop(
+                "cmap",
+                "viridis",
+            )
+        )
+        # colors = [cmap(i) for i in np.linspace(0, 1, len(speed_bins) - 1)]
+        xx = self.frequency_table(
+            direction_bins=direction_bins, speed_bins=speed_bins, density=True
         )
 
-        if speed_bins is None:
-            _low = int(np.floor(new_w.min()))
-            _high = int(np.ceil(new_w.max()))
-            speed_bins = np.linspace(_low, _high, (_high - _low) + 1)
+        thetas = np.deg2rad(direction_bins.midpoints)
+        width = 2 * np.pi / len(thetas)
+        alpha = kwargs.pop("alpha", 1)
+        patches = []
+        arr = []
+        for n, (_, dir_values) in enumerate(xx.items()):
+            _x = thetas[n] - np.deg2rad(direction_bins.bin_width) / 2
+            _y = 0
+            for speed_range, frequency_value in dir_values.items():
+                height = speed_range[1] - speed_range[0]
+                patches.append(
+                    Rectangle(
+                        xy=(_x, _y),
+                        width=width,
+                        height=height,
+                        alpha=alpha,
+                    )
+                )
+                arr.append(frequency_value)
+                _y += height
+        pc = PatchCollection(patches, cmap=cmap)
+        pc.set_array(arr)
+        ax.add_collection(pc)
 
-        if title is not None:
-            ti = f"{title}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
-        else:
-            ti = f"{self}\n{calm_percentage:0.1%} calm (≤ {calm_threshold}m/s)"
+        ax.set_ylim(0, xx.index[-1][-1])
 
-        frequency_table = new_w.frequency_table(
-            speed_bins, direction_bins, density=density, include_counts=False
-        )
+        format_polar_plot(ax)
 
-        direction_angles = np.deg2rad(direction_bins.midpoints)
-        radial_bins = [np.mean(i) for i in frequency_table.index]
+        return ax
 
-        if density:
-            cmap_label = "Frequency"  #
-            cbar_freq = True
-        else:
-            cmap_label = "n-occurences"
-            cbar_freq = False
-
-        return radial_histogram(
-            direction_angles,
-            radial_bins,
-            frequency_table.values,
-            cmap=cmap,
-            include_labels=False,
-            include_cbar=include_cbar,
-            cmap_label=cmap_label,
-            cbar_freq=cbar_freq,
-            title=ti,
-        )
-
+    @decorator_factory()
     def plot_wind_matrix(
         self,
         ax: plt.Axes = None,
+        title: str = None,
         show_values: bool = False,
-        additional_data: pd.Series = None,
         **kwargs,
-    ) -> plt.Axes:  # type: ignore
-        """Create a plot showing the annual wind speed and direction bins using the month_time_average method."""
+    ) -> plt.Axes:
+        """Create a plot showing the annual wind speed and direction bins
+        using the month_time_average method.
 
-        #                 title: str = None,
-        # cmap: Union[Colormap, str] = "YlGnBu",
-        # cbar_title: str = None,
+        Args:
+            ax (plt.Axes, optional):
+                The axes to plot on. If None, the current axes will be used.
+            title (str, optional):
+                An optional title to give the chart. Defaults to None.
+            show_values (bool, optional):
+                Whether to show values in the cells. Defaults to False.
+            **kwargs:
+                Additional keyword arguments to pass to the pcolor function.
 
-        cmap = kwargs.pop("cmap", "YlGnBu" if additional_data is None else "viridis")
-        cbar_title = kwargs.pop(
-            "cbar_title",
-            "Average speed (m/s)" if additional_data is None else additional_data.name,
-        )
-        title = kwargs.pop("title", str(self))
+        Returns:
+            plt.Axes:
+                A matplotlib Axes object.
 
-        return wind_matrix(
-            wind_speeds=self.ws,
-            wind_directions=self.wd,
-            ax=ax,
-            cmap=cmap,
-            title=title,
-            cbar_title=cbar_title,
-            show_values=show_values,
-            additional_data=additional_data,
-            **kwargs,
-        )
+        """
 
-    def plot_speed_frequency(
-        self, title: str = None, speed_bins: list[float] | int = None
-    ) -> plt.Figure:
-        """Create a histogram showing wind speed frequency"""
-
-        # TODO - remake this figure generation as a plt.Axes object!
+        if ax is None:
+            ax = plt.gca()
 
         if title is None:
-            title = str(self)
+            ax.set_title(str(self))
         else:
-            title = f"{self}\n{title}"
+            ax.set_title(f"{self}\n{title}")
 
-        if speed_bins is None:
-            speed_bins = np.linspace(min(self.ws), np.quantile(self.ws, 0.999), 16)
-        elif isinstance(speed_bins, int):
-            speed_bins = np.linspace(
-                min(self.ws), np.quantile(self.ws, 0.999), speed_bins
+        df = self.wind_matrix()
+        _wind_speeds = df["speed"]
+        _wind_directions = df["direction"]
+
+        if any(
+            [
+                _wind_speeds.shape != (24, 12),
+                _wind_directions.shape != (24, 12),
+                _wind_directions.shape != _wind_speeds.shape,
+                not np.array_equal(_wind_directions.index, _wind_speeds.index),
+                not np.array_equal(_wind_directions.columns, _wind_speeds.columns),
+            ]
+        ):
+            raise ValueError(
+                "The wind_speeds and wind_directions must cover all months of the "
+                "year, and all hours of the day, and align with each other."
             )
-        else:
-            pass
-        percentiles = (0.5, 0.95)
 
-        # TODO - reimplement weibull_pdf plotting curve
+        cmap = kwargs.pop("cmap", "Spectral_r")
+        vmin = kwargs.pop("vmin", _wind_speeds.values.min())
+        vmax = kwargs.pop("vmax", _wind_speeds.values.max())
+        cbar_title = kwargs.pop("cbar_title", None)
+        norm = kwargs.pop("norm", Normalize(vmin=vmin, vmax=vmax, clip=True))
+        mapper = kwargs.pop("mapper", ScalarMappable(norm=norm, cmap=cmap))
 
-        return wind_speed_frequency(
-            self.ws.tolist(),
-            speed_bins=speed_bins,
-            # weibull=self.weibull_pdf(),
-            percentiles=percentiles,
-            title=title,
+        pc = ax.pcolor(_wind_speeds, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+        _x = -np.sin(np.deg2rad(_wind_directions.values))
+        _y = -np.cos(np.deg2rad(_wind_directions.values))
+        direction_matrix = angle_from_north([_x, _y])
+        ax.quiver(
+            np.arange(1, 13, 1) - 0.5,
+            np.arange(0, 24, 1) + 0.5,
+            _x * _wind_speeds.values / 2,
+            _y * _wind_speeds.values / 2,
+            pivot="mid",
+            fc="white",
+            ec="black",
+            lw=0.5,
+            alpha=0.5,
         )
 
-    def plot_cumulative_probability(
-        self, percentiles: tuple[float] = (0.5, 0.95), title: str = None
-    ) -> plt.Figure:  # type: ignore
-        """Create a cumulative probability plot"""
+        if show_values:
+            for _xx, col in enumerate(_wind_directions.values.T):
+                for _yy, _ in enumerate(col.T):
+                    local_value = _wind_speeds.values[_yy, _xx]
+                    cell_color = mapper.to_rgba(local_value)
+                    text_color = contrasting_color(cell_color)
+                    # direction text
+                    ax.text(
+                        _xx,
+                        _yy,
+                        f"{direction_matrix[_yy][_xx]:0.0f}°",
+                        color=text_color,
+                        ha="left",
+                        va="bottom",
+                        fontsize="xx-small",
+                    )
+                    # speed text
+                    ax.text(
+                        _xx + 1,
+                        _yy + 1,
+                        f"{_wind_speeds.values[_yy][_xx]:0.1f}m/s",
+                        color=text_color,
+                        ha="right",
+                        va="top",
+                        fontsize="xx-small",
+                    )
+        ax.set_xticks(np.arange(1, 13, 1) - 0.5)
+        ax.set_xticklabels([calendar.month_abbr[i] for i in np.arange(1, 13, 1)])
+        ax.set_yticks(np.arange(0, 24, 1) + 0.5)
+        ax.set_yticklabels([f"{i:02d}:00" for i in np.arange(0, 24, 1)])
+        for label in ax.yaxis.get_ticklabels()[1::2]:
+            label.set_visible(False)
+        cb = plt.colorbar(pc, label=cbar_title, pad=0.01)
+        cb.outline.set_visible(False)
+
+        return ax
+
+    @decorator_factory()
+    def plot_speed_frequency(
+        self,
+        ax: plt.Axes = None,
+        title: str = None,
+        percentiles: tuple[float] = (0.5, 0.95),
+        **kwargs,
+    ) -> plt.Axes:
+        """Create a histogram showing wind speed frequency.
+
+        Args:
+            ax (plt.Axes, optional):
+                The axes to plot this chart on. Defaults to None.
+            title (str, optional):
+                An optional title to give the chart. Defaults to None.
+            percentiles (tuple[float], optional):
+                The percentiles to plot. Defaults to (0.5, 0.95).
+            **kwargs:
+                Additional keyword arguments to pass to the self.frequency_table function.
+
+        Returns:
+            plt.Axes: The axes object.
+        """
+        if ax is None:
+            ax = plt.gca()
+
+        kwargs.pop("include_counts", None)  # remove include_counts if present
+        data = self.frequency_table(**kwargs).sum(axis=1)
+        x_values = [np.mean(i) for i in data.index]
+        y_values = data.values
+
+        for percentile in percentiles:
+            x = np.quantile(self.ws.values, percentile)
+            ax.axvline(x, 0, 1, ls="--", lw=1, c="black", alpha=0.5)
+            ax.text(x, 0, f"{percentile:0.0%}\n{x:0.2f}m/s", ha="left", va="bottom")
+
+        ax.plot(x_values, y_values)
+
+        ax.set_xlim(0, max(x_values))
+        ax.set_ylim(0, max(y_values))
 
         if title is None:
-            title = str(self)
+            ax.set_title(str(self))
         else:
-            title = f"{self}\n{title}"
+            ax.set_title(f"{self}\n{title}")
 
-        return wind_cumulative_probability(
-            self.ws.tolist(),
-            speed_bins=np.linspace(0, 25, 50).tolist(),
-            percentiles=percentiles,
-            title=title,
-        )
+        ax.set_xlabel("Wind Speed (m/s)")
+        ax.set_ylabel("Frequency")
+        if kwargs.get("density", False):
+            ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
 
-    # def plot_windrose_matrix(
-    #     self,
-    #     month_bins: tuple[list[int]],
-    #     hour_bins: tuple[list[int]],
-    #     direction_bins: DirectionBins = DirectionBins(),
-    #     data_bins: list[float] = None,
-    #     title: str = None,
-    # ) -> plt.Figure:
-    #     """Create a plot showing the annual wind direction in a matrix of month and hour bins."""
-    #     fig = windrose_matrix(
-    #         wind_direction=self.wd,
-    #         data=self.ws,
-    #         month_bins=month_bins,
-    #         hour_bins=hour_bins,
-    #         data_bins=data_bins,
-    #         direction_bins=direction_bins,
-    #         cmap="YlGnBu",
-    #         title=title if title is not None else str(self),
-    #     )
-    #     return fig
+        for spine in ["top", "right"]:
+            ax.spines[spine].set_visible(False)
+        ax.grid(visible=True, which="major", axis="both", ls="--", lw=1, alpha=0.25)
 
+        return ax
 
-# def weighted_wind_speed_direction(
-#     wind_speeds: list[float], wind_directions: list[float]
-# ) -> list[float]:
-#     """Return a speed-weighted average wind direction and speed for a set of input wind speeds and directions.
+    @decorator_factory()
+    def plot_cumulative_density(
+        self,
+        ax: plt.Axes = None,
+        title: str = None,
+        percentiles: tuple[float] = (0.5, 0.95),
+        **kwargs,
+    ) -> plt.Axes:
+        """Create a wind speed frequency cumulative density plot.
 
-#     Args:
-#         wind_speeds (list[float]):
-#             A collection of wind speeds, in m/s.
-#         wind_directions (list[float]):
-#             A collection of wind directions, in degrees from North (0).
+        Args:
+            ax (plt.Axes, optional):
+                The axes to plot this chart on. Defaults to None.
+            title (str, optional):
+                An optional title to give the chart. Defaults to None.
+            percentiles (tuple[float], optional):
+                The percentiles to plot. Defaults to (0.5, 0.95).
+            **kwargs:
+                Additional keyword arguments to pass to the self.cumulative_density_function function.
 
-#     Returns:
-#         list[float]:
-#             A weighted average wind speed and direction.
-#     """
-#     warnings.warn("UNDER DEFVEKLOPMENT")
-#     # convert directions into XY vectors (including speed magnitude)
-#     wind_vectors = (
-#         np.array([angle_to_vector(d) for d in wind_directions]).T * wind_speeds
-#     ).T
+        Returns:
+            plt.Axes: The axes object.
+        """
 
-#     # create weights based on wind speed (0-1, higher speeds higher weighting)
-#     weights = np.array(wind_speeds) / np.array(wind_speeds).sum()
+        if ax is None:
+            ax = plt.gca()
 
-#     # multiply by wind speeds (magnitude) to get the average wind vector (weighted by speed)
-#     resultant_wind_vector = np.average((wind_vectors.T).T, axis=0, weights=weights)
+        data = self.cumulative_density_function(**kwargs).sum(axis=1)
+        x_values = [np.mean(i) for i in data.index]
+        y_values = data.values
 
-#     # get unit vector and magnitude (wind_speed)
-#     resultant_wind_speed = np.linalg.norm(resultant_wind_vector)
+        for percentile in percentiles:
+            x = np.quantile(self.ws.values, percentile)
+            ax.axvline(x, 0, 1, ls="--", lw=1, c="black", alpha=0.5)
+            ax.text(x, 0, f"{percentile:0.0%}\n{x:0.2f}m/s", ha="left", va="bottom")
 
-#     # determine new wind direction (angle from north)
-#     try:
-#         resultant_wind_direction = np.degrees(
-#             Vector2D.from_array(resultant_wind_vector).angle_counterclockwise(
-#                 Vector2D(0, 1)
-#             )
-#         )
-#     except:
-#         resultant_wind_direction = 0
+        ax.plot(x_values, y_values)
 
-#     return resultant_wind_speed, resultant_wind_direction
+        ax.set_xlim(0, max(x_values))
+        ax.set_ylim(0, max(y_values))
+
+        if title is None:
+            ax.set_title(str(self))
+        else:
+            ax.set_title(f"{self}\n{title}")
+
+        ax.set_xlabel("Wind Speed (m/s)")
+        ax.set_ylabel("Frequency")
+        ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
+
+        for spine in ["top", "right"]:
+            ax.spines[spine].set_visible(False)
+        ax.grid(visible=True, which="major", axis="both", ls="--", lw=1, alpha=0.25)
+
+        return ax
+
+    # TODO - add Climate Consultant-style "wind wheel" plot here
+    # (http://2.bp.blogspot.com/-F27rpZL4VSs/VngYxXsYaTI/AAAAAAAACAc/yoGXmk13uf8/s1600/CC-graphics%2B-%2BWind%2BWheel.jpg)

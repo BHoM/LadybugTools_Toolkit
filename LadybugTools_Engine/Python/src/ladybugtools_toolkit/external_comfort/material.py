@@ -17,6 +17,7 @@ from honeybee_energy.material.opaque import (
     EnergyMaterialVegetation,
     _EnergyMaterialOpaqueBase,
 )
+from ..bhom import decorator_factory
 
 
 def _ice_tool_materials(
@@ -130,6 +131,7 @@ def _material_equality(
     return str(material1) == str(material2)
 
 
+@decorator_factory()
 def materials() -> list[_EnergyMaterialOpaqueBase]:
     """Return a list all the materials in the library.
 
@@ -156,6 +158,7 @@ def materials() -> list[_EnergyMaterialOpaqueBase]:
     return filtered_materials
 
 
+@decorator_factory()
 def get_material(material_identifier: str) -> _EnergyMaterialOpaqueBase:
     """Get a material from its name.
 

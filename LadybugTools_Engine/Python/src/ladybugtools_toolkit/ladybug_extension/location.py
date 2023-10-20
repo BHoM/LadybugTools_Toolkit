@@ -2,7 +2,10 @@
 import numpy as np
 from ladybug.location import Location
 
+from ..bhom import decorator_factory
 
+
+@decorator_factory()
 def location_to_string(location: Location) -> str:
     """Return a simple string representation of the Location object.
 
@@ -17,6 +20,7 @@ def location_to_string(location: Location) -> str:
     return f"{location.country.strip()} - {location.city.strip()}"
 
 
+@decorator_factory()
 def average_location(
     locations: list[Location], weights: list[float] = None
 ) -> Location:

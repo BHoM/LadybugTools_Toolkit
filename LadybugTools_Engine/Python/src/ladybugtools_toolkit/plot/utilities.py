@@ -27,7 +27,10 @@ from matplotlib.colors import (
 from matplotlib.tri import Triangulation
 from PIL import Image
 
+from ..bhom import decorator_factory
 
+
+@decorator_factory()
 def animation(
     image_files: list[str | Path],
     output_gif: str | Path,
@@ -75,6 +78,7 @@ def animation(
     return output_gif
 
 
+@decorator_factory()
 def relative_luminance(color: Any):
     """Calculate the relative luminance of a color according to W3C standards
 
@@ -96,6 +100,7 @@ def relative_luminance(color: Any):
         return lum
 
 
+@decorator_factory()
 def contrasting_color(color: Any):
     """Calculate the contrasting color for a given color.
 
@@ -111,6 +116,7 @@ def contrasting_color(color: Any):
     return ".15" if relative_luminance(color) > 0.408 else "w"
 
 
+@decorator_factory()
 def colormap_sequential(
     *colors: str | float | int | tuple, N: int = 256
 ) -> LinearSegmentedColormap:
@@ -153,6 +159,7 @@ def colormap_sequential(
     )
 
 
+@decorator_factory()
 def lb_colormap(name: int | str = "original") -> LinearSegmentedColormap:
     """Create a Matplotlib from a colormap provided by Ladybug.
 
@@ -187,6 +194,7 @@ def lb_colormap(name: int | str = "original") -> LinearSegmentedColormap:
     return colormap_sequential(*rgb)
 
 
+@decorator_factory()
 def annotate_imshow(
     im: mimage.AxesImage,
     data: list[float] = None,
@@ -255,6 +263,7 @@ def annotate_imshow(
     return texts
 
 
+@decorator_factory()
 def lighten_color(color: str | tuple, amount: float = 0.5) -> tuple[float]:
     """
     Lightens the given color by multiplying (1-luminosity) by the given amount.
@@ -282,6 +291,7 @@ def lighten_color(color: str | tuple, amount: float = 0.5) -> tuple[float]:
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
 
 
+@decorator_factory()
 def add_bar_labels(ax: plt.Axes, orientation: str, threshold: float) -> None:
     """Add labels to the end of each bar in a bar chart.
 
@@ -314,6 +324,7 @@ def add_bar_labels(ax: plt.Axes, orientation: str, threshold: float) -> None:
             )
 
 
+@decorator_factory()
 def create_title(text: str, plot_type: str) -> str:
     """Create a title for a plot.
 
@@ -339,6 +350,7 @@ def create_title(text: str, plot_type: str) -> str:
     )
 
 
+@decorator_factory()
 def average_color(colors: Any, keep_alpha: bool = False) -> str:
     """Return the average color from a list of colors.
 
@@ -368,6 +380,7 @@ def average_color(colors: Any, keep_alpha: bool = False) -> str:
     return rgb2hex(to_rgba_array(colors).mean(axis=0), keep_alpha=keep_alpha)
 
 
+@decorator_factory()
 def base64_to_image(base64_string: str, image_path: Path) -> Path:
     """Convert a base64 encoded image into a file on disk.
 
@@ -392,6 +405,7 @@ def base64_to_image(base64_string: str, image_path: Path) -> Path:
     return image_path
 
 
+@decorator_factory()
 def image_to_base64(image_path: Path, html: bool = False) -> str:
     """Load an image file from disk and convert to base64 string.
 
@@ -428,6 +442,7 @@ def image_to_base64(image_path: Path, html: bool = False) -> str:
     return base64_string
 
 
+@decorator_factory()
 def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
     """Convert a matplotlib figure object into a base64 string.
 
@@ -455,6 +470,7 @@ def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
     return base64_string
 
 
+@decorator_factory()
 def figure_to_image(fig: plt.Figure) -> Image:
     """Convert a matplotlib Figure object into a PIL Image.
 
@@ -479,6 +495,7 @@ def figure_to_image(fig: plt.Figure) -> Image:
     return Image.fromarray(buf)
 
 
+@decorator_factory()
 def tile_images(
     imgs: list[Path] | list[Image.Image], rows: int, cols: int
 ) -> Image.Image:
@@ -523,6 +540,7 @@ def tile_images(
     return grid
 
 
+@decorator_factory()
 def triangulation_area(triang: Triangulation) -> float:
     """Calculate the area of a matplotlib Triangulation.
 
@@ -554,6 +572,7 @@ def triangulation_area(triang: Triangulation) -> float:
     return area
 
 
+@decorator_factory()
 def create_triangulation(
     x: list[float],
     y: list[float],
@@ -622,3 +641,43 @@ def create_triangulation(
     plt.close(fig)
     triang.set_mask(maxi > alpha)
     return triang
+
+
+@decorator_factory()
+def format_polar_plot(ax: plt.Axes) -> plt.Axes:
+    """Format a polar plot, to svae on having to write this every time!"""
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+
+    # format plot area
+    ax.spines["polar"].set_visible(False)
+    ax.grid(True, which="both", ls="--", zorder=0, alpha=0.5)
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+    plt.setp(ax.get_yticklabels(), fontsize="small")
+    ax.set_xticks(np.radians((0, 90, 180, 270)), minor=False)
+    ax.set_xticklabels(("N", "E", "S", "W"), minor=False, **{"fontsize": "medium"})
+    ax.set_xticks(
+        np.radians(
+            (22.5, 45, 67.5, 112.5, 135, 157.5, 202.5, 225, 247.5, 292.5, 315, 337.5)
+        ),
+        minor=True,
+    )
+    ax.set_xticklabels(
+        (
+            "NNE",
+            "NE",
+            "ENE",
+            "ESE",
+            "SE",
+            "SSE",
+            "SSW",
+            "SW",
+            "WSW",
+            "WNW",
+            "NW",
+            "NNW",
+        ),
+        minor=True,
+        **{"fontsize": "x-small"},
+    )
+    ax.set_yticklabels([])

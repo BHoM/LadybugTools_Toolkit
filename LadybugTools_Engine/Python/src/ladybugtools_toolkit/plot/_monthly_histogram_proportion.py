@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import pandas as pd
 
+from ..bhom import decorator_factory
 from ..helpers import validate_timeseries
 from .utilities import contrasting_color
 
 
+@decorator_factory()
 def monthly_histogram_proportion(
     series: pd.Series,
     bins: list[float],

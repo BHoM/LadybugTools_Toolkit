@@ -422,6 +422,7 @@ class Shelter(BaseModel):
         )
         return shd
 
+    @decorator_factory()
     def rotate(self, angle: float, center: Point3D = Point3D()) -> "Shelter":
         """Rotate the shelter about 0, 0, 0 by the given angle in degrees clockwise from north at 0.
 
@@ -442,6 +443,7 @@ class Shelter(BaseModel):
             self.radiation_porosity,
         )
 
+    @decorator_factory()
     def move(self, vector: Vector3D) -> "Shelter":
         """Move the shelter by the given vector.
 
@@ -459,12 +461,14 @@ class Shelter(BaseModel):
             self.radiation_porosity,
         )
 
+    @decorator_factory()
     def set_porosity(self, porosity: float) -> "Shelter":
         """Return this shelter with an adjusted porosity value applied to both wind and radiation components."""
         return Shelter(
             vertices=self.vertices, radiation_porosity=porosity, wind_porosity=porosity
         )
 
+    @decorator_factory()
     def annual_sky_exposure(self, include_radiation_porosity: bool = True) -> float:
         """Determine the proportion of sky the analytical point is exposed to.
             Also account for radiation_porosity in that exposure.
@@ -490,6 +494,7 @@ class Shelter(BaseModel):
             return 1 - ((n_intersections / len(rays)) * (1 - _radiation_porosity))
         return 1 - (n_intersections / len(rays))
 
+    @decorator_factory()
     def annual_sun_exposure(
         self, epw: EPW, include_radiation_porosity: bool = True
     ) -> list[float]:
@@ -537,6 +542,7 @@ class Shelter(BaseModel):
                 )
         return _sun_exposure
 
+    @decorator_factory()
     def wind_exposure(
         self,
         wind_direction: float,
@@ -642,6 +648,7 @@ class Shelter(BaseModel):
             + (edge_acceleration_factor * sum(not i for i in intersections))
         ) / len(intersections)
 
+    @decorator_factory()
     def annual_wind_speed(
         self,
         epw: EPW,
@@ -689,6 +696,7 @@ class Shelter(BaseModel):
 
         return _wind_speed
 
+    @decorator_factory()
     def visualise(
         self,
         ax: plt.Axes = None,

@@ -167,11 +167,13 @@ class ExternalComfort(BaseModel):
 
         return pmv.standard_effective_temperature
 
+    @decorator_factory()
     def description(self) -> str:
         """Return a description of this external comfort object."""
 
         return f"{self.simulation_result.description()}\n{self.typology.name}"
 
+    @decorator_factory()
     def to_dataframe(self) -> pd.DataFrame:
         """Return a dataframe of all data for this typology."""
 
@@ -205,6 +207,7 @@ class ExternalComfort(BaseModel):
 
         return pd.concat([simulation_result_df, obj_df], axis=1)
 
+    @decorator_factory()
     def plot_utci_day_comfort_metrics(
         self, ax: plt.Axes = None, month: int = 3, day: int = 21
     ) -> plt.Axes:
@@ -234,6 +237,7 @@ class ExternalComfort(BaseModel):
             title=self.description(),
         )
 
+    @decorator_factory()
     def plot_utci_heatmap(
         self,
         ax: plt.Axes = None,
@@ -257,6 +261,7 @@ class ExternalComfort(BaseModel):
             title=self.description(),
         )
 
+    @decorator_factory()
     def plot_utci_heatmap_histogram(
         self, utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES, **kwargs
     ) -> plt.Figure:
@@ -278,6 +283,7 @@ class ExternalComfort(BaseModel):
             **kwargs,
         )
 
+    @decorator_factory()
     def plot_utci_histogram(
         self,
         ax: plt.Axes = None,
@@ -320,6 +326,7 @@ class ExternalComfort(BaseModel):
             **kwargs,
         )
 
+    @decorator_factory()
     def plot_utci_distance_to_comfortable(
         self,
         ax: plt.Axes = None,
@@ -355,6 +362,7 @@ class ExternalComfort(BaseModel):
             vmax=10,
         )
 
+    @decorator_factory()
     def plot_dbt_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly DBT values associated with this Typology.
 
@@ -373,6 +381,7 @@ class ExternalComfort(BaseModel):
             **kwargs,
         )
 
+    @decorator_factory()
     def plot_rh_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly RH values associated with this Typology.
 
@@ -391,6 +400,7 @@ class ExternalComfort(BaseModel):
             **kwargs,
         )
 
+    @decorator_factory()
     def plot_ws_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly WS values associated with this Typology.
 
@@ -409,6 +419,7 @@ class ExternalComfort(BaseModel):
             **kwargs,
         )
 
+    @decorator_factory()
     def plot_mrt_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly MRT values associated with this Typology.
 
