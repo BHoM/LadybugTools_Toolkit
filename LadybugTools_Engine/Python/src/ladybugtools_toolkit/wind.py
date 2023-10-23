@@ -139,6 +139,12 @@ class Wind:
         """
         return self.wind_speeds[self.wind_speeds <= 0.1].index.tolist()
 
+    @property
+    def uv(self) -> pd.DataFrame:
+        """Return the U and V wind components in m/s."""
+        u, v = angle_to_vector(self.wd)
+        return pd.concat([u * self.ws, v * self.ws], axis=1, keys=["u", "v"])
+
     #################
     # CLASS METHODS #
     #################
@@ -309,7 +315,7 @@ class Wind:
         )
 
     @classmethod
-    def from_wind_uv(
+    def from_uv(
         cls,
         u: list[int | float | np.number],
         v: list[int | float | np.number],
@@ -334,8 +340,13 @@ class Wind:
         """
 
         # convert UV into angle and magnitude
-        wind_direction = angle_from_north(v, u)
+        wind_direction = angle_from_north(np.stack([u, v]))
         wind_speed = np.sqrt(np.square(u) + np.square(v))
+
+        if any(wind_direction[wind_speed == 0] == 90):
+            warnings.warn(
+                "Some input vectors have velocity of 0. This is not bad, but can mean directions may be misreported."
+            )
 
         return cls(wind_speed, wind_direction, datetimes, height_above_ground)
 
@@ -1151,12 +1162,15 @@ class Wind:
         if ax is None:
             _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
-        if not data:
-            data = self.ws
+        # remove 0-speed values
+        local_w = self.filter_by_speed(min_speed=0.1)
 
-        if len(data) != len(self.wd):
+        if not data:
+            data = local_w.ws
+
+        if len(data) != len(local_w.wd):
             raise ValueError(
-                f"The length of the data ({len(data)}) must match the length of the wind-directions ({len(self.wd)})."
+                f"The length of the data ({len(data)}) must match the length of the wind-directions ({len(local_w.wd)})."
             )
 
         # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.

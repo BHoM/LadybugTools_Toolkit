@@ -107,6 +107,14 @@ def test_wind_from_openmeteo():
     )
 
 
+def test_wind_from_uv():
+    """_"""
+    w = Wind.from_epw(EPW_OBJ)
+    u, v = w.uv.values.T
+    with pytest.warns(UserWarning):
+        assert isinstance(Wind.from_uv(u=u, v=v, datetimes=w.datetimes), Wind)
+
+
 def test_wind_functions():
     """."""
     w = Wind.from_epw(EPW_OBJ)
