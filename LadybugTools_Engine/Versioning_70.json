@@ -1,0 +1,5 @@
+{
+  "MessageForDeleted": {
+    "BH.Engine.LadybugTools.Convert.FromHoneybeeSurface(System.Object)": "This method has been removed as part of the removal of the dependency from Rhino in the LadybugTools_Toolkit."
+  }
+}
