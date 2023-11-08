@@ -22,9 +22,7 @@
 
 using BH.oM.Base.Attributes;
 using System.ComponentModel;
-using System.Threading;
 using BH.oM.LadybugTools;
-using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -39,7 +37,7 @@ namespace BH.Engine.LadybugTools
         [Input("stringCase", "The case to convert the text to.")]
         [Input("ignoreList", "A list of strings to ignore when converting the case.")]
         [Output("str", "Text in \"PascalCase\".")]
-        public static string ToCase(string str, StringCase stringCase = StringCase.Undefined, List<string> ignoreList = null)
+        public static string ToCase(this string str, StringCase stringCase = StringCase.Undefined, List<string> ignoreList = null)
         {
             if (stringCase == StringCase.Pascal)
             {
@@ -88,7 +86,7 @@ namespace BH.Engine.LadybugTools
         [Input("str", "Text to convert the case of.")]
         [Input("ignoreList", "A list of strings to ignore when converting the case.")]
         [Output("str", "Text in \"PascalCase\".")]
-        public static string ToPascalCase(string str, List<string> ignoreList = null)
+        public static string ToPascalCase(this string str, List<string> ignoreList = null)
         {
             if (ignoreList == null)
             {
@@ -113,7 +111,7 @@ namespace BH.Engine.LadybugTools
         [Input("dict", "The dictionary whose keys will be converted.")]
         [Input("ignoreList", "A list of strings to ignore when converting the case.")]
         [Output("dict", "The dictionary with converted keys.")]
-        public static Dictionary<string, object> ToPascalCase(Dictionary<string, object> dict, List<string> ignoreList = null)
+        public static Dictionary<string, object> ToPascalCase(this Dictionary<string, object> dict, List<string> ignoreList = null)
         {
             var convertedDict = new Dictionary<string, object>();
             foreach (var pair in dict)
@@ -145,7 +143,7 @@ namespace BH.Engine.LadybugTools
         [Input("str", "Text to convert the case of.")]
         [Input("ignoreList", "A list of strings to ignore when converting the case.")]
         [Output("str", "Text in \"snakle_case\".")]
-        public static string ToSnakeCase(string str, List<string> ignoreList = null)
+        public static string ToSnakeCase(this string str, List<string> ignoreList = null)
         {
             if (ignoreList == null)
             {
@@ -168,7 +166,7 @@ namespace BH.Engine.LadybugTools
         [Input("dict", "The dictionary whose keys will be converted.")]
         [Input("ignoreList", "A list of strings to ignore when converting the case.")]
         [Output("dict", "The dictionary with converted keys.")]
-        public static Dictionary<string, object> ToSnakeCase(Dictionary<string, object> dict, List<string> ignoreList = null)
+        public static Dictionary<string, object> ToSnakeCase(this Dictionary<string, object> dict, List<string> ignoreList = null)
         {
             var convertedDict = new Dictionary<string, object>();
             foreach (var pair in dict)
@@ -200,7 +198,7 @@ namespace BH.Engine.LadybugTools
         [Input("str", "Text to convert the case of.")]
         [Input("ignoreList", "A list of strings to ignore when converting the case.")]
         [Output("str", "Text in \"camelCase\".")]
-        public static string ToCamelCase(string str, List<string> ignoreList)
+        public static string ToCamelCase(this string str, List<string> ignoreList)
         {
             if (ignoreList == null)
             {
@@ -227,7 +225,7 @@ namespace BH.Engine.LadybugTools
         [Input("dict", "The dictionary whose keys will be converted.")]
         [Input("ignoreList", "A list of strings to ignore when converting the case.")]
         [Output("dict", "The dictionary with converted keys.")]
-        public static Dictionary<string, object> ToCamelCase(Dictionary<string, object> dict, List<string> ignoreList = null)
+        public static Dictionary<string, object> ToCamelCase(this Dictionary<string, object> dict, List<string> ignoreList = null)
         {
             var convertedDict = new Dictionary<string, object>();
             foreach (var pair in dict)
