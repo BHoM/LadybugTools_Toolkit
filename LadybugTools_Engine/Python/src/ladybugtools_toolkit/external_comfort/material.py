@@ -4,6 +4,7 @@
 # pylint: disable=E0401
 from difflib import get_close_matches
 from pathlib import Path
+from enum import Enum
 
 # pylint: enable=E0401
 
@@ -17,7 +18,7 @@ from honeybee_energy.material.opaque import (
     EnergyMaterialVegetation,
     _EnergyMaterialOpaqueBase,
 )
-from ..bhom import decorator_factory
+from ..helpers import sanitise_string
 
 
 def _ice_tool_materials(
@@ -131,7 +132,6 @@ def _material_equality(
     return str(material1) == str(material2)
 
 
-@decorator_factory()
 def materials() -> list[_EnergyMaterialOpaqueBase]:
     """Return a list all the materials in the library.
 
@@ -148,17 +148,12 @@ def materials() -> list[_EnergyMaterialOpaqueBase]:
     # remove dodgy materials
     filtered_materials = []
     for mat in all_materials:
-        if " air " in mat.identifier.lower():
-            continue
-        if " gap " in mat.identifier.lower():
-            continue
-        if " void " in mat.identifier.lower():
+        if any(i in mat.identifier.lower() for i in [" air ", " gap ", " void "]):
             continue
         filtered_materials.append(mat)
     return filtered_materials
 
 
-@decorator_factory()
 def get_material(material_identifier: str) -> _EnergyMaterialOpaqueBase:
     """Get a material from its name.
 
@@ -182,3 +177,9 @@ def get_material(material_identifier: str) -> _EnergyMaterialOpaqueBase:
             raise KeyError(
                 f"Unknown material name: '{material_identifier}'. Did you mean {possible_materials}"
             ) from exc
+
+
+Materials = Enum(
+    "Materials",
+    {sanitise_string(material.identifier): material for material in materials()},
+)

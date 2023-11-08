@@ -48,25 +48,15 @@ class IrradianceType(Enum):
 class Solar:
     """An object to handle solar radiation."""
 
-    epw_file: Path = field(init=True, repr=True)
+    epw: EPW = field(init=True, repr=True)
 
     def __post_init__(self):
-        self.epw_file = Path(self.epw_file)
-        if not self.epw_file.exists():
-            raise ValueError(f"{self.epw_file} does not exist.")
+        if isinstance(self.epw, str | Path):
+            self.epw = EPW(self.epw)
 
     @property
     def wea(self) -> Wea:
-        return Wea.from_epw_file(self.epw_file)
-
-    @property
-    def epw(self) -> EPW:
-        return EPW(self.epw_file)
-
-    @classmethod
-    def from_epw(cls, epw: EPW):
-        """Create a Solar object from an EPW object."""
-        return cls(epw_file=Path(epw.file_path).resolve())
+        return Wea.from_epw_file(self.epw.file_path)
 
     @staticmethod
     def altitudes(n_altitudes: int) -> list[float]:
@@ -86,8 +76,7 @@ class Solar:
             raise ValueError("n_azimuths must be an integer >= 3.")
         return np.linspace(0, 360, n_azimuths).tolist()
 
-    decorator_factory()
-
+    @decorator_factory()
     def directional_irradiance_matrix(
         self,
         altitude: float | int = 0,
@@ -121,7 +110,7 @@ class Solar:
         _dir.mkdir(exist_ok=True, parents=True)
         sp = (
             _dir
-            / f"{self.epw_file.stem}_{ground_reflectance}_{isotropic}_{db}_{altitude}.h5"
+            / f"{Path(self.epw.file_path).stem}_{ground_reflectance}_{isotropic}_{db}_{altitude}.h5"
         )
         if reload and sp.exists():
             CONSOLE_LOGGER.info(f"Loading results from {sp}.")
@@ -170,8 +159,7 @@ class Solar:
 
         return df
 
-    decorator_factory()
-
+    @decorator_factory()
     def detailed_irradiance_matrix(
         self,
         n_altitudes: int = 3,
@@ -209,7 +197,7 @@ class Solar:
         _dir.mkdir(exist_ok=True, parents=True)
         sp = (
             _dir
-            / f"{self.epw_file.stem}_{ground_reflectance}_{isotropic}_{n_altitudes}_{n_azimuths}.h5"
+            / f"{Path(self.epw.file_path).stem}_{ground_reflectance}_{isotropic}_{n_altitudes}_{n_azimuths}.h5"
         )
 
         if reload and sp.exists():
@@ -259,8 +247,7 @@ class Solar:
 
         return df
 
-    decorator_factory()
-
+    @decorator_factory()
     def plot_tilt_orientation_factor(
         self,
         ax: plt.Axes = None,
@@ -424,6 +411,8 @@ class Solar:
                 The analysis period. Defaults to AnalysisPeriod().
             agg (str, optional):
                 The aggregation method. Defaults to "sum".
+            labelling (bool, optional):
+                Label the plot. Defaults to True.
             **kwargs:
                 Keyword arguments to pass to tricontourf.
 
@@ -538,8 +527,9 @@ class Solar:
 
         _ = ax.set_title(
             (
-                f"{location_to_string(self.epw.location)}\n{irradiance_type.to_string()} "
-                f"Irradiance ({agg.upper()})\n{describe_analysis_period(analysis_period)}"
+                f"{location_to_string(self.epw.location)}\n"
+                f"{irradiance_type.to_string()} irradiance ({agg.upper()}) at {altitude}° tilt\n"
+                f"{describe_analysis_period(analysis_period)}"
             )
         )
 

@@ -1,5 +1,6 @@
 """Methods for handling SpatialMetric results for spatial comfort assessments."""
 # pylint: disable=broad-exception-caught,W0212
+# pylint: disable=line-too-long
 # pylint: disable=E0401
 import calendar
 import contextlib
@@ -22,7 +23,7 @@ from matplotlib.ticker import PercentFormatter, StrMethodFormatter
 from matplotlib.colors import ListedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ...helpers import sanitise_string
+from ...helpers import sanitise_string, wind_speed_at_height
 from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
 from ...ladybug_extension.analysisperiod import (
     analysis_period_to_boolean,
@@ -201,10 +202,6 @@ class SpatialComfort:
                                 timestep=timestep,
                             ),
                         )
-
-        # wrap methods within this class
-        # commented out here to avoid BHoMObject running all methods upon instantiation!
-        # super().__post_init__()
 
     def __repr__(self) -> str:
         return f"{self.spatial_simulation_directory.name}"
@@ -519,6 +516,9 @@ class SpatialComfort:
             df = spatial_wind_speed(
                 self.spatial_simulation_directory, self.simulation_result.epw
             ).round(2)
+            df = wind_speed_at_height(
+                df, 1.5, 10
+            )  # TODO - this part assumes wind speed extracted from CFD results at 1.5m above ground, to translate to 10m above ground. This may not be correct in certain cases.
             df.columns = df.columns.astype(str)
             df.to_parquet(save_path)
             self._wind_speed_cfd = df

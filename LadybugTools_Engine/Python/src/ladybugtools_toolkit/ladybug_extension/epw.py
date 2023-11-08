@@ -347,32 +347,6 @@ def unique_wind_speed_direction(
 
 
 @decorator_factory()
-def epw_to_dict(epw: EPW) -> dict[str, Any]:
-    """Convert a ladybug EPW object into a JSON-able compliant dictionary.
-
-    Args:
-        epw (EPW):
-            An EPW object.
-
-    Returns:
-        Dict[str, Any]:
-            A sanitised dictionary.
-    """
-    d = epw.to_dict()
-    json_str = json.dumps(d)
-
-    # custom handling of non-standard JSON NaN/Inf values
-    json_str = json_str.replace('"min": -Infinity', '"min": "-inf"')
-    json_str = json_str.replace('"max": Infinity', '"max": "inf"')
-
-    # custom handling of float-indexed values
-    for k, _ in d["monthly_ground_temps"].items():
-        json_str = json_str.replace(f'"{k}": {{', f'"_{k}": {{'.replace(".", "_"))
-
-    return json.loads(json_str)
-
-
-@decorator_factory()
 def sun_position_list(epw: EPW) -> list[Sun]:
     """
     Calculate sun positions for a given epw file.
@@ -1450,8 +1424,8 @@ def degree_time(
             [cdd, hdd],
             axis=1,
             keys=[
-                f"Cooling Degree Days (>{cool_base})",
-                f"Heating Degree Days (<{heat_base})",
+                f"Cooling Degree Days (>{cool_base}°C)",
+                f"Heating Degree Days (<{heat_base}°C)",
             ],
         )
         .reorder_levels([1, 0], axis=1)

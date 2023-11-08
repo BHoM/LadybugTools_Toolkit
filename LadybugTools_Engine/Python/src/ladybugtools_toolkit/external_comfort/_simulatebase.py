@@ -3,14 +3,16 @@ unshaded surface temperatures in an abstract "openfield" condition."""
 # pylint: disable=E0401
 import json
 from pathlib import Path
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any
 
 # pylint: enable=E0401
-
+from caseconverter import pascalcase
 import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
 from honeybee.model import Model
+from honeybee_energy.dictutil import dict_to_material
 from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
 from honeybee_energy.simulation.parameter import (
@@ -22,9 +24,13 @@ from honeybee_energy.simulation.parameter import (
 from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.futil import nukedir
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal, SolarCalParameter
-from pydantic import BaseModel, Field, root_validator, validator
 
 from ..bhom import decorator_factory, CONSOLE_LOGGER
+from ..bhom.to_bhom import (
+    energymaterial_to_bhom,
+    hourlycontinuouscollection_to_bhom,
+    energymaterialvegetation_to_bhom,
+)
 from ..honeybee_extension.results import load_sql
 from ..ladybug_extension.datacollection import (
     collection_from_series,
@@ -34,6 +40,30 @@ from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.epw import equality as epw_equality
 from ..ladybug_extension.groundtemperature import energyplus_strings
 from .model import create_model, get_ground_reflectance, model_equality
+from ..helpers import convert_keys_to_snake_case, sanitise_string
+from .material import Materials
+
+
+def simulation_id(
+    epw_file: Path,
+    ground_material: EnergyMaterial | EnergyMaterialVegetation,
+    shade_material: EnergyMaterial | EnergyMaterialVegetation,
+) -> str:
+    """Create an ID for a simulation.
+
+    Args:
+        epw_file (Path): The path to the EPW file.
+        ground_material (EnergyMaterial | EnergyMaterialVegetation): The ground material.
+        shade_material (EnergyMaterial | EnergyMaterialVegetation): The shade material.
+
+    Returns:
+        str: The simulation ID.
+    """
+
+    epw_id = sanitise_string(epw_file.stem)
+    ground_material_id = sanitise_string(ground_material.identifier)
+    shade_material_id = sanitise_string(shade_material.identifier)
+    return f"{epw_id}__{ground_material_id}__{shade_material_id}"
 
 
 def simulation_directory(model: Model) -> Path:
@@ -100,9 +130,7 @@ def simulate_surface_temperatures(
     existing_models = list(sim_dir.glob("*.hbjson"))
     if len(existing_models) >= 1:
         for existing_model in existing_models:
-            if model_equality(
-                model, Model.from_hbjson(existing_model), include_identifier=True
-            ):
+            if model_equality(model, Model.from_hbjson(existing_model)):
                 models_match = True
             else:
                 existing_model.unlink()
@@ -172,6 +200,7 @@ def simulate_surface_temperatures(
 
     else:
         CONSOLE_LOGGER.info(f"Reloading {model.identifier}")
+
     df = load_sql(sql_path)
 
     if remove_dir:
@@ -244,108 +273,128 @@ def radiant_temperature(
     return collection_from_series(mrt_series)
 
 
-class SimulationResult(BaseModel):
+_ATTRIBUTES = [
+    "shaded_down_temperature",
+    "shaded_up_temperature",
+    "unshaded_down_temperature",
+    "unshaded_up_temperature",
+    "shaded_radiant_temperature",
+    "shaded_longwave_mean_radiant_temperature_delta",
+    "shaded_shortwave_mean_radiant_temperature_delta",
+    "shaded_mean_radiant_temperature",
+    "unshaded_radiant_temperature",
+    "unshaded_longwave_mean_radiant_temperature_delta",
+    "unshaded_shortwave_mean_radiant_temperature_delta",
+    "unshaded_mean_radiant_temperature",
+]
+
+
+@dataclass(init=True, repr=True, eq=True)
+class SimulationResult:
     """_"""
 
-    epw_file: Path = Field(alias="EpwFile")
-    ground_material: EnergyMaterial | EnergyMaterialVegetation = Field(
-        alias="GroundMaterial"
-    )
-    shade_material: EnergyMaterial | EnergyMaterialVegetation = Field(
-        alias="ShadeMaterial"
-    )
-    identifier: Optional[str] = Field(alias="Identifier", default="unnamed")
+    epw_file: Path
+    ground_material: EnergyMaterial | EnergyMaterialVegetation
+    shade_material: EnergyMaterial | EnergyMaterialVegetation
+    identifier: str = None
 
-    shaded_down_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="ShadedDownTemperature", repr=False
-    )
-    shaded_up_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="ShadedUpTemperature", repr=False
-    )
+    shaded_down_temperature: HourlyContinuousCollection = None
+    shaded_up_temperature: HourlyContinuousCollection = None
 
-    unshaded_down_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="UnshadedDownTemperature", repr=False
-    )
-    unshaded_up_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="UnshadedUpTemperature", repr=False
-    )
+    unshaded_down_temperature: HourlyContinuousCollection = None
+    unshaded_up_temperature: HourlyContinuousCollection = None
 
-    shaded_radiant_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="ShadedRadiantTemperature", repr=False
-    )
-    shaded_longwave_mean_radiant_temperature_delta: Optional[
-        HourlyContinuousCollection
-    ] = Field(
-        default=None, alias="ShadedLongwaveMeanRadiantTemperatureDelta", repr=False
-    )
-    shaded_shortwave_mean_radiant_temperature_delta: Optional[
-        HourlyContinuousCollection
-    ] = Field(
-        default=None, alias="ShadedShortwaveMeanRadiantTemperatureDelta", repr=False
-    )
-    shaded_mean_radiant_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="ShadedMeanRadiantTemperature", repr=False
-    )
+    shaded_radiant_temperature: HourlyContinuousCollection = None
+    shaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None
+    shaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None
+    shaded_mean_radiant_temperature: HourlyContinuousCollection = None
 
-    unshaded_radiant_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="UnshadedRadiantTemperature", repr=False
-    )
-    unshaded_longwave_mean_radiant_temperature_delta: Optional[
-        HourlyContinuousCollection
-    ] = Field(
-        default=None, alias="UnshadedLongwaveMeanRadiantTemperatureDelta", repr=False
-    )
-    unshaded_shortwave_mean_radiant_temperature_delta: Optional[
-        HourlyContinuousCollection
-    ] = Field(
-        default=None, alias="UnshadedShortwaveMeanRadiantTemperatureDelta", repr=False
-    )
-    unshaded_mean_radiant_temperature: Optional[HourlyContinuousCollection] = Field(
-        default=None, alias="UnshadedMeanRadiantTemperature", repr=False
-    )
+    unshaded_radiant_temperature: HourlyContinuousCollection = None
+    unshaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None
+    unshaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None
+    unshaded_mean_radiant_temperature: HourlyContinuousCollection = None
 
-    @root_validator
-    @classmethod
-    def post_init_simulation(cls, values):  # pylint: disable=E0213
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.identifier})"
+
+    def __post_init__(self):
         """_"""
 
-        _epw = EPW(values["epw_file"])
-        _model = create_model(
-            values["ground_material"],
-            values["shade_material"],
-            values["identifier"],
-        )
+        # validation
+        if not isinstance(self.epw_file, (Path, str)):
+            raise ValueError("epw_file must be a Path or str.")
+        self.epw_file = Path(self.epw_file).resolve()
+        if not self.epw_file.exists():
+            raise ValueError("epw_file does not exist.")
+
+        if isinstance(self.ground_material, Materials):
+            self.ground_material = self.ground_material.value
+        if isinstance(self.shade_material, Materials):
+            self.shade_material = self.shade_material.value
+
+        if not isinstance(
+            self.ground_material, (EnergyMaterial, EnergyMaterialVegetation)
+        ):
+            raise ValueError(
+                "ground_material must be an EnergyMaterial or EnergyMaterialVegetation."
+            )
+        if not isinstance(
+            self.shade_material, (EnergyMaterial, EnergyMaterialVegetation)
+        ):
+            raise ValueError(
+                "shade_material must be an EnergyMaterial or EnergyMaterialVegetation."
+            )
+
+        if self.identifier is None:
+            self.identifier = simulation_id(
+                self.epw_file, self.ground_material, self.shade_material
+            )
+
+        for attr in _ATTRIBUTES:
+            if not isinstance(
+                getattr(self, attr), (HourlyContinuousCollection, type(None))
+            ):
+                raise ValueError(
+                    f"{attr} must be either an HourlyContinuousCollection, or None."
+                )
 
         # run simulation and populate object with results if not already done
+        _epw = EPW(self.epw_file)
+        _model = create_model(
+            identifier=self.identifier,
+            ground_material=self.ground_material,
+            shade_material=self.shade_material,
+        )
+
         if not all(
             [
-                values["shaded_down_temperature"],
-                values["unshaded_down_temperature"],
-                values["shaded_up_temperature"],
-                values["unshaded_up_temperature"],
+                self.shaded_down_temperature,
+                self.unshaded_down_temperature,
+                self.shaded_up_temperature,
+                self.unshaded_up_temperature,
             ]
         ):
             results = simulate_surface_temperatures(
                 model=_model,
-                epw_file=values["epw_file"],
-                remove_dir=not bool(values["identifier"]),
+                epw_file=self.epw_file,
+                remove_dir=not bool(self.identifier),
             )
             for k, v in results.items():
-                if isinstance(values[k], HourlyContinuousCollection):
+                if isinstance(getattr(self, k), HourlyContinuousCollection):
                     continue
-                values[k] = v
+                setattr(self, k, v)
 
         # calculate other variables
-        values["shaded_radiant_temperature"] = radiant_temperature(
+        self.shaded_radiant_temperature = radiant_temperature(
             [
-                values["shaded_down_temperature"],
-                values["shaded_up_temperature"],
+                self.shaded_down_temperature,
+                self.shaded_up_temperature,
             ],
         )
-        values["unshaded_radiant_temperature"] = radiant_temperature(
+        self.unshaded_radiant_temperature = radiant_temperature(
             [
-                values["unshaded_down_temperature"],
-                values["unshaded_up_temperature"],
+                self.unshaded_down_temperature,
+                self.unshaded_up_temperature,
             ],
         )
 
@@ -356,7 +405,7 @@ class SimulationResult(BaseModel):
             direct_normal_solar=_epw.direct_normal_radiation,
             diffuse_horizontal_solar=_epw.diffuse_horizontal_radiation,
             horizontal_infrared=_epw.horizontal_infrared_radiation_intensity,
-            surface_temperatures=values["shaded_radiant_temperature"],
+            surface_temperatures=self.shaded_radiant_temperature,
             floor_reflectance=get_ground_reflectance(_model),
             sky_exposure=0,
             fraction_body_exposed=0,
@@ -367,7 +416,7 @@ class SimulationResult(BaseModel):
             direct_normal_solar=_epw.direct_normal_radiation,
             diffuse_horizontal_solar=_epw.diffuse_horizontal_radiation,
             horizontal_infrared=_epw.horizontal_infrared_radiation_intensity,
-            surface_temperatures=values["unshaded_down_temperature"],
+            surface_temperatures=self.unshaded_down_temperature,
             floor_reflectance=get_ground_reflectance(_model),
             sky_exposure=1,
             fraction_body_exposed=1,
@@ -381,64 +430,122 @@ class SimulationResult(BaseModel):
                 "shortwave_mrt_delta",
                 "longwave_mrt_delta",
             ]:
-                values[
-                    f"{shadedness}_{var.replace('mrt', 'mean_radiant_temperature')}"
-                ] = getattr(cal, var)
+                setattr(
+                    self,
+                    f"{shadedness}_{var.replace('mrt', 'mean_radiant_temperature')}",
+                    getattr(cal, var),
+                )
 
-        return values
+        # add some accessors for collections as series
+        for attr in _ATTRIBUTES:
+            setattr(self, f"{attr}_series", collection_to_series(getattr(self, attr)))
 
-    class Config:
-        """_"""
+    def to_dict(self) -> dict[str, Any]:
+        """Convert this object to a dictionary."""
 
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
-        json_encoders = {
-            EnergyMaterial: lambda v: v.to_dict(),
-            EnergyMaterialVegetation: lambda v: v.to_dict(),
-            HourlyContinuousCollection: lambda v: v.to_dict(),
+        if isinstance(self.ground_material, EnergyMaterial):
+            ground_material_dict = energymaterial_to_bhom(self.ground_material)
+        elif isinstance(self.ground_material, EnergyMaterialVegetation):
+            ground_material_dict = energymaterialvegetation_to_bhom(
+                self.ground_material
+            )
+
+        if isinstance(self.shade_material, EnergyMaterial):
+            shade_material_dict = energymaterial_to_bhom(self.shade_material)
+        elif isinstance(self.shade_material, EnergyMaterialVegetation):
+            shade_material_dict = energymaterialvegetation_to_bhom(self.shade_material)
+
+        attr_dict = {}
+        for attr in _ATTRIBUTES:
+            if getattr(self, attr):
+                attr_dict[pascalcase(attr)] = hourlycontinuouscollection_to_bhom(
+                    getattr(self, attr)
+                )
+
+        d = {
+            **{
+                "_t": "BH.oM.LadybugTools.SimulationResult",
+                "EpwFile": self.epw_file.as_posix(),
+                "GroundMaterial": ground_material_dict,
+                "ShadeMaterial": shade_material_dict,
+                "Identifier": self.identifier,
+            },
+            **attr_dict,
         }
 
-    @validator("epw_file")
-    @classmethod
-    def validate_epw_file(cls, value: Path):  # pylint: disable=E0213
-        """_"""
-        if not value.suffix == ".epw":
-            raise ValueError(f"File {value} is not an .epw file.")
-        if not value.exists():
-            raise ValueError(f"File {value} does not exist.")
-        return value.resolve()
+        return d
 
-    @validator(
-        "ground_material",
-        "shade_material",
-        "shaded_down_temperature",
-        "shaded_up_temperature",
-        "unshaded_down_temperature",
-        "unshaded_up_temperature",
-        "shaded_radiant_temperature",
-        "shaded_longwave_mean_radiant_temperature_delta",
-        "shaded_shortwave_mean_radiant_temperature_delta",
-        "shaded_mean_radiant_temperature",
-        "unshaded_radiant_temperature",
-        "unshaded_longwave_mean_radiant_temperature_delta",
-        "unshaded_shortwave_mean_radiant_temperature_delta",
-        "unshaded_mean_radiant_temperature",
-        pre=True,
-    )
     @classmethod
-    def convert_dict_to_collection(cls, value: dict) -> object:  # pylint: disable=E0213
-        """_"""
-        if not isinstance(value, dict):
-            return value
-        if "type" not in value:
-            return value
-        if value["type"] == "HourlyContinuous":
-            return HourlyContinuousCollection.from_dict(value)
-        if value["type"] == "EnergyMaterial":
-            return EnergyMaterial.from_dict(value)
-        if value["type"] == "EnergyMaterialVegetation":
-            return EnergyMaterialVegetation.from_dict(value)
-        return value
+    def from_dict(cls, d: dict[str, Any]) -> "SimulationResult":
+        """Create this object from a dictionary."""
+
+        d = convert_keys_to_snake_case(d)
+
+        if isinstance(d["ground_material"], dict):
+            d["ground_material"] = dict_to_material(d["ground_material"])
+
+        if isinstance(d["shade_material"], dict):
+            d["shade_material"] = dict_to_material(d["shade_material"])
+
+        for attr in _ATTRIBUTES:
+            if d.get(attr, None):
+                if isinstance(d[attr], dict):
+                    d[attr] = HourlyContinuousCollection.from_dict(d[attr])
+
+        return cls(
+            epw_file=d["epw_file"],
+            ground_material=d["ground_material"],
+            shade_material=d["shade_material"],
+            identifier=d["identifier"],
+            shaded_down_temperature=d["shaded_down_temperature"],
+            shaded_up_temperature=d["shaded_up_temperature"],
+            unshaded_down_temperature=d["unshaded_down_temperature"],
+            unshaded_up_temperature=d["unshaded_up_temperature"],
+            shaded_radiant_temperature=d["shaded_radiant_temperature"],
+            shaded_longwave_mean_radiant_temperature_delta=d[
+                "shaded_longwave_mean_radiant_temperature_delta"
+            ],
+            shaded_shortwave_mean_radiant_temperature_delta=d[
+                "shaded_shortwave_mean_radiant_temperature_delta"
+            ],
+            shaded_mean_radiant_temperature=d["shaded_mean_radiant_temperature"],
+            unshaded_radiant_temperature=d["unshaded_radiant_temperature"],
+            unshaded_longwave_mean_radiant_temperature_delta=d[
+                "unshaded_longwave_mean_radiant_temperature_delta"
+            ],
+            unshaded_shortwave_mean_radiant_temperature_delta=d[
+                "unshaded_shortwave_mean_radiant_temperature_delta"
+            ],
+            unshaded_mean_radiant_temperature=d["unshaded_mean_radiant_temperature"],
+        )
+
+    def to_json(self) -> str:
+        """Create a JSON string from this object."""
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_string: str) -> "SimulationResult":
+        """Create this object from a JSON string."""
+
+        return cls.from_dict(json.loads(json_string))
+
+    def to_file(self, path: Path) -> Path:
+        """Write this object to a JSON file."""
+
+        if Path(path).suffix != ".json":
+            raise ValueError("path must be a JSON file.")
+
+        with open(Path(path), "w") as fp:
+            fp.write(self.to_json())
+
+        return Path(path)
+
+    @classmethod
+    def from_file(cls, path: Path) -> "SimulationResult":
+        """Create this object from a JSON file."""
+
+        with open(Path(path), "r") as fp:
+            return cls.from_json(fp.read())
 
     @property
     def epw(self) -> EPW:
@@ -446,12 +553,17 @@ class SimulationResult(BaseModel):
         return EPW(self.epw_file)
 
     @property
+    def simulation_directory(self) -> Path:
+        """Return the simulation directory for this simulation result."""
+        return simulation_directory(self.model)
+
+    @property
     def model(self) -> Model:
         """Return the model object for this simulation result."""
         return create_model(
-            self.ground_material,
-            self.shade_material,
-            self.identifier,
+            identifier=self.identifier,
+            ground_material=self.ground_material,
+            shade_material=self.shade_material,
         )
 
     @decorator_factory(disable=False)
@@ -491,10 +603,26 @@ class SimulationResult(BaseModel):
         )
 
     @decorator_factory()
-    def description(self) -> str:
-        """_"""
+    def description(self, include_shade_material: bool = True) -> str:
+        """Create the description for this object.
+
+        Args:
+            include_shade_material (bool, optional):
+                Set to False to exclude the shade material from the description.
+                Defaults to True.
+
+        Returns:
+            str:
+                A description of this object.
+        """
+        if include_shade_material:
+            return (
+                f"{self.epw_file.name} - "
+                f"{self.ground_material.identifier} (ground material) - "
+                f"{self.shade_material.identifier} (shade material)"
+            )
+
         return (
-            f"{self.epw_file.name} - {self.ground_material.identifier} "
-            f"(ground material) - {self.shade_material.identifier} "
-            "(shade material)"
+            f"{self.epw_file.name} - "
+            f"{self.ground_material.identifier} (ground material)"
         )

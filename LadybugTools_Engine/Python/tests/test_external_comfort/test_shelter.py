@@ -1,15 +1,26 @@
+from pathlib import Path
+from tempfile import gettempdir
 import numpy as np
 import pytest
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort._shelterbase import Point3D, Shelter
-from ladybugtools_toolkit.external_comfort.shelter import TreeSpecies
+from ladybugtools_toolkit.external_comfort._shelterbase import (
+    Point3D,
+    Shelter,
+    annual_sky_exposure,
+    annual_sun_exposure,
+    annual_wind_speed,
+    write_shelters_to_hbjson,
+)
+
+
+from ladybugtools_toolkit.external_comfort.shelter import TreeShelter
 from ladybugtools_toolkit.ladybug_extension.epw import sun_position_list
 
 from .. import EPW_FILE
 
 EPW_OBJ = EPW(EPW_FILE)
 TEST_SHELTER = Shelter(
-    Vertices=[
+    vertices=[
         Point3D(-10, -10, 5),
         Point3D(-10, 10, 5),
         Point3D(10, 10, 5),
@@ -21,14 +32,23 @@ SUNS = sun_position_list(EPW_OBJ)
 
 def test_tree_species():
     """_"""
-    for species in TreeSpecies:
+    for species in TreeShelter:
         assert isinstance(species.shelter(), Shelter)
+
+    assert isinstance(TreeShelter.ACER_PLATANOIDES.shelter(), Shelter)
+    assert isinstance(
+        TreeShelter.ACER_PLATANOIDES.shelter(northern_hemisphere=False), Shelter
+    )
 
 
 def test_round_trip():
-    """Test whether an object can be converted to a dictionary, and json and back."""
-    assert isinstance(Shelter(**TEST_SHELTER.dict()), Shelter)
-    assert isinstance(Shelter.parse_raw(TEST_SHELTER.json(by_alias=True)), Shelter)
+    """_"""
+    tempfile = Path(gettempdir()) / "pytest_shelter.json"
+    Shelter.from_dict(TEST_SHELTER.to_dict())
+    Shelter.from_json(TEST_SHELTER.to_json())
+    Shelter.from_file(TEST_SHELTER.to_file(tempfile))
+
+    tempfile.unlink()
 
 
 def test_set_porosity():
@@ -56,3 +76,31 @@ def test_wind_adjustment():
     assert sum(TEST_SHELTER.annual_wind_speed(EPW_OBJ)) == pytest.approx(
         28398.899999998048
     )
+
+
+def test_annual_sky_exposure():
+    """_"""
+    assert sum(annual_sky_exposure([TEST_SHELTER])) == pytest.approx(2732.7556325820833)
+
+
+def test_annual_wind_speed():
+    """_"""
+    assert sum(annual_wind_speed([TEST_SHELTER], EPW_OBJ)) == pytest.approx(
+        28398.899999998048
+    )
+
+
+def test_annual_sun_exposure():
+    """_"""
+    assert np.nansum(annual_sun_exposure([TEST_SHELTER], EPW_OBJ)) == pytest.approx(
+        2041
+    )
+
+
+def test_write_shelters_to_hbjson():
+    """_"""
+    tempfile = Path(gettempdir()) / "pytest_shelter.hbjson"
+    write_shelters_to_hbjson([TEST_SHELTER], tempfile)
+    assert tempfile.exists()
+
+    tempfile.unlink()

@@ -5,14 +5,19 @@ import pytest
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug_comfort.collection.utci import UTCI
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-from ladybugtools_toolkit.plot._diurnal import diurnal
+from ladybugtools_toolkit.plot._diurnal import diurnal, stacked_diurnals
 from ladybugtools_toolkit.plot._heatmap import heatmap
 from ladybugtools_toolkit.plot._sunpath import sunpath
+from ladybugtools_toolkit.plot._degree_days import (
+    cooling_degree_days,
+    heating_degree_days,
+    degree_days,
+)
+from ladybugtools_toolkit.plot._psychrometric import psychrometric
 from ladybugtools_toolkit.plot._utci import (
     utci_comfort_band_comparison,
     utci_comparison_diurnal_day,
     utci_day_comfort_metrics,
-    utci_heatmap,
     utci_heatmap_difference,
     utci_heatmap_histogram,
     utci_histogram,
@@ -39,6 +44,21 @@ LB_UTCI_COLLECTION = UTCI(
     EPW_OBJ.dry_bulb_temperature,
     EPW_OBJ.wind_speed,
 ).universal_thermal_climate_index
+
+
+def test_cooling_degree_days():
+    """_"""
+    assert isinstance(cooling_degree_days(epw=EPW_OBJ), plt.Axes)
+
+
+def test_heating_degree_days():
+    """_"""
+    assert isinstance(heating_degree_days(epw=EPW_OBJ), plt.Axes)
+
+
+def test_degree_days():
+    """_"""
+    assert isinstance(degree_days(epw=EPW_OBJ), plt.Figure)
 
 
 def test_create_triangulation():
@@ -149,6 +169,17 @@ def test_sunpath():
         plt.Axes,
     )
     plt.close("all")
+    assert isinstance(
+        sunpath(
+            EPW_OBJ.location,
+            analysis_period=AnalysisPeriod(
+                st_month=3, end_month=4, st_hour=9, end_hour=18
+            ),
+            cmap="inferno",
+        ),
+        plt.Axes,
+    )
+    plt.close("all")
 
 
 def test_timeseries_diurnal():
@@ -170,13 +201,59 @@ def test_timeseries_diurnal():
     )
     with pytest.raises(ValueError):
         diurnal(collection_to_series(EPW_OBJ.dry_bulb_temperature), period="decadely")
+        diurnal(
+            collection_to_series(EPW_OBJ.dry_bulb_temperature).reset_index(drop=True),
+            period="monthly",
+        )
+        diurnal(
+            collection_to_series(EPW_OBJ.dry_bulb_temperature),
+            period="monthly",
+            minmax_range=[0.95, 0.05],
+        )
+        diurnal(
+            collection_to_series(EPW_OBJ.dry_bulb_temperature),
+            period="monthly",
+            quantile_range=[0.95, 0.05],
+        )
     plt.close("all")
+
+    assert isinstance(
+        stacked_diurnals(
+            datasets=[
+                collection_to_series(EPW_OBJ.dry_bulb_temperature),
+                collection_to_series(EPW_OBJ.relative_humidity),
+            ]
+        ),
+        plt.Figure,
+    )
 
 
 def test_heatmap():
     """_"""
     assert isinstance(
         heatmap(collection_to_series(EPW_OBJ.dry_bulb_temperature)), plt.Axes
+    )
+    plt.close("all")
+
+    mask = np.random.random(8760) > 0.5
+    assert isinstance(
+        heatmap(collection_to_series(EPW_OBJ.dry_bulb_temperature), mask=mask), plt.Axes
+    )
+    plt.close("all")
+
+    mask_bad = np.random.random(10) > 0.5
+    with pytest.raises(ValueError):
+        heatmap(collection_to_series(EPW_OBJ.dry_bulb_temperature), mask=mask_bad)
+    plt.close("all")
+
+    assert isinstance(
+        heatmap(
+            pd.Series(
+                np.random.random(21000),
+                index=pd.date_range("2000-01-01", periods=21000, freq="H"),
+            )
+        ),
+        plt.Axes,
     )
     plt.close("all")
 
@@ -223,12 +300,6 @@ def test_utci_heatmap_histogram():
     plt.close("all")
 
 
-def test_utci_heatmap():
-    """_"""
-    assert isinstance(utci_heatmap(LB_UTCI_COLLECTION), plt.Axes)
-    plt.close("all")
-
-
 def test_utci_journey():
     """_"""
     assert isinstance(
@@ -259,6 +330,12 @@ def test_utci_comfort_band_comparison():
         utci_comfort_band_comparison([LB_UTCI_COLLECTION, LB_UTCI_COLLECTION + 1]),
         plt.Axes,
     )
+    plt.close("all")
+
+
+def test_psychrometric():
+    """_"""
+    assert isinstance(psychrometric(epw=EPW_OBJ), plt.Figure)
     plt.close("all")
 
 

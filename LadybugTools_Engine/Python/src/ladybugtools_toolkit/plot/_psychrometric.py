@@ -174,11 +174,9 @@ def psychrometric(
     if analysis_period is None:
         analysis_period = AnalysisPeriod()
 
-    df = (
-        epw_to_dataframe(epw, include_additional=True)
-        .droplevel([0, 1], axis=1)
-        .loc[analysis_period_to_datetimes(analysis_period)]
-    )
+    df = epw_to_dataframe(epw, include_additional=True).loc[
+        analysis_period_to_datetimes(analysis_period)
+    ]
 
     # create mesh for rendering on chart
     psychart = PsychrometricChart(

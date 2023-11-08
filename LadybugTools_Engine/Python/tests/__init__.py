@@ -6,7 +6,7 @@ from honeybee.model import Model
 from ladybug.epw import EPW
 
 # set identifier for all downstream processes
-BASE_IDENTIFIER = "pytest"
+BASE_IDENTIFIER = "_lbt_tk_pytest"
 
 # set simulation directory for downstream processes
 hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"

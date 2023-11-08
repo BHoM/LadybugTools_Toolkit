@@ -9,12 +9,6 @@
 # from honeybee_energy.config import folders as hbe_folders
 # from honeybee_radiance.config import folders as hbr_folders
 
-from .externalcomfort import ExternalComfort
-from .material import get_material, materials
-from .shelter import Shelter
-from .simulate import SimulationResult
-from .typology import Typology
-
 
 # USER = getpass.getuser()
 # LB_FOLDER = Path("C:/Program Files/ladybug_tools")

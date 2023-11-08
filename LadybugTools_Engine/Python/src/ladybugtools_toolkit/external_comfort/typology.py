@@ -1,7 +1,6 @@
 """Module for creating typology objects."""
-# pylint: disable=E0401
-import inspect
-import warnings
+# pylint: disable=E0401,E1101
+from enum import Enum
 
 # pylint: enable=E0401
 
@@ -9,278 +8,75 @@ import numpy as np
 
 from ..bhom import decorator_factory
 from ._typologybase import Typology
-from .shelter import (
-    east_wall,
-    east_west_linear,
-    north_south_linear,
-    north_wall,
-    northeast_southwest_linear,
-    northeast_wall,
-    northwest_southeast_linear,
-    northwest_wall,
-    overhead_large,
-    overhead_small,
-    south_wall,
-    southeast_wall,
-    southwest_wall,
-    west_wall,
-)
+from ._shelterbase import Shelter
 
 
-@decorator_factory()
-def openfield() -> Typology:
-    return Typology(
-        name="Openfield",
-    )
+class Typologies(Enum):
+    """_"""
 
-
-@decorator_factory()
-def enclosed() -> Typology:
-    return Typology(
-        name="Enclosed",
+    OPENFIELD = Typology(identifier="Openfield")
+    ENCLOSED = Typology(
+        identifier="Fully enclosed",
         shelters=[
-            north_wall(),
-            east_wall(),
-            south_wall(),
-            west_wall(),
-            overhead_small(),
+            Shelter.from_adjacent_wall(angle=0),
+            Shelter.from_adjacent_wall(angle=90),
+            Shelter.from_adjacent_wall(angle=180),
+            Shelter.from_adjacent_wall(angle=270),
+            Shelter.from_overhead_circle(),
         ],
     )
-
-
-@decorator_factory()
-def porous_enclosure() -> Typology:
-    return Typology(
-        name="Porous enclosure",
+    ENCLOSED_POROUS = Typology(
+        identifier="Fully enclosed 50% porous",
         shelters=[
-            north_wall().set_porosity([0.5] * 8760),
-            east_wall().set_porosity([0.5] * 8760),
-            south_wall().set_porosity([0.5] * 8760),
-            west_wall().set_porosity([0.5] * 8760),
-            overhead_small().set_porosity([0.5] * 8760),
+            Shelter.from_adjacent_wall(angle=0).set_porosity(0.5),
+            Shelter.from_adjacent_wall(angle=90).set_porosity(0.5),
+            Shelter.from_adjacent_wall(angle=180).set_porosity(0.5),
+            Shelter.from_adjacent_wall(angle=270).set_porosity(0.5),
+            Shelter.from_overhead_circle().set_porosity(0.5),
         ],
     )
-
-
-@decorator_factory()
-def sky_shelter() -> Typology:
-    return Typology(
-        name="Sky-shelter",
+    SKY_SHELTER = Typology(
+        identifier="Sky shelter",
         shelters=[
-            overhead_large(),
+            Shelter.from_overhead_circle(radius=5),
         ],
     )
-
-
-@decorator_factory()
-def fritted_sky_shelter() -> Typology:
-    return Typology(
-        name="Fritted sky-shelter",
-        shelters=[
-            overhead_large().set_porosity([0.5] * 8760),
-        ],
+    NEAR_WATER = Typology(
+        identifier="Near water",
+        evaporative_cooling_effect=(0.15,) * 8760,
     )
-
-
-@decorator_factory()
-def near_water() -> Typology:
-    return Typology(
-        name="Near water",
-        evaporative_cooling_effect=[0.15] * 8760,
+    MISTING = Typology(
+        identifier="Misting",
+        evaporative_cooling_effect=(0.3,) * 8760,
     )
-
-
-@decorator_factory()
-def misting() -> Typology:
-    return Typology(
-        name="Misting",
-        evaporative_cooling_effect=[0.3] * 8760,
+    PASSIVE_DOWNDRAUGHT_EVAPORATIVE_COOLING_TOWER = Typology(
+        identifier="Passive downdraught evaporative cooling tower",
+        evaporative_cooling_effect=(0.7,) * 8760,
+        shelters=[Shelter.from_overhead_circle(height_above_ground=5, radius=4)],
     )
-
-
-@decorator_factory()
-def pdec() -> Typology:
-    return Typology(
-        name="PDEC",
-        evaporative_cooling_effect=[0.7] * 8760,
+    NORTH_SHELTER = Typology(
+        identifier="Shelter from north",
+        shelters=[Shelter.from_adjacent_wall(angle=0)],
     )
-
-
-@decorator_factory()
-def north_shelter() -> Typology:
-    return Typology(
-        name="North shelter",
-        shelters=[
-            north_wall(),
-        ],
+    EAST_SHELTER = Typology(
+        identifier="Shelter from east",
+        shelters=[Shelter.from_adjacent_wall(angle=90)],
     )
-
-
-@decorator_factory()
-def northeast_shelter() -> Typology:
-    return Typology(name="Northeast shelter", shelters=[northeast_wall()])
-
-
-@decorator_factory()
-def east_shelter() -> Typology:
-    return Typology(name="East shelter", shelters=[east_wall()])
-
-
-@decorator_factory()
-def southeast_shelter() -> Typology:
-    return Typology(name="Southeast shelter", shelters=[southeast_wall()])
-
-
-@decorator_factory()
-def south_shelter() -> Typology:
-    return Typology(
-        name="South shelter",
-        shelters=[
-            south_wall(),
-        ],
+    SOUTH_SHELTER = Typology(
+        identifier="Shelter from south",
+        shelters=[Shelter.from_adjacent_wall(angle=180)],
     )
-
-
-@decorator_factory()
-def southwest_shelter() -> Typology:
-    return Typology(name="Southwest shelter", shelters=[southwest_wall()])
-
-
-@decorator_factory()
-def west_shelter() -> Typology:
-    return Typology(name="West shelter", shelters=[west_wall()])
-
-
-@decorator_factory()
-def northwest_shelter() -> Typology:
-    return Typology(name="Northwest shelter", shelters=[northwest_wall()])
-
-
-@decorator_factory()
-def north_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="North shelter with canopy",
-        shelters=[
-            north_wall(),
-            overhead_small(),
-        ],
+    WEST_SHELTER = Typology(
+        identifier="Shelter from west",
+        shelters=[Shelter.from_adjacent_wall(angle=270)],
     )
-
-
-@decorator_factory()
-def northeast_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="Northeast shelter with canopy",
-        shelters=[
-            northeast_wall(),
-            overhead_small(),
-        ],
+    LINEAR_EAST_WEST_SHELTER = Typology(
+        identifier="Linear overhead shelter from east to west",
+        shelters=[Shelter.from_overhead_linear(angle=90)],
     )
-
-
-@decorator_factory()
-def east_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="East shelter with canopy",
-        shelters=[
-            east_wall(),
-            overhead_small(),
-        ],
-    )
-
-
-@decorator_factory()
-def southeast_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="Southeast shelter with canopy",
-        shelters=[
-            southeast_wall(),
-            overhead_small(),
-        ],
-    )
-
-
-@decorator_factory()
-def south_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="South shelter with canopy",
-        shelters=[
-            south_wall(),
-            overhead_small(),
-        ],
-    )
-
-
-@decorator_factory()
-def southwest_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="Southwest shelter with canopy",
-        shelters=[
-            southwest_wall(),
-            overhead_small(),
-        ],
-    )
-
-
-@decorator_factory()
-def west_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="West shelter with canopy",
-        shelters=[
-            west_wall(),
-            overhead_small(),
-        ],
-    )
-
-
-@decorator_factory()
-def northwest_shelter_with_canopy() -> Typology:
-    return Typology(
-        name="Northwest shelter with canopy",
-        shelters=[
-            northwest_wall(),
-            overhead_small(),
-        ],
-    )
-
-
-@decorator_factory()
-def north_south_linear_shelter() -> Typology:
-    return Typology(
-        name="North-south linear overhead shelter",
-        shelters=[
-            north_south_linear(),
-        ],
-    )
-
-
-@decorator_factory()
-def northeast_southwest_linear_shelter() -> Typology:
-    return Typology(
-        name="Northeast-southwest linear overhead shelter",
-        shelters=[
-            northeast_southwest_linear(),
-        ],
-    )
-
-
-@decorator_factory()
-def east_west_linear_shelter() -> Typology:
-    return Typology(
-        name="East-west linear overhead shelter",
-        shelters=[
-            east_west_linear(),
-        ],
-    )
-
-
-@decorator_factory()
-def northwest_southeast_linear_shelter() -> Typology:
-    return Typology(
-        name="Northwest-southeast linear overhead shelter",
-        shelters=[
-            northwest_southeast_linear(),
-        ],
+    LINEAR_NORTH_SOUTH_SHELTER = Typology(
+        identifier="Linear overhead shelter from north to south",
+        shelters=[Shelter.from_overhead_linear(angle=0)],
     )
 
 
@@ -317,36 +113,36 @@ def combine_typologies(
     for typ in typologies:
         all_shelters.extend(typ.shelters)
 
-    if np.isnan([i.target_wind_speed for i in typologies]).sum() != 0:
-        warnings.warn(
-            f"\n{inspect.stack()[0][3]}\n"
-            "Some typologies do not have a target wind speed - at timesteps "
-            "aligned with these, the wind speed from the EPW adjusted by "
-            "shelter exposure will be used."
-        )
-    target_wind_speed_data = np.stack(
+    target_wind_speed_avg = np.stack(
         [i.target_wind_speed for i in typologies],
         axis=0,
+    ).T
+    target_wind_speed_avg[target_wind_speed_avg is None] = np.nan
+    target_wind_speed_avg = target_wind_speed_avg.astype(float)
+    masked_arr = np.ma.masked_invalid(target_wind_speed_avg)
+    target_wind_speed_avg = (
+        np.ma.average(masked_arr, axis=1, weights=target_wind_speed_weights)
+        .filled(np.nan)
+        .tolist()
     )
-    masked_data = np.ma.masked_array(
-        target_wind_speed_data, np.isnan(target_wind_speed_data)
-    )
-    average_ws_data = np.ma.average(
-        masked_data, axis=0, weights=target_wind_speed_weights
-    )
+    target_wind_speed_avg = [None if np.isnan(i) else i for i in target_wind_speed_avg]
+
+    radiant_temperature_adjustment_avg = np.average(
+        [i.radiant_temperature_adjustment for i in typologies],
+        weights=radiant_temperature_adjustment_weights,
+        axis=0,
+    ).tolist()
+
+    evaporative_cooling_effect_avg = np.average(
+        [i.evaporative_cooling_effect for i in typologies],
+        weights=evaporative_cooling_effect_weights,
+        axis=0,
+    ).tolist()
 
     return Typology(
-        name=" + ".join([i.name for i in typologies]),
+        identifier=" + ".join([i.identifier for i in typologies]),
         shelters=all_shelters,
-        evaporative_cooling_effect=np.average(
-            [i.evaporative_cooling_effect for i in typologies],
-            weights=evaporative_cooling_effect_weights,
-            axis=0,
-        ).tolist(),
-        target_wind_speed=average_ws_data.filled(np.nan).tolist(),
-        radiant_temperature_adjustment=np.average(
-            [i.radiant_temperature_adjustment for i in typologies],
-            weights=radiant_temperature_adjustment_weights,
-            axis=0,
-        ).tolist(),
+        evaporative_cooling_effect=evaporative_cooling_effect_avg,
+        target_wind_speed=target_wind_speed_avg,
+        radiant_temperature_adjustment=radiant_temperature_adjustment_avg,
     )

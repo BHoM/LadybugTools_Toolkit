@@ -39,7 +39,7 @@ def analytics_logger() -> logging.Logger:
         mode="a",
         delay=True,  # wait until all logs collected before writing
         maxBytes=25 * 1024 * 1024,  # 25mb max before file overwritten
-        backupCount=0,
+        backupCount=2,
     )
     file_handler.setFormatter(logging.Formatter("%(message)s"))
     file_handler.setLevel(logging.DEBUG)

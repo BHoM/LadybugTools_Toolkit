@@ -212,7 +212,7 @@ def diurnal(
     )
     if show_legend:
         ax.legend(
-            bbox_to_anchor=(0.5, -0.15),
+            bbox_to_anchor=(0.5, -0.2),
             loc=8,
             ncol=6,
             borderaxespad=0,

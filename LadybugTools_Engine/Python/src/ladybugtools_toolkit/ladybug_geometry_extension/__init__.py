@@ -3,7 +3,8 @@ from warnings import warn  # pylint: disable=E0401
 
 from ladybug_geometry.bounding import bounding_rectangle
 from ladybug_geometry.geometry3d import Plane, Point3D, Vector3D, Mesh3D
-from ladybug_geometry.geometry2d import Mesh2D, Point2D
+from ladybug_geometry.geometry2d import Mesh2D, Point2D, Polygon2D
+from scipy.spatial.distance import cdist
 
 
 def mesh3d_isplanar(mesh: Mesh3D) -> bool:
@@ -46,3 +47,12 @@ def mesh3d_get_plane(mesh: Mesh3D) -> Plane:
         return plane.flip()
 
     return plane
+
+
+def pt_distances(base_point: Point2D, points: list[Point2D]) -> list[float]:
+    """Return the distance from each moisture_source pt to each other point in the input list"""
+
+    # for each emitter, get the distance to all "receiving" points
+    distances = cdist([base_point], points)
+
+    return distances

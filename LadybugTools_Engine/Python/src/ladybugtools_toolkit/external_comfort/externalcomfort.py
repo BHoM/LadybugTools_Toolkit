@@ -83,12 +83,12 @@ def modify_external_comfort(
 
     # construct name
     modified_name = (
-        f"{external_comfort.typology.name} + modified"  # TODO - add more info
+        f"{external_comfort.typology.identifier} + modified"  # TODO - add more info
     )
 
     # construct new typology
     modified_typology = Typology(
-        name=modified_name,
+        identifier=modified_name,
         shelters=modified_shelters,
         target_wind_speed=np.where(
             ~np.isnan(target_wind_speed),

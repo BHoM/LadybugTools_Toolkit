@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 from typing import Any
+from dataclasses import dataclass
 
 # pylint: enable=E0401
 
@@ -25,87 +26,136 @@ from ladybug_geometry.geometry3d import (
 )
 from matplotlib.figure import Figure
 from mpl_toolkits import mplot3d
-from pydantic import BaseModel, Field, root_validator, validator
+
 
 from ..bhom import decorator_factory
+from ..bhom.to_bhom import point3d_to_bhom
 from ..ladybug_extension.epw import sun_position_list
+from ..helpers import convert_keys_to_snake_case
 
 SENSOR_LOCATION = Point3D(0, 0, 1.2)
 
 
-class Shelter(BaseModel):
+@dataclass(init=True, eq=True)
+class Shelter:
     """_"""
 
-    vertices: list[Point3D] = Field(alias="Vertices", min_items=3)
-    wind_porosity: list[float] = Field(
-        alias="WindPorosity",
-        min_items=8760,
-        max_items=8760,
-        default=(0,) * 8760,
-        ge=0,
-        le=1,
-        repr=False,
-    )
-    radiation_porosity: list[float] = Field(
-        alias="RadiationPorosity",
-        min_items=8760,
-        max_items=8760,
-        default=(0,) * 8760,
-        ge=0,
-        le=1,
-        repr=False,
-    )
+    vertices: tuple[Point3D]
+    wind_porosity: tuple[float] = (0,) * 8760
+    radiation_porosity: tuple[float] = (0,) * 8760
 
-    @root_validator(allow_reuse=True)
-    @classmethod
-    def validate_shelter_porosity(cls, values):
+    def __post_init__(self):
         """_"""
-        if all(
-            [
-                sum(values["wind_porosity"]) == 8760,
-                sum(values["radiation_porosity"]) == 8760,
-            ]
-        ):
+
+        # validation
+        if len(self.wind_porosity) != 8760:
+            raise ValueError("wind_porosity must be 8760 items long.")
+        if any(not isinstance(i, (float, int)) for i in self.wind_porosity):
+            raise ValueError("wind_porosity must be a list of floats.")
+        if any(i < 0 for i in self.wind_porosity):
+            raise ValueError("wind_porosity values must be >= 0.")
+        if any(i > 1 for i in self.wind_porosity):
+            raise ValueError("wind_porosity values must be <= 1.")
+
+        if len(self.radiation_porosity) != 8760:
+            raise ValueError("radiation_porosity must be 8760 items long.")
+        if any(not isinstance(i, (float, int)) for i in self.radiation_porosity):
+            raise ValueError("radiation_porosity must be a list of floats.")
+        if any(i < 0 for i in self.radiation_porosity):
+            raise ValueError("radiation_porosity values must be >= 0.")
+        if any(i > 1 for i in self.radiation_porosity):
+            raise ValueError("radiation_porosity values must be <= 1.")
+
+        if sum(self.wind_porosity) == 8760 and sum(self.radiation_porosity) == 8760:
             raise ValueError(
                 "This shelter would have no effect as it does not impact wind or radiation exposure."
             )
-        return values
 
-    class Config:
-        """_"""
+        if len(self.wind_porosity) != len(self.radiation_porosity):
+            raise ValueError(
+                "The wind and radiation porosity lists must be the same length."
+            )
 
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
-        json_encoders = {
-            Point3D: lambda v: v.to_dict(),
-        }
+        if len(self.vertices) < 3:
+            raise ValueError("A shelter must have at least 3 vertices.")
 
-    @validator("vertices", pre=True, each_item=True, allow_reuse=True)
-    @classmethod
-    def validate_vertices(cls, value) -> Point3D:  # pylint: disable=E0213
-        """_"""
-        if not isinstance(value, dict):
-            return value
-        if "type" not in value:
-            return value
-        if value["type"] == "Point3D":
-            return Point3D.from_dict(value)
-        return value
+        if not all(isinstance(item, Point3D) for item in self.vertices):
+            raise ValueError("All vertices must be Point3D objects.")
 
-    # pylint: disable=E0213
-    @validator("vertices", allow_reuse=True)
-    @classmethod
-    def validate_vertices_planarity(cls, value) -> list[Point3D]:
-        """_"""
-        _plane = Plane.from_three_points(*value[:3])
-        for vertex in value[3:]:
+        _plane = Plane.from_three_points(*self.vertices[:3])
+        for vertex in self.vertices[3:]:
             if not np.isclose(a=_plane.distance_to_point(point=vertex), b=0):
                 raise ValueError(
                     "All vertices must be coplanar. Please check your input."
                 )
-        return value
 
-    # pylint: enable=E0213
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"avg_wind_porosity={self.average_wind_porosity:0.2f}, "
+            f"avg_radiation_porosity={self.average_radiation_porosity:0.2f}"
+            ")"
+        )
+
+    def to_dict(self) -> str:
+        """Convert this object to a dictionary."""
+        point_dicts = []
+        for point in self.vertices:
+            point_dicts.append(point3d_to_bhom(point))
+
+        d = {
+            "_t": "BH.oM.LadybugTools.Shelter",
+            "Vertices": point_dicts,
+            "WindPorosity": self.wind_porosity,
+            "RadiationPorosity": self.radiation_porosity,
+        }
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Shelter":
+        """Create this object from a dictionary."""
+
+        d = convert_keys_to_snake_case(d)
+
+        new_verts = []
+        for vert in d["vertices"]:
+            if isinstance(vert, dict):
+                vert["Type"] = "Point3D"
+                new_verts.append(Point3D.from_dict(vert))
+        d["vertices"] = new_verts
+
+        return cls(
+            vertices=d["vertices"],
+            wind_porosity=d["wind_porosity"],
+            radiation_porosity=d["radiation_porosity"],
+        )
+
+    def to_json(self) -> str:
+        """Convert this object to a JSON string."""
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_string: str) -> "Shelter":
+        """Create this object from a JSON string."""
+
+        return cls.from_dict(json.loads(json_string))
+
+    def to_file(self, path: Path) -> Path:
+        """Convert this object to a JSON file."""
+
+        if Path(path).suffix != ".json":
+            raise ValueError("path must be a JSON file.")
+
+        with open(Path(path), "w") as fp:
+            fp.write(self.to_json())
+
+        return Path(path)
+
+    @classmethod
+    def from_file(cls, path: Path) -> "Shelter":
+        """Create this object from a JSON file."""
+        with open(Path(path), "r") as fp:
+            return cls.from_json(fp.read())
 
     @property
     def min_wind_porosity(self) -> float:
@@ -238,9 +288,9 @@ class Shelter(BaseModel):
     @classmethod
     def from_adjacent_wall(
         cls,
-        distance_from_wall: float = 1.5,
+        distance_from_wall: float = 1,
         wall_height: float = 2,
-        wall_length: float = 3,
+        wall_length: float = 2,
         wind_porosity: list[float] = (0,) * 8760,
         radiation_porosity: list[float] = (0,) * 8760,
         angle: float = 0,
@@ -438,9 +488,9 @@ class Shelter(BaseModel):
         """
         angle = np.deg2rad(-angle)
         return Shelter(
-            self.face3d.rotate_xy(angle, center).vertices,
-            self.wind_porosity,
-            self.radiation_porosity,
+            vertices=self.face3d.rotate_xy(angle, center).vertices,
+            wind_porosity=self.wind_porosity,
+            radiation_porosity=self.radiation_porosity,
         )
 
     @decorator_factory()
@@ -456,19 +506,23 @@ class Shelter(BaseModel):
                 The moved shelter object.
         """
         return Shelter(
-            self.face3d.move(vector).vertices,
-            self.wind_porosity,
-            self.radiation_porosity,
+            vertices=self.face3d.move(vector).vertices,
+            wind_porosity=self.wind_porosity,
+            radiation_porosity=self.radiation_porosity,
         )
 
-    @decorator_factory()
     def set_porosity(self, porosity: float) -> "Shelter":
         """Return this shelter with an adjusted porosity value applied to both wind and radiation components."""
+
+        if isinstance(porosity, (int, float)):
+            porosity = (porosity,) * 8760
+
         return Shelter(
-            vertices=self.vertices, radiation_porosity=porosity, wind_porosity=porosity
+            vertices=self.vertices,
+            radiation_porosity=porosity,
+            wind_porosity=porosity,
         )
 
-    @decorator_factory()
     def annual_sky_exposure(self, include_radiation_porosity: bool = True) -> float:
         """Determine the proportion of sky the analytical point is exposed to.
             Also account for radiation_porosity in that exposure.
@@ -494,7 +548,6 @@ class Shelter(BaseModel):
             return 1 - ((n_intersections / len(rays)) * (1 - _radiation_porosity))
         return 1 - (n_intersections / len(rays))
 
-    @decorator_factory()
     def annual_sun_exposure(
         self, epw: EPW, include_radiation_porosity: bool = True
     ) -> list[float]:
@@ -542,7 +595,6 @@ class Shelter(BaseModel):
                 )
         return _sun_exposure
 
-    @decorator_factory()
     def wind_exposure(
         self,
         wind_direction: float,
@@ -648,7 +700,6 @@ class Shelter(BaseModel):
             + (edge_acceleration_factor * sum(not i for i in intersections))
         ) / len(intersections)
 
-    @decorator_factory()
     def annual_wind_speed(
         self,
         epw: EPW,
@@ -893,7 +944,16 @@ def write_shelters_to_hbjson(shelters: list[Shelter], hbjson_path: Path) -> Path
 
     name = hbjson_path.stem
     directory = hbjson_path.parent
-    Model(identifier="Shelters", orphaned_faces=[i.face3d for i in shelters]).to_hbjson(
+    faces = [
+        Face.from_vertices(
+            identifier=f"Shelter_{n:02d}", vertices=shelter.face3d.vertices
+        )
+        for n, shelter in enumerate(shelters)
+    ]
+
+    # TODO - include temporal shade schedule here
+
+    Model(identifier="Shelters", orphaned_faces=faces).to_hbjson(
         name=name, folder=directory
     )
     return hbjson_path

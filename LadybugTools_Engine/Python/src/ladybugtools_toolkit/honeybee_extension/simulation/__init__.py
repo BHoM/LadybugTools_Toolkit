@@ -1,14 +1,13 @@
+"""_"""
 # pylint: disable=E0401
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# pylint: enable=E0401
-
+import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
 from honeybee.model import Model
-from ladybug_geometry.geometry3d import Plane, Point3D
 from honeybee_radiance.sensorgrid import SensorGrid
 from honeybee_radiance.writer import _filter_by_pattern
 from honeybee_radiance_command.options.rfluxmtx import RfluxmtxOptions
@@ -17,18 +16,19 @@ from honeybee_radiance_command.options.rtrace import RtraceOptions
 from honeybee_radiance_postprocess.results import _filter_grids_by_pattern
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.wea import Wea
+from ladybug_geometry.geometry3d import Plane, Point3D
 from lbt_recipes.recipe import Recipe, RecipeSettings
 from matplotlib import pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import Normalize
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import numpy as np
-
-from ...ladybug_extension.analysisperiod import describe_analysis_period
-from ..results import load_ill, load_npy, load_res
 from ...bhom import CONSOLE_LOGGER
-from .sensorgrids import get_limits, groupby_level, as_patchcollection
+from ...ladybug_extension.analysisperiod import describe_analysis_period
 from ..model import HbModelGeometry
+from ..results import load_ill, load_npy, load_res
+from .sensorgrids import as_patchcollection, get_limits, groupby_level
+
+# pylint: enable=E0401
 
 
 def radiance_parameters(
@@ -454,9 +454,11 @@ class HoneybeeRadiance:
             wea (Wea):
                 A Ladybug Wea object.
             reload_old (bool, optional):
-                Instead of running a full simulation, reload the existing results ... if they exist. Defaults to True.
+                Instead of running a full simulation, reload the existing results ... if they exist.
+                Defaults to True.
             delete_tempfiles (bool, optional):
-                Delete temporary files created during simulation. This should roughly half the results directory size. Defaults to True.
+                Delete temporary files created during simulation. This should roughly half the results directory size.
+                Defaults to True.
             north (float, optional):
                 Set the angle to north. Defaults to 0 which assumes the model is correctly oriented.
             detail_level (float, optional):
@@ -556,9 +558,11 @@ class HoneybeeRadiance:
             wea (Wea):
                 A Ladybug Wea object.
             reload_old (bool, optional):
-                Instead of running a full simulation, reload the existing results ... if they exist. Defaults to True.
+                Instead of running a full simulation, reload the existing results ... if they exist.
+                Defaults to True.
             delete_tempfiles (bool, optional):
-                Delete temporary files created during simulation. This should roughly half the results directory size. Defaults to True.
+                Delete temporary files created during simulation. This should roughly half the results directory size.
+                Defaults to True.
             north (float, optional):
                 Set the angle to north. Defaults to 0 which assumes the model is correctly oriented.
             detail_level (float, optional):

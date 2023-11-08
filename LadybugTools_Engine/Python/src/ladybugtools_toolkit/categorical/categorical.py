@@ -1,5 +1,7 @@
 """Categorical objects for grouping data into bins."""
+# pylint: disable=W0212
 # pylint: disable=E0401
+import calendar
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
@@ -14,13 +16,16 @@ from matplotlib.colors import (
     BoundaryNorm,
     Colormap,
     ListedColormap,
-    is_color_like,
     to_hex,
     to_rgba,
 )
 from matplotlib.legend import Legend
+import matplotlib.ticker as mticker
+
 from ..bhom import decorator_factory
-from ..helpers import rolling_window
+from ..helpers import rolling_window, validate_timeseries
+from ..plot.utilities import contrasting_color
+from ..plot._heatmap import heatmap
 
 
 @dataclass(init=True, repr=True)
@@ -51,9 +56,6 @@ class Categorical:
             while len(cycle) < len(self.bins):
                 cycle += cycle
             self.colors = cycle[: len(self.bins) - 1]
-        for color in self.colors:
-            if not is_color_like(color):
-                raise ValueError(f"{color} is not a valid color.")
         self.colors = tuple(to_hex(i, keep_alpha=True) for i in self.colors)
 
         # ensure bin names are valid
@@ -166,20 +168,13 @@ class Categorical:
 
         if np.isinf(self.bins[0]) and np.isinf(self.bins[-1]):
             colors = self.colors[1:-1]
-            # above_color = self.colors[-1]
-            # below_color = self.colors[0]
         elif np.isinf(self.bins[0]) and not np.isinf(self.bins[-1]):
             colors = self.colors[1:]
-            # above_color = self.colors[-1]
-            # below_color = self.colors[0]
         elif not np.isinf(self.bins[0]) and np.isinf(self.bins[-1]):
             colors = self.colors[:-1]
-            # above_color = self.colors[-1]
-            # below_color = self.colors[0]
         else:
             colors = self.colors
-            # above_color = self.colors[-1]
-            # below_color = self.colors[0]
+        colors = [to_rgba(i) for i in colors]
 
         cmap = ListedColormap(colors=colors, name=self.name)
         cmap.set_over(self.colors[-1])
@@ -188,7 +183,7 @@ class Categorical:
 
     @property
     def norm(self) -> BoundaryNorm:
-        """Return the boundary-norm associate with this comfort metric.
+        """Return the boundary-norm associate with this categorical.
 
         Returns:
             BoundaryNorm:
@@ -203,6 +198,10 @@ class Categorical:
             boundaries = boundaries[:-1]
         else:
             pass
+        if len(boundaries) == 1:
+            raise ValueError(
+                "The current Categorical object has unbounded edges and cannot be used to create a BoundaryNorm."
+            )
         return BoundaryNorm(boundaries=boundaries, ncolors=self.cmap.N)
 
     @property
@@ -326,7 +325,7 @@ class Categorical:
             )
         color = self.cmap(self.norm(value))
         if not as_array:
-            return to_hex(color)
+            return to_hex(color, keep_alpha=True)
         return color
 
     @decorator_factory()
@@ -426,7 +425,7 @@ class Categorical:
         statements = []
         for desc, (idx, val) in list(zip(*[self.bin_names, result.items()])):
             statements.append(
-                f'"{desc}" occurs {val} times ({result_density[idx]:0.1%}*{len(data)}).'
+                f'"{desc}" occurs {val} times ({result_density[idx]:0.1%}).'
             )
         return "\n".join(statements)
 
@@ -434,7 +433,7 @@ class Categorical:
     def create_legend(
         self, ax: plt.Axes = None, verbose: bool = True, **kwargs
     ) -> Legend:
-        """Create a legend for this categoical.
+        """Create a legend for this categorical.
 
         Args:
             ax (plt.Axes, optional):
@@ -467,6 +466,120 @@ class Categorical:
             labels.append(description if verbose else iidx)
         lgd = ax.legend(handles=handles, labels=labels, **kwargs)
         return lgd
+
+    @decorator_factory()
+    def annual_monthly_histogram(
+        self,
+        series: pd.Series,
+        ax: plt.Axes = None,
+        show_legend: bool = False,
+        show_labels: bool = False,
+        **kwargs,
+    ) -> plt.Axes:
+        """Create a monthly histogram of a pandas Series.
+
+        Args:
+            series (pd.Series):
+                The pandas Series to plot. Must have a datetime index.
+            ax (plt.Axes, optional):
+                An optional plt.Axes object to populate. Defaults to None, which creates a new plt.Axes object.
+            show_legend (bool, optional):
+                Whether to show the legend. Defaults to False.
+            show_labels (bool, optional):
+                Whether to show the labels on the bars. Defaults to False.
+            **kwargs:
+                Additional keyword arguments to pass to plt.bar.
+
+        Returns:
+            plt.Axes:
+                The populated plt.Axes object.
+        """
+
+        validate_timeseries(series)
+
+        if ax is None:
+            ax = plt.gca()
+
+        t = self.timeseries_summary_monthly(series, density=True)
+        t.plot(
+            ax=ax,
+            kind="bar",
+            stacked=True,
+            color=self.colors,
+            width=kwargs.pop("width", 1),
+            legend=False,
+            **kwargs,
+        )
+        ax.set_xlim(-0.5, len(t) - 0.5)
+        ax.set_ylim(0, 1)
+        ax.set_xticklabels(
+            [calendar.month_abbr[int(i._text)] for i in ax.get_xticklabels()],
+            ha="center",
+            rotation=0,
+        )
+        for spine in ["top", "right", "left", "bottom"]:
+            ax.spines[spine].set_visible(False)
+        ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
+
+        if show_legend:
+            ax.legend(
+                bbox_to_anchor=(1, 1),
+                loc="upper left",
+                borderaxespad=0.0,
+                frameon=False,
+                title=self.name,
+            )
+
+        if show_labels:
+            for i, c in enumerate(ax.containers):
+                label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
+                labels = [
+                    f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c
+                ]
+                ax.bar_label(
+                    c,
+                    labels=labels,
+                    label_type="center",
+                    color=label_colors[i],
+                    fontsize="x-small",
+                )
+
+        return ax
+
+    @decorator_factory()
+    def annual_heatmap(
+        self, series: pd.Series, ax: plt.Axes = None, **kwargs
+    ) -> plt.Axes:
+        """Create a heatmap showing the annual hourly categorical assignment for the given series.
+
+        Args:
+            series (pd.Series):
+                A time-indexed pandas Series object.
+            ax (plt.Axes, optional):
+                A matplotlib Axes object to plot on. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
+
+        Returns:
+            plt.Axes:
+                A matplotlib Axes object.
+        """
+
+        validate_timeseries(series)
+
+        if ax is None:
+            ax = plt.gca()
+
+        heatmap(
+            series,
+            ax=ax,
+            cmap=self.cmap,
+            norm=self.norm,
+            extend="both",
+            **kwargs,
+        )
+
+        return ax
 
 
 class ComfortClass(Enum):
@@ -518,11 +631,11 @@ class CategoricalComfort(Categorical):
         return super().__post_init__()
 
     @decorator_factory()
-    def simplify(self) -> Categorical:
-        """Return a simplified version of this object based on teh assigned comfort clases.
+    def simplify(self) -> "CategoricalComfort":
+        """Return a simplified version of this object based on the assigned comfort clases.
 
         Returns:
-            Categorical:
+            CategoricalComfort:
                 The simplified categorical comfort.
         """
         d = {}
@@ -530,10 +643,16 @@ class CategoricalComfort(Categorical):
             if comfort_class in d:
                 continue
             d[comfort_class] = bin_left
+        if len(d.keys()) != len(ComfortClass):
+            raise ValueError(
+                "The comfort classes must include all comfort classes "
+                f"{[i.name for i in ComfortClass]}."
+            )
 
-        return Categorical(
+        return CategoricalComfort(
             bins=list(d.values()) + [self.bins[-1]],
             bin_names=[i.text for i in ComfortClass],
             colors=[i.color for i in ComfortClass],
             name=self.name + " (simplified)",
+            comfort_classes=list(ComfortClass),
         )

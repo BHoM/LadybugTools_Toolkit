@@ -30,21 +30,26 @@ namespace BH.oM.LadybugTools
     {
         [Description("The SimulationResult associated with this object.")]
         public virtual SimulationResult SimulationResult { get; set; } = new SimulationResult();
+        
         [Description("The typology in the processing of this object.")]
         public virtual Typology Typology { get; set; } = new Typology();
 
         // simulated properties
 
         [Description("The calculated property from this object.")]
-        public virtual CustomObject DryBulbTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection DryBulbTemperature { get; set; } = null;
+        
         [Description("The calculated property from this object.")]
-        public virtual CustomObject RelativeHumidity { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection RelativeHumidity { get; set; } = null;
+        
         [Description("The calculated property from this object.")]
-        public virtual CustomObject WindSpeed { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection WindSpeed { get; set; } = null;
+        
         [Description("The calculated property from this object.")]
-        public virtual CustomObject MeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection MeanRadiantTemperature { get; set; } = null;
+        
         [Description("The calculated property from this object.")]
-        public virtual CustomObject UniversalThermalClimateIndex { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; set; } = null;
     }
 }
 

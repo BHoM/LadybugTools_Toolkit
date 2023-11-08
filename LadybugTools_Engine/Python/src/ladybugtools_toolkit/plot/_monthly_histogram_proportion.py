@@ -18,6 +18,7 @@ def monthly_histogram_proportion(
     labels: list[str] = None,
     show_year_in_label: bool = False,
     show_labels: bool = False,
+    show_legend: bool = False,
     **kwargs,
 ) -> plt.Axes:
     """Create a monthly histogram of a pandas Series.
@@ -35,6 +36,8 @@ def monthly_histogram_proportion(
             Whether to show the year in the x-axis label. Defaults to False.
         show_labels (bool, optional):
             Whether to show the labels on the bars. Defaults to False.
+        show_legend (bool, optional):
+            Whether to show the legend. Defaults to False.
         **kwargs:
             Additional keyword arguments to pass to plt.bar.
 
@@ -49,7 +52,7 @@ def monthly_histogram_proportion(
         ax = plt.gca()
 
     t = pd.cut(series, bins=bins, labels=labels)
-    t = t.groupby([t.index.year, t.index.month, t]).count().unstack().T
+    t = t.groupby([t.index.year, t.index.month, t], observed=True).count().unstack().T
     t = t / t.sum()
 
     # adjust column labels
@@ -74,6 +77,14 @@ def monthly_histogram_proportion(
         ax.spines[spine].set_visible(False)
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
 
+    if show_legend:
+        ax.legend(
+            bbox_to_anchor=(1, 1),
+            loc="upper left",
+            borderaxespad=0.0,
+            frameon=False,
+        )
+
     if show_labels:
         for i, c in enumerate(ax.containers):
             label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
@@ -85,7 +96,7 @@ def monthly_histogram_proportion(
                 labels=labels,
                 label_type="center",
                 color=label_colors[i],
-                fontsize="xx-small",
+                fontsize="x-small",
             )
 
     return ax

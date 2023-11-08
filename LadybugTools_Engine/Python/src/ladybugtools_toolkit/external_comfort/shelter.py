@@ -9,133 +9,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from ..bhom import decorator_factory
 from ._shelterbase import Shelter
 
 
-@decorator_factory()
-def north_south_linear() -> Shelter:
-    """Predefined north-south linear shelter."""
-    return Shelter.from_overhead_linear(
-        width=3, height_above_ground=3.5, length=2000, angle=0
-    )
-
-
-@decorator_factory()
-def east_west_linear() -> Shelter:
-    """Predefined east-west linear shelter."""
-    return Shelter.from_overhead_linear(
-        width=3, height_above_ground=3.5, length=2000, angle=90
-    )
-
-
-@decorator_factory()
-def northeast_southwest_linear() -> Shelter:
-    """Predefined northeast-southwest linear shelter."""
-    return Shelter.from_overhead_linear(
-        width=3, height_above_ground=3.5, length=2000, angle=45
-    )
-
-
-@decorator_factory()
-def northwest_southeast_linear() -> Shelter:
-    """Predefined northwest-southeast linear shelter."""
-    return Shelter.from_overhead_linear(
-        width=3, height_above_ground=3.5, length=2000, angle=135
-    )
-
-
-@decorator_factory()
-def overhead_large() -> Shelter:
-    return Shelter.from_overhead_circle(radius=5, height_above_ground=3.5)
-
-
-@decorator_factory()
-def overhead_small() -> Shelter:
-    return Shelter.from_overhead_circle(radius=1.5, height_above_ground=3.5)
-
-
-@decorator_factory()
-def north_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=0,
-    )
-
-
-@decorator_factory()
-def northeast_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=45,
-    )
-
-
-@decorator_factory()
-def east_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=90,
-    )
-
-
-@decorator_factory()
-def southeast_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=135,
-    )
-
-
-@decorator_factory()
-def south_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=180,
-    )
-
-
-@decorator_factory()
-def southwest_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=225,
-    )
-
-
-@decorator_factory()
-def west_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=270,
-    )
-
-
-@decorator_factory()
-def northwest_wall() -> Shelter:
-    return Shelter.from_adjacent_wall(
-        distance_from_wall=1,
-        wall_height=2,
-        wall_length=2,
-        angle=315,
-    )
-
-
-class TreeSpecies(Enum):
+class TreeShelter(Enum):
     """_"""
 
     ACER_PLATANOIDES = "Norway maple"
@@ -152,7 +29,6 @@ class TreeSpecies(Enum):
     QUERCUS_PALUSTRIS = "Spanish oak"
     TILIA_X_EUCHLORA = "Caucasian lime"
 
-    @decorator_factory()
     def shelter(self, northern_hemisphere: bool = True) -> Shelter:
         """Get a shelter object for this tree species.
 

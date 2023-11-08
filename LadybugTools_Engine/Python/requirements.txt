@@ -1,6 +1,8 @@
 case-converter
+meteostat
 openpyxl
 pyarrow
+pyet
 pylint
 pytest
 pytest-cov

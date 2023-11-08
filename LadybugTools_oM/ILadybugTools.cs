@@ -26,38 +26,9 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class OpaqueMaterial : ILadybugToolsMaterial
+    public interface ILadybugTools : IObject
     {
-        [Description("The name of this EnergyMaterial.")]
-        public virtual string Identifier { get; set; } = "Generic Opaque Material";
-        
-        [Description("The source for this object and it's properties.")]
-        public virtual string Source { get; set; } = string.Empty;
-
-        [Description("The roughness of the material.")]
-        public virtual Roughness Roughness { get; set; } = Roughness.MediumRough;
-
-        [Description("Thickness of material (m).")]
-        public virtual double Thickness { get; set; } = 0.1;
-
-        [Description("Conductivity of material (W/mK).")]
-        public virtual double Conductivity { get; set; } = 2;
-
-        [Description("Density of material (kg/m3).")]
-        public virtual double Density { get; set; } = 2000;
-
-        [Description("Specific heat capacity of material (J/kgK).")]
-        public virtual double SpecificHeat { get; set; } = 800;
-
-        [Description("Thermal absorptivity (emissivity) of material (0-1).")]
-        public virtual double ThermalAbsorptance { get; set; } = 0.9;
-
-        [Description("Solar absorptivity of material (0-1).")]
-        public virtual double SolarAbsorptance { get; set; } = 0.7;
-
-        [Description("Light absorptivity (1 - albedo) of material (0-1).")]
-        public virtual double VisibleAbsorptance { get; set; } = 0.7;
+        [Description("The object type - for use deserialising Python-side.")]
+        string Type { get; set; }
     }
 }
-
-

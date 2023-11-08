@@ -19,7 +19,11 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+
+from caseconverter import snakecase
 from ladybug.datatype.temperature import WetBulbTemperature
+from honeybee.config import folders as hb_folders
+from ladybug_geometry.geometry2d import Vector2D
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 from ladybug.skymodel import (
@@ -31,9 +35,34 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
+from meteostat import Point, Hourly
 from scipy.stats import weibull_min
 from tqdm import tqdm
-from .bhom import decorator_factory
+from .bhom import decorator_factory, CONSOLE_LOGGER
+from .ladybug_extension.dt import lb_datetime_from_datetime
+
+
+@decorator_factory()
+def sanitise_string(string: str) -> str:
+    """Sanitise a string so that only path-safe characters remain."""
+
+    keep_characters = r"[^.A-Za-z0-9_-]"
+
+    return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
+
+
+def convert_keys_to_snake_case(d: dict):
+    """Given a dictionary, convert all keys to snake_case."""
+    keys_to_skip = ["_t"]
+    if isinstance(d, dict):
+        return {
+            snakecase(k) if k not in keys_to_skip else k: convert_keys_to_snake_case(v)
+            for k, v in d.items()
+        }
+    if isinstance(d, list):
+        return [convert_keys_to_snake_case(x) for x in d]
+
+    return d
 
 
 @decorator_factory()
@@ -356,12 +385,20 @@ def rolling_window(array: list[Any], window: int):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
+class DecayMethod(Enum):
+    """An enumeration of decay methods."""
+
+    LINEAR = auto()
+    PARABOLIC = auto()
+    SIGMOID = auto()
+
+
 @decorator_factory()
 def proximity_decay(
     value: float,
     distance_to_value: float,
     max_distance: float,
-    decay_method: str = "linear",
+    decay_method: DecayMethod = DecayMethod.LINEAR,
 ) -> float:
     """Calculate the "decayed" value based on proximity (up to a maximum distance).
 
@@ -373,8 +410,8 @@ def proximity_decay(
         max_distance (float):
             The maximum distance to which magnitude is to be distributed. Beyond this, the input
             value is 0.
-        decay_method (str, optional):
-            A type of distribution (the shape of the distribution profile). Defaults to "linear".
+        decay_method (DecayMethod, optional):
+            A type of distribution (the shape of the distribution profile). Defaults to "DecayMethod.LINEAR".
 
     Returns:
         float:
@@ -383,11 +420,11 @@ def proximity_decay(
 
     distance_to_value = np.interp(distance_to_value, [0, max_distance], [0, 1])
 
-    if decay_method == "linear":
+    if decay_method == DecayMethod.LINEAR:
         return (1 - distance_to_value) * value
-    if decay_method == "parabolic":
+    if decay_method == DecayMethod.PARABOLIC:
         return (-(distance_to_value**2) + 1) * value
-    if decay_method == "sigmoid":
+    if decay_method == DecayMethod.SIGMOID:
         return (1 - (0.5 * (np.sin(distance_to_value * np.pi - np.pi / 2) + 1))) * value
 
     raise ValueError(f"Unknown curve type: {decay_method}")
@@ -625,12 +662,12 @@ def angle_from_north(vector: list[float]) -> float:
 
 def angle_to_vector(clockwise_angle_from_north: float) -> list[float]:
     """Return the X, Y vector from of an angle from north at 0-degrees.
-    
+
     Args:
         clockwise_angle_from_north (float):
             The angle from north in degrees clockwise from [0, 360], though
             any number can be input here for angles greater than a full circle.
-    
+
     Returns:
         list[float]:
             A vector of length 2.
@@ -641,170 +678,27 @@ def angle_to_vector(clockwise_angle_from_north: float) -> list[float]:
     return np.sin(clockwise_angle_from_north), np.cos(clockwise_angle_from_north)
 
 
-@decorator_factory()
-def sanitise_string(string: str) -> str:
-    """Sanitise a string so that only path-safe characters remain."""
-    keep_characters = r"[^.A-Za-z0-9_-]"
-    return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
-
-
-@decorator_factory()
-def stringify_df_header(columns: list[Any]) -> list[str]:
-    """Convert a list of objects into their string representations.
-    This method is mostly used for making DataFrames parqeut serialisable.
+def epw_wind_vectors(epw: EPW, normalise: bool = False) -> list[Vector2D]:
+    """Return a list of vectors from the EPW wind direction and speed.
 
     Args:
-        columns (list[Any]): The list of objects to be converted.
+        epw (EPW):
+            An EPW object.
+        normalise (bool, optional):
+            Normalise the vectors. Defaults to False.
 
     Returns:
-        list[str]: The list of strings.
+        list[Vector2D]:
+            A list of vectors.
     """
 
-    return [str(i) for i in columns]
+    wind_direction = np.array(epw.wind_direction)
+    vectors = np.array(angle_to_vector(wind_direction))
 
+    if not normalise:
+        vectors *= np.array(epw.wind_speed)
 
-@decorator_factory()
-def unstringify_df_header(columns: list[str]) -> list[Any]:
-    """Convert a list of strings into a set of objects capable of being used as DataFrame column headers.
-
-    Args:
-        columns (list[str]): The list of strings to be converted.
-
-    Returns:
-        list[Any]: The list of objects.
-    """
-
-    evaled = []
-    for i in columns:
-        try:
-            evaled.append(eval(i))  # pylint: disable=eval-used
-        except NameError:
-            evaled.append(i)
-
-    if all("(" in i for i in str(evaled)):
-        return pd.MultiIndex.from_tuples(evaled)
-    return evaled
-
-
-@decorator_factory()
-def write_parquet(data: pd.DataFrame, path: Path) -> Path:
-    """Write a parquet file, and convert columns into strings.
-
-    Args:
-        data (pd.DataFrame): The data to be written.
-        path (Path): The path to the parquet file.
-
-    Returns:
-        Path: The path to the parquet file.
-    """
-    path = Path(path)
-
-    if isinstance(data.columns, pd.MultiIndex):
-        data.columns = [str(i) for i in data.columns]
-
-    print(f"Writing {path.as_posix()}")
-
-    data.to_parquet(path)
-
-    return path
-
-
-@decorator_factory()
-def read_parquet(path: Path) -> pd.DataFrame:
-    """Read a parquet file, and reinterpret columns as their automatically
-    assigned datatype.
-
-    Args:
-        path (Path): The path to the parquet file.
-
-    Returns:
-        pd.DataFrame: A pandas DataFrame.
-    """
-
-    path = Path(path)
-
-    print(f"Reading {path.as_posix()}")
-
-    df = pd.read_parquet(path)
-    try:
-        df.columns = pd.MultiIndex.from_tuples(
-            [eval(i) for i in df.columns]  # pylint: disable=eval-used
-        )
-    except Exception as _:  # pylint: disable=broad-except
-        print("yo")
-
-    return df
-
-
-@decorator_factory()
-def store_dataset(
-    dataframe: pd.DataFrame, target_path: Path, downcast: bool = True
-) -> Path:
-    """Serialise a pandas DataFrame as a parquet file, including pre-processing
-    to ensure it is serialisable, and optional downcasting to samller dtypes.
-
-    Args:
-        dataframe (pd.DataFrame):
-            The dataframe to be serialised
-        target_path (Path):
-            The target file for storage.
-        downcast (bool, optional):
-            Optinal downcasting to reduce dataframe dtype complexity. Defaults to True.
-
-    Returns:
-        Path:
-            The path to the stored dataset.
-    """
-
-    target_path = Path(target_path)
-
-    if "parquet" not in target_path.suffix:
-        raise ValueError('This method only currently works for "*.parquet" files.')
-
-    if downcast:
-        # downcast dataframe type to save on storage
-        for col, _type in dataframe.dtypes.items():
-            if _type == "float64":
-                dataframe[col] = dataframe[col].astype(np.float32)
-            if _type == "int64":
-                dataframe[col] = dataframe[col].astype(np.int16)
-
-    # prepare dataframe for storage as parquet
-    dataframe.columns = stringify_df_header(dataframe.columns)
-
-    # store dataframe
-    dataframe.to_parquet(target_path, compression="snappy")
-
-    return target_path
-
-
-@decorator_factory()
-def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
-    """Read a stored dataset, including upcasting to float64.
-
-    Args:
-        target_path (Path):
-            The dataset path to be loaded.
-        upcast (bool, optional):
-            Optional upcasting of data to enable downstream calculations without issues!
-
-    Returns:
-        pd.DataFrame:
-            The loaded dataset as a dataframe.
-    """
-
-    df = pd.read_parquet(target_path)
-
-    if upcast:
-        for col, _type in dict(df.dtypes).items():
-            if _type == "float32":
-                df[col].astype(np.float64)
-            elif _type in ["int32", "int16", "int8"]:
-                df[col].astype(np.int64)
-
-    df.columns = unstringify_df_header(df.columns)
-
-    return df
+    return [Vector2D(*i) for i in vectors.T]
 
 
 class OpenMeteoVariable(Enum):
@@ -1163,6 +1057,10 @@ def scrape_openmeteo(
         convert_units (bool, optional):
             Convert units output into more common units, and rename headers accordingly.
 
+    Note:
+        This method saves the data to a local cache, and will return the cached data if it is less
+        than 28 days old. This is to avoid unnecessary API calls.
+
     Returns:
         pd.DataFrame:
             A DataFrame containing scraped data.
@@ -1189,6 +1087,18 @@ def scrape_openmeteo(
             raise ValueError(
                 "All values in the variables tuple must be of type OpenMeteoVariable."
             )
+
+    _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_openmeteo"
+    _dir.mkdir(exist_ok=True, parents=True)
+    sp = (
+        _dir
+        / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{int(convert_units)}_{len(variables):02d}.h5"
+    )
+
+    if sp.exists():
+        if (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 28:
+            CONSOLE_LOGGER.info(f"Loading cached data from {sp}.")
+            return pd.read_hdf(sp, key="df")
 
     # construct query string
     var_strings = ",".join([i.openmeteo_name for i in variables])
@@ -1222,7 +1132,116 @@ def scrape_openmeteo(
             )
         except KeyError:
             pass
-    return pd.concat(new_df, axis=1)
+
+    df = pd.concat(new_df, axis=1)
+    df.to_hdf(sp, key="df", complevel=9, complib="blosc:zlib")
+
+    return df
+
+
+def scrape_meteostat(
+    latitude: float,
+    longitude: float,
+    start_date: datetime | str,
+    end_date: datetime | str,
+    altitude: float = None,
+    convert_units: bool = False,
+) -> pd.DataFrame:
+    """Obtain historic hourly data from Meteostat.
+
+    Args:
+        latitude (float):
+            The latitude of the target site, in degrees.
+        longitude (float):
+            The longitude of the target site, in degrees.
+        start_date (datetime | str):
+            The start-date from which records will be obtained.
+        end_date (datetime | str):
+            The end-date beyond which records will be ignored.
+        altitude (float, optional):
+            The altitude of the target site, in metres. Defaults to None.
+        convert_units (bool, optional):
+            Convert units output into more common units, and rename headers accordingly.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame containing scraped data.
+    """
+
+    if latitude < -90 or latitude > 90:
+        raise ValueError("The latitude must be between -90 and 90 degrees.")
+    if longitude < -180 or longitude > 180:
+        raise ValueError("The longitude must be between -180 and 180 degrees.")
+
+    if isinstance(start_date, str):
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    if isinstance(end_date, str):
+        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
+    location = Point(latitude, longitude, altitude)
+    data = Hourly(location, start_date, end_date).fetch()
+
+    if len(data) == 0:
+        raise ValueError("No data was returned from Meteostat.")
+
+    if convert_units:
+        converter = {
+            "temp": [1, "Dry Bulb Temperature (C)"],
+            "dwpt": [1, "Dew Point Temperature (C)"],
+            "rhum": [1, "Relative Humidity (%)"],
+            "prcp": [1, "Liquid Precipitation Depth (mm)"],
+            "snow": [0.1, "Snow Depth (cm)"],
+            "wdir": [1, "Wind Direction (degrees)"],
+            "wspd": [1 / 3.6, "Wind Speed (m/s)"],
+            "wpgt": [1 / 3.6, "Wind Gust (m/s)"],
+            "pres": [100, "Atmospheric Station Pressure (Pa)"],
+            "tsun": [1, "One Hour Sunshine (minutes)"],
+            "coco": [1, "Present Weather (text)"],
+        }
+        weather_codes = {
+            1: "Clear",
+            2: "Fair",
+            3: "Cloudy",
+            4: "Overcast",
+            5: "Fog",
+            6: "Freezing Fog",
+            7: "Light Rain",
+            8: "Rain",
+            9: "Heavy Rain",
+            10: "Freezing Rain",
+            11: "Heavy Freezing Rain",
+            12: "Sleet",
+            13: "Heavy Sleet",
+            14: "Light Snowfall",
+            15: "Snowfall",
+            16: "Heavy Snowfall",
+            17: "Rain Shower",
+            18: "Heavy Rain Shower",
+            19: "Sleet Shower",
+            20: "Heavy Sleet Shower",
+            21: "Snow Shower",
+            22: "Heavy Snow Shower",
+            23: "Lightning",
+            24: "Hail",
+            25: "Thunderstorm",
+            26: "Heavy Thunderstorm",
+            27: "Storm",
+        }
+        temp = []
+        for col_name, col_values in data.items():
+            if col_name == "coco":
+                temp.append(
+                    pd.Series(
+                        col_values.map(weather_codes), name=converter[col_name][1]
+                    )
+                )
+            else:
+                temp.append(
+                    (col_values * converter[col_name][0]).rename(converter[col_name][1])
+                )
+        return pd.concat(temp, axis=1)
+
+    return data
 
 
 @decorator_factory()
@@ -1402,7 +1421,6 @@ def wind_direction_average(angles: list[float]) -> float:
     return np.degrees(average_angle)
 
 
-@decorator_factory()
 def wind_speed_at_height(
     reference_value: float,
     reference_height: float,
@@ -1473,7 +1491,6 @@ def wind_speed_at_height(
     )
 
 
-@decorator_factory()
 def temperature_at_height(
     reference_value: float,
     reference_height: float,
@@ -1520,7 +1537,6 @@ def temperature_at_height(
     return reference_value - (height_difference * lapse_rate)
 
 
-@decorator_factory()
 def radiation_at_height(
     reference_value: float,
     target_height: float,
@@ -1686,7 +1702,6 @@ def validate_timeseries(
             raise ValueError("series is not contiguous")
 
 
-@decorator_factory()
 def evaporative_cooling_effect(
     dry_bulb_temperature: float,
     relative_humidity: float,
@@ -1946,14 +1961,14 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
         [
             {
                 **sp.calculate_sunrise_sunset_from_datetime(
-                    ix, depression=0.5334
+                    lb_datetime_from_datetime(ix), depression=0.5334
                 ),  # actual sunrise/set
                 **{
                     f"civil {k}".replace("sunrise", "twilight start").replace(
                         "sunset", "twilight end"
                     ): v
                     for k, v in sp.calculate_sunrise_sunset_from_datetime(
-                        ix, depression=6
+                        lb_datetime_from_datetime(ix), depression=6
                     ).items()
                     if k != "noon"
                 },  # civil twilight
@@ -1962,7 +1977,7 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
                         "sunset", "twilight end"
                     ): v
                     for k, v in sp.calculate_sunrise_sunset_from_datetime(
-                        ix, depression=12
+                        lb_datetime_from_datetime(ix), depression=12
                     ).items()
                     if k != "noon"
                 },  # nautical twilight
@@ -1971,7 +1986,7 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
                         "sunset", "twilight end"
                     ): v
                     for k, v in sp.calculate_sunrise_sunset_from_datetime(
-                        ix, depression=18
+                        lb_datetime_from_datetime(ix), depression=18
                     ).items()
                     if k != "noon"
                 },  # astronomical twilight

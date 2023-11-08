@@ -26,13 +26,9 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public interface ILadybugToolsMaterial : IObject
+    public interface IEnergyMaterialOpaque : ILadybugTools
     {
         [Description("The identifier for this material object.")]
         string Identifier { get; set; }
-        [Description("The source for this material object.")]
-        string Source { get; set; }
     }
 }
-
-

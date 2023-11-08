@@ -32,7 +32,7 @@ from ..bhom import decorator_factory
 
 @decorator_factory()
 def animation(
-    image_files: list[str | Path],
+    images: list[str | Path | Image.Image],
     output_gif: str | Path,
     ms_per_image: int = 333,
     transparency_idx: int = 0,
@@ -40,9 +40,9 @@ def animation(
     """Create an animated gif from a set of images.
 
     Args:
-        image_files (list[Union[str, Path]]):
-            A list of image files.
-        output_gif (Union[str, Path]):
+        images (list[str | Path | Image.Image]):
+            A list of image files or PIL Image objects.
+        output_gif (str | Path):
             The output gif file to be created.
         ms_per_image (int, optional):
             Number of milliseconds per image. Default is 333, for 3 images per second.
@@ -54,20 +54,26 @@ def animation(
             The animated gif.
 
     """
-
-    image_files = [Path(i) for i in image_files]
-
-    images = [Image.open(i) for i in image_files]
+    _images = []
+    for i in images:
+        if isinstance(i, (str, Path)):
+            _images.append(Image.open(i))
+        elif isinstance(i, Image.Image):
+            _images.append(i)
+        else:
+            raise ValueError(
+                f"images must be a list of strings, Paths or PIL Image objects - {i} is not valid."
+            )
 
     # create white background
-    background = Image.new("RGBA", images[0].size, (255, 255, 255))
+    background = Image.new("RGBA", _images[0].size, (255, 255, 255))
 
-    images = [Image.alpha_composite(background, i) for i in images]
+    _images = [Image.alpha_composite(background, i) for i in _images]
 
-    images[0].save(
+    _images[0].save(
         output_gif,
         save_all=True,
-        append_images=images[1:],
+        append_images=_images[1:],
         optimize=False,
         duration=ms_per_image,
         loop=0,
@@ -78,7 +84,6 @@ def animation(
     return output_gif
 
 
-@decorator_factory()
 def relative_luminance(color: Any):
     """Calculate the relative luminance of a color according to W3C standards
 
@@ -100,7 +105,6 @@ def relative_luminance(color: Any):
         return lum
 
 
-@decorator_factory()
 def contrasting_color(color: Any):
     """Calculate the contrasting color for a given color.
 
@@ -116,7 +120,6 @@ def contrasting_color(color: Any):
     return ".15" if relative_luminance(color) > 0.408 else "w"
 
 
-@decorator_factory()
 def colormap_sequential(
     *colors: str | float | int | tuple, N: int = 256
 ) -> LinearSegmentedColormap:
@@ -159,7 +162,6 @@ def colormap_sequential(
     )
 
 
-@decorator_factory()
 def lb_colormap(name: int | str = "original") -> LinearSegmentedColormap:
     """Create a Matplotlib from a colormap provided by Ladybug.
 
@@ -194,7 +196,6 @@ def lb_colormap(name: int | str = "original") -> LinearSegmentedColormap:
     return colormap_sequential(*rgb)
 
 
-@decorator_factory()
 def annotate_imshow(
     im: mimage.AxesImage,
     data: list[float] = None,
@@ -263,7 +264,6 @@ def annotate_imshow(
     return texts
 
 
-@decorator_factory()
 def lighten_color(color: str | tuple, amount: float = 0.5) -> tuple[float]:
     """
     Lightens the given color by multiplying (1-luminosity) by the given amount.
@@ -289,39 +289,6 @@ def lighten_color(color: str | tuple, amount: float = 0.5) -> tuple[float]:
         c = color
     c = colorsys.rgb_to_hls(*to_rgb(c))
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
-
-
-@decorator_factory()
-def add_bar_labels(ax: plt.Axes, orientation: str, threshold: float) -> None:
-    """Add labels to the end of each bar in a bar chart.
-
-    Arguments:
-        ax (matplotlib.axes.Axes):
-            The matplotlib object containing the axes of the plot to annotate.
-        orientation (str):
-            The orientation of the plot. Either "vertical" or "horizontal".
-        threshold (float):
-            The threshold value to use to determine whether to add a label.
-
-    """
-
-    for rect in ax.patches:
-        x = rect.get_x() + (rect.get_width() / 2)
-        y = rect.get_y() + (rect.get_height() / 2)
-        if orientation == "vertical":
-            value = rect.get_height()
-        elif orientation == "horizontal":
-            value = rect.get_width()
-        else:
-            raise ValueError("orientation must be either 'vertical' or 'horizontal'")
-        if value > threshold:
-            ax.annotate(
-                f"{value:.0%}",
-                (x, y),
-                ha="center",
-                va="center",
-                c=contrasting_color(rect.get_facecolor()),
-            )
 
 
 @decorator_factory()

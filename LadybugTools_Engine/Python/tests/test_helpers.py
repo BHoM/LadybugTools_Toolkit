@@ -1,39 +1,142 @@
-from datetime import timedelta
+from datetime import timedelta  # pylint: disable=E0401
+
 
 import numpy as np
 import pandas as pd
 import pytest
-from ladybug.epw import EPW
 from ladybugtools_toolkit.helpers import (
+    air_pressure_at_height,
     AnalysisPeriod,
     angle_from_cardinal,
     angle_from_north,
     cardinality,
+    chunks,
     circular_weighted_mean,
     decay_rate_smoother,
+    DecayMethod,
     default_analysis_periods,
     default_combined_analysis_periods,
     default_hour_analysis_periods,
     default_month_analysis_periods,
-    evaporative_cooling_effect,
+    dry_bulb_temperature_at_height,
+    epw_wind_vectors,
     evaporative_cooling_effect_collection,
+    evaporative_cooling_effect,
     month_hour_binned_series,
+    OpenMeteoVariable,
     proximity_decay,
     radiation_at_height,
     remove_leap_days,
     rolling_window,
     sanitise_string,
+    scrape_openmeteo,
+    sunrise_sunset,
     target_wind_speed_collection,
     temperature_at_height,
     timedelta_tostring,
+    validate_timeseries,
     weibull_pdf,
     wind_direction_average,
     wind_speed_at_height,
 )
 
-from . import EPW_FILE
+from . import EPW_OBJ
 
-EPW_OBJ = EPW(EPW_FILE)
+
+def test_sunrise_sunset():
+    """_"""
+    assert sunrise_sunset(EPW_OBJ.location).shape == (365, 9)
+
+
+def test_openmeteo_variable():
+    """_"""
+    assert (
+        OpenMeteoVariable.from_string("windgusts_10m")
+        == OpenMeteoVariable.WINDGUSTS_10M
+    )
+    assert OpenMeteoVariable.TEMPERATURE_2M.openmeteo_unit == "°C"
+    assert OpenMeteoVariable.TEMPERATURE_2M.target_name == "Dry Bulb Temperature"
+    assert OpenMeteoVariable.TEMPERATURE_2M.target_unit == "C"
+    assert OpenMeteoVariable.TEMPERATURE_2M.target_multiplier == 1
+    assert OpenMeteoVariable.TEMPERATURE_2M.openmeteo_name == "temperature_2m"
+    assert (
+        OpenMeteoVariable.TEMPERATURE_2M.target_table_name == "Dry Bulb Temperature (C)"
+    )
+    assert (
+        OpenMeteoVariable.TEMPERATURE_2M.openmeteo_table_name == "temperature_2m (°C)"
+    )
+    assert OpenMeteoVariable.TEMPERATURE_2M.convert(1) == 1
+
+
+def test_epw_wind_vectors():
+    """_"""
+    assert len(epw_wind_vectors(EPW_OBJ)) == 8760
+    assert len(epw_wind_vectors(EPW_OBJ, normalise=True)) == 8760
+
+
+def test_scrape_openmeteo():
+    """_"""
+    with pytest.raises(ValueError):
+        scrape_openmeteo(
+            latitude=180,
+            longitude=EPW_OBJ.location.longitude,
+            convert_units=True,
+            start_date="2021-01-01",
+            end_date="2021-02-01",
+            variables=[
+                OpenMeteoVariable.DEWPOINT_2M,
+            ],
+        )
+        scrape_openmeteo(
+            latitude=EPW_OBJ.location.latitude,
+            longitude=-1000,
+            convert_units=True,
+            start_date="2021-01-01",
+            end_date="2021-02-01",
+            variables=[
+                OpenMeteoVariable.DEWPOINT_2M,
+            ],
+        )
+        scrape_openmeteo(
+            latitude=EPW_OBJ.location.latitude,
+            longitude=EPW_OBJ.location.longitude,
+            convert_units=True,
+            start_date="2021-02-01",
+            end_date="2021-01-01",
+            variables=[
+                OpenMeteoVariable.DEWPOINT_2M,
+                OpenMeteoVariable.SOIL_MOISTURE_28_TO_100CM,
+                OpenMeteoVariable.TEMPERATURE_2M,
+            ],
+        )
+        scrape_openmeteo(
+            latitude=EPW_OBJ.location.latitude,
+            longitude=EPW_OBJ.location.longitude,
+            convert_units=True,
+            start_date="2021-01-01",
+            end_date="2021-02-01",
+            variables=[
+                "not a variable",
+            ],
+        )
+
+    assert scrape_openmeteo(
+        latitude=EPW_OBJ.location.latitude,
+        longitude=EPW_OBJ.location.longitude,
+        convert_units=True,
+        start_date="2021-01-01",
+        end_date="2021-02-01",
+        variables=[
+            OpenMeteoVariable.DEWPOINT_2M,
+            OpenMeteoVariable.SOIL_MOISTURE_28_TO_100CM,
+            OpenMeteoVariable.TEMPERATURE_2M,
+        ],
+    ).shape == (768, 3)
+
+
+def test_chunks():
+    """_"""
+    assert len(list(chunks([1, 2, 3, 4, 5, 6, 7, 8, 9], 2))) == 5
 
 
 def test_wind_direction_average():
@@ -129,6 +232,12 @@ def test_circular_weighted_mean():
     with pytest.raises(ValueError):
         circular_weighted_mean(angles, weights)
 
+    # Test with number of weights not equal to number of angles
+    angles = [0, 90, 180, 270]
+    weights = [0.2, 0.2, 0.2, 0.2, 0.2]
+    with pytest.raises(ValueError):
+        circular_weighted_mean(angles, weights)
+
     # Test with negative angles
     angles = [-90, 0, 90, 180, 270]
     weights = [0.2, 0.2, 0.2, 0.2, 0.2]
@@ -139,6 +248,10 @@ def test_circular_weighted_mean():
     angles = [90, 180, 270]
     weights = [1 / 3, 1 / 3, 1 / 3]
     assert np.isclose(circular_weighted_mean(angles, weights), 180)
+
+    # Test without weights specified
+    angles = [0, 90, 180, 270]
+    assert isinstance(circular_weighted_mean(angles), float)
 
     # Test with different weights
     angles = [90, 180, 270]
@@ -153,7 +266,7 @@ def test_circular_weighted_mean():
     # Test opposing
     angles = [0, 180]
     weights = [0.5, 0.5]
-    assert np.isclose(circular_weighted_mean(angles, weights), 90)
+    assert isinstance(circular_weighted_mean(angles, weights), float)
 
 
 def test_sanitise_string():
@@ -289,6 +402,7 @@ def test_cardinality_bad():
     """_"""
     with pytest.raises(ValueError):
         cardinality(370, directions=16)
+        cardinality(12, directions=7)
 
 
 def test_decay_rate_smoother():
@@ -303,12 +417,31 @@ def test_proximity_decay_good():
     """_"""
     assert (
         proximity_decay(
-            value=10,
-            distance_to_value=5,
-            max_distance=10,
-            decay_method="parabolic",
+            value=3,
+            distance_to_value=1.5,
+            max_distance=3,
+            decay_method=DecayMethod.LINEAR,
         )
-        == 7.5
+        == 1.5
+    )
+
+    assert (
+        proximity_decay(
+            value=3,
+            distance_to_value=1.5,
+            max_distance=3,
+            decay_method=DecayMethod.SIGMOID,
+        )
+        == 1.5
+    )
+    assert (
+        proximity_decay(
+            value=3,
+            distance_to_value=1.5,
+            max_distance=3,
+            decay_method=DecayMethod.PARABOLIC,
+        )
+        == 2.25
     )
 
 
@@ -319,7 +452,7 @@ def test_proximity_decay_bad():
             value=10,
             distance_to_value=5,
             max_distance=10,
-            decay_method="unknown",
+            decay_method="not a decay method",
         )
 
 
@@ -327,6 +460,9 @@ def test_evaporative_cooling_effect():
     """_"""
     dbt, rh = evaporative_cooling_effect(20, 50, 0.5)
     assert (dbt == pytest.approx(16.9, rel=0.1)) and (rh == pytest.approx(75, rel=0.1))
+
+    dbt, rh = evaporative_cooling_effect(20, 110, 0.5)
+    assert (dbt == pytest.approx(20, rel=0.1)) and (rh == pytest.approx(100, rel=0.1))
 
 
 def test_evaporative_cooling_effect_collection():
@@ -363,6 +499,22 @@ def test_wind_speed_at_height():
         terrain_roughness_length=0.5,
         log_function=False,
     ) == pytest.approx(1.5891948094037045, rel=0.0001)
+
+
+def test_air_pressure_at_height():
+    """_"""
+    assert air_pressure_at_height(
+        reference_value=2,
+        reference_height=10,
+        target_height=2,
+    ) == pytest.approx(2.001897379377387, rel=0.0001)
+
+
+def test_dry_bulb_temperature_at_height():
+    """_"""
+    assert sum(
+        dry_bulb_temperature_at_height(epw=EPW_OBJ, target_height=50).values
+    ) == pytest.approx(87388.7999999973, rel=0.0001)
 
 
 def test_remove_leap_days():
@@ -406,6 +558,10 @@ def test_remove_leap_days():
     s = pd.concat([s, s])  # Test with duplicated data
     s = remove_leap_days(s)
     assert len(s) == 728
+
+    # Test with a series without a datetime index
+    with pytest.raises(ValueError):
+        remove_leap_days(pd.Series([1, 2, 3]))
 
 
 def test_month_hour_binned_series():

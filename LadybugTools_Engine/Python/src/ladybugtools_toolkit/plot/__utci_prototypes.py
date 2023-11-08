@@ -1,4 +1,5 @@
-# """Protoype UTCI plotting methods."""
+"""Protoype UTCI plotting methods."""
+# pylint: disable=line-too-long
 # # pylint: disable=E0401
 # import calendar
 # import textwrap

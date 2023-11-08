@@ -1,41 +1,11 @@
-import numpy as np
+from pathlib import Path
+from tempfile import gettempdir
 import pytest
 from ladybug.epw import EPW
-from ladybug_geometry.geometry3d.pointvector import Point3D
-from ladybugtools_toolkit.external_comfort._shelterbase import Shelter
-from ladybugtools_toolkit.external_comfort._simulatebase import SimulationResult
-from ladybugtools_toolkit.external_comfort.material import get_material
 from ladybugtools_toolkit.external_comfort.typology import (
     Typology,
     combine_typologies,
-    east_shelter,
-    east_shelter_with_canopy,
-    east_west_linear_shelter,
-    enclosed,
-    fritted_sky_shelter,
-    misting,
-    near_water,
-    north_shelter,
-    north_shelter_with_canopy,
-    north_south_linear_shelter,
-    northeast_shelter,
-    northeast_shelter_with_canopy,
-    northeast_southwest_linear_shelter,
-    northwest_shelter,
-    northwest_shelter_with_canopy,
-    northwest_southeast_linear_shelter,
-    openfield,
-    pdec,
-    porous_enclosure,
-    sky_shelter,
-    south_shelter,
-    south_shelter_with_canopy,
-    southeast_shelter,
-    southeast_shelter_with_canopy,
-    southwest_shelter,
-    southwest_shelter_with_canopy,
-    west_shelter,
-    west_shelter_with_canopy,
+    Typologies,
 )
 
 from .. import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
@@ -45,18 +15,29 @@ from .test_simulate import TEST_SIMULATION_RESULT
 EPW_OBJ = EPW(EPW_FILE)
 
 TEST_TYPOLOGY = Typology(
-    Name=EXTERNAL_COMFORT_IDENTIFIER,
-    Shelters=[TEST_SHELTER],
-    EvaporativeCoolingEffect=[0.1] * 8760,
+    identifier=EXTERNAL_COMFORT_IDENTIFIER,
+    shelters=[TEST_SHELTER],
+    evaporative_cooling_effect=[0.1] * 8760,
 )
+
+
+def test_round_trip():
+    """_"""
+    tempfile = Path(gettempdir()) / "pytest_typology.json"
+    Typology.from_dict(TEST_TYPOLOGY.to_dict())
+    Typology.from_json(TEST_TYPOLOGY.to_json())
+    Typology.from_file(TEST_TYPOLOGY.to_file(tempfile))
+    tempfile.unlink()
 
 
 def test_combine_typologies():
     """_"""
-    with pytest.warns(UserWarning):
-        assert isinstance(
-            combine_typologies([sky_shelter(), south_shelter()]), Typology
-        )
+    assert isinstance(
+        combine_typologies(
+            [Typologies.SKY_SHELTER.value, Typologies.SOUTH_SHELTER.value]
+        ),
+        Typology,
+    )
 
 
 def test_dry_bulb_temperature():
@@ -85,38 +66,3 @@ def test_mean_radiant_temperature():
     assert TEST_TYPOLOGY.mean_radiant_temperature(
         TEST_SIMULATION_RESULT
     ).average == pytest.approx(15.64262493993061, rel=0.5)
-
-
-def test_predefined_typologies():
-    """_"""
-    for typology in [
-        east_shelter_with_canopy,
-        east_shelter,
-        east_west_linear_shelter,
-        enclosed,
-        fritted_sky_shelter,
-        misting,
-        near_water,
-        north_shelter_with_canopy,
-        north_shelter,
-        north_south_linear_shelter,
-        northeast_shelter_with_canopy,
-        northeast_shelter,
-        northeast_southwest_linear_shelter,
-        northwest_shelter_with_canopy,
-        northwest_shelter,
-        northwest_southeast_linear_shelter,
-        openfield,
-        pdec,
-        porous_enclosure,
-        sky_shelter,
-        south_shelter_with_canopy,
-        south_shelter,
-        southeast_shelter_with_canopy,
-        southeast_shelter,
-        southwest_shelter_with_canopy,
-        southwest_shelter,
-        west_shelter_with_canopy,
-        west_shelter,
-    ]:
-        assert isinstance(typology(), Typology)

@@ -1,4 +1,5 @@
 """Miscellaneous plots that don't really fit anywhere else."""
+# pylint: disable=line-too-long
 from calendar import month_abbr  # pylint: disable=E0401
 
 import matplotlib.dates as mdates
@@ -212,9 +213,7 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         ax = plt.gca()
 
     srss_df = sunrise_sunset(location)
-    seconds = srss_df.applymap(
-        lambda a: ((a - a.normalize()) / pd.Timedelta("1 second"))
-    )
+    seconds = srss_df.map(lambda a: ((a - a.normalize()) / pd.Timedelta("1 second")))
     hours = seconds / (60 * 60)
 
     ## hours of daylight
@@ -328,21 +327,21 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
     ax.text(
         temp.daylight.idxmax(),
         hours.noon.loc[temp.daylight.idxmax()] + 0.5,
-        f"Summer solstice ({temp.daylight.idxmax():%d %b})\n{np.floor(temp.daylight.max()):0.0f} hrs, {(temp.daylight.max() % 1) * 60:0.0f} mins",
+        f"Summer solstice ({temp.daylight.idxmax():%d %b})\n{np.floor(temp.daylight.max()):02.0f} hrs, {(temp.daylight.max() % 1) * 60:02.0f} mins",
         ha="center",
         va="bottom",
     )
     ax.text(
         temp.daylight.idxmax(),
         hours.sunrise.loc[temp.daylight.idxmax()] + 0.5,
-        f"Sunrise\n{int(np.floor((hours.sunrise.loc[temp.daylight.idxmax()]))):02d}:{(hours.sunrise.loc[temp.daylight.idxmax()] % 1) * 60:0.0f}",
+        f"Sunrise\n{int(np.floor((hours.sunrise.loc[temp.daylight.idxmax()]))):02.0f}:{(hours.sunrise.loc[temp.daylight.idxmax()] % 1) * 60:02.0f}",
         ha="center",
         va="bottom",
     )
     ax.text(
         temp.daylight.idxmax(),
         hours.sunset.loc[temp.daylight.idxmax()] + 0.5,
-        f"Sunset\n{int(np.floor((hours.sunset.loc[temp.daylight.idxmax()]))):02d}:{(hours.sunset.loc[temp.daylight.idxmax()] % 1) * 60:0.0f}",
+        f"Sunset\n{int(np.floor((hours.sunset.loc[temp.daylight.idxmax()]))):02.0f}:{(hours.sunset.loc[temp.daylight.idxmax()] % 1) * 60:02.0f}",
         ha="center",
         va="bottom",
     )
@@ -351,21 +350,21 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
     ax.text(
         temp.daylight.idxmin(),
         hours.noon.loc[temp.daylight.idxmin()] + 0.5,
-        f"Winter solstice ({temp.daylight.idxmin():%d %b})\n{np.floor(temp.daylight.min()):0.0f} hrs, {(temp.daylight.min() % 1) * 60:0.0f} mins",
+        f"Winter solstice ({temp.daylight.idxmin():%d %b})\n{np.floor(temp.daylight.min()):02.0f} hrs, {(temp.daylight.min() % 1) * 60:02.0f} mins",
         ha="right" if temp.daylight.idxmin().month > 6 else "left",
         va="bottom",
     )
     ax.text(
         temp.daylight.idxmin(),
         hours.sunrise.loc[temp.daylight.idxmin()] + 0.5,
-        f"Sunrise\n{int(np.floor((hours.sunrise.loc[temp.daylight.idxmin()]))):02d}:{(hours.sunrise.loc[temp.daylight.idxmin()] % 1) * 60:0.0f}",
+        f"Sunrise\n{int(np.floor((hours.sunrise.loc[temp.daylight.idxmin()]))):02.0f}:{(hours.sunrise.loc[temp.daylight.idxmin()] % 1) * 60:02.0f}",
         ha="right" if temp.daylight.idxmin().month > 6 else "left",
         va="bottom",
     )
     ax.text(
         temp.daylight.idxmin(),
         hours.sunset.loc[temp.daylight.idxmin()] + 0.5,
-        f"Sunset\n{int(np.floor((hours.sunset.loc[temp.daylight.idxmin()]))):02d}:{(hours.sunset.loc[temp.daylight.idxmin()] % 1) * 60:0.0f}",
+        f"Sunset\n{int(np.floor((hours.sunset.loc[temp.daylight.idxmin()]))):02.0f}:{(hours.sunset.loc[temp.daylight.idxmin()] % 1) * 60:02.0f}",
         ha="right" if temp.daylight.idxmin().month > 6 else "left",
         va="bottom",
     )

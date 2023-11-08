@@ -3,10 +3,12 @@
 # pylint: disable=E0401
 import calendar
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
+
 
 # pylint: enable=E0401
 
@@ -36,7 +38,9 @@ from .helpers import (
     angle_to_vector,
     OpenMeteoVariable,
     circular_weighted_mean,
+    convert_keys_to_snake_case,
     rolling_window,
+    scrape_meteostat,
     scrape_openmeteo,
     weibull_directional,
     weibull_pdf,
@@ -52,7 +56,7 @@ from .plot._timeseries import timeseries
 from .directionbins import DirectionBins
 
 
-@dataclass(init=True, repr=True, eq=True)
+@dataclass(init=True, eq=True, repr=True)
 class Wind:
     """An object containing historic, time-indexed wind data.
 
@@ -67,67 +71,151 @@ class Wind:
             The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
     """
 
-    wind_speeds: list[int | float | np.number] = field(
-        init=True, compare=True, repr=False
-    )
-    wind_directions: list[int | float | np.number] = field(
-        init=True, compare=True, repr=False
-    )
-    datetimes: list[datetime] = field(init=True, compare=True, repr=False)
-    height_above_ground: float = field(init=True, compare=True, repr=False, default=10)
+    wind_speeds: list[float]
+    wind_directions: list[float]
+    datetimes: list[datetime] | pd.DatetimeIndex
+    height_above_ground: Optional[float]
 
     def __post_init__(self):
-        self.validation(
-            self.wind_speeds,
-            self.wind_directions,
-            self.datetimes,
-            self.height_above_ground,
-        )
+        if self.height_above_ground < 0.1:
+            raise ValueError("Height above ground must be >= 0.1m.")
 
-        self.datetimes: list[datetime] = pd.to_datetime(self.datetimes)
-        self.wind_speeds = pd.Series(
-            self.wind_speeds, index=self.datetimes, name="speed"
-        ).sort_index(inplace=False)
-        self.wind_directions = pd.Series(
-            self.wind_directions, index=self.datetimes, name="direction"
-        ).sort_index(inplace=False)
-        self.df = pd.concat([self.ws, self.wd], axis=1)
+        if not (
+            len(self.wind_speeds) == len(self.wind_directions) == len(self.datetimes)
+        ):
+            raise ValueError(
+                "wind_speeds, wind_directions and datetimes must be the same length."
+            )
 
-        # # wrap methods within this class
-        # super().__post_init__()
+        if len(self.wind_speeds) <= 1:
+            raise ValueError(
+                "wind_speeds, wind_directions and datetimes must be at least 2 items long."
+            )
+
+        if len(set(self.datetimes)) != len(self.datetimes):
+            raise ValueError("datetimes contains duplicates.")
+
+        # convert to lists
+        self.wind_speeds = np.array(self.wind_speeds)
+        self.wind_directions = np.array(self.wind_directions)
+        self.datetimes = pd.DatetimeIndex(self.datetimes)
+
+        for ws in self.wind_speeds:
+            if np.isnan(ws):
+                raise ValueError("wind_speeds contains null values.")
+            if ws < 0:
+                raise ValueError("wind_speeds must be >= 0")
+
+        for n, wd in enumerate(self.wind_directions):
+            if np.isnan(wd):
+                raise ValueError("wind_directions contains null values.")
+            if wd < 0 or wd > 360:
+                raise ValueError("wind_directions must be within 0-360")
+            if wd == 360:
+                self.wind_directions[n] = 0
 
     def __len__(self) -> int:
-        return len(self.df)
+        return len(self.datetimes)
 
     def __repr__(self) -> str:
         """The printable representation of the given object"""
         return (
-            f"{self.__class__.__name__}({min(self.df.index):%Y-%m-%d} to "
-            f"{max(self.df.index):%Y-%m-%d}, n={len(self)} @{self.freq}, "
+            f"{self.__class__.__name__}({min(self.datetimes):%Y-%m-%d} to "
+            f"{max(self.datetimes):%Y-%m-%d}, n={len(self.datetimes)} @{self.freq}, "
             f"@{self.height_above_ground}m)"
         )
 
-    ##############
-    # PROPERTIES #
-    ##############
+    def to_dict(self) -> dict:
+        """Return the object as a dictionary."""
+
+        return {
+            "_t": "BH.oM.LadybugTools.Wind",
+            "WindSpeeds": [float(i) for i in self.wind_speeds],
+            "WindDirections": [float(i) for i in self.wind_directions],
+            "Datetimes": [i.isoformat() for i in self.datetimes],
+            "HeightAboveGround": self.height_above_ground,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Wind":
+        """Create a DirectionBins object from a dictionary."""
+
+        d = convert_keys_to_snake_case(d)
+
+        # datetimes = []
+        # for dt in d["datetimes"]:
+        #     if isinstance(dt, (str)):
+        #         datetimes.append(datetime.fromordinal(int(dt)))
+
+        return cls(
+            wind_speeds=d["wind_speeds"],
+            wind_directions=d["wind_directions"],
+            datetimes=pd.to_datetime(d["datetimes"]),
+            height_above_ground=d["height_above_ground"],
+        )
+
+    def to_json(self) -> str:
+        """Convert this object to a JSON string."""
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_string: str) -> "Wind":
+        """Create this object from a JSON string."""
+
+        return cls.from_dict(json.loads(json_string))
+
+    def to_file(self, path: Path) -> Path:
+        """Convert this object to a JSON file."""
+
+        if Path(path).suffix != ".json":
+            raise ValueError("path must be a JSON file.")
+
+        with open(Path(path), "w") as fp:
+            fp.write(self.to_json())
+
+        return Path(path)
+
+    @classmethod
+    def from_file(cls, path: Path) -> "Wind":
+        """Create this object from a JSON file."""
+        with open(Path(path), "r") as fp:
+            return cls.from_json(fp.read())
+
+    # ##############
+    # # PROPERTIES #
+    # ##############
 
     @property
     def freq(self) -> str:
         """Return the inferred frequency of the datetimes associated with this object."""
-        freq = pd.infer_freq(self.df.index)
+        freq = pd.infer_freq(self.datetimes)
         if freq is None:
             return "inconsistent"
         return freq
 
     @property
+    def index(self) -> pd.DatetimeIndex:
+        """Get the datetimes as a pandas DateTimeIndex."""
+        return pd.to_datetime(self.datetimes)
+
+    @property
     def ws(self) -> pd.Series:
         """Convenience accessor for wind speeds as a time-indexed pd.Series object."""
-        return self.wind_speeds
+        return pd.Series(
+            self.wind_speeds, index=self.index, name="Wind Speed (m/s)"
+        ).sort_index(ascending=True, inplace=False)
 
     @property
     def wd(self) -> pd.Series:
         """Convenience accessor for wind directions as a time-indexed pd.Series object."""
-        return self.wind_directions
+        return pd.Series(
+            self.wind_directions, index=self.index, name="Wind Direction (degrees)"
+        ).sort_index(ascending=True, inplace=False)
+
+    @property
+    def df(self) -> pd.DataFrame:
+        """Convenience accessor for wind speed and direction as a time-indexed pd.DataFrame object."""
+        return pd.concat([self.ws, self.wd], axis=1)
 
     @property
     def calm_datetimes(self) -> list[datetime]:
@@ -137,7 +225,7 @@ class Wind:
             list[datetime]:
                 "Calm" wind datetimes.
         """
-        return self.wind_speeds[self.wind_speeds <= 0.1].index.tolist()
+        return self.ws[self.ws <= 0.1].index.tolist()  # pylint: disable=E1136
 
     @property
     def uv(self) -> pd.DataFrame:
@@ -184,11 +272,11 @@ class Wind:
         # remove duplicates in input dataframe
         df = df.loc[~df.index.duplicated()]
 
-        return cls(
-            df[wind_speed_column].tolist(),
-            df[wind_direction_column].tolist(),
-            df.index.tolist(),
-            height_above_ground,
+        return Wind(
+            wind_speeds=df[wind_speed_column].tolist(),
+            wind_directions=df[wind_direction_column].tolist(),
+            datetimes=df.index.tolist(),
+            height_above_ground=height_above_ground,
         )
 
     @classmethod
@@ -282,7 +370,59 @@ class Wind:
                 "OpenMeteo did not return any data for the given latitude, longitude and start/end dates."
             )
         datetimes = df.index.tolist()
-        return Wind(wind_speeds, wind_directions, datetimes, 10)
+        return Wind(
+            wind_speeds=wind_speeds,
+            wind_directions=wind_directions,
+            datetimes=datetimes,
+            height_above_ground=10,
+        )
+
+    @classmethod
+    def from_meteostat(
+        cls,
+        latitude: float,
+        longitude: float,
+        start_date: datetime | str,
+        end_date: datetime | str,
+        altitude: float = 10,
+    ) -> "Wind":
+        """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
+
+        Args:
+            latitude (float):
+                The latitude of the target site, in degrees.
+            longitude (float):
+                The longitude of the target site, in degrees.
+            start_date (datetime | str):
+                The start-date from which records will be obtained.
+            end_date (datetime | str):
+                The end-date beyond which records will be ignored.
+            altitude (float, optional):
+                The altitude of the target site, in meters. Defaults to 10.
+        """
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
+        df = scrape_meteostat(
+            latitude=latitude,
+            longitude=longitude,
+            start_date=start_date,
+            end_date=end_date,
+            altitude=altitude,
+            convert_units=True,
+        )[["Wind Speed (m/s)", "Wind Direction (degrees)"]]
+
+        df.dropna(axis=0, inplace=True, how="any")
+
+        return Wind.from_dataframe(
+            df=df,
+            wind_speed_column="Wind Speed (m/s)",
+            wind_direction_column="Wind Direction (degrees)",
+            height_above_ground=altitude,
+        )
 
     @classmethod
     def from_average(
@@ -302,37 +442,42 @@ class Wind:
         df_wd = pd.concat([i.wd for i in wind_objects], axis=1).dropna()
 
         # construct the weighted means
-        wd_avg = [circular_weighted_mean(i, weights) for r, i in df_wd.iterrows()]
+        wd_avg = np.array(
+            [circular_weighted_mean(i, weights) for _, i in df_wd.iterrows()]
+        )
         ws_avg = np.average(df_ws, axis=1, weights=weights)
         dts = df_ws.index
 
         # return the new averaged object
         return Wind(
-            ws_avg,
-            wd_avg,
-            dts,
-            np.average([i.height_above_ground for i in wind_objects], weights=weights),
+            wind_speeds=ws_avg.tolist(),
+            wind_directions=wd_avg.tolist(),
+            datetimes=dts,
+            height_above_ground=np.average(
+                [i.height_above_ground for i in wind_objects], weights=weights
+            ),
         )
 
     @classmethod
     def from_uv(
         cls,
-        u: list[int | float | np.number],
-        v: list[int | float | np.number],
+        u: list[float],
+        v: list[float],
         datetimes: list[datetime],
         height_above_ground: float = 10,
     ) -> "Wind":
         """Create a Wind object from a set of U, V wind components.
 
         Args:
-            u (list[int | float | np.number]):
+            u (list[float]):
                 An iterable of U (eastward) wind components in m/s.
-            v (list[int | float | np.number]):
+            v (list[float]):
                 An iterable of V (northward) wind components in m/s.
             datetimes (list[datetime]):
                 An iterable of datetime-like objects.
             height_above_ground (float, optional):
-                The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
+                The height above ground (in m) where the input wind speeds and directions were collected.
+                Defaults to 10m.
 
         Returns:
             Wind:
@@ -348,90 +493,12 @@ class Wind:
                 "Some input vectors have velocity of 0. This is not bad, but can mean directions may be misreported."
             )
 
-        return cls(wind_speed, wind_direction, datetimes, height_above_ground)
-
-    ##################
-    # STATIC METHODS #
-    ##################
-
-    @staticmethod
-    def validation(
-        wind_speeds: Any, wind_directions: Any, datetimes: Any, height_above_ground: Any
-    ) -> None:
-        """Ensure that values given conform to expected standards in order to create a valid Wind object.
-
-        Args:
-            wind_speeds (Any):
-                Input for wind_speeds.
-            wind_directions (Any):
-                Input for wind_directions.
-            datetimes (Any):
-                Input for datetimes.
-            height_above_ground (Any):
-                Input for height_above_ground.
-        """
-
-        for arg_name, arg_value in locals().items():
-            if arg_name == "height_above_ground":
-                if arg_value <= 0:
-                    raise ValueError(f"{arg_name} must be greater than 0")
-                continue
-
-            # check that arg is iterable, and not a string
-            try:
-                iter(arg_value)
-            except TypeError as exc:
-                raise ValueError(
-                    f"{arg_name} must be single-dimension iterable"
-                ) from exc
-
-            if isinstance(arg_value, str):
-                raise ValueError(f"{arg_name} must be single-dimension iterable")
-
-            # check that iterable is flat
-            if any(isinstance(el, (list, np.ndarray, tuple)) for el in arg_value):
-                raise ValueError(f"{arg_name} must be single-dimension iterable")
-
-            if arg_name in ["wind_speeds", "wind_directions"]:
-                # check that inputs are numeric
-                if not all(isinstance(el, (int, float, np.number)) for el in arg_value):
-                    raise ValueError(f"{arg_name} must contain numeric values")
-
-                if arg_name == "wind_speeds":
-                    if min(arg_value) < 0:
-                        raise ValueError(f"{arg_name} must be in m/s and ≥ 0")
-                if arg_name == "wind_directions":
-                    if (min(arg_value) < 0) or (max(arg_value) > 360):
-                        raise ValueError(
-                            f"{arg_name} must be in degrees (with north at 0) and in the range 0-360"
-                        )
-
-                # check that iterable contains no NaN values
-                if sum(np.isnan(arg_value)) > 0:
-                    raise ValueError(f"{arg_name} contains null values")
-
-            else:
-                # check that inputs are datetimes
-                if not all(
-                    isinstance(el, (datetime, pd.Timestamp, np.datetime64))
-                    for el in arg_value
-                ):
-                    raise ValueError(f"{arg_name} must contain datetime-like values")
-
-                # check that all datetimes are unique
-                if len(datetimes) != len(np.unique(datetimes)):
-                    raise ValueError(f"duplicate values are present in {arg_name}")
-
-        # check height above ground validity
-        if height_above_ground < 0.1:
-            raise ValueError("height_above_ground must be >= 0.1")
-
-        # check that inputs are the same shape/size
-        if not len(wind_speeds) == len(wind_directions) == len(datetimes):
-            raise ValueError(
-                "wind_speeds, wind_directions and datetimes must be the same length. "
-                f"({len(wind_speeds)} != {len(wind_directions)} != {len(datetimes)})."
-            )
+        return Wind(
+            wind_speeds=wind_speed.tolist(),
+            wind_directions=wind_direction.tolist(),
+            datetimes=datetimes,
+            height_above_ground=height_above_ground,
+        )
 
     ###################
     # GENERAL METHODS #
@@ -527,10 +594,10 @@ class Wind:
             resampled_directions.fillna(prevailing_direction, inplace=True)
 
         return Wind(
-            resampled_speeds.tolist(),
-            resampled_directions.tolist(),
-            resampled_datetimes,
-            self.height_above_ground,
+            wind_speeds=resampled_speeds.tolist(),
+            wind_directions=resampled_directions.tolist(),
+            datetimes=resampled_datetimes,
+            height_above_ground=self.height_above_ground,
         )
 
     @decorator_factory()
@@ -558,11 +625,6 @@ class Wind:
         return direction_bins.prevailing(self.wd.tolist(), n, as_angle)
 
     @decorator_factory()
-    def vectors(self) -> list[list[float]]:
-        """Convenience method for calculating wind vectors for each wind direction."""
-        return np.array(angle_to_vector(self.wind_directions.values)).T
-
-    @decorator_factory()
     def average_direction(self) -> tuple[float, float]:
         """Calculate the average speed and direction for this object.
 
@@ -570,7 +632,7 @@ class Wind:
             tuple[float, float]:
                 A tuple containing the average speed and direction.
         """
-        return angle_from_north(self.vectors().mean(axis=0))
+        return angle_from_north(self.uv.values.mean(axis=0))
 
     @decorator_factory()
     def probabilities(
@@ -642,10 +704,13 @@ class Wind:
         mask = [lookup[i] for i in possible_datetimes]
         df = df[mask]
 
+        if len(df) == 0:
+            raise ValueError("No data remains within the given analysis_period filter.")
+
         return Wind.from_dataframe(
             df,
-            wind_speed_column="speed",
-            wind_direction_column="direction",
+            wind_speed_column="Wind Speed (m/s)",
+            wind_direction_column="Wind Direction (degrees)",
             height_above_ground=self.height_above_ground,
         )
 
@@ -663,11 +728,14 @@ class Wind:
                 "The length of the boolean mask must match the length of the current object."
             )
 
+        if len(self.ws.values[mask]) == 0:
+            raise ValueError("No data remains within the given boolean filters.")
+
         return Wind(
-            self.ws[mask].tolist(),
-            self.wd[mask].tolist(),
-            self.datetimes[mask],
-            self.height_above_ground,
+            wind_speeds=self.ws.values[mask].tolist(),
+            wind_directions=self.wd.values[mask].tolist(),
+            datetimes=self.datetimes[mask],
+            height_above_ground=self.height_above_ground,
         )
 
     @decorator_factory()
@@ -713,11 +781,15 @@ class Wind:
                     axis=0,
                 )
             ).flatten()
+
+        if len(self.ws.iloc[indices]) == 0:
+            raise ValueError("No data remains within the given time filters.")
+
         return Wind(
-            self.ws.iloc[indices].tolist(),
-            self.wd.iloc[indices].tolist(),
-            self.datetimes[indices],
-            self.height_above_ground,
+            wind_speeds=self.ws.iloc[indices].tolist(),
+            wind_directions=self.wd.iloc[indices].tolist(),
+            datetimes=self.datetimes[indices],
+            height_above_ground=self.height_above_ground,
         )
 
     @decorator_factory()
@@ -756,11 +828,14 @@ class Wind:
             else:
                 mask = (self.wd > left_angle) & (self.wd < right_angle)
 
+        if len(self.ws.values[mask]) == 0:
+            raise ValueError("No data remains within the given direction filter.")
+
         return Wind(
-            self.ws[mask].tolist(),
-            self.wd[mask].tolist(),
-            self.datetimes[mask],
-            self.height_above_ground,
+            wind_speeds=self.ws.values[mask].tolist(),
+            wind_directions=self.wd.values[mask].tolist(),
+            datetimes=self.datetimes[mask],
+            height_above_ground=self.height_above_ground,
         )
 
     @decorator_factory()
@@ -793,11 +868,14 @@ class Wind:
         else:
             mask = (self.ws > min_speed) & (self.ws < max_speed)
 
+        if len(self.ws.values[mask]) == 0:
+            raise ValueError("No data remains within the given speed filter.")
+
         return Wind(
-            self.ws[mask].tolist(),
-            self.wd[mask].tolist(),
-            self.datetimes[mask],
-            self.height_above_ground,
+            wind_speeds=self.ws.values[mask].tolist(),
+            wind_directions=self.wd.values[mask].tolist(),
+            datetimes=self.datetimes[mask],
+            height_above_ground=self.height_above_ground,
         )
 
     @decorator_factory()
@@ -834,15 +912,13 @@ class Wind:
                 "At least 4 directions should be specified in the DirectionBins object."
             )
 
-        df = self.df
-
         # bin data using speed bins and direction
         ds = []
         speed_bin_labels = []
         for low, high in rolling_window(speed_bins, 2):
             speed_bin_labels.append((low, high))
-            mask = (df.speed >= low) & (df.speed < high)
-            binned = direction_bins.bin_data(df.direction[mask])
+            mask = (self.ws >= low) & (self.ws < high)
+            binned = direction_bins.bin_data(self.wd.values[mask])
             ds.append({k: len(v) for k, v in binned.items()})
         df = pd.DataFrame.from_dict(ds).T
         df.columns = speed_bin_labels
@@ -864,6 +940,19 @@ class Wind:
         speed_bins: tuple[float] = None,
         direction_bins: DirectionBins = DirectionBins(),
     ) -> pd.DataFrame:
+        """Create a table with the cumulative probability density function for each speed and direction.
+
+        Args:
+            speed_bins (list[float], optional):
+                A list of bins edges, between which wind speeds will be binned.
+                Defaults to (0, 0.1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 99.9).
+            direction_bins (DirectionBins, optional):
+                A DirectionBins object. Defaults to DirectionBins().
+
+        Returns:
+            pd.DataFrame:
+                A cumulative density table.
+        """
         return self.frequency_table(
             speed_bins=speed_bins, density=True, direction_bins=direction_bins
         ).cumsum(axis=0)
@@ -921,13 +1010,18 @@ class Wind:
                 A translated Wind object.
         """
         ws = wind_speed_at_height(
-            reference_value=self.ws,  # type: ignore
+            reference_value=self.ws,
             reference_height=self.height_above_ground,
             target_height=target_height,
             terrain_roughness_length=terrain_roughness_length,
             log_function=log_function,
         )
-        return Wind(ws.tolist(), self.wd.tolist(), self.datetimes, target_height)  # type: ignore
+        return Wind(
+            wind_speeds=ws.tolist(),
+            wind_directions=self.wd.tolist(),
+            datetimes=self.datetimes,
+            height_above_ground=target_height,
+        )
 
     @decorator_factory()
     def apply_directional_factors(
@@ -970,7 +1064,10 @@ class Wind:
         ws = self.ws * all_factors
 
         return Wind(
-            ws.tolist(), self.wd.tolist(), self.datetimes, self.height_above_ground
+            wind_speeds=ws.tolist(),
+            wind_directions=self.wd.tolist(),
+            datetimes=self.datetimes,
+            height_above_ground=self.height_above_ground,
         )
 
     @decorator_factory()
@@ -1085,12 +1182,35 @@ class Wind:
 
         return df
 
+    @decorator_factory()
+    def summarise(self) -> list[str]:
+        """Generate a textual sumarry of the current object."""
+
+        aa = self.frequency_table().sum(axis=0).idxmax()
+        prevailing_count = self.frequency_table()[aa].sum()
+
+        start_time = self.datetimes[0]
+        end_time = self.datetimes[-1]
+        prevailing_angle = self.prevailing(as_angle=True)[0]
+        prevailing_cardinal = self.prevailing(as_angle=False)[0]
+        prevailing_mean = self.ws.loc[self.wd == prevailing_angle].mean()
+        prevailing_max = self.ws.loc[self.wd == prevailing_angle].max()
+
+        # pylint: disable=line-too-long
+        return [
+            f"Between {start_time} and {end_time}, the prevailing wind direction is {prevailing_angle}° (or {prevailing_cardinal}) accounting for {prevailing_count} of {len(self.wd)} timesteps.",
+            f"Prevailing wind average speed is {prevailing_mean:.2f}m/s, with a maximum of {prevailing_max:.2f}m/s.",
+            f"Peak wind speeds were observed at {self.ws.idxmax()}, reaching {self.ws.max():.2f}m/s from {self.wd.loc[self.ws.idxmax()]}°.",
+            f"{self.calm():.2%} of the time, wind speeds were calm (≤ 0.1m/s).",
+        ]
+        # pylint: enable=line-too-long
+
     ##################################
     # PLOTTING/VISUALISATION METHODS #
     ##################################
 
     @decorator_factory()
-    def plot_timeseries(self, ax: plt.Axes = None, color: str = "grey") -> plt.Axes:  # type: ignore
+    def plot_timeseries(self, ax: plt.Axes = None, color: str = "grey", **kwargs) -> plt.Axes:  # type: ignore
         """Create a simple line plot of wind speed.
 
         Args:
@@ -1098,6 +1218,10 @@ class Wind:
                 The axes to plot on. If None, the current axes will be used.
             color (str, optional):
                 The color of the line to plot. Default is "blue".
+            **kwargs:
+                Additional keyword arguments to pass to the function. These include:
+                title (str, optional):
+                    A title for the plot. Defaults to None.
 
         Returns:
             plt.Axes:
@@ -1108,13 +1232,12 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        data = self.ws
-
-        timeseries(data, ax=ax, color=color)
+        timeseries(self.ws, ax=ax, color=color)
         _, yhigh = ax.get_ylim()
         ax.set_ylim(0, yhigh)
-        ax.set_title(str(self))
-        ax.set_ylabel("Wind speed (m/s)")
+        title = [kwargs.pop("title", None), repr(self)]
+        ax.set_title("\n".join([i for i in title if i is not None]))
+        ax.set_ylabel(self.ws.name)
 
         return ax
 
@@ -1153,6 +1276,8 @@ class Wind:
                     The opening angle of the windrose. Defaults to 0.
                 alpha (float, optional):
                     The alpha value of the windrose. Defaults to 1.
+                title (str, optional):
+                    A title for the plot. Defaults to None.
 
         Returns:
             plt.Axes:
@@ -1163,14 +1288,14 @@ class Wind:
             _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
         # remove 0-speed values
-        local_w = self.filter_by_speed(min_speed=0.1)
+        local_w = self.filter_by_speed(min_speed=0.001)
 
         if not data:
             data = local_w.ws
 
         if len(data) != len(local_w.wd):
             raise ValueError(
-                f"The length of the data ({len(data)}) must match the length of the wind-directions ({len(local_w.wd)})."
+                f"Length of the data ({len(data)}) must match the length of the wind-directions ({len(local_w.wd)})."
             )
 
         # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
@@ -1185,9 +1310,7 @@ class Wind:
             raise ValueError("The opening must be between 0 and 1.")
         opening = 1 - opening
 
-        title = [
-            kwargs.pop("title", None),
-        ]
+        title = [kwargs.pop("title", None), repr(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         # set data binning defaults
@@ -1206,7 +1329,7 @@ class Wind:
         # bin input data
         thetas = np.deg2rad(direction_bins.midpoints)
         width = np.deg2rad(direction_bins.bin_width)
-        binned_data = direction_bins.bin_data(self.wd, data)
+        binned_data = direction_bins.bin_data(local_w.wd, data)
         radiis = []
         for _, values in binned_data.items():
             radiis.append(np.histogram(a=values, bins=_data_bins)[0])
@@ -1287,6 +1410,9 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
+        title = [kwargs.pop("title", None), repr(self)]
+        ax.set_title("\n".join([i for i in title if i is not None]))
+
         direction_bins = kwargs.pop("direction_bins", DirectionBins())
         speed_bins = np.linspace(0, self.ws.max() + 1, 21)
         mtx = self.frequency_table(
@@ -1306,12 +1432,8 @@ class Wind:
         y = np.array([np.array(i) for i in mtx.index]).flatten()
         z = mtx.values.repeat(2, axis=1).repeat(2, axis=0) * 100
 
-        ax.set_xlabel("Wind direction (degrees)")
-        ax.set_ylabel("Wind speed (m/s)")
-        title = [
-            kwargs.pop("title", str(self)),
-        ]
-        ax.set_title("\n".join([i for i in title if i is not None]))
+        ax.set_xlabel(self.wd.name)
+        ax.set_ylabel(self.ws.name)
 
         pcm = ax.pcolormesh(
             x,
@@ -1319,7 +1441,8 @@ class Wind:
             z[:-1, :-1],
             **kwargs,
         )
-        plt.colorbar(pcm, label="Frequency (%)")
+        cb = plt.colorbar(pcm, label="Frequency (%)")
+        cb.outline.set_visible(False)
 
         return ax
 
@@ -1353,17 +1476,15 @@ class Wind:
         if ax is None:
             _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
+        title = [kwargs.pop("title", None), repr(self)]
+        ax.set_title("\n".join([i for i in title if i is not None]))
+
         # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
         fig = plt.figure()
         rect = [0.1, 0.1, 0.8, 0.8]
         hist_ax = plt.Axes(fig, rect)
         hist_ax.bar(np.array([1]), np.array([1]))
         # HACK end
-
-        title = [
-            kwargs.pop("title", None),
-        ]
-        ax.set_title("\n".join([i for i in title if i is not None]))
 
         direction_bins = kwargs.pop("direction_bins", DirectionBins())
         speed_bins = kwargs.pop(
@@ -1415,7 +1536,6 @@ class Wind:
     def plot_wind_matrix(
         self,
         ax: plt.Axes = None,
-        title: str = None,
         show_values: bool = False,
         **kwargs,
     ) -> plt.Axes:
@@ -1425,8 +1545,6 @@ class Wind:
         Args:
             ax (plt.Axes, optional):
                 The axes to plot on. If None, the current axes will be used.
-            title (str, optional):
-                An optional title to give the chart. Defaults to None.
             show_values (bool, optional):
                 Whether to show values in the cells. Defaults to False.
             **kwargs:
@@ -1441,10 +1559,8 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        if title is None:
-            ax.set_title(str(self))
-        else:
-            ax.set_title(f"{self}\n{title}")
+        title = [kwargs.pop("title", None), repr(self)]
+        ax.set_title("\n".join([i for i in title if i is not None]))
 
         df = self.wind_matrix()
         _wind_speeds = df["speed"]
@@ -1467,7 +1583,7 @@ class Wind:
         cmap = kwargs.pop("cmap", "Spectral_r")
         vmin = kwargs.pop("vmin", _wind_speeds.values.min())
         vmax = kwargs.pop("vmax", _wind_speeds.values.max())
-        cbar_title = kwargs.pop("cbar_title", None)
+        cbar_title = kwargs.pop("cbar_title", "m/s")
         norm = kwargs.pop("norm", Normalize(vmin=vmin, vmax=vmax, clip=True))
         mapper = kwargs.pop("mapper", ScalarMappable(norm=norm, cmap=cmap))
 
@@ -1519,6 +1635,7 @@ class Wind:
         ax.set_yticklabels([f"{i:02d}:00" for i in np.arange(0, 24, 1)])
         for label in ax.yaxis.get_ticklabels()[1::2]:
             label.set_visible(False)
+
         cb = plt.colorbar(pc, label=cbar_title, pad=0.01)
         cb.outline.set_visible(False)
 
@@ -1528,7 +1645,6 @@ class Wind:
     def plot_speed_frequency(
         self,
         ax: plt.Axes = None,
-        title: str = None,
         percentiles: tuple[float] = (0.5, 0.95),
         **kwargs,
     ) -> plt.Axes:
@@ -1537,18 +1653,21 @@ class Wind:
         Args:
             ax (plt.Axes, optional):
                 The axes to plot this chart on. Defaults to None.
-            title (str, optional):
-                An optional title to give the chart. Defaults to None.
+
             percentiles (tuple[float], optional):
                 The percentiles to plot. Defaults to (0.5, 0.95).
             **kwargs:
                 Additional keyword arguments to pass to the self.frequency_table function.
-
+                title (str, optional):
+                    An optional title to give the chart. Defaults to None.
         Returns:
             plt.Axes: The axes object.
         """
         if ax is None:
             ax = plt.gca()
+
+        title = [kwargs.pop("title", None), repr(self)]
+        ax.set_title("\n".join([i for i in title if i is not None]))
 
         kwargs.pop("include_counts", None)  # remove include_counts if present
         data = self.frequency_table(**kwargs).sum(axis=1)
@@ -1565,11 +1684,6 @@ class Wind:
         ax.set_xlim(0, max(x_values))
         ax.set_ylim(0, max(y_values))
 
-        if title is None:
-            ax.set_title(str(self))
-        else:
-            ax.set_title(f"{self}\n{title}")
-
         ax.set_xlabel("Wind Speed (m/s)")
         ax.set_ylabel("Frequency")
         if kwargs.get("density", False):
@@ -1585,7 +1699,6 @@ class Wind:
     def plot_cumulative_density(
         self,
         ax: plt.Axes = None,
-        title: str = None,
         percentiles: tuple[float] = (0.5, 0.95),
         **kwargs,
     ) -> plt.Axes:
@@ -1594,12 +1707,12 @@ class Wind:
         Args:
             ax (plt.Axes, optional):
                 The axes to plot this chart on. Defaults to None.
-            title (str, optional):
-                An optional title to give the chart. Defaults to None.
             percentiles (tuple[float], optional):
                 The percentiles to plot. Defaults to (0.5, 0.95).
             **kwargs:
                 Additional keyword arguments to pass to the self.cumulative_density_function function.
+                title (str, optional):
+                    An optional title to give the chart. Defaults to None.
 
         Returns:
             plt.Axes: The axes object.
@@ -1607,6 +1720,9 @@ class Wind:
 
         if ax is None:
             ax = plt.gca()
+
+        title = [kwargs.pop("title", None), repr(self)]
+        ax.set_title("\n".join([i for i in title if i is not None]))
 
         data = self.cumulative_density_function(**kwargs).sum(axis=1)
         x_values = [np.mean(i) for i in data.index]
@@ -1622,12 +1738,7 @@ class Wind:
         ax.set_xlim(0, max(x_values))
         ax.set_ylim(0, max(y_values))
 
-        if title is None:
-            ax.set_title(str(self))
-        else:
-            ax.set_title(f"{self}\n{title}")
-
-        ax.set_xlabel("Wind Speed (m/s)")
+        ax.set_xlabel(self.ws.name)
         ax.set_ylabel("Frequency")
         ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
 
@@ -1637,5 +1748,6 @@ class Wind:
 
         return ax
 
-    # TODO - add Climate Consultant-style "wind wheel" plot here
-    # (http://2.bp.blogspot.com/-F27rpZL4VSs/VngYxXsYaTI/AAAAAAAACAc/yoGXmk13uf8/s1600/CC-graphics%2B-%2BWind%2BWheel.jpg)
+
+# TODO - add Climate Consultant-style "wind wheel" plot here
+# (http://2.bp.blogspot.com/-F27rpZL4VSs/VngYxXsYaTI/AAAAAAAACAc/yoGXmk13uf8/s1600/CC-graphics%2B-%2BWind%2BWheel.jpg)

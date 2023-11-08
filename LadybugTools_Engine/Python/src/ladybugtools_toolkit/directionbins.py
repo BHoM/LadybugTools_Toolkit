@@ -1,5 +1,10 @@
 """Methods for working with time-indexed wind data."""
+# pylint: disable=E0401
+from dataclasses import dataclass
+import json
+from pathlib import Path
 
+# pylint: enable=E0401
 import numpy as np
 import pandas as pd
 
@@ -13,6 +18,7 @@ from .helpers import (
 )
 
 
+@dataclass(init=True, repr=True, eq=True)
 class DirectionBins:
     """An object containing directional binning data, used mainly for Wind data
     collections. These bins assume North is at 0-degrees.
@@ -29,20 +35,62 @@ class DirectionBins:
             The resulting object.
     """
 
-    def __init__(
-        self,
-        directions: int = 8,
-        centered: bool = True,
-    ) -> "DirectionBins":
-        self.directions = directions
-        self.centered = centered
-        self.bins = self.direction_bin_edges(self.directions, self.centered)
+    directions: int = 8
+    centered: bool = True
 
     def __len__(self) -> int:
         return self.directions
 
     def __str__(self) -> str:
         return f"DirectionBins_{self.directions}_{self.centered}"
+
+    def to_dict(self) -> dict:
+        """Return the object as a dictionary."""
+        return {
+            "_t": "BH.oM.LadybugTools.DirectionBins",
+            "directions": self.directions,
+            "centered": self.centered,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DirectionBins":
+        """Create a DirectionBins object from a dictionary."""
+        return cls(
+            directions=data["directions"],
+            centered=data["centered"],
+        )
+
+    def to_json(self) -> str:
+        """Convert this object to a JSON string."""
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_string: str) -> "DirectionBins":
+        """Create this object from a JSON string."""
+
+        return cls.from_dict(json.loads(json_string))
+
+    def to_file(self, path: Path) -> Path:
+        """Convert this object to a JSON file."""
+
+        if Path(path).suffix != ".json":
+            raise ValueError("path must be a JSON file.")
+
+        with open(Path(path), "w") as fp:
+            fp.write(self.to_json())
+
+        return Path(path)
+
+    @classmethod
+    def from_file(cls, path: Path) -> "DirectionBins":
+        """Create this object from a JSON file."""
+        with open(Path(path), "r") as fp:
+            return cls.from_json(fp.read())
+
+    @property
+    def bins(self) -> list[list[float]]:
+        """The direction bins as a list of lists."""
+        return self.direction_bin_edges(self.directions, self.centered)
 
     @property
     def lows(self) -> list[float]:

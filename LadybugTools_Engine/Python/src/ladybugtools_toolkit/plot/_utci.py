@@ -3,7 +3,6 @@
 # pylint: disable=E0401
 import calendar
 import textwrap
-from calendar import month_abbr
 
 # pylint enable=E0401
 
@@ -24,12 +23,11 @@ from ..bhom import decorator_factory
 from ..categorical.categories import (
     UTCI_DEFAULT_CATEGORIES,
     CategoricalComfort,
-    ComfortClass,
 )
 from ..ladybug_extension.datacollection import collection_to_series
 from ._heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
-from .utilities import add_bar_labels, average_color, contrasting_color, lighten_color
+from .utilities import contrasting_color, lighten_color
 
 
 @decorator_factory()
@@ -634,194 +632,6 @@ def utci_journey(
 
 
 @decorator_factory()
-def utci_heatmap(
-    utci_collection: HourlyContinuousCollection,
-    ax: plt.Axes = None,
-    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
-    **kwargs,
-) -> plt.Axes:
-    """Create a heatmap showing the annual hourly UTCI for this HourlyContinuousCollection.
-
-    Args:
-        utci_collection (HourlyContinuousCollection):
-            An HourlyContinuousCollection containing UTCI.
-        ax (plt.Axes, optional):
-            A matplotlib Axes object to plot on. Defaults to None.
-        utci_categories (Categories, optional):
-            A Categories object with colors, ranges and limits. Defaults to UTCI_DEFAULT_CATEGORIES.
-        **kwargs:
-            Additional keyword arguments to pass to the heatmap function.
-
-    Returns:
-        plt.Axes:
-            A matplotlib Axes object.
-    """
-
-    return heatmap(
-        collection_to_series(utci_collection),
-        ax=ax,
-        cmap=utci_categories.cmap,
-        norm=utci_categories.norm,
-        extend="both",
-        **kwargs,
-    )
-
-
-@decorator_factory()
-def utci_monthly_histogram(
-    utci_collection: HourlyContinuousCollection,
-    ax: plt.Axes = None,
-    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
-    show_labels: bool = False,
-    show_summary: bool = False,
-    show_legend: bool = False,
-) -> plt.Axes:
-    """Create a stacked bar chart showing the monthly distribution of UTCI values.
-
-    Args:
-        utci_collection (HourlyContinuousCollection):
-            An HourlyContinuousCollection containing UTCI.
-        ax (plt.Axes, optional):
-            A matplotlib Axes object to plot on. Defaults to None.
-        utci_categories (Categories, optional):
-            A Categories object with colors, ranges and limits. Defaults to UTCI_CATEGORIES.
-        show_labels (bool, optional):
-            Set to True to show the UTCI category labels on the plot. Defaults to False.
-        show_summary (bool, optional):
-            Set to True to show the UTCI category summary on the plot. Defaults to False.
-        show_legend (bool, optional):
-            Set to True to show the UTCI category legend on the plot. Defaults to False.
-
-    Returns:
-        plt.Axes:
-            A matplotlib Axes object.
-    """
-
-    if not isinstance(
-        utci_collection.header.data_type, LB_UniversalThermalClimateIndex
-    ):
-        raise ValueError("Input collection is not a UTCI collection.")
-
-    series = collection_to_series(utci_collection)
-
-    if ax is None:
-        ax = plt.gca()
-
-    t = utci_categories.timeseries_summary_monthly(series, density=True).T
-    t.columns = [month_abbr[i] for i in t.columns]
-    t.T.plot.bar(
-        ax=ax,
-        stacked=True,
-        color=utci_categories.colors,
-        legend=False,
-        width=1,
-    )
-    ax.set_xlabel(None)
-    ax.set_xlim(-0.5, 11.5)
-    ax.set_ylim(0, 1)
-    ax.set_xticklabels(t.columns, ha="center", rotation=0)
-    ax.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
-
-    if show_summary:
-        # Add header percentages for bar plot - and check that ComfortClass is available on object using that if it is
-        # get avg "cold", "hot", "comfortable" colors
-        cold_color = average_color(
-            [
-                utci_categories.colors[n]
-                for n, i in enumerate(utci_categories.comfort_classes)
-                if i.value == ComfortClass.TOO_COLD.value
-            ]
-        )
-        hot_color = average_color(
-            [
-                utci_categories.colors[n]
-                for n, i in enumerate(utci_categories.comfort_classes)
-                if i.value == ComfortClass.TOO_HOT.value
-            ]
-        )
-        comfortable_color = average_color(
-            [
-                utci_categories.colors[n]
-                for n, i in enumerate(utci_categories.comfort_classes)
-                if i.value == ComfortClass.COMFORTABLE.value
-            ]
-        )
-
-        cold_stress = []
-        no_stress = []
-        heat_stress = []
-        for n, col in t.items():
-            cs = 0
-            ns = 0
-            hs = 0
-            for nn, i in enumerate(col):
-                if (
-                    utci_categories.comfort_classes[nn].value
-                    == ComfortClass.TOO_COLD.value
-                ):
-                    cs += i
-                elif (
-                    utci_categories.comfort_classes[nn].value
-                    == ComfortClass.COMFORTABLE.value
-                ):
-                    ns += i
-                elif (
-                    utci_categories.comfort_classes[nn].value
-                    == ComfortClass.TOO_HOT.value
-                ):
-                    hs += i
-                else:
-                    raise ValueError("How'd you get here?")
-            cold_stress.append(cs)
-            no_stress.append(ns)
-            heat_stress.append(hs)
-
-        for n, (i, j, k) in enumerate(zip(*[cold_stress, no_stress, heat_stress])):
-            ax.text(
-                n,
-                1.02,
-                f"{i:0.1%}",
-                va="bottom",
-                ha="center",
-                color=cold_color,
-                fontsize="small",
-            )
-            ax.text(
-                n,
-                1.02,
-                f"{j:0.1%}\n",
-                va="bottom",
-                ha="center",
-                color=comfortable_color,
-                fontsize="small",
-            )
-            ax.text(
-                n,
-                1.02,
-                f"{k:0.1%}\n\n",
-                va="bottom",
-                ha="center",
-                color=hot_color,
-                fontsize="small",
-            )
-
-    if show_labels:
-        add_bar_labels(ax, orientation="vertical", threshold=0.05)
-
-    if show_legend:
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(
-            handles[::-1],
-            labels[::-1],
-            title=utci_categories.name,
-            bbox_to_anchor=(1, 0.5),
-            loc="center left",
-        )
-
-    return ax
-
-
-@decorator_factory()
 def utci_heatmap_histogram(
     utci_collection: HourlyContinuousCollection,
     utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
@@ -866,29 +676,17 @@ def utci_heatmap_histogram(
     histogram_ax = fig.add_subplot(spec[1, 0])
 
     # Add heatmap
-    utci_heatmap(
-        utci_collection,
-        ax=heatmap_ax,
-        utci_categories=utci_categories,
-        show_colorbar=False,
-        **kwargs,
-    )
+    utci_categories.annual_heatmap(series, ax=heatmap_ax, show_colorbar=False, **kwargs)
 
     # Add stacked plot
-    utci_monthly_histogram(
-        utci_collection,
-        ax=histogram_ax,
-        utci_categories=utci_categories,
-        show_labels=False,
-        show_legend=False,
-        show_summary=True,
-        **kwargs,
+    utci_categories.annual_monthly_histogram(
+        series=series, ax=histogram_ax, show_labels=True
     )
 
     if show_colorbar:
         # add colorbar
         divider = make_axes_locatable(histogram_ax)
-        colorbar_ax = divider.append_axes("bottom", size="20%", pad=0.65)
+        colorbar_ax = divider.append_axes("bottom", size="20%", pad=0.7)
         cb = fig.colorbar(
             mappable=heatmap_ax.get_children()[0],
             cax=colorbar_ax,
@@ -912,11 +710,11 @@ def utci_heatmap_histogram(
 
             colorbar_ax.text(
                 position,
-                1,
+                1.05,
                 textwrap.fill(bin_name, 11),
                 ha=ha,
                 va="bottom",
-                size="small",
+                fontsize="x-small",
                 # transform=colorbar_ax.transAxes,
             )
 

@@ -20,41 +20,23 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Base.Attributes;
+
 using System.ComponentModel;
-using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace BH.Engine.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public static partial class Convert
+    public class HourlyContinuousCollection : ILadybugTools
     {
-        [Description("Convert the case of the given text.")]
-        [Input("str", "Text in \"PascalCase\".")]
-        [Output("str", "Text in \"snake_case\".")]
-        public static string PascalCaseToSnakeCase(this string str)
-        {
-            if (str.Length < 2)
-            {
-                return str;
-            }
+        [Description("The Ladybug datatype of this object, used for deserialisation.")]
+        public virtual string Type { get; set; } = "HourlyContinuous";
+        
+        [Description("An approximation of a Ladybug Header object.")]
+        public virtual Header Header { get; set; } = new Header();
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append(char.ToLowerInvariant(str[0]));
-            for (int i = 1; i < str.Length; ++i)
-            {
-                char c = str[i];
-                if (char.IsUpper(c))
-                {
-                    sb.Append('_');
-                    sb.Append(char.ToLowerInvariant(c));
-                }
-                else
-                {
-                    sb.Append(c);
-                }
-            }
-            return sb.ToString();
-        }
+        [Description("A list of values.")]
+        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+
     }
 }
-

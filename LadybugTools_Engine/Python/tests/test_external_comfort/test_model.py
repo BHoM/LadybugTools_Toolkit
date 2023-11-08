@@ -4,7 +4,6 @@ import pytest
 from honeybee.model import Model
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.shade import ShadeConstruction
-from ladybugtools_toolkit.external_comfort.material import get_material
 from ladybugtools_toolkit.external_comfort.model import (
     _GROUND_THICKNESS,
     _SHADE_HEIGHT_ABOVE_GROUND,
@@ -32,6 +31,9 @@ def test_single_layer_construction():
     assert isinstance(construction, OpaqueConstruction)
     assert construction.identifier == TEST_SHADE_MATERIAL.identifier
     assert construction.materials[0].identifier == TEST_SHADE_MATERIAL.identifier
+
+    with pytest.raises(TypeError):
+        single_layer_construction("not_a_material")
 
 
 def test_opaque_to_shade():
@@ -86,63 +88,86 @@ def test_shade_zone_bad():
 def test_create_model():
     """_"""
     default_model = create_model(
+        identifier="test_name",
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_SHADE_MATERIAL,
     )
     assert isinstance(default_model, Model)
-    assert default_model.identifier == "unnamed"
-
-    named_model = create_model(
-        ground_material=TEST_GROUND_MATERIAL,
-        shade_material=TEST_SHADE_MATERIAL,
-        identifier="test_name",
-    )
-    assert named_model.identifier == "test_name"
+    assert default_model.identifier == "test_name"
 
 
 def test_get_ground_material():
     """_"""
     model = create_model(
+        identifier="test_name",
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_SHADE_MATERIAL,
     )
     assert get_ground_material(model) == TEST_GROUND_MATERIAL
 
+    with pytest.raises(TypeError):
+        get_ground_material("not_a_model")
+
 
 def test_get_ground_reflectance():
     """_"""
     model = create_model(
+        identifier="test_name",
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_SHADE_MATERIAL,
     )
     assert get_ground_reflectance(model) == TEST_GROUND_MATERIAL.solar_reflectance
 
+    with pytest.raises(TypeError):
+        get_ground_reflectance("not_a_model")
+
 
 def test_get_shade_material():
     """_"""
     model = create_model(
+        identifier="test_name",
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_SHADE_MATERIAL,
     )
     assert get_shade_material(model) == TEST_SHADE_MATERIAL
 
+    with pytest.raises(TypeError):
+        get_shade_material("not_a_model")
+
 
 def test_model_equality():
     """_"""
     model_1 = create_model(
+        identifier="test_name",
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_SHADE_MATERIAL,
     )
     model_2 = create_model(
+        identifier="other_name",
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_SHADE_MATERIAL,
-        identifier="text_name",
     )
     model_3 = create_model(
+        identifier="test_name",
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_GROUND_MATERIAL,
     )
+    model_4 = create_model(
+        identifier="test_name",
+        ground_material=TEST_SHADE_MATERIAL,
+        shade_material=TEST_SHADE_MATERIAL,
+    )
+    model_5 = create_model(
+        identifier="test_name",
+        ground_material=TEST_SHADE_MATERIAL,
+        shade_material=TEST_GROUND_MATERIAL,
+    )
 
-    assert model_equality(model_1, model_2, include_identifier=False)
-    assert not model_equality(model_1, model_2, include_identifier=True)
-    assert not model_equality(model_1, model_3, include_identifier=False)
+    with pytest.raises(TypeError):
+        model_equality("not_a_model", model_1)
+
+    assert model_equality(model_1, model_1)  # equal
+    assert not model_equality(model_1, model_2)  # identifier different
+    assert not model_equality(model_1, model_4)  # ground material different
+    assert not model_equality(model_1, model_3)  # shade material different
+    assert not model_equality(model_1, model_5)  # both materials different

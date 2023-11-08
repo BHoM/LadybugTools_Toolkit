@@ -1,17 +1,26 @@
 """Base class for typology objects."""
+# pylint: disable=E0401
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+# pylint: enable=E0401
+
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
-from pydantic import BaseModel, Field, validator  # pylint: disable=E0611
 
-from ..bhom import decorator_factory
-from ..helpers import decay_rate_smoother, evaporative_cooling_effect
+from ..bhom import CONSOLE_LOGGER, decorator_factory
+from ..helpers import (
+    convert_keys_to_snake_case,
+    decay_rate_smoother,
+    evaporative_cooling_effect,
+)
 from ..ladybug_extension.datacollection import (
     collection_from_series,
     collection_to_series,
 )
 from ._shelterbase import (
-    Point3D,
     Shelter,
     annual_sky_exposure,
     annual_sun_exposure,
@@ -20,52 +29,133 @@ from ._shelterbase import (
 from .simulate import SimulationResult
 
 
-class Typology(BaseModel):
+@dataclass(init=True, repr=True, eq=True)
+class Typology:
     """_"""
 
-    name: str = Field(alias="Name")
-    shelters: list[Shelter] = Field(alias="Shelters", default_factory=list)
-    evaporative_cooling_effect: list[float] = Field(
-        alias="EvaporativeCoolingEffect",
-        min_items=1,
-        max_items=8760,
-        default=(0,) * 8760,
-        ge=0,
-        le=1,
-    )
-    target_wind_speed: list[float] = Field(
-        alias="TargetWindSpeed",
-        min_items=8760,
-        max_items=8760,
-        default=(np.nan,) * 8760,
-    )
-    radiant_temperature_adjustment: list[float] = Field(
-        alias="RadiantTemperatureAdjustment",
-        min_items=8760,
-        max_items=8760,
-        default=(0,) * 8760,
-    )
+    identifier: str
+    shelters: tuple[Shelter] = ()
+    evaporative_cooling_effect: tuple[float] = (0,) * 8760
+    target_wind_speed: tuple[float] = (None,) * 8760
+    radiant_temperature_adjustment: tuple[float] = (0,) * 8760
 
-    class Config:
+    def __post_init__(self):
         """_"""
 
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
-        json_encoders = {
-            Point3D: lambda v: v.to_dict(),
+        # validation
+        if len(self.shelters) > 0:
+            if any(not isinstance(shelter, Shelter) for shelter in self.shelters):
+                raise ValueError("All shelters must be of type 'Shelter'.")
+
+        if len(self.evaporative_cooling_effect) != 8760:
+            raise ValueError("evaporative_cooling_effect must be 8760 items long.")
+        if any(
+            not isinstance(i, (float, int)) for i in self.evaporative_cooling_effect
+        ):
+            raise ValueError("evaporative_cooling_effect must be a list of floats.")
+        if any(i < 0 for i in self.evaporative_cooling_effect):
+            raise ValueError("evaporative_cooling_effect must be >= 0.")
+        if any(i > 1 for i in self.evaporative_cooling_effect):
+            raise ValueError("evaporative_cooling_effect must be <= 1.")
+
+        if len(self.target_wind_speed) != 8760:
+            raise ValueError("target_wind_speed must be 8760 items long.")
+        for tws in self.target_wind_speed:
+            if not isinstance(tws, (float, int, type(None))):
+                raise ValueError(
+                    "target_wind_speed must be a list of numbers, which can include None values."
+                )
+            if tws is None:
+                continue
+            if tws < 0:
+                raise ValueError(
+                    "target_wind_speed must be >= 0, or None (representing no change to in-situ wind speed)."
+                )
+
+        if len(self.radiant_temperature_adjustment) != 8760:
+            raise ValueError("radiant_temperature_adjustment must be 8760 items long.")
+        if any(
+            not isinstance(i, (float, int)) for i in self.radiant_temperature_adjustment
+        ):
+            raise ValueError("radiant_temperature_adjustment must be a list of floats.")
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.identifier})"
+
+    def to_dict(self) -> str:
+        """Convert this object to a dictionary."""
+        shelter_dicts = []
+        for shelter in self.shelters:
+            shelter_dicts.append(shelter.to_dict())
+
+        d = {
+            "_t": "BH.oM.LadybugTools.Typology",
+            "Identifier": self.identifier,
+            "Shelters": shelter_dicts,
+            "EvaporativeCoolingEffect": self.evaporative_cooling_effect,
+            "TargetWindSpeed": self.target_wind_speed,
+            "RadiantTemperatureAdjustment": self.radiant_temperature_adjustment,
         }
+        return d
 
-    @validator(
-        "target_wind_speed",
-        pre=True,
-        each_item=True,
-    )
     @classmethod
-    def validate_target_wind_speed(cls, value) -> list[float]:  # pylint: disable=E0213
+    def from_dict(cls, d: dict) -> "Shelter":
+        """Create this object from a dictionary."""
+        d = convert_keys_to_snake_case(d)
+
+        new_shelters = []
+        for shelter in d["shelters"]:
+            if isinstance(shelter, dict):
+                new_shelters.append(Shelter.from_dict(shelter))
+        d["shelters"] = new_shelters
+
+        return cls(
+            identifier=d["identifier"],
+            shelters=d["shelters"],
+            evaporative_cooling_effect=d["evaporative_cooling_effect"],
+            target_wind_speed=d["target_wind_speed"],
+            radiant_temperature_adjustment=d["radiant_temperature_adjustment"],
+        )
+
+    def to_json(self) -> str:
+        """Convert this object to a JSON string."""
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_string: str) -> "Shelter":
+        """Create this object from a JSON string."""
+        return cls.from_dict(json.loads(json_string))
+
+    def to_file(self, path: Path) -> Path:
+        """Convert this object to a JSON file."""
+        if Path(path).suffix != ".json":
+            raise ValueError("path must be a JSON file.")
+
+        with open(Path(path), "w") as fp:
+            fp.write(self.to_json())
+
+        return Path(path)
+
+    @classmethod
+    def from_file(cls, path: Path) -> "Typology":
+        """Create this object from a JSON file."""
+        with open(Path(path), "r") as fp:
+            return cls.from_json(fp.read())
+
+    @property
+    def average_evaporative_cooling_effect(self) -> float:
         """_"""
-        if value < 0 and not np.isnan(value):
-            raise ValueError("value must be >= 0.")
-        return value
+        return np.mean(self.evaporative_cooling_effect)
+
+    @property
+    def average_radiant_temperature_adjustment(self) -> float:
+        """_"""
+        return np.mean(self.radiant_temperature_adjustment)
+
+    @property
+    def average_target_wind_speed(self) -> float:
+        """_"""
+        return np.mean([i for i in self.target_wind_speed if i is not None])
 
     @decorator_factory()
     def sky_exposure(self) -> list[float]:
@@ -84,7 +174,7 @@ class Typology(BaseModel):
 
         ws = []
         for sh_ws, tgt_ws in list(zip(shelter_wind_speed, self.target_wind_speed)):
-            if np.isnan(tgt_ws):
+            if tgt_ws is None:
                 ws.append(sh_ws)
             else:
                 ws.append(tgt_ws)

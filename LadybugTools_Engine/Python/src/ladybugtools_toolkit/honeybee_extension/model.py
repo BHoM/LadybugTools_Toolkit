@@ -1,6 +1,6 @@
 """Methods for handling honeybee models."""
-
-from enum import Enum, auto  # pylint: disable=E0401,R0911
+# pylint: disable=R0911
+from enum import Enum, auto  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 from honeybee.model import AirBoundary, Face3D, Floor, Model, RoofCeiling, Wall
@@ -201,12 +201,17 @@ def linesegments_to_polycollection(
     """Convert a list of LineSegment3D objects to a matplotlib PolyCollection.
 
     Args:
-        line_segments (list[LineSegment3D]): A list of LineSegment3D objects.
-        plane (Plane, optional): A Ladybug 3D Plane object to project the segments onto. Defaults to None which does not project the segments and instead asssumes the line segments are in an XY plane.
-        **kwargs: Additional keyword arguments to pass to the matplotlib PolyCollection constructor.
+        line_segments (list[LineSegment3D]):
+            A list of LineSegment3D objects.
+        plane (Plane, optional):
+            A Ladybug 3D Plane object to project the segments onto. Defaults to None which does not project the
+            segments and instead asssumes the line segments are in an XY plane.
+        **kwargs:
+            Additional keyword arguments to pass to the matplotlib PolyCollection constructor.
 
     Returns:
-        PolyCollection: A matplotlib PolyCollection object.
+        PolyCollection:
+            A matplotlib PolyCollection object.
     """
 
     plane = Plane() if plane is None else plane
@@ -228,13 +233,18 @@ def slice_geometry(
     """Slice a set of Honeybee objects with a plane and plot their intersections.
 
     Args:
-        hb_objects (list[object]): A set of Honeybee objects to slice. These must have a geometry attribute.
-        plane (Plane): A Ladybug 3D Plane object to slice the objects with.
-        ax (plt.Axes, optional): The matplotlib axes to plot the intersections on. Defaults to None which uses the current axes.
-        **kwargs: Additional keyword arguments to pass to the matplotlib PolyCollection constructor.
+        hb_objects (list[object]):
+            A set of Honeybee objects to slice. These must have a geometry attribute.
+        plane (Plane):
+            A Ladybug 3D Plane object to slice the objects with.
+        ax (plt.Axes, optional):
+            The matplotlib axes to plot the intersections on. Defaults to None which uses the current axes.
+        **kwargs:
+            Additional keyword arguments to pass to the matplotlib PolyCollection constructor.
 
     Returns:
-        plt.Axes: A matplotlib axes with the intersections plotted.
+        plt.Axes:
+            A matplotlib axes with the intersections plotted.
     """
 
     if ax is None:
@@ -317,7 +327,7 @@ def slice_model(model: Model, plane: Plane, ax: plt.Axes = None) -> plt.Axes:
             },
         },
         "shade": {
-            "objects": [i for i in model.shades],
+            "objects": model.shades,
             "poly_kwargs": {
                 "color": "green",
                 "zorder": 3,
@@ -326,7 +336,7 @@ def slice_model(model: Model, plane: Plane, ax: plt.Axes = None) -> plt.Axes:
             },
         },
         "aperture": {
-            "objects": [i for i in model.apertures],
+            "objects": model.apertures,
             "poly_kwargs": {
                 "color": "blue",
                 "zorder": 6,

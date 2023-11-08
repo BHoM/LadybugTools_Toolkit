@@ -20,22 +20,27 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Base.Attributes;
-using System.ComponentModel;
-using System.Threading;
-using System.Linq;
 
-namespace BH.Engine.LadybugTools
+using System.Collections.Generic;
+using System.ComponentModel;
+
+namespace BH.oM.LadybugTools
 {
-    public static partial class Convert
+    public class Header : ILadybugTools
     {
-        [Description("Convert the case of the given text.")]
-        [Input("str", "Text in \"snake_case\".")]
-        [Output("str", "Text in \"PascalCase\".")]
-        public static string SnakeCaseToPascalCase(this string str)
-        {
-            return string.Concat(str.Split('_').Select(Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase));
-        }
+        [Description("The Ladybug datatype of this object, used for deserialisation.")]
+        public virtual string Type { get; set; } = "Header";
+        
+        [Description("The data type the data associated with this header object represents.")]
+        public virtual DataType DataType { get; set; } = new DataType();
+        
+        [Description("The unit for this header object.")]
+        public virtual string Unit { get; set; } = string.Empty;
+        
+        [Description("The analysis period associated with this header object.")]
+        public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
+
+        [Description("The metadata associated with this header object.")]
+        public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
     }
 }
-
