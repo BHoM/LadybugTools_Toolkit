@@ -22,13 +22,11 @@
 
 using BH.oM.Base.Attributes;
 using System.ComponentModel;
-using System.Threading;
-using System.Linq;
 using System.Collections.Generic;
 using BH.oM.Geometry;
 using BH.Engine.Serialiser;
-using System.Web.Script.Serialization;
 using BH.oM.LadybugTools;
+using System.Web.Script.Serialization;
 
 namespace BH.Engine.LadybugTools
 {
