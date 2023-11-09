@@ -9,7 +9,6 @@ from ladybug.header import Header
 from ..bhom import decorator_factory
 
 
-@decorator_factory()
 def header_to_string(header: Header) -> str:
     """Convert a Ladybug header object into a string.
 
@@ -48,7 +47,6 @@ def header_to_multiindex(header: Header) -> pd.MultiIndex:
     return pd.MultiIndex.from_arrays([[i] for i in values], names=names)
 
 
-@decorator_factory()
 def header_from_string(string: str, is_leap_year: bool = False) -> Header:
     """Convert a string into a Ladybug header object.
 

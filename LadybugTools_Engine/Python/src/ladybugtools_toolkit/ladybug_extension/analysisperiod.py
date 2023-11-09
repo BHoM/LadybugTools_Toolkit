@@ -13,7 +13,6 @@ from ..bhom import decorator_factory
 from .dt import lb_datetime_from_datetime
 
 
-@decorator_factory()
 def analysis_period_to_datetimes(
     analysis_period: AnalysisPeriod,
 ) -> pd.DatetimeIndex:

@@ -9,7 +9,7 @@ from ladybug.wea import AnalysisPeriod, Wea
 from ladybugtools_toolkit.external_comfort._simulatebase import SimulationResult
 from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort import SpatialComfort
 from lbt_recipes.recipe import Recipe, RecipeSettings
-from ladybugtools_toolkit.honeybee_extension.simulation import HoneybeeRadiance
+from ladybugtools_toolkit.honeybee_extension.simulation.radiance import HoneybeeRadiance
 
 from .. import (
     CFD_DIRECTORY,

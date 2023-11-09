@@ -101,7 +101,7 @@ def _load_npy_file(npy_file: Path) -> pd.DataFrame:
 
     # get the "results" directory and sun-up-hours file
     for parent in npy_file.parents:
-        if parent.name == "results":
+        if parent.name in ["results", "assets"]:
             sun_up_hours_file = parent / "sun-up-hours.txt"
             break
 

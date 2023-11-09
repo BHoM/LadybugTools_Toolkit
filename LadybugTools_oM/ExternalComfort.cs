@@ -22,34 +22,35 @@
 
 
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
+    [NoAutoConstructor]
     public class ExternalComfort : BHoMObject
     {
         [Description("The SimulationResult associated with this object.")]
-        public virtual SimulationResult SimulationResult { get; set; } = new SimulationResult();
-        
+        public virtual SimulationResult SimulationResult { get; set; }
+
         [Description("The typology in the processing of this object.")]
-        public virtual Typology Typology { get; set; } = new Typology();
+        public virtual Typology Typology { get; set; }
 
         // simulated properties
 
         [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection DryBulbTemperature { get; set; } = null;
-        
+        public virtual HourlyContinuousCollection DryBulbTemperature { get; set; }
+
         [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection RelativeHumidity { get; set; } = null;
-        
+        public virtual HourlyContinuousCollection RelativeHumidity { get; set; }
+
         [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection WindSpeed { get; set; } = null;
-        
+        public virtual HourlyContinuousCollection WindSpeed { get; set; }
+
         [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection MeanRadiantTemperature { get; set; } = null;
-        
+        public virtual HourlyContinuousCollection MeanRadiantTemperature { get; set; }
+
         [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; set; } = null;
+        public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; set; }
     }
 }
-

@@ -20,8 +20,6 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-
-using BH.oM.Base;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
@@ -30,10 +28,10 @@ namespace BH.oM.LadybugTools
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "DataType";
-        
+
         [Description("The name of this data type.")]
         public virtual string Name { get; set; } = string.Empty;
-        
+
         [Description("The data type of this data type.")]
         public virtual string Data_Type { get; set; } = string.Empty;
     }

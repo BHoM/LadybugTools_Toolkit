@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # pylint: enable=E0401
-
+from caseconverter import pascalcase
 import matplotlib.pyplot as plt
 import pandas as pd
 from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
@@ -13,10 +13,10 @@ from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
 
-from ..bhom import CONSOLE_LOGGER, decorator_factory
+from ..bhom import CONSOLE_LOGGER
 from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
-from ..helpers import convert_keys_to_snake_case, pascalcase
+from ..helpers import convert_keys_to_snake_case
 from ..ladybug_extension.analysisperiod import describe_analysis_period
 from ..ladybug_extension.datacollection import collection_to_series
 from ..plot._heatmap import heatmap
@@ -196,7 +196,6 @@ class ExternalComfort:
         with open(Path(path), "r") as fp:
             return cls.from_json(fp.read())
 
-    @decorator_factory()
     def standard_effective_temperature(
         self,
         met_rate: float = 1.1,
@@ -238,7 +237,6 @@ class ExternalComfort:
 
         return pmv.standard_effective_temperature
 
-    @decorator_factory()
     def description(self) -> str:
         """Return a description of this external comfort object."""
         return (
@@ -246,7 +244,6 @@ class ExternalComfort:
             f"\n{self.typology.identifier}"
         )
 
-    @decorator_factory()
     def to_dataframe(self) -> pd.DataFrame:
         """Return a dataframe of all data for this typology."""
 
@@ -280,7 +277,6 @@ class ExternalComfort:
 
         return pd.concat([simulation_result_df, obj_df], axis=1)
 
-    @decorator_factory()
     def plot_utci_day_comfort_metrics(
         self, ax: plt.Axes = None, month: int = 3, day: int = 21
     ) -> plt.Axes:
@@ -310,7 +306,6 @@ class ExternalComfort:
             title=self.description(),
         )
 
-    @decorator_factory()
     def plot_utci_heatmap(
         self,
         ax: plt.Axes = None,
@@ -333,7 +328,6 @@ class ExternalComfort:
             title=self.description(),
         )
 
-    @decorator_factory()
     def plot_utci_heatmap_histogram(
         self, utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES, **kwargs
     ) -> plt.Figure:
@@ -355,7 +349,6 @@ class ExternalComfort:
             **kwargs,
         )
 
-    @decorator_factory()
     def plot_utci_histogram(
         self,
         ax: plt.Axes = None,
@@ -399,7 +392,6 @@ class ExternalComfort:
             **kwargs,
         )
 
-    @decorator_factory()
     def plot_utci_distance_to_comfortable(
         self,
         ax: plt.Axes = None,
@@ -435,7 +427,6 @@ class ExternalComfort:
             vmax=10,
         )
 
-    @decorator_factory()
     def plot_dbt_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly DBT values associated with this Typology.
 
@@ -454,7 +445,6 @@ class ExternalComfort:
             **kwargs,
         )
 
-    @decorator_factory()
     def plot_rh_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly RH values associated with this Typology.
 
@@ -473,7 +463,6 @@ class ExternalComfort:
             **kwargs,
         )
 
-    @decorator_factory()
     def plot_ws_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly WS values associated with this Typology.
 
@@ -492,7 +481,6 @@ class ExternalComfort:
             **kwargs,
         )
 
-    @decorator_factory()
     def plot_mrt_heatmap(self, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly MRT values associated with this Typology.
 

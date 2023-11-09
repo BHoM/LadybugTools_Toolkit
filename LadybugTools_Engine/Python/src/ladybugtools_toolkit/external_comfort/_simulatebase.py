@@ -25,11 +25,10 @@ from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.futil import nukedir
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal, SolarCalParameter
 
-from ..bhom import decorator_factory, CONSOLE_LOGGER
+from ..bhom import CONSOLE_LOGGER
 from ..bhom.to_bhom import (
-    energymaterial_to_bhom,
     hourlycontinuouscollection_to_bhom,
-    energymaterialvegetation_to_bhom,
+    material_to_bhom,
 )
 from ..honeybee_extension.results import load_sql
 from ..ladybug_extension.datacollection import (
@@ -83,7 +82,6 @@ def simulation_directory(model: Model) -> Path:
     return working_dir
 
 
-@decorator_factory(disable=False)
 def simulate_surface_temperatures(
     model: Model, epw_file: Path, remove_dir: bool = False
 ) -> dict[str, HourlyContinuousCollection]:
@@ -229,7 +227,6 @@ def simulate_surface_temperatures(
     }
 
 
-@decorator_factory(disable=False)
 def radiant_temperature(
     collections: list[HourlyContinuousCollection], view_factors: list[float] = None
 ) -> HourlyContinuousCollection:
@@ -443,17 +440,8 @@ class SimulationResult:
     def to_dict(self) -> dict[str, Any]:
         """Convert this object to a dictionary."""
 
-        if isinstance(self.ground_material, EnergyMaterial):
-            ground_material_dict = energymaterial_to_bhom(self.ground_material)
-        elif isinstance(self.ground_material, EnergyMaterialVegetation):
-            ground_material_dict = energymaterialvegetation_to_bhom(
-                self.ground_material
-            )
-
-        if isinstance(self.shade_material, EnergyMaterial):
-            shade_material_dict = energymaterial_to_bhom(self.shade_material)
-        elif isinstance(self.shade_material, EnergyMaterialVegetation):
-            shade_material_dict = energymaterialvegetation_to_bhom(self.shade_material)
+        ground_material_dict = material_to_bhom(self.ground_material)
+        shade_material_dict = material_to_bhom(self.shade_material)
 
         attr_dict = {}
         for attr in _ATTRIBUTES:
@@ -566,7 +554,6 @@ class SimulationResult:
             shade_material=self.shade_material,
         )
 
-    @decorator_factory(disable=False)
     def to_dataframe(self) -> pd.DataFrame:
         """Create a Pandas DataFrame from this object.
 
@@ -602,7 +589,6 @@ class SimulationResult:
             axis=1,
         )
 
-    @decorator_factory()
     def description(self, include_shade_material: bool = True) -> str:
         """Create the description for this object.
 

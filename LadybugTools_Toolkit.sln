@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34202.233
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LadybugTools_oM", "LadybugTools_oM\LadybugTools_oM.csproj", "{ABC2CD49-3DCF-46C3-9249-EB09C88ECFFD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LadybugTools_oM", "LadybugTools_oM\LadybugTools_oM.csproj", "{ABC2CD49-3DCF-46C3-9249-EB09C88ECFFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LadybugTools_Engine", "LadybugTools_Engine\LadybugTools_Engine.csproj", "{0A409572-CA4B-4267-95AD-F9A4A699DB89}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LadybugTools_Engine", "LadybugTools_Engine\LadybugTools_Engine.csproj", "{0A409572-CA4B-4267-95AD-F9A4A699DB89}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LadybugTools_Adapter", "LadybugTools_Adapter\LadybugTools_Adapter.csproj", "{FA39A3F6-100F-4824-A91B-A2AEC4660B4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LadybugTools_Adapter", "LadybugTools_Adapter\LadybugTools_Adapter.csproj", "{FA39A3F6-100F-4824-A91B-A2AEC4660B4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

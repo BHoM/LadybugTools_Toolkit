@@ -22,27 +22,29 @@
 
 
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
 namespace BH.oM.LadybugTools
 {
+    [NoAutoConstructor]
     public class Typology : BHoMObject
     {
         [Description("The name of this Typology.")]
-        public virtual string Identifier { get; set; } = string.Empty;
-        
+        public virtual string Identifier { get; set; }
+
         [Description("The shelters for this Typology.")]
-        public virtual List<Shelter> Shelters { get; set; } = new List<Shelter>();
-        
+        public virtual List<Shelter> Shelters { get; set; }
+
         [Description("The proportion of evaporative cooling to add to this Typology.")]
-        public virtual List<double> EvaporativeCoolingEffect { get; set; } = Enumerable.Repeat<double>(0.0, 8760).ToList();
-        
+        public virtual List<double> EvaporativeCoolingEffect { get; set; }
+
         [Description("A multiplier to apply to the wind speed component of this Typology.")]
-        public virtual List<double?> TargetWindSpeed { get; set; } = Enumerable.Repeat<double?>(null, 8760).ToList();
-        
+        public virtual List<double?> TargetWindSpeed { get; set; }
+
         [Description("A reduction or increase in MRT to be applied to results generated using this Typology.")]
-        public virtual List<double> RadiantTemperatureAdjustment { get; set; } = Enumerable.Repeat<double>(0.0, 8760).ToList();
+        public virtual List<double> RadiantTemperatureAdjustment { get; set; }
     }
 }

@@ -1,7 +1,6 @@
 """Methods for manipulating Ladybug data collections."""
 
 # pylint: disable=E0401
-import json
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -18,12 +17,6 @@ from ladybug.datacollection import (
     MonthlyCollection,
 )
 from ladybug.datatype.angle import Angle
-from ladybug.datautil import (
-    collections_from_csv,
-    collections_from_json,
-    collections_to_csv,
-    collections_to_json,
-)
 from ladybug.dt import DateTime
 from ..bhom import decorator_factory
 from ..helpers import circular_weighted_mean, wind_direction_average
@@ -32,7 +25,6 @@ from .analysisperiod import describe_analysis_period
 from .header import header_from_string, header_to_string
 
 
-@decorator_factory()
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
 
@@ -59,90 +51,48 @@ def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Ser
     )
 
 
-@decorator_factory()
-def collection_to_json(
-    collections: list[BaseCollection], json_path: Path, indent: int = None
-) -> Path:
-    """Save Ladybug BaseCollection-like objects into a JSON file.
+def collection_from_series(series: pd.Series) -> BaseCollection:
+    """Convert a Pandas Series object into a Ladybug BaseCollection-like object.
 
     Args:
-        collections (BaseCollection):
-            A Ladybug BaseCollection-like object.
-        json_path (Path):
-            The path to the JSON file.
-        indent (str, optional):
-            The indentation to use in the resulting JSON file. Defaults to None.
+        series (pd.Series): A Pandas Series object.
 
     Returns:
-        Path:
-            The path to the JSON file.
-
+        BaseCollection: A Ladybug BaseCollection-like object.
     """
 
-    json_path = Path(json_path)
-
-    if not all(isinstance(n, BaseCollection) for n in collections):
-        raise ValueError(
-            'All elements of the input "collections" must inherit from BaseCollection.'
-        )
-
-    if json_path.suffix != ".json":
-        raise ValueError("The target file must be a *.json file.")
-
-    return Path(
-        collections_to_json(
-            collections,
-            folder=json_path.parent.as_posix(),
-            file_name=json_path.name,
-            indent=indent,
-        )
+    header = header_from_string(
+        series.name, is_leap_year=series.index.is_leap_year.any()
     )
+    header.metadata["source"] = "From custom pd.Series"
 
+    freq = pd.infer_freq(series.index)
+    if freq in ["H"]:
+        if series.index.is_leap_year.any():
+            if len(series.index) != 8784:
+                raise ValueError(
+                    "The number of values in the series must be 8784 for leap years."
+                )
+        else:
+            if len(series.index) != 8760:
+                raise ValueError("The series must have 8760 rows for non-leap years.")
 
-@decorator_factory()
-def collection_to_csv(collections: list[BaseCollection], csv_path: Path) -> Path:
-    """Save Ladybug BaseCollection-like objects into a CSV file.
-
-    Args:
-        collections (BaseCollection):
-            A Ladybug BaseCollection-like object.
-        csv_path (Path):
-            The path to the CSV file.
-
-    Returns:
-        Path:
-            The path to the CSV file.
-
-    """
-
-    csv_path = Path(csv_path)
-
-    if not all(isinstance(n, BaseCollection) for n in collections):
-        raise ValueError(
-            'All elements of the input "collections" must inherit from BaseCollection.'
+        return HourlyContinuousCollection(
+            header=header,
+            values=series.values,
         )
 
-    return Path(
-        collections_to_csv(
-            collections,
-            folder=csv_path.parent.as_posix(),
-            file_name=csv_path.name,
+    if freq in ["M", "MS"]:
+        if len(series.index) != 12:
+            raise ValueError("The series must have 12 rows for months.")
+
+        return MonthlyCollection(
+            header=header,
+            values=series.values.tolist(),
+            datetimes=range(1, 13),
         )
-    )
 
-
-@decorator_factory()
-def collection_to_array(collection: BaseCollection) -> np.ndarray:
-    """Convert a Ladybug BaseCollection-like object into a numpy array.
-
-    Args:
-        collection: A Ladybug BaseCollection-like object.
-
-    Returns:
-        np.ndarray: A numpy array.
-    """
-
-    return np.array(collection.values)
+    raise ValueError("The series must be hourly or monthly.")
 
 
 @decorator_factory()
@@ -230,118 +180,6 @@ def maximum(collections: list[BaseCollection]) -> BaseCollection:
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
     return collection_from_series(df.max(axis=1).rename(series_name))
-
-
-@decorator_factory()
-def collection_from_series(series: pd.Series) -> BaseCollection:
-    """Convert a Pandas Series object into a Ladybug BaseCollection-like object.
-
-    Args:
-        series (pd.Series): A Pandas Series object.
-
-    Returns:
-        BaseCollection: A Ladybug BaseCollection-like object.
-    """
-
-    header = header_from_string(
-        series.name, is_leap_year=series.index.is_leap_year.any()
-    )
-    header.metadata["source"] = "From custom pd.Series"
-
-    freq = pd.infer_freq(series.index)
-    if freq in ["H"]:
-        if series.index.is_leap_year.any():
-            if len(series.index) != 8784:
-                raise ValueError(
-                    "The number of values in the series must be 8784 for leap years."
-                )
-        else:
-            if len(series.index) != 8760:
-                raise ValueError("The series must have 8760 rows for non-leap years.")
-
-        return HourlyContinuousCollection(
-            header=header,
-            values=series.values,
-        )
-
-    if freq in ["M", "MS"]:
-        if len(series.index) != 12:
-            raise ValueError("The series must have 12 rows for months.")
-
-        return MonthlyCollection(
-            header=header,
-            values=series.values.tolist(),
-            datetimes=range(1, 13),
-        )
-
-    raise ValueError("The series must be hourly or monthly.")
-
-
-@decorator_factory()
-def collection_from_json(json_path: Path) -> list[BaseCollection]:
-    """Load a JSON containing serialised Ladybug BaseCollection-like objects.
-
-    Args:
-        json_path (Path): The path to the JSON file.
-
-    Returns:
-        list[BaseCollection]: A list of Ladybug BaseCollection-like object.
-
-    """
-
-    json_path = Path(json_path)
-
-    if json_path.suffix != ".json":
-        raise ValueError("The target file must be a *.json file.")
-
-    return collections_from_json(json_path.as_posix())
-
-
-@decorator_factory()
-def collection_from_dict(dictionary: dict[str, Any]) -> BaseCollection:
-    """Convert a JSON compliant dictionary object into a ladybug EPW.
-
-    Args:
-        dict[str, Any]:
-            A sanitised dictionary.
-
-    Returns:
-        BaseCollection:
-            A ladybug collection object.
-    """
-
-    json_str = json.dumps(dictionary)
-
-    # custom handling of non-standard JSON NaN/Inf values
-    json_str = json_str.replace('"min": "-inf"', '"min": -Infinity')
-    json_str = json_str.replace('"max": "inf"', '"max": Infinity')
-
-    # pylint: disable=broad-exception-caught
-    try:
-        return HourlyContinuousCollection.from_dict(json.loads(json_str))
-    except Exception:
-        return MonthlyCollection.from_dict(json.loads(json_str))
-    # pylint: enable=broad-exception-caught
-
-
-@decorator_factory()
-def collection_from_csv(csv_path: Path) -> list[BaseCollection]:
-    """Load a CSV containing serialised Ladybug BaseCollection-like objects.
-
-    Args:
-        csv_path (Path): The path to the CSV file.
-
-    Returns:
-        list[BaseCollection]: A list of Ladybug BaseCollection-like object.
-
-    """
-
-    csv_path = Path(csv_path)
-
-    if csv_path.suffix != ".csv":
-        raise ValueError("The target file must be a *.csv file.")
-
-    return collections_from_csv(csv_path.as_posix())
 
 
 @decorator_factory()

@@ -8,10 +8,9 @@ from functools import wraps
 from typing import Any, Callable
 
 # pylint: enable=E0401
-from .log import analytics_logger
+from .log import ANALYTICS_LOGGER
 from .util import bhom_version, csharp_ticks, toolkit_name
 
-LOGGER = analytics_logger()
 BHoM_VERSION = bhom_version()
 
 
@@ -93,7 +92,9 @@ def decorator_factory(disable: bool = False) -> Callable:
                 exec_metadata["Errors"].extend(sys.exc_info())
                 raise exc
             finally:
-                LOGGER.info(json.dumps(exec_metadata, default=str, indent=None))
+                ANALYTICS_LOGGER.info(
+                    json.dumps(exec_metadata, default=str, indent=None)
+                )
 
             return result
 

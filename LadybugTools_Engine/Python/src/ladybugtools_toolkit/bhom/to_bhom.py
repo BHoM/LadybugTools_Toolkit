@@ -8,6 +8,20 @@ from ladybug.header import DataTypeBase, Header
 from ladybug_geometry.geometry3d.pointvector import Point3D
 
 
+def material_to_bhom(obj: EnergyMaterial | EnergyMaterialVegetation) -> dict:
+    """Convert this object into a BHOM deserialisable dictionary."""
+
+    if isinstance(obj, EnergyMaterial):
+        return energymaterial_to_bhom(obj)
+    elif isinstance(obj, EnergyMaterialVegetation):
+        return energymaterialvegetation_to_bhom(obj)
+    else:
+        raise ValueError(
+            f"Unexpected type {type(obj)} for material_to_bhom. "
+            "Expected EnergyMaterial or EnergyMaterialVegetation."
+        )
+
+
 def energymaterial_to_bhom(obj: EnergyMaterial) -> dict:
     """Convert this object into a BHOM deserialisable dictionary."""
     return {
