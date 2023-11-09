@@ -78,7 +78,7 @@
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="System.Web.Extensions">
-      <HintPath>$(ProgramData)\BHoM\Assemblies\System.Web.Extensions.dll</HintPath>
+      <HintPath>..\libs\System.Web.Extensions.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
