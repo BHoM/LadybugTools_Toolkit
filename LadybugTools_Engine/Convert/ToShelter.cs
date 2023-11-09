@@ -69,21 +69,15 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            foreach (double value in radiationPorosity)
+            if(radiationPorosity.Where(x => x < 0 || x > 1).Any())
             {
-                if (value <= 0 || value >= 1)
-                {
-                    Base.Compute.RecordError("Radiation porosity must be between 0-1 (inclusive).");
-                    return null;
-                }
+                BH.Engine.Base.Compute.RecordError("All Radiation Porosity values must be between 0-1 (inclusive).");
+                return null;
             }
-            foreach (double value in windPorosity)
+            if(windPorosity.Where(x => x < 0 || x > 1).Any())
             {
-                if (value <= 0 || value >= 1)
-                {
-                    Base.Compute.RecordError("Wind porosity must be between 0-1 (inclusive).");
-                    return null;
-                }
+                BH.Engine.Base.Compute.RecordError("All Wind Porosity values must be between 0-1 (inclusive).");
+                return null;
             }
 
             if (windPorosity.Sum() + radiationPorosity.Sum() == 0)

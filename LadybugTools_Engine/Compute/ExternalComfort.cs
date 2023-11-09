@@ -58,14 +58,11 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Typology evaporative cooling effect must be a list of values 8760 long.");
                 return null;
             }
-            foreach (double evapClg in typology.EvaporativeCoolingEffect)
-            {
-                if (evapClg < 0 || evapClg > 1)
-                {
-                    BH.Engine.Base.Compute.RecordError("Typology evaporative cooling effect must be between 0 and 1.");
-                    return null;
-                }
-            }
+if(typology.EvaporativeCoolingEffect.Where(x => x < 0 || x > 1).Any())
+{
+    BH.Engine.Base.Compute.RecordError("All Evaporative Cooling Effect values must between 0 and 1.");
+    return null;
+}
 
             if (typology.RadiantTemperatureAdjustment.Count() != 8760)
             {
@@ -78,21 +75,11 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Typology target wind speed must be a list of values 8760 long.");
                 return null;
             }
-            foreach (double? tgtWindSpd in typology.TargetWindSpeed)
-            {
-                if (tgtWindSpd == null)
-                {
-                    continue;
-                }
-                else
-                {
-                    if (tgtWindSpd < 0)
-                    {
-                        BH.Engine.Base.Compute.RecordError("Typology target wind speed must be greater than or eqaul to 0 (or null).");
-                        return null;
-                    }
-                }
-            }
+if(typology.TargetWindSpeed.Where(x => x != null && x.Value < 0).Any())
+{
+    BH.Engine.Base.Compute.RecordError("Typology Target Wind Speed values must be greater than or equal to 0, or null if not relevant for that hour of the year.");
+    return null;
+}
 
             foreach (Shelter shelter in typology.Shelters)
             {
@@ -106,26 +93,20 @@ namespace BH.Engine.LadybugTools
                     BH.Engine.Base.Compute.RecordError("Shelter wind porosity must be a list of values 8760 long.");
                     return null;
                 }
-                foreach (double windPorosity in shelter.WindPorosity)
+                if(shelter.WindPorosity.Where(x => x < 0 || x > 1).Any())
                 {
-                    if (windPorosity < 0 || windPorosity > 1)
-                    {
-                        BH.Engine.Base.Compute.RecordError("Shelter wind porosity must be between 0 and 1.");
-                        return null;
-                    }
+                    BH.Engine.Base.Compute.RecordError($"Shelter wind porosity must be between 0 and 1 for the Shelter with GUID {shelter.BHoM_Guid.ToString()}.");
+                    return null;
                 }
                 if (shelter.RadiationPorosity.Count() != 8760)
                 {
                     BH.Engine.Base.Compute.RecordError("Shelter radiation porosity must be a list of values 8760 long.");
                     return null;
                 }
-                foreach (double radiationPorosity in shelter.RadiationPorosity)
+                if(shelter.RadiationPorosity.Where(x => x < 0 || x > 1).Any())
                 {
-                    if (radiationPorosity < 0 || radiationPorosity > 1)
-                    {
-                        BH.Engine.Base.Compute.RecordError("Shelter radiation porosity must be between 0 and 1.");
-                        return null;
-                    }
+                    BH.Engine.Base.Compute.RecordError($"Shelter Radiation Porosity must be between 0 and 1 for shelter with GUID {shelter.BHoM_Guid.ToString()}.");
+                    return null;
                 }
             }
 
@@ -140,6 +121,7 @@ namespace BH.Engine.LadybugTools
                 {
                     wsAvg = typology.TargetWindSpeed.Where(x => x.HasValue).Average(x => x.Value);
                 }
+
                 if (typology.Shelters.Count() == 0)
                 {
                     typology.Identifier = $"ec{typology.EvaporativeCoolingEffect.Average()}_ws{wsAvg}_mrt{typology.RadiantTemperatureAdjustment.Average()}";
@@ -148,6 +130,7 @@ namespace BH.Engine.LadybugTools
                 {
                     typology.Identifier = $"shelters{typology.Shelters.Count()}_ec{typology.EvaporativeCoolingEffect.Average()}_ws{wsAvg}_mrt{typology.RadiantTemperatureAdjustment.Average()}";
                 }
+
                 Base.Compute.RecordNote($"This typology has been automatically named \"{typology.Identifier}\". This can be overriden with the 'identifier' parameter of Typology.");
             }
 

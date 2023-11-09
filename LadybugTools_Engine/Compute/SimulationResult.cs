@@ -38,6 +38,7 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A ground material.")]
         [Input("shadeMaterial", "A shade material.")]
         [Output("simulationResult", "An simulation result object containing simulation results.")]
+        [PreviousVersion("7.0", "BH.Engine.LadybugTools.Compute.SimulationResult(System.String, BH.oM.LadybugTools.ILadybugToolsMaterial, BH.oM.LadybugTools.ILadybugToolsMaterial)")]
         public static SimulationResult SimulationResult(string epwFile, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial)
         {
             // validation prior to passing to Python
