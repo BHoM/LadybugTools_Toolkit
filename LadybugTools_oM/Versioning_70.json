@@ -1,0 +1,14 @@
+﻿{
+  "Type": {
+    "ToNew": {
+      "BH.oM.LadybugTools.OpaqueMaterial": "BH.oM.LadybugTools.EnergyMaterial",
+      "BH.oM.LadybugTools.OpaqueVegetationMaterial": "BH.oM.LadybugTools.EnergyMaterialVegetation",
+      "BH.oM.LadybugTools.ILadybugToolsMaterial": "BH.oM.LadybugTools.IEnergyMaterialOpaque"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.EnergyMaterial": "BH.oM.LadybugTools.OpaqueMaterial",
+      "BH.oM.LadybugTools.EnergyMaterialVegetation": "BH.oM.LadybugTools.OpaqueVegetationMaterial",
+      "BH.oM.LadybugTools.IEnergyMaterialOpaque": "BH.oM.LadybugTools.ILadybugToolsMaterial"
+    }
+  }
+}
