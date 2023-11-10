@@ -13,10 +13,10 @@
   },
   "Property": {
     "ToNew": {
-      "BH.oM.LadybugTools.Typology.WindSpeedMultiplier": "TargetWindSpeed"
+      "BH.oM.LadybugTools.Typology.WindSpeedMultiplier": "BH.oM.LadybugTools.Typology.TargetWindSpeed"
     },
     "ToOld": {
-      "BH.oM.LadybugTools.Typology.TargetWindSpeed": "WindSpeedMultiplier"
+      "BH.oM.LadybugTools.Typology.TargetWindSpeed": "BH.oM.LadybugTools.Typology.WindSpeedMultiplier"
     }
   }
 }
