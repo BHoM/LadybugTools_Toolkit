@@ -53,7 +53,7 @@ namespace BH.Engine.LadybugTools
 
             if (reinstall)
                 Python.Compute.RemoveVirtualEnvironment(Query.ToolkitName());
-            
+
             // obtain python version
             PythonVersion pythonVersion = Python.Query.Version(referencedExecutable);
 
@@ -73,7 +73,6 @@ namespace BH.Engine.LadybugTools
                 // create requiremetns from referenced executable
                 string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
                 env.InstallRequirements(requirementsTxt);
-                File.Delete(requirementsTxt);
             }
 
             return env;

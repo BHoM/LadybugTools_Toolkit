@@ -1,8 +1,13 @@
+"""Methods for manipulating Ladybug data collections."""
+
+# pylint: disable=E0401
 import json
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
@@ -20,20 +25,23 @@ from ladybug.datautil import (
     collections_to_json,
 )
 from ladybug.dt import DateTime
-
+from ..bhom import decorator_factory
 from ..helpers import circular_weighted_mean, wind_direction_average
-from .analysis_period import analysis_period_to_datetimes
-from .analysis_period import describe_analysis_period as describe_analysis_period
-from .header import header_from_string as header_from_string
-from .header import header_to_string as header_to_string
+from .analysisperiod import analysis_period_to_datetimes
+from .analysisperiod import describe_analysis_period
+from .header import header_from_string, header_to_string
 
 
-def collection_to_series(collection: BaseCollection) -> pd.Series:
+@decorator_factory()
+def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
 
     Args:
         collection (BaseCollection):
             Ladybug data collection object.
+        name (str, optional):
+            The name of the resulting Pandas Series object. Defaults to None,
+            which uses the collection datatype.
 
     Returns:
         pd.Series:
@@ -47,19 +55,20 @@ def collection_to_series(collection: BaseCollection) -> pd.Series:
     return pd.Series(
         data=collection.values,
         index=index,
-        name=header_to_string(collection.header),
+        name=header_to_string(collection.header) if not name else name,
     )
 
 
+@decorator_factory()
 def collection_to_json(
-    collections: List[BaseCollection], json_path: Union[Path, str], indent: int = None
+    collections: list[BaseCollection], json_path: Path, indent: int = None
 ) -> Path:
     """Save Ladybug BaseCollection-like objects into a JSON file.
 
     Args:
         collections (BaseCollection):
             A Ladybug BaseCollection-like object.
-        json_path (Union[Path, str]):
+        json_path (Path):
             The path to the JSON file.
         indent (str, optional):
             The indentation to use in the resulting JSON file. Defaults to None.
@@ -90,15 +99,14 @@ def collection_to_json(
     )
 
 
-def collection_to_csv(
-    collections: List[BaseCollection], csv_path: Union[Path, str]
-) -> Path:
+@decorator_factory()
+def collection_to_csv(collections: list[BaseCollection], csv_path: Path) -> Path:
     """Save Ladybug BaseCollection-like objects into a CSV file.
 
     Args:
         collections (BaseCollection):
             A Ladybug BaseCollection-like object.
-        csv_path (Union[Path, str]):
+        csv_path (Path):
             The path to the CSV file.
 
     Returns:
@@ -123,6 +131,7 @@ def collection_to_csv(
     )
 
 
+@decorator_factory()
 def collection_to_array(collection: BaseCollection) -> np.ndarray:
     """Convert a Ladybug BaseCollection-like object into a numpy array.
 
@@ -136,13 +145,14 @@ def collection_to_array(collection: BaseCollection) -> np.ndarray:
     return np.array(collection.values)
 
 
+@decorator_factory()
 def percentile(
-    collections: List[BaseCollection], nth_percentile: float
+    collections: list[BaseCollection], nth_percentile: float
 ) -> BaseCollection:
     """Create an nth percentile of the given data collections.
 
     Args:
-        collections (List[BaseCollection]):
+        collections (list[BaseCollection]):
             A list of collections.
         nth_percentile (float):
             A percentile, between 0 and 1.
@@ -170,11 +180,12 @@ def percentile(
     )
 
 
-def minimum(collections: List[BaseCollection]) -> BaseCollection:
+@decorator_factory()
+def minimum(collections: list[BaseCollection]) -> BaseCollection:
     """Create a Minimum of the given data collections.
 
     Args:
-        collections (List[BaseCollection]):
+        collections (list[BaseCollection]):
             A list of collections.
 
     Returns:
@@ -195,11 +206,12 @@ def minimum(collections: List[BaseCollection]) -> BaseCollection:
     return collection_from_series(df.min(axis=1).rename(series_name))
 
 
-def maximum(collections: List[BaseCollection]) -> BaseCollection:
+@decorator_factory()
+def maximum(collections: list[BaseCollection]) -> BaseCollection:
     """Create a Maximum of the given data collections.
 
     Args:
-        collections (List[BaseCollection]):
+        collections (list[BaseCollection]):
             A list of collections.
 
     Returns:
@@ -220,6 +232,7 @@ def maximum(collections: List[BaseCollection]) -> BaseCollection:
     return collection_from_series(df.max(axis=1).rename(series_name))
 
 
+@decorator_factory()
 def collection_from_series(series: pd.Series) -> BaseCollection:
     """Convert a Pandas Series object into a Ladybug BaseCollection-like object.
 
@@ -264,14 +277,15 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
     raise ValueError("The series must be hourly or monthly.")
 
 
-def collection_from_json(json_path: Union[Path, str]) -> List[BaseCollection]:
+@decorator_factory()
+def collection_from_json(json_path: Path) -> list[BaseCollection]:
     """Load a JSON containing serialised Ladybug BaseCollection-like objects.
 
     Args:
-        json_path (Union[Path, str]): The path to the JSON file.
+        json_path (Path): The path to the JSON file.
 
     Returns:
-        List[BaseCollection]: A list of Ladybug BaseCollection-like object.
+        list[BaseCollection]: A list of Ladybug BaseCollection-like object.
 
     """
 
@@ -283,11 +297,12 @@ def collection_from_json(json_path: Union[Path, str]) -> List[BaseCollection]:
     return collections_from_json(json_path.as_posix())
 
 
-def collection_from_dict(dictionary: Dict[str, Any]) -> BaseCollection:
+@decorator_factory()
+def collection_from_dict(dictionary: dict[str, Any]) -> BaseCollection:
     """Convert a JSON compliant dictionary object into a ladybug EPW.
 
     Args:
-        Dict[str, Any]:
+        dict[str, Any]:
             A sanitised dictionary.
 
     Returns:
@@ -309,14 +324,15 @@ def collection_from_dict(dictionary: Dict[str, Any]) -> BaseCollection:
     # pylint: enable=broad-exception-caught
 
 
-def collection_from_csv(csv_path: Union[Path, str]) -> List[BaseCollection]:
+@decorator_factory()
+def collection_from_csv(csv_path: Path) -> list[BaseCollection]:
     """Load a CSV containing serialised Ladybug BaseCollection-like objects.
 
     Args:
-        csv_path (Union[Path, str]): The path to the CSV file.
+        csv_path (Path): The path to the CSV file.
 
     Returns:
-        List[BaseCollection]: A list of Ladybug BaseCollection-like object.
+        list[BaseCollection]: A list of Ladybug BaseCollection-like object.
 
     """
 
@@ -328,20 +344,21 @@ def collection_from_csv(csv_path: Union[Path, str]) -> List[BaseCollection]:
     return collections_from_csv(csv_path.as_posix())
 
 
+@decorator_factory()
 def summarise_collection(
     collection: BaseCollection,
     _n_common: int = 3,
-) -> List[str]:
+) -> list[str]:
     """Describe a datacollection.
 
     Args:
         ...
 
     Returns:
-        List[str]: A list of strings describing this data collection.
+        list[str]: A list of strings describing this data collection.
 
     """
-
+    # pylint: disable=C0301
     descriptions = []
 
     series = collection_to_series(collection)
@@ -420,7 +437,9 @@ def summarise_collection(
         _n_max = len(series[series == _max])
         _max_mean_time = series.groupby(series.index.time).mean().idxmax()
         descriptions.append(
-            f"Maximum {name} is {_max:,.01f}{unit}, occurring {_n_max} time{f's and typically at {_max_mean_time:%H:%M}' if _n_max > 1 else f' on {series.idxmax():%b %d at %H:%M}'}."
+            f"Maximum {name} is {_max:,.01f}{unit}, "
+            f"occurring {_n_max} time"
+            f"{f's and typically at {_max_mean_time:%H:%M}' if _n_max > 1 else f' on {series.idxmax():%b %d at %H:%M}'}."
         )
 
     # common values
@@ -449,25 +468,30 @@ def summarise_collection(
         # cumulative values
         if rate_of_change:
             descriptions.append(
-                f"Cumulative total {name} for {period} is {series.sum():,.0f}{collection.to_time_rate_of_change().header.unit}."
+                f"Cumulative total {name} for {period} is "
+                f"{series.sum():,.0f}{collection.to_time_rate_of_change().header.unit}."
             )
 
         # agg months
         _month_mean = series.resample("MS").mean()
         descriptions.append(
-            f"The month with the lowest mean {name} is {_month_mean.idxmin():%B}, with a value of {_month_mean.min():,.1f}{unit}."
+            f"The month with the lowest mean {name} is "
+            f"{_month_mean.idxmin():%B}, with a value of {_month_mean.min():,.1f}{unit}."
         )
         descriptions.append(
-            f"The month with the highest mean {name} is {_month_mean.idxmax():%B}, with a value of {_month_mean.max():,.1f}{unit}."
+            f"The month with the highest mean {name} is "
+            f"{_month_mean.idxmax():%B}, with a value of {_month_mean.max():,.1f}{unit}."
         )
 
         # agg times
         _time_mean = series.groupby(series.index.time).mean()
         descriptions.append(
-            f"The time when the highest mean {name} typically occurs is {_time_mean.idxmax():%H:%M}, with a value of {_time_mean.max():,.1f}{unit}."
+            f"The time when the highest mean {name} typically occurs "
+            f"is {_time_mean.idxmax():%H:%M}, with a value of {_time_mean.max():,.1f}{unit}."
         )
         descriptions.append(
-            f"The time when the lowest mean {name} typically occurs is {_time_mean.idxmin():%H:%M}, with a mean value of {_time_mean.min():,.1f}{unit}."
+            f"The time when the lowest mean {name} typically occurs "
+            f"is {_time_mean.idxmin():%H:%M}, with a mean value of {_time_mean.min():,.1f}{unit}."
         )
 
         # diurnal
@@ -476,25 +500,33 @@ def summarise_collection(
         _month_grp_max = _month_grp.max()
         _month_range_month_avg = _month_grp_max - _month_grp_min
         descriptions.append(
-            f"The month when the largest range of {name} typically occurs is {_month_range_month_avg.idxmax():%B}, with values between {_month_grp_min.loc[_month_range_month_avg.idxmax()]:,.1f}{unit} and {_month_grp_max.loc[_month_range_month_avg.idxmax()]:,.1f}{unit}."
+            f"The month when the largest range of {name} typically occurs "
+            f"is {_month_range_month_avg.idxmax():%B}, with values between "
+            f"{_month_grp_min.loc[_month_range_month_avg.idxmax()]:,.1f}{unit} "
+            f"and {_month_grp_max.loc[_month_range_month_avg.idxmax()]:,.1f}{unit}."
         )
         descriptions.append(
-            f"The month when the smallest range of {name} typically occurs is {_month_range_month_avg.idxmin():%B}, with values between {_month_grp_min.loc[_month_range_month_avg.idxmin()]:,.1f}{unit} and {_month_grp_max.loc[_month_range_month_avg.idxmin()]:,.1f}{unit}."
+            f"The month when the smallest range of {name} typically occurs "
+            f"is {_month_range_month_avg.idxmin():%B}, with values between "
+            f"{_month_grp_min.loc[_month_range_month_avg.idxmin()]:,.1f}{unit} "
+            f"and {_month_grp_max.loc[_month_range_month_avg.idxmin()]:,.1f}{unit}."
         )
-
+    # pylint: enable=C0301
     return descriptions
 
 
+@decorator_factory()
 def average(
-    collections: List[BaseCollection], weights: List[float] = None
+    collections: list[BaseCollection], weights: list[float] = None
 ) -> BaseCollection:
     """Create an Average of the given data collections.
 
     Args:
-        collections (List[BaseCollection]):
+        collections (list[BaseCollection]):
             A list of collections.
-        weights (List[float], optional):
-            A list of weights for each collection. Defaults to None which evenly weights each collection.
+        weights (list[float], optional):
+            A list of weights for each collection.
+            Defaults to None which evenly weights each collection.
 
     Returns:
         BaseCollection:
@@ -507,7 +539,8 @@ def average(
     for col in collections[1:]:
         if col.header.data_type != collections[0].header.data_type:
             raise ValueError(
-                f"You cannot get the average across non-alike datatypes ({col.header.unit} != {collections[0].header.unit})."
+                "You cannot get the average across non-alike datatypes "
+                f"({col.header.unit} != {collections[0].header.unit})."
             )
 
     if weights is None:
@@ -535,6 +568,7 @@ def average(
     return collections[0].get_aligned_collection(vals)
 
 
+@decorator_factory()
 def to_hourly(
     collection: MonthlyCollection, method: str = None
 ) -> HourlyContinuousCollection:
@@ -579,7 +613,8 @@ def to_hourly(
     )
 
 
-def peak_time(collection: BaseCollection) -> Tuple[Any, Tuple[DateTime]]:
+@decorator_factory()
+def peak_time(collection: BaseCollection) -> tuple[Any, tuple[DateTime]]:
     """Find the peak value within a collection, and the time, or times at which it occurs.
 
     Args:
@@ -587,7 +622,7 @@ def peak_time(collection: BaseCollection) -> Tuple[Any, Tuple[DateTime]]:
             A Ladybug DataCollection.
 
     Returns:
-        peak_value, times (Tuple[Any, Tuple[DateTime]]):
+        peak_value, times (tuple[Any, tuple[DateTime]]):
             The peak value and times it occurs.
     """
 
@@ -600,6 +635,7 @@ def peak_time(collection: BaseCollection) -> Tuple[Any, Tuple[DateTime]]:
     return peak_value, times
 
 
+@decorator_factory()
 def create_typical_day(
     collection: HourlyContinuousCollection,
     centroid: DateTime,
@@ -609,13 +645,24 @@ def create_typical_day(
     """Create a single day representative of conditions centered about the centroid DateTime.
 
     Args:
-        collection (HourlyContinuousCollection): The collection to sample from.
-        centroid (DateTime): The center date around which samples will be taken. The centroid will be included in the sample and more granular detail than "Date" will be ignored.
-        sample_size (int): The number of days about the centroid to sample from. If even, then this number will be increased by one to ensure that half-days are not sampled. A 10 day sample would include 5 days before and 5 days after the centroid.
-        agg (str, optional): The aggregation method to use. Defaults to "mean".
+        collection (HourlyContinuousCollection):
+            The collection to sample from.
+        centroid (DateTime):
+            The center date around which samples will be taken.
+            The centroid will be included in the sample and more granular
+            detail than "Date" will be ignored.
+        sample_size (int):
+            The number of days about the centroid to sample from.
+            If even, then this number will be increased by one to ensure
+            that half-days are not sampled. A 10 day sample would include
+            5 days before and 5 days after the centroid.
+        agg (str, optional):
+            The aggregation method to use. Defaults to "mean".
 
     Returns:
-        HourlyContinuousCollection: The filtered sample. This will have the same header as the input collection but will be only 1-day long.
+        HourlyContinuousCollection:
+            The filtered sample. This will have the same header as the input
+            collection but will be only 1-day long.
     """
 
     # check that the collection is hourly
@@ -673,5 +720,7 @@ def create_typical_day(
             end_day=centroid.day,
         )
     )
+    # pylint: disable=protected-access
     _base_col._values = sample.groupby(sample.index.hour).agg(agg).values
+    # pylint: enable=protected-access
     return _base_col

@@ -1,13 +1,17 @@
-import calendar
+"""Plotting methods for condensation potential."""
+
+import calendar  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 
+from ..bhom import decorator_factory
 from .utilities import create_title
 
 
+@decorator_factory()
 def condensation_potential(
     dry_bulb_temperature: pd.Series,
     dew_point_temperature: pd.Series,
@@ -16,7 +20,8 @@ def condensation_potential(
     dpt_quantile: float = 0.9,
     **kwargs,
 ) -> plt.Axes:
-    """Create a plot of the condensation potential for a given set of timeseries dry bulb temperature and dew point temperature.
+    """Create a plot of the condensation potential for a given set of
+    timeseries dry bulb temperature and dew point temperature.
 
     Args:
         dry_bulb_temperature (pd.Series):
@@ -24,11 +29,14 @@ def condensation_potential(
         dew_point_temperature (pd.Series):
             The dew point temperature dataset.
         ax (plt.Axes, optional):
-            An optional plt.Axes object to populate. Defaults to None, which creates a new plt.Axes object.
+            An optional plt.Axes object to populate. Defaults to None,
+            which creates a new plt.Axes object.
         dbt_quantile (float, optional):
-            The quantile of the dry bulb temperature to use for the condensation potential calculation. Defaults to 0.1.
+            The quantile of the dry bulb temperature to use for the
+            condensation potential calculation. Defaults to 0.1.
         dpt_quantile (float, optional):
-            The quantile of the dew point temperature to use for the condensation potential calculation. Defaults to 0.9.
+            The quantile of the dew point temperature to use for the
+            condensation potential calculation. Defaults to 0.9.
         **kwargs:
             A set of kwargs to pass to plt.plot.
 
@@ -38,7 +46,7 @@ def condensation_potential(
     """
 
     # check that the series are the same length and have the same index and are both indexes of pd.DatetimeIndex
-    if not (len(dry_bulb_temperature) == len(dew_point_temperature)):
+    if not len(dry_bulb_temperature) == len(dew_point_temperature):
         raise ValueError(
             "The dry bulb temperature and dew point temperature must have the same length"
         )
@@ -68,7 +76,7 @@ def condensation_potential(
     ax.set_title(
         create_title(
             kwargs.pop("title", None),
-            f"Condensation potential (for values between {min(dry_bulb_temperature.index):%b %Y} and {max(dry_bulb_temperature.index):%b %Y})",
+            "Condensation potential",
         )
     )
 
@@ -126,7 +134,11 @@ def condensation_potential(
     ax.text(
         1,
         1,
-        f"{(dbt.values < dpt.values).sum() / len(dbt):0.1%} of annual hours with potential for condensation\n(using {dbt_quantile:0.0%}-ile DBT and {dpt_quantile:0.0%}-ile DPT)",
+        (
+            f"{(dbt.values < dpt.values).sum() / len(dbt):0.1%} of annual hours "
+            f"with potential for condensation\n(using {dbt_quantile:0.0%}-ile DBT "
+            f"and {dpt_quantile:0.0%}-ile DPT)"
+        ),
         ha="right",
         va="top",
         transform=ax.transAxes,

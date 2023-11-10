@@ -1,28 +1,28 @@
-from __future__ import annotations
-
-from copy import copy
-from typing import Union
+"""Methods for modifying single points in-situ."""
+from copy import copy  # pylint: disable=E0401
 
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
 
 from ...ladybug_extension.datacollection import collection_from_series
-from ..external_comfort import ExternalComfort, SimulationResult, Typology
+from ..externalcomfort import ExternalComfort, Typology
+from ..simulate import SimulationResult
 
 
 class PointMitigation:
-    """Adjust point-location-based UTCI using adjustments to the composite DBT, MRT, RH and WS values in-situ.
+    """Adjust point-location-based UTCI using adjustments to the composite
+    DBT, MRT, RH and WS values in-situ.
 
     Args:
         simulation_result (SimulationResult):
             The simulation result to get point-values from.
-        point_dbt (Union[pd.Series, HourlyContinuousCollection]):
+        point_dbt (pd.Series | HourlyContinuousCollection):
             The DBT values to set for the theoretical point.
-        point_mrt (Union[pd.Series, HourlyContinuousCollection]):
+        point_mrt (pd.Series | HourlyContinuousCollection):
             The MRT values to set for the theoretical point.
-        point_rh (Union[pd.Series, HourlyContinuousCollection]):
+        point_rh (pd.Series | HourlyContinuousCollection):
             The RH values to set for the theoretical point.
-        point_ws (Union[pd.Series, HourlyContinuousCollection]):
+        point_ws (pd.Series | HourlyContinuousCollection):
             The WS values to set for the theoretical point.
 
     Returns:
@@ -33,11 +33,11 @@ class PointMitigation:
     def __init__(
         self,
         simulation_result: SimulationResult,
-        point_dbt: Union[pd.Series, HourlyContinuousCollection],
-        point_mrt: Union[pd.Series, HourlyContinuousCollection],
-        point_rh: Union[pd.Series, HourlyContinuousCollection],
-        point_ws: Union[pd.Series, HourlyContinuousCollection],
-    ) -> PointMitigation:
+        point_dbt: pd.Series | HourlyContinuousCollection,
+        point_mrt: pd.Series | HourlyContinuousCollection,
+        point_rh: pd.Series | HourlyContinuousCollection,
+        point_ws: pd.Series | HourlyContinuousCollection,
+    ) -> "PointMitigation":
         self._point_dbt = (
             point_dbt
             if isinstance(point_dbt, HourlyContinuousCollection)

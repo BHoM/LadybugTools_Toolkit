@@ -1,10 +1,15 @@
+"""Methods for plotting heatmaps from time-indexed data."""
+
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
+from ..bhom import decorator_factory
 from ..helpers import validate_timeseries
 
 
+@decorator_factory()
 def heatmap(
     series: pd.Series,
     ax: plt.Axes = None,
@@ -23,6 +28,8 @@ def heatmap(
                 If True, show the colorbar. Defaults to True.
             title (str, optional):
                 The title of the plot. Defaults to None.
+            mask (List[bool], optional):
+                A list of booleans to mask the data. Defaults to None.
 
     Returns:
         plt.Axes:
@@ -44,6 +51,13 @@ def heatmap(
         pd.to_datetime([f"2017-01-01 {i}" for i in day_time_matrix.index])
     )
     z = day_time_matrix.values
+
+    if "mask" in kwargs:
+        if len(kwargs["mask"]) != len(series):
+            raise ValueError(
+                f"Length of mask ({len(kwargs['mask'])}) must match length of data ({len(series)})."
+            )
+        z = np.ma.masked_array(z, mask=kwargs.pop("mask"))
 
     # handle non-standard kwargs
     extend = kwargs.pop("extend", "neither")
@@ -68,7 +82,7 @@ def heatmap(
     ax.yaxis_date()
     ax.yaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 
-    ax.tick_params(labelleft=True, labelright=True, labelbottom=True)
+    ax.tick_params(labelleft=True, labelbottom=True)
     plt.setp(ax.get_xticklabels(), ha="left")
 
     for spine in ["top", "bottom", "left", "right"]:
@@ -89,6 +103,7 @@ def heatmap(
             aspect=100,
             pad=0.075,
             extend=extend,
+            label=series.name,
         )
         cb.outline.set_visible(False)
 

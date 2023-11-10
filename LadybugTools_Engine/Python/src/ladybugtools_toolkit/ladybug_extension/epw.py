@@ -1,13 +1,15 @@
+"""Methods for manipulating Ladybug EPW objects."""
+# pylint: disable=C0302
+# pylint: disable=E0401
 import calendar
 import copy
 import datetime
-import itertools
 import json
 import warnings
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import field
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
@@ -31,10 +33,9 @@ from ladybug.psychrometrics import (
 )
 from ladybug.skymodel import clearness_index as lb_ci
 from ladybug.sunpath import Sun, Sunpath
-from ladybug.wea import Wea
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
-from ..external_comfort.ground_temperature import hourly_ground_temperature
+from ..bhom import decorator_factory
 from ..helpers import (
     air_pressure_at_height,
     radiation_at_height,
@@ -42,14 +43,15 @@ from ..helpers import (
     timedelta_tostring,
     wind_speed_at_height,
 )
-from .analysis_period import analysis_period_to_datetimes
+from .analysisperiod import analysis_period_to_datetimes
 from .datacollection import average as average_collection
 from .datacollection import collection_to_series
-from .header import header_to_string as header_to_string
-from .location import average_location
-from .location import location_to_string as location_to_string
+from .groundtemperature import hourly_ground_temperature
+from .header import header_to_string
+from .location import average_location, location_to_string
 
 
+@decorator_factory()
 def epw_to_dataframe(
     epw: EPW, include_additional: bool = False, **kwargs
 ) -> pd.DataFrame:
@@ -59,13 +61,11 @@ def epw_to_dataframe(
         epw (EPW):
             An EPW object.
         include_additional (bool, optional):
-            Set to False to not include additional calculated properties. Default is False.
+            Set to False to not include additional calculated properties.
+            Default is False.
         **kwargs:
-            Additional keyword arguments to be passed to the to_dataframe method.
-            ground_temperature_depth (float):
-                The depth in m at which to calculate ground temperatures. Default is 0.5.
-            soil_diffusivity (float):
-                The soil diffusivity in m2/s. Default is 3.1e-7.
+            Keyword arguments are passed to `hourly_ground_temperature()` to
+            calculate the temperature of the ground.
 
     Returns:
         pd.DataFrame:
@@ -109,11 +109,12 @@ def epw_to_dataframe(
     for prop in properties:
         try:
             s = collection_to_series(getattr(epw, prop))
-            s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
+            # s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
             all_series.append(s)
         except (ValueError, TypeError):
             warnings.warn(
-                f"{prop} is not available in this EPW file. This is most likely because this file does not follow normal EPW content conventions."
+                f"{prop} is not available in this EPW file. This is most likely "
+                "because this file does not follow normal EPW content conventions."
             )
 
     if not include_additional:
@@ -162,16 +163,17 @@ def epw_to_dataframe(
         ground_temp,
     ]:
         s = collection_to_series(collection)
-        s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
+        # s.rename((Path(epw.file_path).stem, "EPW", s.name), inplace=True)
         all_series.append(s)
 
     return pd.concat(all_series, axis=1).sort_index(axis=1)
 
 
+@decorator_factory()
 def epw_from_dataframe(
     dataframe: pd.DataFrame,
     location: Location = None,
-    monthly_ground_temperature: Dict[float, MonthlyCollection] = None,
+    monthly_ground_temperature: dict[float, MonthlyCollection] = None,
     comments_1: str = None,
     comments_2: str = None,
 ) -> EPW:
@@ -292,6 +294,7 @@ def epw_from_dataframe(
     return epw_obj
 
 
+@decorator_factory()
 def wet_bulb_temperature(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly wet bulb temperature for a given EPW.
 
@@ -315,9 +318,10 @@ def wet_bulb_temperature(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
+@decorator_factory()
 def unique_wind_speed_direction(
-    epw: EPW, schedule: List[int] = None
-) -> List[Tuple[float, float]]:
+    epw: EPW, schedule: list[int] = None
+) -> list[tuple[float, float]]:
     """Return a set of unique wind speeds and directions for an EPW file.
 
     Args:
@@ -325,7 +329,7 @@ def unique_wind_speed_direction(
         schedule (epw): a mask of hours to include in the unique
 
     Returns:
-        List[List[float, float]]: A list of unique (wind_speed, wind_direction).
+        list[tuple[float, float]]: A list of unique (wind_speed, wind_direction).
     """
 
     df = pd.concat(
@@ -342,32 +346,8 @@ def unique_wind_speed_direction(
     return df.drop_duplicates().values
 
 
-def epw_to_dict(epw: EPW) -> Dict[str, Any]:
-    """Convert a ladybug EPW object into a JSON-able compliant dictionary.
-
-    Args:
-        epw (EPW):
-            An EPW object.
-
-    Returns:
-        Dict[str, Any]:
-            A sanitised dictionary.
-    """
-    d = epw.to_dict()
-    json_str = json.dumps(d)
-
-    # custom handling of non-standard JSON NaN/Inf values
-    json_str = json_str.replace('"min": -Infinity', '"min": "-inf"')
-    json_str = json_str.replace('"max": Infinity', '"max": "inf"')
-
-    # custom handling of float-indexed values
-    for k, _ in d["monthly_ground_temps"].items():
-        json_str = json_str.replace(f'"{k}": {{', f'"_{k}": {{'.replace(".", "_"))
-
-    return json.loads(json_str)
-
-
-def sun_position_list(epw: EPW) -> List[Sun]:
+@decorator_factory()
+def sun_position_list(epw: EPW) -> list[Sun]:
     """
     Calculate sun positions for a given epw file.
 
@@ -375,7 +355,7 @@ def sun_position_list(epw: EPW) -> List[Sun]:
         epw (EPW):
             An epw object.
     Returns:
-        List[Sun]:
+        list[Sun]:
             A list of Sun objects.
     """
 
@@ -384,6 +364,7 @@ def sun_position_list(epw: EPW) -> List[Sun]:
     return [sunpath.calculate_sun_from_hoy(i) for i in range(len(epw.years))]
 
 
+@decorator_factory()
 def sun_position_collection(epw: EPW) -> HourlyContinuousCollection:
     """Calculate a set of Sun positions for each hour of the year.
 
@@ -409,6 +390,7 @@ def sun_position_collection(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
+@decorator_factory()
 def solar_time_hour(
     epw: EPW, eot: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -447,6 +429,7 @@ def solar_time_hour(
     )
 
 
+@decorator_factory()
 def solar_time_datetime(
     epw: EPW, solar_time_hourly: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -478,7 +461,8 @@ def solar_time_datetime(
     )
     _datetimes = list(_datetimes)
 
-    # Sometimes the first datetime for solar time occurs before the target year - so this moves the first datetime to the previous day
+    # Sometimes the first datetime for solar time occurs before the target year -
+    # so this moves the first datetime to the previous day
     for i in range(12):
         if (_datetimes[i].year == _datetimes[-1].year) and (_datetimes[i].hour > 12):
             _datetimes[i] = _datetimes[i] - pd.Timedelta(days=1)
@@ -497,6 +481,7 @@ def solar_time_datetime(
     )
 
 
+@decorator_factory()
 def solar_declination(epw: EPW) -> HourlyContinuousCollection:
     """Calculate solar declination for each hour of the year.
 
@@ -532,6 +517,7 @@ def solar_declination(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
+@decorator_factory()
 def solar_azimuth(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -564,6 +550,7 @@ def solar_azimuth(
     )
 
 
+@decorator_factory()
 def solar_azimuth_radians(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -586,6 +573,7 @@ def solar_azimuth_radians(
     return collection
 
 
+@decorator_factory()
 def solar_altitude(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -618,6 +606,7 @@ def solar_altitude(
     )
 
 
+@decorator_factory()
 def solar_altitude_radians(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -640,6 +629,7 @@ def solar_altitude_radians(
     return collection
 
 
+@decorator_factory()
 def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly humidity ratio for a given EPW.
 
@@ -663,11 +653,12 @@ def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-def epw_from_dict(dictionary: Dict[str, Any]) -> EPW:
+@decorator_factory()
+def epw_from_dict(dictionary: dict[str, Any]) -> EPW:
     """Convert a JSON compliant dictionary object into a ladybug EPW.
 
     Args:
-        Dict[str, Any]:
+        dict[str, Any]:
             A sanitised dictionary.
 
     Returns:
@@ -689,6 +680,7 @@ def epw_from_dict(dictionary: Dict[str, Any]) -> EPW:
     return EPW.from_dict(json.loads(json_str))
 
 
+@decorator_factory()
 def get_filename(epw: EPW, include_extension: bool = False) -> str:
     """Get the filename of the given EPW.
 
@@ -709,6 +701,7 @@ def get_filename(epw: EPW, include_extension: bool = False) -> str:
     return Path(epw.file_path).stem
 
 
+@decorator_factory()
 def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
     """Check for equality between two EPW objects, with regards to the data contained within.
 
@@ -744,6 +737,7 @@ def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
         "direct_normal_radiation",
         "diffuse_horizontal_radiation",
         "atmospheric_station_pressure",
+        "monthly_ground_temperature",
     ]:
         if getattr(epw0, var) != getattr(epw1, var):
             warnings.warn(f"{var}: {epw0} != {epw1}")
@@ -752,6 +746,7 @@ def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
     return True
 
 
+@decorator_factory()
 def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
     """Calculate the equation of time for each hour of the year.
 
@@ -786,13 +781,14 @@ def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-def epw_content_check(epw: EPW, fields: List[str] = None) -> bool:
+@decorator_factory()
+def epw_content_check(epw: EPW, fields: list[str] = None) -> bool:
     """Check an EPW object for whether it contains all valid fields
 
     Args:
         epw (EPW):
             An EPW object.
-        fields (List[str], optional):
+        fields (list[str], optional):
             The fields subset to check.
 
     Returns:
@@ -854,6 +850,7 @@ def epw_content_check(epw: EPW, fields: List[str] = None) -> bool:
     return valid
 
 
+@decorator_factory()
 def enthalpy(
     epw: EPW, hum_ratio: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -884,6 +881,7 @@ def enthalpy(
     )
 
 
+@decorator_factory()
 def clearness_index(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -928,6 +926,7 @@ def clearness_index(
     )
 
 
+@decorator_factory()
 def seasonality_from_day_length_location(
     location: Location, annotate: bool = False
 ) -> pd.Series:
@@ -1028,6 +1027,7 @@ def seasonality_from_day_length_location(
     return pd.Series(categories, index=idx, name="season")
 
 
+@decorator_factory()
 def seasonality_from_temperature_timeseries(
     series: pd.Series, annotate: bool = False
 ) -> pd.Series:
@@ -1062,7 +1062,8 @@ def seasonality_from_temperature_timeseries(
     # check that weatherfile is "seasonal", by checking avg variance
     if series.std() <= 2.5:
         warnings.warn(
-            "Input dataset has a low variance, indicating that seasonality may not be determined accurately from dry-bulb temperature."
+            "Input dataset has a low variance, indicating that seasonality may "
+            "not be determined accurately from dry-bulb temperature."
         )
 
     # create the aggregate year
@@ -1227,24 +1228,30 @@ def seasonality_from_temperature_timeseries(
 
     # get mean temps if annotated
     if annotate:
-        s[
-            s == "Spring"
-        ] = f"Spring ({dbt[s == 'Spring'].mean():0.1f}°C average temperature, {spring_start:%b %d} to {summer_start:%b %d})"
-        s[
-            s == "Summer"
-        ] = f"Summer ({dbt[s == 'Summer'].mean():0.1f}°C average temperature, {summer_start:%b %d} to {autumn_start:%b %d})"
-        s[
-            s == "Autumn"
-        ] = f"Autumn ({dbt[s == 'Autumn'].mean():0.1f}°C average temperature, {autumn_start:%b %d} to {winter_start:%b %d})"
-        s[
-            s == "Winter"
-        ] = f"Winter ({dbt[s == 'Winter'].mean():0.1f}°C average temperature, {winter_start:%b %d} to {spring_start:%b %d})"
+        s[s == "Spring"] = (
+            f"Spring ({dbt[s == 'Spring'].mean():0.1f}°C average temperature, "
+            f"{spring_start:%b %d} to {summer_start:%b %d})"
+        )
+        s[s == "Summer"] = (
+            f"Summer ({dbt[s == 'Summer'].mean():0.1f}°C average temperature, "
+            f"{summer_start:%b %d} to {autumn_start:%b %d})"
+        )
+        s[s == "Autumn"] = (
+            f"Autumn ({dbt[s == 'Autumn'].mean():0.1f}°C average temperature, "
+            f"{autumn_start:%b %d} to {winter_start:%b %d})"
+        )
+        s[s == "Winter"] = (
+            f"Winter ({dbt[s == 'Winter'].mean():0.1f}°C average temperature, "
+            f"{winter_start:%b %d} to {spring_start:%b %d})"
+        )
 
     return s
 
 
+@decorator_factory()
 def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
-    """Create a Series containing a category for each timestep of an EPW giving it's season based on day length (using sunrise/sunset).
+    """Create a Series containing a category for each timestep of an EPW giving
+    its season based on day length (using sunrise/sunset).
 
     Args:
         epw (EPW):
@@ -1260,6 +1267,7 @@ def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
     return seasonality_from_day_length_location(epw.location, annotate)
 
 
+@decorator_factory()
 def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving it's season.
 
@@ -1319,6 +1327,7 @@ def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
     return pd.Series(categories, index=idx, name="season")
 
 
+@decorator_factory()
 def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving it's season.
     Args:
@@ -1336,18 +1345,19 @@ def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
     )
 
 
+@decorator_factory()
 def degree_time(
-    epws: List[EPW],
+    epws: list[EPW],
     heat_base: float = 18,
     cool_base: float = 23,
     return_type: str = "days",
-    names: List[str] = None,
+    names: list[str] = None,
 ) -> pd.DataFrame:
     """Get the heating/cooling degree days/hours from a given set of EPW
     objects.
 
     Args:
-        epws (List[EPW]):
+        epws (list[EPW]):
             A list of EPW objcts.
         heat_base (float, optional):
             The temperature at which heating kicks in. Defaults to 18.
@@ -1355,7 +1365,7 @@ def degree_time(
             The temperature at which cooling kicks in. Defaults to 23.
         return_type (str, optional):
             Return days or hours. Defaults to "days".
-        names (List[str], optional):
+        names (list[str], optional):
             Names to overide EPW names with. Defaults to None.
 
     Returns:
@@ -1414,8 +1424,8 @@ def degree_time(
             [cdd, hdd],
             axis=1,
             keys=[
-                f"Cooling Degree Days (>{cool_base})",
-                f"Heating Degree Days (<{heat_base})",
+                f"Cooling Degree Days (>{cool_base}°C)",
+                f"Heating Degree Days (<{heat_base}°C)",
             ],
         )
         .reorder_levels([1, 0], axis=1)
@@ -1423,16 +1433,22 @@ def degree_time(
     )
 
 
+@decorator_factory()
 def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> EPW:
-    """Translate an EPW to a different height above ground (assuming that the original height represented is at ground level, with wind measured at 10m).
+    """Translate an EPW to a different height above ground (assuming that the
+    original height represented is at ground level, with wind measured at 10m).
 
     Args:
-        epw (EPW): The EPW to translate.
-        target_height (float): The target height above ground, in m.
-        save (bool, optional): If True, save the translated EPW to disk. Defaults to False.
+        epw (EPW):
+            The EPW to translate.
+        target_height (float):
+            The target height above ground, in m.
+        save (bool, optional):
+            If True, save the translated EPW to disk. Defaults to False.
 
     Returns:
-        EPW: The translated EPW.
+        EPW:
+            The translated EPW.
     """
 
     new_epw = copy.deepcopy(epw)
@@ -1443,8 +1459,9 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
 
     # modify header
     new_epw.comments_1 = (
-        epw.comments_1
-        + f"Modified from {original_height}m elevation at 10m above ground (assumed for EPW data), to {target_height}m above ground."
+        f"{epw.comments_1} "
+        f"Modified from {original_height}m elevation at 10m above ground "
+        f"(assumed for EPW data), to {target_height}m above ground."
     )
     new_epw.location.source = f"{epw.location.source}[@{target_height}M_ELEVATION]"
 
@@ -1614,12 +1631,12 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
     ]
 
     # set filepath variable
-    # pylint disable=protected-access
+    # pylint: disable=protected-access
     new_epw._file_path = (
         Path(epw.file_path).parent
         / f"{Path(epw.file_path).stem}_at{target_height}m.epw"
     ).as_posix()
-    # pylint enable=protected-access
+    # pylint: enable=protected-access
 
     if save:
         new_epw.save(Path(new_epw.file_path).absolute().as_posix())
@@ -1630,15 +1647,16 @@ def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> E
 def _representative_day() -> pd.DataFrame:
     """Create a table contiing hourly values for the "typical" day the given month."""
 
-    #! - TODO - add weighting of variables
-    #! - TODO - add option to use median or mean values
-    #! - TODO - add option to use specific time period (perhpas based on AnalysisPeriod, or more generic)
-    #! - TODO - return whole table (all collections? and otehr days), or just specific day
+    #! TODO - add weighting of variables
+    #! TODO - add option to use median or mean values
+    #! TODO - add option to use specific time period (perhpas based on AnalysisPeriod, or more generic)
+    #! TODO - return whole table (all collections? and otehr days), or just specific day
     #! TODO - ensure that wind direction is being accounted for correctly - aliginign with the peak weighted variable/s
 
-    raise NotImplementedError
+    raise NotImplementedError("")
 
 
+@decorator_factory()
 def hottest_day(epw: EPW) -> datetime:
     """
     The hottest day in the year associated with this epw object
@@ -1655,6 +1673,7 @@ def hottest_day(epw: EPW) -> datetime:
     )
 
 
+@decorator_factory()
 def coldest_day(epw: EPW) -> datetime:
     """
     The coldest day in the year associated with this epw object
@@ -1671,7 +1690,8 @@ def coldest_day(epw: EPW) -> datetime:
     )
 
 
-def sun_up_bool(epw: EPW) -> List[bool]:
+@decorator_factory()
+def sun_up_bool(epw: EPW) -> list[bool]:
     """
     A list of booleans aligned with the input EPW stating whether the sun is above the horizon.
     """
@@ -1683,6 +1703,7 @@ def sun_up_bool(epw: EPW) -> List[bool]:
     return [i.altitude > 0 for i in suns]
 
 
+@decorator_factory()
 def longest_day(epw: EPW) -> datetime:
     """
     The longest day in the year associated with this epw object."""
@@ -1695,6 +1716,7 @@ def longest_day(epw: EPW) -> datetime:
     return s[s > 0].resample("D").count().idxmax().to_pydatetime()
 
 
+@decorator_factory()
 def shortest_day(epw: EPW) -> datetime:
     """
     The shortest day in the year associated with this epw object."""
@@ -1707,13 +1729,14 @@ def shortest_day(epw: EPW) -> datetime:
     return s[s > 0].resample("D").count().idxmin().to_pydatetime()
 
 
+@decorator_factory()
 def average_epw(
-    epws: List[EPW],
+    epws: list[EPW],
     location: Location = None,
     comments_1: str = "",
     comments_2: str = "",
     file_path: str = "synthetic.epw",
-    weights: List[float] = None,
+    weights: list[float] = None,
 ) -> EPW:
     """For a set of input EPW files, construct an "average", with wind speeds and direction weighted based on speed."""
     warnings.warn("UNDER DEVELOPMENT")
@@ -1731,7 +1754,7 @@ def average_epw(
     # set metadata
     synthetic_epw.comments_1 = comments_1
     synthetic_epw.comments_2 = comments_2
-    synthetic_epw._file_path = file_path
+    synthetic_epw._file_path = file_path  # pylint: disable=protected-access
 
     # set ground temperayture data
     all_depths = []
@@ -1751,7 +1774,7 @@ def average_epw(
         try:
             for coll in collections[1:]:
                 base += coll
-        except:
+        except Exception as _:  # pylint: disable=broad-except
             pass
         base = base / len(collections)
         d[depth] = base

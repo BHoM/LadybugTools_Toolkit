@@ -20,17 +20,14 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
  */
 
-using BH.Engine.Python;
+
 using BH.oM.Python;
 using BH.oM.Base.Attributes;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.IO;
 using BH.oM.LadybugTools;
+using System;
 using BH.Engine.Serialiser;
-using BH.Engine.Base;
 
 namespace BH.Engine.LadybugTools
 {
@@ -41,11 +38,18 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A ground material.")]
         [Input("shadeMaterial", "A shade material.")]
         [Output("simulationResult", "An simulation result object containing simulation results.")]
-        public static SimulationResult SimulationResult(string epwFile, ILadybugToolsMaterial groundMaterial, ILadybugToolsMaterial shadeMaterial)
+        [PreviousVersion("7.0", "BH.Engine.LadybugTools.Compute.SimulationResult(System.String, BH.oM.LadybugTools.ILadybugToolsMaterial, BH.oM.LadybugTools.ILadybugToolsMaterial)")]
+        public static SimulationResult SimulationResult(string epwFile, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial)
         {
+            // validation prior to passing to Python
             if (epwFile == null)
             {
                 BH.Engine.Base.Compute.RecordError("epwFile input cannot be null.");
+                return null;
+            }
+            if (!File.Exists(epwFile))
+            {
+                BH.Engine.Base.Compute.RecordError($"{epwFile} does not exist.");
                 return null;
             }
 
@@ -61,47 +65,34 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            if (!System.IO.File.Exists(epwFile))
-            {
-                BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
-                return null;
-            }
-
-            // construct the base object
+            // construct the base object and file to be passed to Python for simulation
             SimulationResult simulationResult = new SimulationResult()
             {
                 EpwFile = Path.GetFullPath(epwFile).Replace(@"\", "/"),
                 GroundMaterial = groundMaterial,
                 ShadeMaterial = shadeMaterial,
-                Identifier = Compute.SimulationId(epwFile, groundMaterial, shadeMaterial)
+                Identifier = Compute.SimulationID(epwFile, groundMaterial, shadeMaterial)
             };
+            string jsonPreSimulation = simulationResult.ToJson();
+            string jsonFile = Path.Combine(Path.GetTempPath(), $"LBTBHoM_{Guid.NewGuid()}.json");
+            File.WriteAllText(jsonFile, jsonPreSimulation);
 
-            // send to Python to simulate/load
-            string simulationResultJsonStr = System.Text.RegularExpressions.Regex.Unescape(simulationResult.ToJson());
+            // locate the Python executable and file containing the simulation code
             PythonEnvironment env = InstallPythonEnv_LBT(true);
-            string pythonScript = string.Join("\n", new List<string>()
-            {
-                "import json",
-                "import traceback",
-                "try:",
-                "    from ladybugtools_toolkit.external_comfort.simulate import SimulationResult",
-                $"    simulation_result = SimulationResult.from_json('{simulationResultJsonStr}').run()",
-                "    print(simulation_result.to_json())",
-                "except Exception as exc:",
-                "    print(json.dumps({'error': str(traceback.format_exc())}))",
-            });
-            string output = env.RunPythonString(pythonScript).Trim().Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
-
-            if (output.Substring(0, 12).Contains("error"))
-            {
-                BH.Engine.Base.Compute.RecordError(Serialiser.Convert.FromJson(output).PropertyValue("error").ToString());
-                return null;
-            }
+            string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "simulation_result.py");
             
+            // run the simulation
+            string command = $"{env.Executable} {script} -j \"{jsonFile}\"";
+            Python.Compute.RunCommandStdout(command: command, hideWindows: true);
+
             // reload from Python results
-            return (SimulationResult)Serialiser.Convert.FromJson(output);
+            string jsonPostSimulation = File.ReadAllText(jsonFile);
+            SimulationResult simulationResultPopulated = (SimulationResult)BH.Engine.Serialiser.Convert.FromJson(jsonPostSimulation);
+
+            // remove temporary file
+            File.Delete(jsonFile);
+
+            return simulationResultPopulated;
         }
     }
 }
-
-

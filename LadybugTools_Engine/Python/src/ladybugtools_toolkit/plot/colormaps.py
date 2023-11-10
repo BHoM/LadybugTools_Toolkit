@@ -1,3 +1,5 @@
+"""Default colormaps"""
+
 from .utilities import colormap_sequential
 
 DBT_COLORMAP = colormap_sequential("white", "#bc204b")
@@ -10,3 +12,7 @@ WS_COLORMAP = colormap_sequential(
     "#24135f",
 )
 UTCI_DIFFERENCE_COLORMAP = colormap_sequential("#00A9E0", "w", "#702F8A")
+UTCI_DISTANCE_TO_COMFORTABLE = colormap_sequential("#00A9E0", "w", "#ba000d")
+_ = colormap_sequential(
+    "#E40303", "#FF8C00", "#FFED00", "#008026", "#24408E", "#732982"
+)

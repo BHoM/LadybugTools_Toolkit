@@ -1,5 +1,4 @@
-from typing import Union
-
+"""Methods for plotting sun-paths."""
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,7 +9,8 @@ from ladybug.location import Location
 from ladybug.sunpath import Sunpath
 from matplotlib.colors import BoundaryNorm, Colormap
 
-from ..ladybug_extension.analysis_period import (
+from ..bhom import decorator_factory
+from ..ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
     describe_analysis_period,
 )
@@ -18,12 +18,13 @@ from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.location import location_to_string
 
 
+@decorator_factory()
 def sunpath(
     location: Location,
     ax: plt.Axes = None,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
     data_collection: HourlyContinuousCollection = None,
-    cmap: Union[Colormap, str] = "viridis",
+    cmap: Colormap | str = "viridis",
     norm: BoundaryNorm = None,
     sun_size: float = 10,
     show_grid: bool = True,
@@ -68,9 +69,7 @@ def sunpath(
     day_suns = []
     for month in [6, 9, 12]:
         date = pd.to_datetime(f"2017-{month:02d}-21")
-        day_idx = pd.date_range(
-            date, date + pd.Timedelta(hours=24), freq="1T", closed="left"
-        )
+        day_idx = pd.date_range(date, date + pd.Timedelta(hours=24), freq="1T")
         _ = []
         for idx in day_idx:
             s = sunpath_obj.calculate_sun_from_date_time(idx)

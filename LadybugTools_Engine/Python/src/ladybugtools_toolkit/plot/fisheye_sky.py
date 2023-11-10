@@ -1,4 +1,5 @@
-﻿import copy
+﻿"""Methods for creating fisheye sky images."""
+import copy  # pylint: disable=E0401
 
 import numpy as np
 from cv2 import IMREAD_ANYDEPTH, imread
@@ -10,8 +11,10 @@ from ladybug_geometry.geometry3d import Point3D, Vector3D
 from lbt_recipes.recipe import Recipe
 from lbt_recipes.settings import RecipeSettings
 from PIL import Image, ImageEnhance
+from ..bhom import decorator_factory
 
 
+@decorator_factory()
 def fisheye_sky(
     model: Model,
     sensor: Point3D,
@@ -101,7 +104,8 @@ def fisheye_sky(
 
     # img = img.filter(ImageFilter.SMOOTH_MORE)
 
-    # crop out most of floor from fisheye view. typically we see 210deg, so if the image is 360, crop 40$ off of the image (20% from each edge)
+    # crop out most of floor from fisheye view. typically we see
+    # 210deg, so if the image is 360, crop 40$ off of the image (20% from each edge)
     image_size = img.size[0]
     img = img.crop(
         (

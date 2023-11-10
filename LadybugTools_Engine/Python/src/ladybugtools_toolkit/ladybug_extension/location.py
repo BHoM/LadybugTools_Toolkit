@@ -1,10 +1,11 @@
-from typing import List
-from warnings import warn
-
+"""Methods for manipulating Ladybug Location objects."""
 import numpy as np
 from ladybug.location import Location
 
+from ..bhom import decorator_factory
 
+
+@decorator_factory()
 def location_to_string(location: Location) -> str:
     """Return a simple string representation of the Location object.
 
@@ -19,14 +20,19 @@ def location_to_string(location: Location) -> str:
     return f"{location.country.strip()} - {location.city.strip()}"
 
 
+@decorator_factory()
 def average_location(
-    locations: List[Location], weights: List[float] = None
+    locations: list[Location], weights: list[float] = None
 ) -> Location:
-    """Create an average location from a list of locations. This will use weighting if provided to adjust latitude/longitude values.
+    """Create an average location from a list of locations.
+    This will use weighting if provided to adjust latitude/longitude values.
 
     Args:
-        locations (List[Location]): A set of ladybug Location objects.
-        weights (List[float], optional): A list of weights for each location. Defaults to None which evenly weights each location.
+        locations (list[Location]):
+            A set of ladybug Location objects.
+        weights (list[float], optional):
+            A list of weights for each location.
+            Defaults to None which evenly weights each location.
 
     Returns:
         Location: A synthetic location that is the average of all locations.

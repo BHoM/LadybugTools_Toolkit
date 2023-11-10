@@ -1,7 +1,11 @@
+"""Methods for handling CFD results for spatial comfort assessments."""
+# pylint: disable=E0401
 import json
 import warnings
 from io import StringIO
 from pathlib import Path
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd

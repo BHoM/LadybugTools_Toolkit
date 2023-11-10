@@ -1,35 +1,34 @@
-from typing import Tuple
-
+"""Methods for calculating spatial comfort metrics."""
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from ...ladybug_extension.analysis_period import (
+from ...ladybug_extension.analysisperiod import (
     AnalysisPeriod,
     analysis_period_to_datetimes,
 )
 
 
 def shaded_unshaded_interpolation(
-    unshaded_value: Tuple[float],
-    shaded_value: Tuple[float],
-    total_irradiance: Tuple[Tuple[float]],
-    sky_view: Tuple[float],
-    sun_up: Tuple[bool],
+    unshaded_value: tuple[float],
+    shaded_value: tuple[float],
+    total_irradiance: tuple[tuple[float]],
+    sky_view: tuple[float],
+    sun_up: tuple[bool],
 ) -> pd.DataFrame:
     """Interpolate between the unshaded and shaded input values, using the total irradiance and sky
         view as proportional values for each point.
 
     Args:
-        unshaded_value (Tuple[float]):
+        unshaded_value (tuple[float]):
             A list of hourly values for the unshaded case.
-        shaded_value (Tuple[float]):
+        shaded_value (tuple[float]):
             A collection of hourly values for the shaded case.
-        total_irradiance (Tuple[Tuple[float]]):
+        total_irradiance (tuple[tuple[float]]):
             An array with the total irradiance for each point for each hour.
-        sky_view (Tuple[float]):
+        sky_view (tuple[float]):
             A list with the sky view for each point.
-        sun_up (Tuple[bool]):
+        sun_up (tuple[bool]):
             A list of booleans stating whether the sun is up.
 
     Returns:
@@ -59,7 +58,8 @@ def shaded_unshaded_interpolation(
     # Check for shape alignment
     if not len(sky_view) == total_irradiance.shape[1]:
         raise ValueError(
-            f"Number of sky-view values must match length of total irradiance values ({len(sky_view)} != {total_irradiance.shape[1]})"
+            "Number of sky-view values must match length of total irradiance values "
+            f"({len(sky_view)} != {total_irradiance.shape[1]})"
         )
     if (
         len(unshaded_value)
@@ -68,7 +68,8 @@ def shaded_unshaded_interpolation(
         != len(sun_up)
     ):
         raise ValueError(
-            f"Number of points-in-time must match for unshaded, shaded, total_irradiance and sun_up values ({len(sky_view)} != {total_irradiance.shape[1]})"
+            "Number of points-in-time must match for unshaded, shaded, "
+            f"total_irradiance and sun_up values ({len(sky_view)} != {total_irradiance.shape[1]})"
         )
 
     # get the target range into which the value should fit following interpolation
@@ -115,8 +116,8 @@ def shaded_unshaded_interpolation(
 
 def rwdi_london_thermal_comfort_category(
     utci: pd.DataFrame,
-    comfort_limits: Tuple[float] = (0, 32),
-    hours: Tuple[float] = (8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+    comfort_limits: tuple[float] = (0, 32),
+    hours: tuple[float] = (8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
 ) -> pd.Series:
     """From a dataframe containing annual hourly spatial UTCI values,
     categorise each column as one of the RWDI London Thermal Comfort
@@ -130,10 +131,10 @@ def rwdi_london_thermal_comfort_category(
     Args:
         utci (pd.DataFrame):
             A temporo-spatial UTCI data collection.
-        comfort_limits (Tuple[float], optional):
+        comfort_limits (tuple[float], optional):
             The UTCI values within which "comfortable" is defined.
             Defaults to (0, 32).
-        hours (Tuple[float], optional):
+        hours (tuple[float], optional):
             The hours to include in this assessment.
             Defaults to (8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20).
 

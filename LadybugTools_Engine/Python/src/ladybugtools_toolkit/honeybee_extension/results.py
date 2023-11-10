@@ -1,49 +1,59 @@
+"""Methods for loading Honeybee results files into Pandas DataFrames."""
+
+# pylint: disable=E0401
 import datetime
 import warnings
 from pathlib import Path
-from typing import Callable, List, Union
+from typing import Callable
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
 from ladybug.sql import SQLiteResult
-
+from ..bhom import decorator_factory
 from ..ladybug_extension.datacollection import collection_to_series
 
 
-def load_files(func: Callable, files: List[Union[str, Path]]) -> pd.DataFrame:
+def _load_files(func: Callable, files: list[Path]) -> pd.DataFrame:
     """Load a set of input files and combine into a DataFrame with filename as header.
 
     Args:
         func (Callable):
             The function to use to load each of the files.
-        files (List[Union[str, Path]]):
+        files (list[Path]):
             A list of paths to the input files.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input files.
     """
+
     if isinstance(files, (str, Path)):
         files = [files]
+
+    files = [Path(i) for i in files]
 
     if len(files) == 0:
         raise FileNotFoundError("No files of the specified type were found.")
 
-    filenames = [Path(i).stem for i in files]
+    filenames = [i.stem for i in files]
     if len(set(filenames)) != len(filenames):
-        err_str = f"There are duplicate filenames in the list of input files for {func.__name__}. This may cause issues when trying to reference specific results sets!"
+        err_str = (
+            "There are duplicate filenames in the list of input files for "
+            f"{func.__name__}. This may cause issues when trying to reference "
+            "specific results sets!"
+        )
         warnings.warn(err_str)
 
     return pd.concat([func(i) for i in files], axis=1).sort_index(axis=1)
 
 
-def load_ill_file(
-    ill_file: Union[str, Path], sun_up_hours_file: Union[str, Path] = None
-) -> pd.DataFrame:
+def _load_ill_file(ill_file: Path, sun_up_hours_file: Path = None) -> pd.DataFrame:
     """Load a Radiance .ill file and return a DataFrame with the data.
 
     Args:
-        ill_file (Union[str, Path]): The path to the Radiance .ill file.
-        sun_up_hours_file (Union[str, Path], optional): The path to the sun-up-hours.txt file.
+        ill_file (Path): The path to the Radiance .ill file.
+        sun_up_hours_file (Path, optional): The path to the sun-up-hours.txt file.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the .ill file.
@@ -52,6 +62,8 @@ def load_ill_file(
 
     if sun_up_hours_file is None:
         sun_up_hours_file = ill_file.parent / "sun-up-hours.txt"
+    else:
+        sun_up_hours_file = Path(sun_up_hours_file)
 
     df = pd.read_csv(ill_file, sep=r"\s+", header=None, index_col=None).T
     df.columns = pd.MultiIndex.from_product([[ill_file.stem], df.columns])
@@ -59,23 +71,26 @@ def load_ill_file(
     return df
 
 
-def load_ill(ill_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
+@decorator_factory()
+def load_ill(ill_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .ill file, or list of Radiance .ill files and return a combined DataFrame with the data.
 
     Args:
-        ill_files (Union[str, Path, List[Union[str, Path]]]): A single .ill file, or a list of .ill files.
+        ill_files (Path | list[Path]):
+            A single .ill file, or a list of .ill files.
 
     Returns:
-        pd.DataFrame: A DataFrame containing the data from the input .ill files.
+        pd.DataFrame:
+            A DataFrame containing the data from the input .ill files.
     """
-    return load_files(load_ill_file, ill_files)
+    return _load_files(_load_ill_file, ill_files)
 
 
-def load_npy_file(npy_file: Union[str, Path]) -> pd.DataFrame:
+def _load_npy_file(npy_file: Path) -> pd.DataFrame:
     """Load a Honeybee-Radiance .npy file and return a DataFrame with the data.
 
     Args:
-        npy_file (Union[str, Path]):
+        npy_file (Path):
             The path to the Radiance/Honeybee .npy file.
 
     Returns:
@@ -96,23 +111,25 @@ def load_npy_file(npy_file: Union[str, Path]) -> pd.DataFrame:
     return df
 
 
-def load_npy(npy_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
-    """Load a single Honeybee-Radiance .npy file, or list of Honeybee-Radiance .npy files and return a combined DataFrame with the data.
+@decorator_factory()
+def load_npy(npy_files: Path | list[Path]) -> pd.DataFrame:
+    """Load a single Honeybee-Radiance .npy file, or list of Honeybee-Radiance
+    .npy files and return a combined DataFrame with the data.
 
     Args:
-        npy_files (Union[str, Path, List[Union[str, Path]]]): A single .npy file, or a list of .npy files.
+        npy_files (Path | list[Path]): A single .npy file, or a list of .npy files.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .npy files.
     """
-    return load_files(load_npy_file, npy_files)
+    return _load_files(_load_npy_file, npy_files)
 
 
-def load_pts_file(pts_file: Union[str, Path]) -> pd.DataFrame:
+def _load_pts_file(pts_file: Path) -> pd.DataFrame:
     """Load a Radiance .pts file and return a DataFrame with the data.
 
     Args:
-        pts_file (Union[str, Path]): The path to the Radiance .pts file.
+        pts_file (Path): The path to the Radiance .pts file.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the .pts file.
@@ -125,25 +142,26 @@ def load_pts_file(pts_file: Union[str, Path]) -> pd.DataFrame:
     return df
 
 
-def load_pts(pts_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
+@decorator_factory()
+def load_pts(pts_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .pts file, or list of Radiance .pts files and return a combined DataFrame with the data.
 
     Args:
-        pts_files (Union[str, Path, List[Union[str, Path]]]): A single .pts file, or a list of .pts files.
+        pts_files (Path | list[Path]): A single .pts file, or a list of .pts files.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .pts files.
     """
-    return load_files(load_pts_file, pts_files)
+    return _load_files(_load_pts_file, pts_files)
 
 
-def load_res_file(res_file: Union[str, Path]) -> pd.Series:
+def _load_res_file(res_file: Path) -> pd.Series:
     """Load a Radiance .res file and return a DataFrame with the data.
 
     NOTE: This also works with daylight metrics files (da, cda, udi, udi_lower and udi_upper).
 
     Args:
-        res_file (Union[str, Path]): The path to the Radiance .res file.
+        res_file (Path): The path to the Radiance .res file.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the .res file.
@@ -154,25 +172,26 @@ def load_res_file(res_file: Union[str, Path]) -> pd.Series:
     return series
 
 
-def load_res(res_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
+@decorator_factory()
+def load_res(res_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .res file, or list of Radiance .res files and return a combined DataFrame with the data.
 
     NOTE: This also works with daylight metrics files (da, cda, udi, udi_lower and udi_upper).
 
     Args:
-        res_files (Union[str, Path, List[Union[str, Path]]]): A single .res file, or a list of .res files.
+        res_files (Path | list[Path]): A single .res file, or a list of .res files.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .res files.
     """
-    return load_files(load_res_file, res_files)
+    return _load_files(_load_res_file, res_files)
 
 
-def load_sql_file(sql_file: Union[str, Path]) -> pd.DataFrame:
+def _load_sql_file(sql_file: Path) -> pd.DataFrame:
     """Return a DataFrame with hourly values along rows and variables along columns.
 
     Args:
-        sql_file (Union[str, Path]): The path to the EnergyPlus .sql file.
+        sql_file (Path): The path to the EnergyPlus .sql file.
 
     Returns:
         pd.DataFrame: A pandas DataFrame containing the data from the .sql file.
@@ -228,29 +247,33 @@ def load_sql_file(sql_file: Union[str, Path]) -> pd.DataFrame:
     return df
 
 
-def load_sql(sql_files: Union[str, Path, List[Union[str, Path]]]) -> pd.DataFrame:
-    """Load a single EnergyPlus .sql file, or list of EnergyPlus .sql files and return a combined DataFrame with the data.
+@decorator_factory()
+def load_sql(sql_files: Path | list[Path]) -> pd.DataFrame:
+    """Load a single EnergyPlus .sql file, or list of EnergyPlus .sql
+    files and return a combined DataFrame with the data.
 
     Args:
-        sql_files (Union[str, Path, List[Union[str, Path]]]): A single .sql file, or a list of .sql files.
+        sql_files (Path | list[Path]): A single .sql file, or a list of .sql files.
 
     Returns:
         pd.DataFrame: A DataFrame containing the data from the input .sql files.
     """
-    return load_files(load_sql_file, sql_files)
+    return _load_files(_load_sql_file, sql_files)
 
 
-def load_sun_up_hours(
-    sun_up_hours_file: Union[str, Path], year: int = 2017
-) -> pd.DatetimeIndex:
+@decorator_factory()
+def load_sun_up_hours(sun_up_hours_file: Path, year: int = 2017) -> pd.DatetimeIndex:
     """Load a HB-Radiance generated sun-up-hours.txt file and return a DatetimeIndex with the data.
 
     Args:
-        sun_up_hours_file (Union[str, Path]): Path to the sun-up-hours.txt file.
-        year (int, optional): The year to be used to generate the DatetimeIndex. Defaults to 2017.
+        sun_up_hours_file (Path):
+            Path to the sun-up-hours.txt file.
+        year (int, optional):
+            The year to be used to generate the DatetimeIndex. Defaults to 2017.
 
     Returns:
-        pd.DatetimeIndex: A Pandas DatetimeIndex with the data from the sun-up-hours.txt file.
+        pd.DatetimeIndex:
+            A Pandas DatetimeIndex with the data from the sun-up-hours.txt file.
     """
 
     sun_up_hours_file = Path(sun_up_hours_file)
@@ -262,6 +285,7 @@ def load_sun_up_hours(
     return index
 
 
+@decorator_factory()
 def make_annual(df: pd.DataFrame) -> pd.DataFrame:
     """Convert a DataFrame with partial annual data to a DataFrame with annual data.
 

@@ -1,5 +1,6 @@
-from __future__ import annotations
-
+"""Helper methods used throughout the ladybugtools_toolkit."""
+# pylint: disable=C0302
+# pylint: disable=E0401
 import calendar
 import contextlib
 import copy
@@ -12,11 +13,17 @@ import warnings
 from datetime import datetime, timedelta
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
+
+# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
+
+from caseconverter import snakecase
 from ladybug.datatype.temperature import WetBulbTemperature
+from honeybee.config import folders as hb_folders
+from ladybug_geometry.geometry2d import Vector2D
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 from ladybug.skymodel import (
@@ -28,26 +35,38 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
-from matplotlib.ticker import FuncFormatter
+from meteostat import Point, Hourly
 from scipy.stats import weibull_min
 from tqdm import tqdm
+from .bhom import decorator_factory, CONSOLE_LOGGER
+from .ladybug_extension.dt import lb_datetime_from_datetime
 
 
-@FuncFormatter
-def ZeroPadPercentFormatter(x: float) -> str:
-    """A matplotlib formatter for percentages that pads with zeros.
+@decorator_factory()
+def sanitise_string(string: str) -> str:
+    """Sanitise a string so that only path-safe characters remain."""
 
-    Args:
-        x (float): The value to be formatted.
+    keep_characters = r"[^.A-Za-z0-9_-]"
 
-    Returns:
-        str: The formatted string.
-    """
-
-    return f"{x:5.0%}"
+    return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
 
 
-def default_hour_analysis_periods() -> List[AnalysisPeriod]:
+def convert_keys_to_snake_case(d: dict):
+    """Given a dictionary, convert all keys to snake_case."""
+    keys_to_skip = ["_t"]
+    if isinstance(d, dict):
+        return {
+            snakecase(k) if k not in keys_to_skip else k: convert_keys_to_snake_case(v)
+            for k, v in d.items()
+        }
+    if isinstance(d, list):
+        return [convert_keys_to_snake_case(x) for x in d]
+
+    return d
+
+
+@decorator_factory()
+def default_hour_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning times of day."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -61,7 +80,8 @@ def default_hour_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def default_month_analysis_periods() -> List[AnalysisPeriod]:
+@decorator_factory()
+def default_month_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning month of year."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -75,7 +95,8 @@ def default_month_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def default_combined_analysis_periods() -> List[AnalysisPeriod]:
+@decorator_factory()
+def default_combined_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning combinations of time of day and month of year."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -95,8 +116,10 @@ def default_combined_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def default_analysis_periods() -> List[AnalysisPeriod]:
-    """A set of generic Analysis Period objects, spanning all predefined combinations of time of ady and month of year."""
+@decorator_factory()
+def default_analysis_periods() -> list[AnalysisPeriod]:
+    """A set of generic Analysis Period objects, spanning all predefined
+    combinations of time of day and month of year."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
         aps = [
@@ -109,20 +132,22 @@ def default_analysis_periods() -> List[AnalysisPeriod]:
     return aps
 
 
-def chunks(lst: List[Any], chunksize: int):
+@decorator_factory()
+def chunks(lst: list[Any], chunksize: int):
     """Partition an iterable into lists of length "chunksize".
 
     Args:
-        lst (List[Any]): The list to be partitioned.
+        lst (list[Any]): The list to be partitioned.
         chunksize (int): The size of each partition.
 
     Yields:
-        List[Any]: A list of length "chunksize".
+        list[Any]: A list of length "chunksize".
     """
     for i in range(0, len(lst), chunksize):
         yield lst[i : i + chunksize]
 
 
+@decorator_factory()
 def scrape_weather(
     station: str,
     start_date: str = "1970-01-01",
@@ -131,7 +156,7 @@ def scrape_weather(
     resample: bool = False,
 ) -> pd.DataFrame:
     """Scrape historic data from global airport weather stations using their ICAO codes
-        (https://en.wikipedia.org/wiki/List_of_airports_by_IATA_and_ICAO_code)
+        (https://en.wikipedia.org/wiki/list_of_airports_by_IATA_and_ICAO_code)
 
     Args:
         station (str):
@@ -158,7 +183,34 @@ def scrape_weather(
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
     # Scrape data from source website (https://mesonet.agron.iastate.edu/request/download.phtml)
-    uri = f"https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station={station}&year1={start_date.year}&month1={start_date.month}&day1={start_date.day}&year2={end_date.year}&month2={end_date.month}&day2={end_date.day}&tz=Etc%2FUTC&format=onlycomma&latlon=yes&elev=yes&missing=null&trace=null&direct=no&data=tmpc&data=dwpc&data=relh&data=drct&data=sknt&data=alti&data=p01m&data=vsby&data=skyc1&data=skyc2&data=skyc3"
+    uri = (
+        "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
+        f"station={station}&"
+        f"year1={start_date.year}&"
+        f"month1={start_date.month}&"
+        f"day1={start_date.day}&"
+        f"year2={end_date.year}&"
+        f"month2={end_date.month}&"
+        f"day2={end_date.day}&"
+        "tz=Etc%2FUTC&"
+        "format=onlycomma&"
+        "latlon=yes&"
+        "elev=yes&"
+        "missing=null&"
+        "trace=null&"
+        "direct=no&"
+        "data=tmpc&"
+        "data=dwpc&"
+        "data=relh&"
+        "data=drct&"
+        "data=sknt&"
+        "data=alti&"
+        "data=p01m&"
+        "data=vsby&"
+        "data=skyc1&"
+        "data=skyc2&"
+        "data=skyc3"
+    )
     df = pd.read_csv(
         uri,
         header=0,
@@ -305,11 +357,12 @@ def scrape_weather(
     return df
 
 
-def rolling_window(array: List[Any], window: int):
+@decorator_factory()
+def rolling_window(array: list[Any], window: int):
     """Throwaway function here to roll a window along a list.
 
     Args:
-        array (List[Any]):
+        array (list[Any]):
             A 1D list of some kind.
         window (int):
             The size of the window to apply to the list.
@@ -319,7 +372,7 @@ def rolling_window(array: List[Any], window: int):
         returns [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]]
 
     Returns:
-        List[List[Any]]:
+        list[list[Any]]:
             The resulting, "windowed" list.
     """
 
@@ -332,11 +385,20 @@ def rolling_window(array: List[Any], window: int):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
+class DecayMethod(Enum):
+    """An enumeration of decay methods."""
+
+    LINEAR = auto()
+    PARABOLIC = auto()
+    SIGMOID = auto()
+
+
+@decorator_factory()
 def proximity_decay(
     value: float,
     distance_to_value: float,
     max_distance: float,
-    decay_method: str = "linear",
+    decay_method: DecayMethod = DecayMethod.LINEAR,
 ) -> float:
     """Calculate the "decayed" value based on proximity (up to a maximum distance).
 
@@ -348,8 +410,8 @@ def proximity_decay(
         max_distance (float):
             The maximum distance to which magnitude is to be distributed. Beyond this, the input
             value is 0.
-        decay_method (str, optional):
-            A type of distribution (the shape of the distribution profile). Defaults to "linear".
+        decay_method (DecayMethod, optional):
+            A type of distribution (the shape of the distribution profile). Defaults to "DecayMethod.LINEAR".
 
     Returns:
         float:
@@ -358,16 +420,17 @@ def proximity_decay(
 
     distance_to_value = np.interp(distance_to_value, [0, max_distance], [0, 1])
 
-    if decay_method == "linear":
+    if decay_method == DecayMethod.LINEAR:
         return (1 - distance_to_value) * value
-    if decay_method == "parabolic":
+    if decay_method == DecayMethod.PARABOLIC:
         return (-(distance_to_value**2) + 1) * value
-    if decay_method == "sigmoid":
+    if decay_method == DecayMethod.SIGMOID:
         return (1 - (0.5 * (np.sin(distance_to_value * np.pi - np.pi / 2) + 1))) * value
 
     raise ValueError(f"Unknown curve type: {decay_method}")
 
 
+@decorator_factory()
 def timedelta_tostring(time_delta: timedelta) -> str:
     """timedelta objects don't have a nice string representation, so this function converts them.
 
@@ -384,6 +447,7 @@ def timedelta_tostring(time_delta: timedelta) -> str:
     return f"{hours:02d}:{minutes:02d}"
 
 
+@decorator_factory()
 def decay_rate_smoother(
     series: pd.Series,
     difference_threshold: float = -10,
@@ -434,6 +498,7 @@ def decay_rate_smoother(
     return new_series
 
 
+@decorator_factory()
 def cardinality(direction_angle: float, directions: int = 16):
     """Returns the cardinal orientation of a given angle, where that angle is related to north at
         0 degrees.
@@ -523,6 +588,7 @@ def cardinality(direction_angle: float, directions: int = 16):
     return arr[(val % directions)]
 
 
+@decorator_factory()
 def angle_from_cardinal(cardinal_direction: str) -> float:
     """
     For a given cardinal direction, return the corresponding angle in degrees.
@@ -577,11 +643,11 @@ def angle_from_cardinal(cardinal_direction: str) -> float:
     return lookup[cardinal_direction]
 
 
-def angle_from_north(vector: List[float]) -> float:
+def angle_from_north(vector: list[float]) -> float:
     """For an X, Y vector, determine the clockwise angle to north at [0, 1].
 
     Args:
-        vector (List[float]):
+        vector (list[float]):
             A vector of length 2.
 
     Returns:
@@ -594,120 +660,49 @@ def angle_from_north(vector: List[float]) -> float:
     return np.rad2deg((angle1 - angle2) % (2 * np.pi))
 
 
-def angle_to_vector(_angle_from_north: float) -> List[float]:
-    """Return the X, Y vector from of an angle from north at 0-degrees."""
-    if (_angle_from_north > 360) or (_angle_from_north < 0):
-        raise ValueError(
-            "angle_from_north must be between 0 and 360 degrees (inclusive)."
-        )
-
-    _angle_from_north = np.radians(_angle_from_north)
-
-    return np.sin(_angle_from_north), np.cos(_angle_from_north)
-
-
-def sanitise_string(string: str) -> str:
-    """Sanitise a string so that only path-safe characters remain."""
-    keep_characters = r"[^.A-Za-z0-9_-]"
-    return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
-
-
-def stringify_df_header(columns: List[Any]) -> List[str]:
-    """Convert a list of objects into their string represenations. This
-    method is mostly used for making DataFrames parqeut serialisable.
-    """
-
-    return [str(i) for i in columns]
-
-
-def unstringify_df_header(columns: List[str]) -> List[Any]:
-    """Convert a list of strings into a set of objecst capable of being used
-    as DataFrame column headers.
-    """
-
-    evaled = []
-    for i in columns:
-        try:
-            evaled.append(eval(i))  # pylint: disable=eval-used
-        except NameError:
-            evaled.append(i)
-
-    if all("(" in i for i in str(evaled)):
-        return pd.MultiIndex.from_tuples(evaled)
-    return evaled
-
-
-def store_dataset(
-    dataframe: pd.DataFrame, target_path: Path, downcast: bool = True
-) -> Path:
-    """Serialise a pandas DataFrame as a parquet file, including pre-processing to ensure it is serialisable, and optional downcasting to samller dtypes.
+def angle_to_vector(clockwise_angle_from_north: float) -> list[float]:
+    """Return the X, Y vector from of an angle from north at 0-degrees.
 
     Args:
-        dataframe (pd.DataFrame):
-            The dataframe to be serialised
-        target_path (Path):
-            The target file for storage.
-        downcast (bool, optional):
-            Optinal downcasting to reduce dataframe dtype complexity. Defaults to True.
+        clockwise_angle_from_north (float):
+            The angle from north in degrees clockwise from [0, 360], though
+            any number can be input here for angles greater than a full circle.
 
     Returns:
-        Path:
-            The path to the stored dataset.
+        list[float]:
+            A vector of length 2.
     """
 
-    target_path = Path(target_path)
+    clockwise_angle_from_north = np.radians(clockwise_angle_from_north)
 
-    if "parquet" not in target_path.suffix:
-        raise ValueError('This method only currently works for "*.parquet" files.')
-
-    if downcast:
-        # downcast dataframe type to save on storage
-        for col, _type in dataframe.dtypes.items():
-            if _type == "float64":
-                dataframe[col] = dataframe[col].astype(np.float32)
-            if _type == "int64":
-                dataframe[col] = dataframe[col].astype(np.int16)
-
-    # prepare dataframe for storage as parquet
-    dataframe.columns = stringify_df_header(dataframe.columns)
-
-    # store dataframe
-    dataframe.to_parquet(target_path, compression="snappy")
-
-    return target_path
+    return np.sin(clockwise_angle_from_north), np.cos(clockwise_angle_from_north)
 
 
-def load_dataset(target_path: Path, upcast: bool = True) -> pd.DataFrame:
-    """Read a stored dataset, including upcasting to float64.
+def epw_wind_vectors(epw: EPW, normalise: bool = False) -> list[Vector2D]:
+    """Return a list of vectors from the EPW wind direction and speed.
 
     Args:
-        target_path (Path):
-            The dataset path to be loaded.
-        upcast (bool, optional):
-            Optional upcasting of data to enable downstream calculations without issues!
+        epw (EPW):
+            An EPW object.
+        normalise (bool, optional):
+            Normalise the vectors. Defaults to False.
 
     Returns:
-        pd.DataFrame:
-            The loaded dataset as a dataframe.
+        list[Vector2D]:
+            A list of vectors.
     """
 
-    df = pd.read_parquet(target_path)
+    wind_direction = np.array(epw.wind_direction)
+    vectors = np.array(angle_to_vector(wind_direction))
 
-    if upcast:
-        for col, _type in dict(df.dtypes).items():
-            if _type == "float32":
-                df[col].astype(np.float64)
-            elif _type in ["int32", "int16", "int8"]:
-                df[col].astype(np.int64)
+    if not normalise:
+        vectors *= np.array(epw.wind_speed)
 
-    df.columns = unstringify_df_header(df.columns)
-
-    return df
+    return [Vector2D(*i) for i in vectors.T]
 
 
 class OpenMeteoVariable(Enum):
-    """An enumeration of the variables, and their metadata available
-    from OpenMeteo."""
+    """An enumeration of variables available from OpenMeteo, and their metadata for handling returned values."""
 
     TEMPERATURE_2M = auto()
     DEWPOINT_2M = auto()
@@ -741,7 +736,7 @@ class OpenMeteoVariable(Enum):
     SOIL_MOISTURE_100_TO_255CM = auto()
 
     @staticmethod
-    def __properties__() -> Dict[str, Dict[str, Union[str, float]]]:
+    def __properties__() -> dict[str, dict[str, str | float]]:
         """A dictionary of the properties of each variable."""
         return {
             OpenMeteoVariable.TEMPERATURE_2M.value: {
@@ -957,7 +952,7 @@ class OpenMeteoVariable(Enum):
         }
 
     @classmethod
-    def from_string(cls, name: str) -> OpenMeteoVariable:
+    def from_string(cls, name: str) -> "OpenMeteoVariable":
         """."""
         d = {
             "temperature_2m": cls.TEMPERATURE_2M,
@@ -1036,12 +1031,13 @@ class OpenMeteoVariable(Enum):
         return value * self.target_multiplier
 
 
+@decorator_factory()
 def scrape_openmeteo(
     latitude: float,
     longitude: float,
-    start_date: Union[datetime, str],
-    end_date: Union[datetime, str],
-    variables: Tuple[OpenMeteoVariable] = None,
+    start_date: datetime | str,
+    end_date: datetime | str,
+    variables: tuple[OpenMeteoVariable] = None,
     convert_units: bool = False,
 ) -> pd.DataFrame:
     """Obtain historic hourly data from Open-Meteo.
@@ -1052,14 +1048,18 @@ def scrape_openmeteo(
             The latitude of the target site, in degrees.
         longitude (float):
             The longitude of the target site, in degrees.
-        start_date (Union[datetime, str]):
+        start_date (datetime | str):
             The start-date from which records will be obtained.
-        end_date (Union[datetime, str]):
+        end_date (datetime | str):
             The end-date beyond which records will be ignored.
-        variables (Tuple[OpenMeteoVariable]):
+        variables (tuple[OpenMeteoVariable]):
             A list of variables to query. If None, then all variables will be queried.
         convert_units (bool, optional):
             Convert units output into more common units, and rename headers accordingly.
+
+    Note:
+        This method saves the data to a local cache, and will return the cached data if it is less
+        than 28 days old. This is to avoid unnecessary API calls.
 
     Returns:
         pd.DataFrame:
@@ -1088,9 +1088,25 @@ def scrape_openmeteo(
                 "All values in the variables tuple must be of type OpenMeteoVariable."
             )
 
+    _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_openmeteo"
+    _dir.mkdir(exist_ok=True, parents=True)
+    sp = (
+        _dir
+        / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{int(convert_units)}_{len(variables):02d}.h5"
+    )
+
+    if sp.exists():
+        if (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 28:
+            CONSOLE_LOGGER.info(f"Loading cached data from {sp}.")
+            return pd.read_hdf(sp, key="df")
+
     # construct query string
     var_strings = ",".join([i.openmeteo_name for i in variables])
-    query_string = f"https://archive-api.open-meteo.com/v1/era5?latitude={latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
+    query_string = (
+        "https://archive-api.open-meteo.com/v1/era5?latitude="
+        f"{latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&"
+        f"end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
+    )
 
     # request data
     with urllib.request.urlopen(query_string) as url:
@@ -1116,19 +1132,178 @@ def scrape_openmeteo(
             )
         except KeyError:
             pass
-    return pd.concat(new_df, axis=1)
+
+    df = pd.concat(new_df, axis=1)
+    df.to_hdf(sp, key="df", complevel=9, complib="blosc:zlib")
+
+    return df
 
 
-def weibull_directional(
-    binned_data: Dict[Tuple[float, float], List[float]]
+def scrape_meteostat(
+    latitude: float,
+    longitude: float,
+    start_date: datetime | str,
+    end_date: datetime | str,
+    altitude: float = None,
+    convert_units: bool = False,
 ) -> pd.DataFrame:
-    """Calculate the weibull coefficients for a given set of binned data in the form {(low, high): [speeds], (low, high): [speeds]}, binned by the number of directions specified.
+    """Obtain historic hourly data from Meteostat.
+
     Args:
-        binned_data (Dict[Tuple[float, float], List[float]]):
+        latitude (float):
+            The latitude of the target site, in degrees.
+        longitude (float):
+            The longitude of the target site, in degrees.
+        start_date (datetime | str):
+            The start-date from which records will be obtained.
+        end_date (datetime | str):
+            The end-date beyond which records will be ignored.
+        altitude (float, optional):
+            The altitude of the target site, in metres. Defaults to None.
+        convert_units (bool, optional):
+            Convert units output into more common units, and rename headers accordingly.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame containing scraped data.
+    """
+
+    if latitude < -90 or latitude > 90:
+        raise ValueError("The latitude must be between -90 and 90 degrees.")
+    if longitude < -180 or longitude > 180:
+        raise ValueError("The longitude must be between -180 and 180 degrees.")
+
+    if isinstance(start_date, str):
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    if isinstance(end_date, str):
+        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
+    location = Point(latitude, longitude, altitude)
+    data = Hourly(location, start_date, end_date).fetch()
+
+    if len(data) == 0:
+        raise ValueError("No data was returned from Meteostat.")
+
+    if convert_units:
+        converter = {
+            "temp": [1, "Dry Bulb Temperature (C)"],
+            "dwpt": [1, "Dew Point Temperature (C)"],
+            "rhum": [1, "Relative Humidity (%)"],
+            "prcp": [1, "Liquid Precipitation Depth (mm)"],
+            "snow": [0.1, "Snow Depth (cm)"],
+            "wdir": [1, "Wind Direction (degrees)"],
+            "wspd": [1 / 3.6, "Wind Speed (m/s)"],
+            "wpgt": [1 / 3.6, "Wind Gust (m/s)"],
+            "pres": [100, "Atmospheric Station Pressure (Pa)"],
+            "tsun": [1, "One Hour Sunshine (minutes)"],
+            "coco": [1, "Present Weather (text)"],
+        }
+        weather_codes = {
+            1: "Clear",
+            2: "Fair",
+            3: "Cloudy",
+            4: "Overcast",
+            5: "Fog",
+            6: "Freezing Fog",
+            7: "Light Rain",
+            8: "Rain",
+            9: "Heavy Rain",
+            10: "Freezing Rain",
+            11: "Heavy Freezing Rain",
+            12: "Sleet",
+            13: "Heavy Sleet",
+            14: "Light Snowfall",
+            15: "Snowfall",
+            16: "Heavy Snowfall",
+            17: "Rain Shower",
+            18: "Heavy Rain Shower",
+            19: "Sleet Shower",
+            20: "Heavy Sleet Shower",
+            21: "Snow Shower",
+            22: "Heavy Snow Shower",
+            23: "Lightning",
+            24: "Hail",
+            25: "Thunderstorm",
+            26: "Heavy Thunderstorm",
+            27: "Storm",
+        }
+        temp = []
+        for col_name, col_values in data.items():
+            if col_name == "coco":
+                temp.append(
+                    pd.Series(
+                        col_values.map(weather_codes), name=converter[col_name][1]
+                    )
+                )
+            else:
+                temp.append(
+                    (col_values * converter[col_name][0]).rename(converter[col_name][1])
+                )
+        return pd.concat(temp, axis=1)
+
+    return data
+
+
+@decorator_factory()
+def get_soil_temperatures(
+    latitude: float,
+    longitude: float,
+    start_date: datetime | str,
+    end_date: datetime | str,
+    include_dbt: bool = False,
+) -> pd.DataFrame:
+    """Query Open-Meteo for soil temperature data.
+
+    Args:
+        latitude (float):
+            The latitude of the target site, in degrees.
+        longitude (float):
+            The longitude of the target site, in degrees.
+        start_date (datetime | str):
+            The start-date from which records will be obtained.
+        end_date (datetime | str):
+            The end-date beyond which records will be ignored.
+        include_dbt (bool, optional):
+            Include dry bulb temperature in the output. Defaults to False.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame containing scraped data.
+    """
+
+    variables = [
+        OpenMeteoVariable.SOIL_TEMPERATURE_0_TO_7CM,
+        OpenMeteoVariable.SOIL_TEMPERATURE_7_TO_28CM,
+        OpenMeteoVariable.SOIL_TEMPERATURE_28_TO_100CM,
+        OpenMeteoVariable.SOIL_TEMPERATURE_100_TO_255CM,
+    ]
+    if include_dbt:
+        variables.append(OpenMeteoVariable.TEMPERATURE_2M)
+
+    return scrape_openmeteo(
+        latitude=latitude,
+        longitude=longitude,
+        start_date=start_date,
+        end_date=end_date,
+        variables=variables,
+        convert_units=True,
+    )
+
+
+@decorator_factory()
+def weibull_directional(
+    binned_data: dict[tuple[float, float], list[float]]
+) -> pd.DataFrame:
+    """Calculate the weibull coefficients for a given set of binned data in the form
+    {(low, high): [speeds], (low, high): [speeds]}, binned by the number of
+    directions specified.
+    Args:
+        binned_data (dict[tuple[float, float], list[float]]):
             A dictionary of binned wind speed data.
     Returns:
         pd.DataFrame:
-            A DataFrame with (direction_bin_low, direction_bin_high) as index, and weibull coefficients as columns.
+            A DataFrame with (direction_bin_low, direction_bin_high) as index,
+            and weibull coefficients as columns.
     """
     d = {}
     for (low, high), speeds in tqdm(
@@ -1139,21 +1314,23 @@ def weibull_directional(
     return pd.DataFrame.from_dict(d, orient="index", columns=["k", "loc", "c"])
 
 
-def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
+@decorator_factory()
+def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
     """Estimate the two-parameter Weibull parameters for a set of wind speeds.
 
     Args:
-        wind_speeds (List[float]):
+        wind_speeds (list[float]):
             A list of wind speeds.
 
     Returns:
         k (float):
-            Shape parameter
+            Shape parameter.
         loc (float):
             Location parameter.
         c (float):
             Scale parameter.
     """
+
     ws = np.array(wind_speeds)
     ws = ws[ws != 0]
     ws = ws[~np.isnan(ws)]
@@ -1166,13 +1343,14 @@ def weibull_pdf(wind_speeds: List[float]) -> Tuple[float]:
         return (np.nan, np.nan, np.nan)  # type: ignore
 
 
-def circular_weighted_mean(angles: List[float], weights: List[float] = None):
+@decorator_factory()
+def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     """Get the average angle from a set of weighted angles.
 
     Args:
-        angles (List[float]):
+        angles (list[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
-        weights (List[float]):
+        weights (list[float]):
             A collection of weights, which must sum to 1. Defaults to None which will equally weight all angles.
 
     Returns:
@@ -1206,11 +1384,12 @@ def circular_weighted_mean(angles: List[float], weights: List[float] = None):
     return mean
 
 
-def wind_direction_average(angles: List[float]) -> float:
+@decorator_factory()
+def wind_direction_average(angles: list[float]) -> float:
     """Get the average wind direction from a set of wind directions.
 
     Args:
-        angles (List[float]):
+        angles (list[float]):
             A collection of equally weighted wind directions, in degrees from North (0).
 
     Returns:
@@ -1258,29 +1437,39 @@ def wind_speed_at_height(
             The original height of the wind speed being translated.
         target_height (float):
             The target height of the wind speed being translated.
+
         **kwargs:
-            Additional keyword arguments to be passed to the
-            wind_speed_at_height function. This includes:
-                terrain_roughness_length (float):
-                    A value describing how rough the ground is. Default is
-                    0.03 for Open flat terrain; grass, few isolated obstacles.
-                log_function (bool, optional):
-                    Set to True to used the log transformation method, or
-                    False for the exponent method. Defaults to True.
+            Additional keyword arguments to pass to the translation method. These include:
+            terrain_roughness_length (float):
+                A value describing how rough the ground is. Default is
+                0.03 for Open flat terrain; grass, few isolated obstacles.
+            log_function (bool, optional):
+                Set to True to used the log transformation method, or
+                False for the exponent method. Defaults to True.
 
     Notes:
         Terrain roughness lengths can be found in the following table:
-            | Terrain description                               |  z0 (m)   |
-            ----------------------------------------------------|-----------|
-            | Open sea, Fetch at least 5 km                     |    0.0002 |
-            | Mud flats, snow; no vegetation, no obstacles      |    0.005  |
-            | Open flat terrain; grass, few isolated obstacle   |    0.03   |
-            | Low crops; occasional large obstacles, x/H > 20   |    0.10   |
-            | High crops; scattered obstacles, 15 < x/H < 20    |    0.25   |
-            | parkland, bushes; numerous obstacles, x/H ≈ 10    |    0.5    |
-            | Regular large obstacle coverage (suburb, forest)  |    1.0    |
-            | City centre with high- and low-rise buildings     |  ≥ 2      |
-            ----------------------------------------------------------------|
+
+        +---------------------------------------------------+-----------+
+        | Terrain description                               |  z0 (m)   |
+        +===================================================+===========+
+        | Open sea, Fetch at least 5 km                     |    0.0002 |
+        +---------------------------------------------------+-----------+
+        | Mud flats, snow; no vegetation, no obstacles      |    0.005  |
+        +---------------------------------------------------+-----------+
+        | Open flat terrain; grass, few isolated obstacle   |    0.03   |
+        +---------------------------------------------------+-----------+
+        | Low crops; occasional large obstacles, x/H > 20   |    0.10   |
+        +---------------------------------------------------+-----------+
+        | High crops; scattered obstacles, 15 < x/H < 20    |    0.25   |
+        +---------------------------------------------------+-----------+
+        | Parkland, bushes; numerous obstacles, x/H ≈ 10    |    0.5    |
+        +---------------------------------------------------+-----------+
+        | Regular large obstacle coverage (suburb, forest)  |    1.0    |
+        +---------------------------------------------------+-----------+
+        | City centre with high- and low-rise buildings     |    ≥ 2    |
+        +---------------------------------------------------+-----------+
+
 
     Returns:
         float:
@@ -1308,6 +1497,7 @@ def temperature_at_height(
     target_height: float,
     **kwargs,
 ) -> float:
+    # pylint: disable=C0301
     """Estimate the dry-bulb temperature at a given height from a referenced
         dry-bulb temperature at another height.
 
@@ -1319,7 +1509,7 @@ def temperature_at_height(
         target_height (float):
             The height to translate the reference temperature towards.
         **kwargs:
-            Additional keyword arguments to be passed to the temperature_at_height function. This includes:
+            Additional keyword arguments to pass to the translation method. These include:
             reduction_per_km_altitude_gain (float, optional):
                 The lapse rate of the atmosphere. Defaults to 0.0065 based
                 on https://scied.ucar.edu/learning-zone/atmosphere/change-atmosphere-altitude#:~:text=Near%20the%20Earth's%20surface%2C%20air,standard%20(average)%20lapse%20rate
@@ -1331,10 +1521,12 @@ def temperature_at_height(
         float:
             A translated air temperature.
     """
+    # pylint: enable=C0301
 
     if (target_height > 8000) or (reference_height > 8000):
         warnings.warn(
-            "The heights input into this calculation exist partially above the egde of the troposphere. This method is only valid below 8000m."
+            "The heights input into this calculation exist partially above "
+            "the egde of the troposphere. This method is only valid below 8000m."
         )
 
     lapse_rate = kwargs.get("lapse_rate", 0.0065)
@@ -1351,14 +1543,14 @@ def radiation_at_height(
     reference_height: float,
     **kwargs,
 ) -> float:
-    """Calculate the radiation at a given height, given a reference radiation
-        and height.
+    """Calculate the radiation at a given height, given a reference
+    radiation and height.
 
     References:
         Armel Oumbe, Lucien Wald. A parameterisation of vertical profile of
         solar irradiance for correcting solar fluxes for changes in terrain
-        elevation. Earth Observation and Water Cycle Science Conference,
-        Nov 2009, Frascati, Italy. pp.S05.
+        elevation. Earth Observation and Water Cycle Science Conference, Nov
+        2009, Frascati, Italy. pp.S05.
 
     Args:
         reference_value (float):
@@ -1368,10 +1560,9 @@ def radiation_at_height(
         reference_height (float, optional):
             The height at which the reference radiation was measured.
         **kwargs:
-            Additional keyword arguments to be passed to the
-            radiation_at_height function. This includes:
-                lapse_rate (float, optional):
-                    The lapse rate of the atmosphere. Defaults to 0.08.
+            Additional keyword arguments to pass to the translation method. These include:
+            lapse_rate (float, optional):
+                The lapse rate of the atmosphere. Defaults to 0.08.
 
     Returns:
         float:
@@ -1385,6 +1576,7 @@ def radiation_at_height(
     return reference_value + increase
 
 
+@decorator_factory()
 def air_pressure_at_height(
     reference_value: float,
     target_height: float,
@@ -1410,6 +1602,7 @@ def air_pressure_at_height(
     )
 
 
+@decorator_factory()
 def target_wind_speed_collection(
     epw: EPW, target_average_wind_speed: float, target_height: float
 ) -> HourlyContinuousCollection:
@@ -1445,6 +1638,7 @@ def target_wind_speed_collection(
     return epw.wind_speed * adjustment_factor
 
 
+@decorator_factory()
 def dry_bulb_temperature_at_height(
     epw: EPW, target_height: float
 ) -> HourlyContinuousCollection:
@@ -1465,6 +1659,7 @@ def dry_bulb_temperature_at_height(
     return dbt_collection
 
 
+@decorator_factory()
 def validate_timeseries(
     obj: Any,
     is_annual: bool = False,
@@ -1512,7 +1707,7 @@ def evaporative_cooling_effect(
     relative_humidity: float,
     evaporative_cooling_effectiveness: float,
     atmospheric_pressure: float = None,
-) -> List[float]:
+) -> list[float]:
     """
     For the inputs, calculate the effective DBT and RH values for the evaporative cooling
     effectiveness given.
@@ -1529,7 +1724,7 @@ def evaporative_cooling_effect(
             A pressure in Pa. Default is pressure at sea level (101325 Pa).
 
     Returns:
-        effective_dry_bulb_temperature, effective_relative_humidity (List[float]):
+        effective_dry_bulb_temperature, effective_relative_humidity (list[float]):
             A list of two values for the effective dry bulb temperature and relative humidity.
     """
 
@@ -1555,9 +1750,10 @@ def evaporative_cooling_effect(
     return [new_dbt, new_rh]
 
 
+@decorator_factory()
 def evaporative_cooling_effect_collection(
     epw: EPW, evaporative_cooling_effectiveness: float = 0.3
-) -> List[HourlyContinuousCollection]:
+) -> list[HourlyContinuousCollection]:
     """Calculate the effective DBT and RH considering effects of evaporative cooling.
 
     Args:
@@ -1568,7 +1764,7 @@ def evaporative_cooling_effect_collection(
             of Misting.
 
     Returns:
-        List[HourlyContinuousCollection]:
+        list[HourlyContinuousCollection]:
             Adjusted dry-bulb temperature and relative humidity collections incorporating
             evaporative cooling effect.
     """
@@ -1605,9 +1801,8 @@ def evaporative_cooling_effect_collection(
     return [dbt, rh]
 
 
-def remove_leap_days(
-    pd_object: Union[pd.DataFrame, pd.Series]
-) -> Union[pd.DataFrame, pd.Series]:
+@decorator_factory()
+def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     """A removal of all timesteps within a time-indexed pandas
     object where the day is the 29th of February."""
 
@@ -1619,12 +1814,13 @@ def remove_leap_days(
     return pd_object[~mask]
 
 
+@decorator_factory()
 def month_hour_binned_series(
     series: pd.Series,
-    month_bins: Tuple[Tuple[int]] = None,
-    hour_bins: Tuple[Tuple[int]] = None,
-    month_labels: Tuple[str] = None,
-    hour_labels: Tuple[str] = None,
+    month_bins: tuple[tuple[int]] = None,
+    hour_bins: tuple[tuple[int]] = None,
+    month_labels: tuple[str] = None,
+    hour_labels: tuple[str] = None,
     agg: str = "mean",
 ) -> pd.DataFrame:
     """Bin a series by hour and month.
@@ -1632,13 +1828,13 @@ def month_hour_binned_series(
     Args:
         series (pd.Series):
             A series with a datetime index.
-        hour_bins (Tuple[Tuple[int]], optional):
+        hour_bins (tuple[tuple[int]], optional):
             A list of lists of hours to bin by. Defaults to None which bins into the default_time_analysis_periods().
-        month_bins (Tuple[Tuple[int]], optional):
+        month_bins (tuple[tuple[int]], optional):
             A list of lists of months to bin by. Defaults to None which bins into default_month_analysis_periods.
-        hour_labels (List[str], optional):
+        hour_labels (list[str], optional):
             A list of labels to use for the hour bins. Defaults to None which just lists the hours in each bin.
-        month_labels (List[str], optional):
+        month_labels (list[str], optional):
             A list of labels to use for the month bins. Defaults to None which just lists the months in each bin.
         agg (str, optional):
             The aggregation method to use. Can be either "min", "mean", "median", "max" or "sum". Defaults to "mean".
@@ -1699,7 +1895,7 @@ def month_hour_binned_series(
         raise ValueError("hour_bins hours must be in the range 0-23")
     if (max(flat_months) != 12) or min(flat_months) != 1:
         raise ValueError("month_bins hours must be in the range 1-12")
-    # cehck for duplicates
+    # check for duplicates
     if len(set(flat_hours)) != len(flat_hours):
         raise ValueError("hour_bins hours must not contain duplicates")
     if len(set(flat_months)) != len(flat_months):
@@ -1745,3 +1941,78 @@ def month_hour_binned_series(
     df = pd.DataFrame(values, index=col_labels, columns=row_labels).T
 
     return df
+
+
+@decorator_factory()
+def sunrise_sunset(location: Location) -> pd.DataFrame():
+    """Calculate sunrise and sunset times for a given location and year. Includes
+    civil, nautical and astronomical twilight.
+
+    Args:
+        location (Location): The location to calculate sunrise and sunset for.
+
+    Returns:
+        pd.DataFrame: A DataFrame with sunrise and sunset times for each day of the year.
+    """
+
+    idx = pd.date_range("2017-01-01", "2017-12-31", freq="D")
+    sp = Sunpath.from_location(location)
+    df = pd.DataFrame(
+        [
+            {
+                **sp.calculate_sunrise_sunset_from_datetime(
+                    lb_datetime_from_datetime(ix), depression=0.5334
+                ),  # actual sunrise/set
+                **{
+                    f"civil {k}".replace("sunrise", "twilight start").replace(
+                        "sunset", "twilight end"
+                    ): v
+                    for k, v in sp.calculate_sunrise_sunset_from_datetime(
+                        lb_datetime_from_datetime(ix), depression=6
+                    ).items()
+                    if k != "noon"
+                },  # civil twilight
+                **{
+                    f"nautical {k}".replace("sunrise", "twilight start").replace(
+                        "sunset", "twilight end"
+                    ): v
+                    for k, v in sp.calculate_sunrise_sunset_from_datetime(
+                        lb_datetime_from_datetime(ix), depression=12
+                    ).items()
+                    if k != "noon"
+                },  # nautical twilight
+                **{
+                    f"astronomical {k}".replace("sunrise", "twilight start").replace(
+                        "sunset", "twilight end"
+                    ): v
+                    for k, v in sp.calculate_sunrise_sunset_from_datetime(
+                        lb_datetime_from_datetime(ix), depression=18
+                    ).items()
+                    if k != "noon"
+                },  # astronomical twilight
+            }
+            for ix in idx
+        ],
+        index=idx,
+    )
+    return df[
+        [
+            "astronomical twilight start",
+            "nautical twilight start",
+            "civil twilight start",
+            "sunrise",
+            "noon",
+            "sunset",
+            "civil twilight end",
+            "nautical twilight end",
+            "astronomical twilight end",
+        ]
+    ]
+
+
+@decorator_factory()
+def safe_filename(filename: str) -> str:
+    """Remove all non-alphanumeric characters from a filename."""
+    return "".join(
+        [c for c in filename if c.isalpha() or c.isdigit() or c == " "]
+    ).strip()

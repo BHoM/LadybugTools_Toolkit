@@ -30,38 +30,53 @@ namespace BH.oM.LadybugTools
     {
         [Description("The EPW file associated with this object.")]
         public virtual string EpwFile { get; set; } = string.Empty;
+        
         [Description("The ground material used in the processing of this object.")]
-        public virtual ILadybugToolsMaterial GroundMaterial { get; set; } = new OpaqueMaterial();
+        public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = new EnergyMaterial();
+        
         [Description("The shade material used in the processing of this object.")]
-        public virtual ILadybugToolsMaterial ShadeMaterial { get; set; } = new OpaqueMaterial();
+        public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; } = new EnergyMaterial();
+        
         [Description("The identifier used to distinguish existing results for this object.")]
         public virtual string Identifier { get; set; } = string.Empty;
 
         // simulated properties
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedDownTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection ShadedDownTemperature { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedUpTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection ShadedUpTemperature { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedRadiantTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection ShadedRadiantTemperature { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedLongwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection ShadedLongwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedShortwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection ShadedShortwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject ShadedMeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection ShadedMeanRadiantTemperature { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedDownTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection UnshadedDownTemperature { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedUpTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection UnshadedUpTemperature { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedRadiantTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection UnshadedRadiantTemperature { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedLongwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection UnshadedLongwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedShortwaveMeanRadiantTemperatureDelta { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection UnshadedShortwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        
         [Description("The simulated property from this object.")]
-        public virtual CustomObject UnshadedMeanRadiantTemperature { get; set; } = new CustomObject();
+        public virtual HourlyContinuousCollection UnshadedMeanRadiantTemperature { get; set; } = null;
     }
 }
 
