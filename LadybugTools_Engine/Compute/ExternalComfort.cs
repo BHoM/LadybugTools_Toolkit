@@ -58,11 +58,11 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Typology evaporative cooling effect must be a list of values 8760 long.");
                 return null;
             }
-if(typology.EvaporativeCoolingEffect.Where(x => x < 0 || x > 1).Any())
-{
-    BH.Engine.Base.Compute.RecordError("All Evaporative Cooling Effect values must between 0 and 1.");
-    return null;
-}
+            if(typology.EvaporativeCoolingEffect.Where(x => x < 0 || x > 1).Any())
+            {
+                BH.Engine.Base.Compute.RecordError("All Evaporative Cooling Effect values must between 0 and 1.");
+                return null;
+            }
 
             if (typology.RadiantTemperatureAdjustment.Count() != 8760)
             {
@@ -75,11 +75,11 @@ if(typology.EvaporativeCoolingEffect.Where(x => x < 0 || x > 1).Any())
                 BH.Engine.Base.Compute.RecordError("Typology target wind speed must be a list of values 8760 long.");
                 return null;
             }
-if(typology.TargetWindSpeed.Where(x => x != null && x.Value < 0).Any())
-{
-    BH.Engine.Base.Compute.RecordError("Typology Target Wind Speed values must be greater than or equal to 0, or null if not relevant for that hour of the year.");
-    return null;
-}
+            if(typology.TargetWindSpeed.Where(x => x != null && x.Value < 0).Any())
+            {
+                BH.Engine.Base.Compute.RecordError("Typology Target Wind Speed values must be greater than or equal to 0, or null if not relevant for that hour of the year.");
+                return null;
+            }
 
             foreach (Shelter shelter in typology.Shelters)
             {
