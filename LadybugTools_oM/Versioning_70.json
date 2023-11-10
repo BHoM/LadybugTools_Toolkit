@@ -10,5 +10,13 @@
       "BH.oM.LadybugTools.EnergyMaterialVegetation": "BH.oM.LadybugTools.OpaqueVegetationMaterial",
       "BH.oM.LadybugTools.IEnergyMaterialOpaque": "BH.oM.LadybugTools.ILadybugToolsMaterial"
     }
+  },
+  "Property": {
+    "ToNew": {
+      "BH.oM.LadybugTools.Typology.WindSpeedMultiplier": "TargetWindSpeed"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.Typology.TargetWindSpeed": "WindSpeedMultiplier"
+    }
   }
 }
