@@ -26,7 +26,6 @@ using BH.oM.Base.Attributes;
 using BH.oM.Geometry;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 
 namespace BH.oM.LadybugTools
 {

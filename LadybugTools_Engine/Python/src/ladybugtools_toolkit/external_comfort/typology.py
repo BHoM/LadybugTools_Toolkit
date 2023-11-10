@@ -6,7 +6,7 @@ from enum import Enum
 
 import numpy as np
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ._typologybase import Typology
 from ._shelterbase import Shelter
 
@@ -80,7 +80,7 @@ class Typologies(Enum):
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def combine_typologies(
     typologies: list[Typology],
     evaporative_cooling_effect_weights: list[float] = None,

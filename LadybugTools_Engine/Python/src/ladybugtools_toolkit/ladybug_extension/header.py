@@ -6,7 +6,7 @@ from ladybug.datatype import TYPESDICT
 from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
 def header_to_string(header: Header) -> str:
@@ -23,7 +23,7 @@ def header_to_string(header: Header) -> str:
     return f"{header.data_type} ({header.unit})"
 
 
-@decorator_factory()
+@bhom_analytics()
 def header_to_multiindex(header: Header) -> pd.MultiIndex:
     """Convert a Ladybug header object into a Pandas MultiIndex. Used for creating CSV headers for
         reloading by Ladybug.
@@ -83,7 +83,7 @@ def header_from_string(string: str, is_leap_year: bool = False) -> Header:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def header_from_multiindex(multiindex: pd.MultiIndex) -> Header:
     """Convert a Pandas MultiIndex into a Ladybug header object.
 

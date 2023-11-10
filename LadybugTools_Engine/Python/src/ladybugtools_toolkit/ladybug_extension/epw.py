@@ -35,7 +35,7 @@ from ladybug.skymodel import clearness_index as lb_ci
 from ladybug.sunpath import Sun, Sunpath
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..helpers import (
     air_pressure_at_height,
     radiation_at_height,
@@ -51,7 +51,7 @@ from .header import header_to_string
 from .location import average_location, location_to_string
 
 
-@decorator_factory()
+@bhom_analytics()
 def epw_to_dataframe(
     epw: EPW, include_additional: bool = False, **kwargs
 ) -> pd.DataFrame:
@@ -169,7 +169,7 @@ def epw_to_dataframe(
     return pd.concat(all_series, axis=1).sort_index(axis=1)
 
 
-@decorator_factory()
+@bhom_analytics()
 def epw_from_dataframe(
     dataframe: pd.DataFrame,
     location: Location = None,
@@ -294,7 +294,7 @@ def epw_from_dataframe(
     return epw_obj
 
 
-@decorator_factory()
+@bhom_analytics()
 def wet_bulb_temperature(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly wet bulb temperature for a given EPW.
 
@@ -318,7 +318,7 @@ def wet_bulb_temperature(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def unique_wind_speed_direction(
     epw: EPW, schedule: list[int] = None
 ) -> list[tuple[float, float]]:
@@ -346,7 +346,7 @@ def unique_wind_speed_direction(
     return df.drop_duplicates().values
 
 
-@decorator_factory()
+@bhom_analytics()
 def sun_position_list(epw: EPW) -> list[Sun]:
     """
     Calculate sun positions for a given epw file.
@@ -364,7 +364,7 @@ def sun_position_list(epw: EPW) -> list[Sun]:
     return [sunpath.calculate_sun_from_hoy(i) for i in range(len(epw.years))]
 
 
-@decorator_factory()
+@bhom_analytics()
 def sun_position_collection(epw: EPW) -> HourlyContinuousCollection:
     """Calculate a set of Sun positions for each hour of the year.
 
@@ -390,7 +390,7 @@ def sun_position_collection(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def solar_time_hour(
     epw: EPW, eot: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -429,7 +429,7 @@ def solar_time_hour(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def solar_time_datetime(
     epw: EPW, solar_time_hourly: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -481,7 +481,7 @@ def solar_time_datetime(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def solar_declination(epw: EPW) -> HourlyContinuousCollection:
     """Calculate solar declination for each hour of the year.
 
@@ -517,7 +517,7 @@ def solar_declination(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def solar_azimuth(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -550,7 +550,7 @@ def solar_azimuth(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def solar_azimuth_radians(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -573,7 +573,7 @@ def solar_azimuth_radians(
     return collection
 
 
-@decorator_factory()
+@bhom_analytics()
 def solar_altitude(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -606,7 +606,7 @@ def solar_altitude(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def solar_altitude_radians(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -629,7 +629,7 @@ def solar_altitude_radians(
     return collection
 
 
-@decorator_factory()
+@bhom_analytics()
 def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     """Calculate an annual hourly humidity ratio for a given EPW.
 
@@ -653,7 +653,7 @@ def humidity_ratio(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def epw_from_dict(dictionary: dict[str, Any]) -> EPW:
     """Convert a JSON compliant dictionary object into a ladybug EPW.
 
@@ -680,7 +680,7 @@ def epw_from_dict(dictionary: dict[str, Any]) -> EPW:
     return EPW.from_dict(json.loads(json_str))
 
 
-@decorator_factory()
+@bhom_analytics()
 def get_filename(epw: EPW, include_extension: bool = False) -> str:
     """Get the filename of the given EPW.
 
@@ -701,7 +701,7 @@ def get_filename(epw: EPW, include_extension: bool = False) -> str:
     return Path(epw.file_path).stem
 
 
-@decorator_factory()
+@bhom_analytics()
 def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
     """Check for equality between two EPW objects, with regards to the data contained within.
 
@@ -746,7 +746,7 @@ def equality(epw0: EPW, epw1: EPW, include_header: bool = False) -> bool:
     return True
 
 
-@decorator_factory()
+@bhom_analytics()
 def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
     """Calculate the equation of time for each hour of the year.
 
@@ -781,7 +781,7 @@ def equation_of_time(epw: EPW) -> HourlyContinuousCollection:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def epw_content_check(epw: EPW, fields: list[str] = None) -> bool:
     """Check an EPW object for whether it contains all valid fields
 
@@ -850,7 +850,7 @@ def epw_content_check(epw: EPW, fields: list[str] = None) -> bool:
     return valid
 
 
-@decorator_factory()
+@bhom_analytics()
 def enthalpy(
     epw: EPW, hum_ratio: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -881,7 +881,7 @@ def enthalpy(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def clearness_index(
     epw: EPW, sun_position: HourlyContinuousCollection = None
 ) -> HourlyContinuousCollection:
@@ -926,7 +926,7 @@ def clearness_index(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def seasonality_from_day_length_location(
     location: Location, annotate: bool = False
 ) -> pd.Series:
@@ -1027,7 +1027,7 @@ def seasonality_from_day_length_location(
     return pd.Series(categories, index=idx, name="season")
 
 
-@decorator_factory()
+@bhom_analytics()
 def seasonality_from_temperature_timeseries(
     series: pd.Series, annotate: bool = False
 ) -> pd.Series:
@@ -1248,7 +1248,7 @@ def seasonality_from_temperature_timeseries(
     return s
 
 
-@decorator_factory()
+@bhom_analytics()
 def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving
     its season based on day length (using sunrise/sunset).
@@ -1267,7 +1267,7 @@ def seasonality_from_day_length(epw: EPW, annotate: bool = False) -> pd.Series:
     return seasonality_from_day_length_location(epw.location, annotate)
 
 
-@decorator_factory()
+@bhom_analytics()
 def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving it's season.
 
@@ -1327,7 +1327,7 @@ def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
     return pd.Series(categories, index=idx, name="season")
 
 
-@decorator_factory()
+@bhom_analytics()
 def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving it's season.
     Args:
@@ -1345,7 +1345,7 @@ def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def degree_time(
     epws: list[EPW],
     heat_base: float = 18,
@@ -1433,7 +1433,7 @@ def degree_time(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> EPW:
     """Translate an EPW to a different height above ground (assuming that the
     original height represented is at ground level, with wind measured at 10m).
@@ -1656,7 +1656,7 @@ def _representative_day() -> pd.DataFrame:
     raise NotImplementedError("")
 
 
-@decorator_factory()
+@bhom_analytics()
 def hottest_day(epw: EPW) -> datetime:
     """
     The hottest day in the year associated with this epw object
@@ -1673,7 +1673,7 @@ def hottest_day(epw: EPW) -> datetime:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def coldest_day(epw: EPW) -> datetime:
     """
     The coldest day in the year associated with this epw object
@@ -1690,7 +1690,7 @@ def coldest_day(epw: EPW) -> datetime:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def sun_up_bool(epw: EPW) -> list[bool]:
     """
     A list of booleans aligned with the input EPW stating whether the sun is above the horizon.
@@ -1703,7 +1703,7 @@ def sun_up_bool(epw: EPW) -> list[bool]:
     return [i.altitude > 0 for i in suns]
 
 
-@decorator_factory()
+@bhom_analytics()
 def longest_day(epw: EPW) -> datetime:
     """
     The longest day in the year associated with this epw object."""
@@ -1716,7 +1716,7 @@ def longest_day(epw: EPW) -> datetime:
     return s[s > 0].resample("D").count().idxmax().to_pydatetime()
 
 
-@decorator_factory()
+@bhom_analytics()
 def shortest_day(epw: EPW) -> datetime:
     """
     The shortest day in the year associated with this epw object."""
@@ -1729,7 +1729,7 @@ def shortest_day(epw: EPW) -> datetime:
     return s[s > 0].resample("D").count().idxmin().to_pydatetime()
 
 
-@decorator_factory()
+@bhom_analytics()
 def average_epw(
     epws: list[EPW],
     location: Location = None,

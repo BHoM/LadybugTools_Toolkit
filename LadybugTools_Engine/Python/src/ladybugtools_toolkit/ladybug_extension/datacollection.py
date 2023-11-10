@@ -18,7 +18,7 @@ from ladybug.datacollection import (
 )
 from ladybug.datatype.angle import Angle
 from ladybug.dt import DateTime
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..helpers import circular_weighted_mean, wind_direction_average
 from .analysisperiod import analysis_period_to_datetimes
 from .analysisperiod import describe_analysis_period
@@ -95,7 +95,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
     raise ValueError("The series must be hourly or monthly.")
 
 
-@decorator_factory()
+@bhom_analytics()
 def percentile(
     collections: list[BaseCollection], nth_percentile: float
 ) -> BaseCollection:
@@ -130,7 +130,7 @@ def percentile(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def minimum(collections: list[BaseCollection]) -> BaseCollection:
     """Create a Minimum of the given data collections.
 
@@ -156,7 +156,7 @@ def minimum(collections: list[BaseCollection]) -> BaseCollection:
     return collection_from_series(df.min(axis=1).rename(series_name))
 
 
-@decorator_factory()
+@bhom_analytics()
 def maximum(collections: list[BaseCollection]) -> BaseCollection:
     """Create a Maximum of the given data collections.
 
@@ -182,7 +182,7 @@ def maximum(collections: list[BaseCollection]) -> BaseCollection:
     return collection_from_series(df.max(axis=1).rename(series_name))
 
 
-@decorator_factory()
+@bhom_analytics()
 def summarise_collection(
     collection: BaseCollection,
     _n_common: int = 3,
@@ -353,7 +353,7 @@ def summarise_collection(
     return descriptions
 
 
-@decorator_factory()
+@bhom_analytics()
 def average(
     collections: list[BaseCollection], weights: list[float] = None
 ) -> BaseCollection:
@@ -406,7 +406,7 @@ def average(
     return collections[0].get_aligned_collection(vals)
 
 
-@decorator_factory()
+@bhom_analytics()
 def to_hourly(
     collection: MonthlyCollection, method: str = None
 ) -> HourlyContinuousCollection:
@@ -451,7 +451,7 @@ def to_hourly(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def peak_time(collection: BaseCollection) -> tuple[Any, tuple[DateTime]]:
     """Find the peak value within a collection, and the time, or times at which it occurs.
 
@@ -473,7 +473,7 @@ def peak_time(collection: BaseCollection) -> tuple[Any, tuple[DateTime]]:
     return peak_value, times
 
 
-@decorator_factory()
+@bhom_analytics()
 def create_typical_day(
     collection: HourlyContinuousCollection,
     centroid: DateTime,

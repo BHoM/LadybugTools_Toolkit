@@ -11,10 +11,10 @@ from ladybug_geometry.geometry3d import Point3D, Vector3D
 from lbt_recipes.recipe import Recipe
 from lbt_recipes.settings import RecipeSettings
 from PIL import Image, ImageEnhance
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
-@decorator_factory()
+@bhom_analytics()
 def fisheye_sky(
     model: Model,
     sensor: Point3D,

@@ -18,7 +18,7 @@ TEST_HB_RAD = HoneybeeRadiance(TEST_DAYLIGHT_MODEL)
 def test_object_init():
     """_"""
 
-    assert TEST_HB_RAD.model_name == "_lbt_tk_pytest_daylight"
+    assert TEST_HB_RAD.model_name == "LBTBHoM_pytest_daylight"
     assert TEST_HB_RAD.output_directory.parent.name == "simulation"
 
 

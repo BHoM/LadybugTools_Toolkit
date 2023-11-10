@@ -28,7 +28,7 @@ from ladybug.epw import EPW
 
 from tqdm import tqdm
 
-from .bhom import decorator_factory
+from .bhom.analytics import bhom_analytics
 
 
 from .plot.utilities import contrasting_color, format_polar_plot
@@ -504,32 +504,32 @@ class Wind:
     # GENERAL METHODS #
     ###################
 
-    @decorator_factory()
+    @bhom_analytics()
     def mean(self) -> float:
         """Return the mean wind speed for this object."""
         return self.ws.mean()
 
-    @decorator_factory()
+    @bhom_analytics()
     def min(self) -> float:
         """Return the min wind speed for this object."""
         return self.ws.min()
 
-    @decorator_factory()
+    @bhom_analytics()
     def max(self) -> float:
         """Return the max wind speed for this object."""
         return self.ws.max()
 
-    @decorator_factory()
+    @bhom_analytics()
     def median(self) -> float:
         """Return the median wind speed for this object."""
         return self.ws.median()
 
-    @decorator_factory()
+    @bhom_analytics()
     def calm(self, threshold: float = 0.1) -> float:
         """Return the proportion of timesteps "calm" (i.e. wind-speed ≤ 0.1)."""
         return (self.ws <= threshold).sum() / len(self.ws)
 
-    @decorator_factory()
+    @bhom_analytics()
     def percentile(self, percentile: float) -> float:
         """Calculate the wind speed at the given percentile.
 
@@ -543,7 +543,7 @@ class Wind:
         """
         return self.ws.quantile(percentile)
 
-    @decorator_factory()
+    @bhom_analytics()
     def resample(self, rule: pd.DateOffset | pd.Timedelta | str) -> "Wind":
         """Resample the wind data collection to a different timestep. If upsampling then 0m/s
             and prevailing winds will be added to the data. If downsampling, then the average
@@ -600,7 +600,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def prevailing(
         self,
         direction_bins: DirectionBins = DirectionBins(),
@@ -624,7 +624,7 @@ class Wind:
 
         return direction_bins.prevailing(self.wd.tolist(), n, as_angle)
 
-    @decorator_factory()
+    @bhom_analytics()
     def average_direction(self) -> tuple[float, float]:
         """Calculate the average speed and direction for this object.
 
@@ -634,7 +634,7 @@ class Wind:
         """
         return angle_from_north(self.uv.values.mean(axis=0))
 
-    @decorator_factory()
+    @bhom_analytics()
     def probabilities(
         self,
         direction_bins: DirectionBins = DirectionBins(),
@@ -667,7 +667,7 @@ class Wind:
         )
         return df.T
 
-    @decorator_factory()
+    @bhom_analytics()
     def filter_by_analysis_period(
         self,
         analysis_period: AnalysisPeriod | tuple[AnalysisPeriod],
@@ -714,7 +714,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def filter_by_boolean_mask(self, mask: tuple[bool]) -> "Wind":
         """Filter the current object by a boolean mask.
 
@@ -738,7 +738,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def filter_by_time(
         self,
         months: tuple[float] = tuple(range(1, 13, 1)),  # type: ignore
@@ -792,7 +792,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def filter_by_direction(
         self, left_angle: float = 0, right_angle: float = 360, inclusive: bool = True
     ) -> "Wind":
@@ -838,7 +838,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def filter_by_speed(
         self, min_speed: float = 0, max_speed: float = 999, inclusive: bool = True
     ) -> "Wind":
@@ -878,7 +878,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def frequency_table(
         self,
         speed_bins: tuple[float] = None,
@@ -934,7 +934,7 @@ class Wind:
 
         return df.T
 
-    @decorator_factory()
+    @bhom_analytics()
     def cumulative_density_function(
         self,
         speed_bins: tuple[float] = None,
@@ -957,7 +957,7 @@ class Wind:
             speed_bins=speed_bins, density=True, direction_bins=direction_bins
         ).cumsum(axis=0)
 
-    @decorator_factory()
+    @bhom_analytics()
     def weibull_pdf(self) -> tuple[float]:
         """Calculate the parameters of an exponentiated Weibull continuous random variable.
 
@@ -971,7 +971,7 @@ class Wind:
         """
         return weibull_pdf(self.ws.tolist())
 
-    @decorator_factory()
+    @bhom_analytics()
     def weibull_directional(
         self, direction_bins: DirectionBins = DirectionBins()
     ) -> pd.DataFrame:
@@ -988,7 +988,7 @@ class Wind:
         binned_data = direction_bins.bin_data(self.wd.tolist(), self.ws.tolist())
         return weibull_directional(binned_data)
 
-    @decorator_factory()
+    @bhom_analytics()
     def to_height(
         self,
         target_height: float,
@@ -1023,7 +1023,7 @@ class Wind:
             height_above_ground=target_height,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def apply_directional_factors(
         self, direction_bins: DirectionBins, factors: tuple[float]
     ) -> "Wind":
@@ -1070,7 +1070,7 @@ class Wind:
             height_above_ground=self.height_above_ground,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def exceedance(
         self,
         limit_value: float,
@@ -1128,7 +1128,7 @@ class Wind:
 
         return df
 
-    @decorator_factory()
+    @bhom_analytics()
     def to_csv(self, csv_path: Path) -> Path:
         """Save this object as a csv file.
 
@@ -1144,7 +1144,7 @@ class Wind:
         self.df.to_csv(csv_path)
         return csv_path
 
-    @decorator_factory()
+    @bhom_analytics()
     def wind_matrix(self) -> pd.DataFrame:
         """Calculate average wind speed and direction for each month and hour of day in a pandas DataFrame.
         Returns:
@@ -1182,7 +1182,7 @@ class Wind:
 
         return df
 
-    @decorator_factory()
+    @bhom_analytics()
     def summarise(self) -> list[str]:
         """Generate a textual sumarry of the current object."""
 
@@ -1209,7 +1209,7 @@ class Wind:
     # PLOTTING/VISUALISATION METHODS #
     ##################################
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_timeseries(self, ax: plt.Axes = None, color: str = "grey", **kwargs) -> plt.Axes:  # type: ignore
         """Create a simple line plot of wind speed.
 
@@ -1241,7 +1241,7 @@ class Wind:
 
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_windrose(
         self,
         ax: plt.Axes = None,
@@ -1387,7 +1387,7 @@ class Wind:
 
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_windhist(
         self,
         ax: plt.Axes = None,
@@ -1446,7 +1446,7 @@ class Wind:
 
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_windhist_radial(
         self,
         ax: plt.Axes = None,
@@ -1532,7 +1532,7 @@ class Wind:
 
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_wind_matrix(
         self,
         ax: plt.Axes = None,
@@ -1641,7 +1641,7 @@ class Wind:
 
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_speed_frequency(
         self,
         ax: plt.Axes = None,
@@ -1695,7 +1695,7 @@ class Wind:
 
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_cumulative_density(
         self,
         ax: plt.Axes = None,

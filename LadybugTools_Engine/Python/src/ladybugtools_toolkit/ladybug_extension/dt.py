@@ -3,10 +3,10 @@
 from datetime import datetime  # pylint: disable=E0401
 
 from ladybug.dt import DateTime
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
-@decorator_factory()
+@bhom_analytics()
 def lb_datetime_to_datetime(lb_datetime: DateTime) -> datetime:
     """Convert a Ladybug DateTime object into a Python datetime object.
 
@@ -28,7 +28,7 @@ def lb_datetime_to_datetime(lb_datetime: DateTime) -> datetime:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def lb_datetime_from_datetime(date_time: datetime) -> DateTime:
     """Convert a Python datetime object into a Ladybug DateTime object.
 

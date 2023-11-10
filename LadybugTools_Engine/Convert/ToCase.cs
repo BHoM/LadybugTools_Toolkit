@@ -39,22 +39,18 @@ namespace BH.Engine.LadybugTools
         [Output("str", "Text in \"PascalCase\".")]
         public static string ToCase(this string str, StringCase stringCase = StringCase.Undefined, List<string> ignoreList = null)
         {
-            if (stringCase == StringCase.Pascal)
+            switch (stringCase)
             {
-                return ToPascalCase(str, ignoreList);
+                case StringCase.Pascal:
+                    return ToPascalCase(str, ignoreList);
+                case StringCase.Snake:
+                    return ToSnakeCase(str, ignoreList);
+                case StringCase.Camel:
+                    return ToCamelCase(str, ignoreList);
+                default:
+                    BH.Engine.Base.Compute.RecordWarning($"No change to the input ({str}) was made");
+                    return str;
             }
-
-            if (stringCase == StringCase.Snake)
-            {
-                return ToSnakeCase(str, ignoreList);
-            }
-
-            if (stringCase == StringCase.Camel)
-            {
-                return ToCamelCase(str, ignoreList);
-            }
-
-            return str;
         }
 
         [Description("Convert the case of the keys in the given dictionary.")]
@@ -64,22 +60,17 @@ namespace BH.Engine.LadybugTools
         [Output("dict", "The dictionary with converted keys.")]
         public static Dictionary<string, object> ToCase(this Dictionary<string, object> dict, StringCase stringCase = StringCase.Undefined, List<string> ignoreList = null)
         {
-            if (stringCase == StringCase.Pascal)
+            switch (stringCase)
             {
-                return ToPascalCase(dict, ignoreList);
+                case StringCase.Pascal:
+                    return ToPascalCase(dict, ignoreList);
+                case StringCase.Snake:
+                    return ToSnakeCase(dict, ignoreList);
+                case StringCase.Camel:
+                    return ToCamelCase(dict, ignoreList);
+                default:
+                    return dict;
             }
-
-            if (stringCase == StringCase.Snake)
-            {
-                return ToSnakeCase(dict, ignoreList);
-            }
-
-            if (stringCase == StringCase.Camel)
-            {
-                return ToCamelCase(dict, ignoreList);
-            }
-
-            return dict;
         }   
 
         [Description("Convert the case of the given text.")]

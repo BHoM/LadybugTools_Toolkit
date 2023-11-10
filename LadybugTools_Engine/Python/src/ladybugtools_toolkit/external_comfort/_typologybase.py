@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
 
-from ..bhom import CONSOLE_LOGGER, decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..helpers import (
     convert_keys_to_snake_case,
     decay_rate_smoother,
@@ -157,17 +157,17 @@ class Typology:
         """_"""
         return np.mean([i for i in self.target_wind_speed if i is not None])
 
-    @decorator_factory()
+    @bhom_analytics()
     def sky_exposure(self) -> list[float]:
         """Direct access to "sky_exposure" method for this typology object."""
         return annual_sky_exposure(self.shelters, include_radiation_porosity=True)
 
-    @decorator_factory()
+    @bhom_analytics()
     def sun_exposure(self, epw: EPW) -> list[float]:
         """Direct access to "sun_exposure" method for this typology object."""
         return annual_sun_exposure(self.shelters, epw, include_radiation_porosity=True)
 
-    @decorator_factory()
+    @bhom_analytics()
     def wind_speed(self, epw: EPW) -> list[float]:
         """Direct access to "wind_speed" method for this typology object."""
         shelter_wind_speed = annual_wind_speed(self.shelters, epw)
@@ -180,7 +180,7 @@ class Typology:
                 ws.append(tgt_ws)
         return epw.wind_speed.get_aligned_collection(ws)
 
-    @decorator_factory()
+    @bhom_analytics()
     def dry_bulb_temperature(self, epw: EPW) -> HourlyContinuousCollection:
         """Get the effective DBT for the given EPW file for this Typology.
 
@@ -217,7 +217,7 @@ class Typology:
 
         return epw.dry_bulb_temperature.get_aligned_collection(dbt_evap)
 
-    @decorator_factory()
+    @bhom_analytics()
     def relative_humidity(self, epw: EPW) -> HourlyContinuousCollection:
         """Get the effective RH for the given EPW file for this Typology.
 
@@ -255,7 +255,7 @@ class Typology:
 
         return epw.relative_humidity.get_aligned_collection(rh_evap)
 
-    @decorator_factory()
+    @bhom_analytics()
     def mean_radiant_temperature(
         self,
         simulation_result: SimulationResult,

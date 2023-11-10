@@ -25,8 +25,8 @@ namespace BH.oM.LadybugTools
     public enum StringCase
     {
         Undefined,
-        Snake,
+        Camel,
         Pascal,
-        Camel
+        Snake,
     };
 }

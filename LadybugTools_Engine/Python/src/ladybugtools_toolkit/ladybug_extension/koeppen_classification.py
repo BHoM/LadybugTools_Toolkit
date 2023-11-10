@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 from ladybug.epw import EPW, Location
 from scipy import spatial
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
 @dataclass
@@ -59,7 +59,7 @@ class KoeppenClassification:
         if self.classification not in classifications:
             raise ValueError(f"Invalid Koeppen classification: {self.classification}")
 
-    @decorator_factory()
+    @bhom_analytics()
     def to_dict(self):
         """Return a dictionary representation of the KoeppenClassification."""
         return {
@@ -286,7 +286,7 @@ class KoeppenClimateClassifications(Enum):
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def koeppen_classification(
     arg: EPW | Location | Path | tuple[float],
 ) -> KoeppenClassification:

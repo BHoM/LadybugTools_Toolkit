@@ -5,12 +5,12 @@ import matplotlib.pyplot as plt
 from ladybug.epw import EPW
 from .utilities import contrasting_color
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..ladybug_extension.epw import EPW, degree_time
 from ..ladybug_extension.location import location_to_string
 
 
-@decorator_factory()
+@bhom_analytics()
 def cooling_degree_days(
     epw: EPW,
     ax: plt.Axes = None,
@@ -99,7 +99,7 @@ def cooling_degree_days(
     return ax
 
 
-@decorator_factory()
+@bhom_analytics()
 def heating_degree_days(
     epw: EPW,
     ax: plt.Axes = None,
@@ -190,7 +190,7 @@ def heating_degree_days(
     return ax
 
 
-@decorator_factory()
+@bhom_analytics()
 def degree_days(epw: EPW, heat_base: float = 18, cool_base: float = 23, **kwargs):
     """Plot the heating/cooling degree days from a given EPW object.
 

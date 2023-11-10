@@ -8,7 +8,7 @@ from ladybug.epw import EPW
 from ladybug.wea import Wea
 
 # identifier for all downstream processes
-BASE_IDENTIFIER = "_lbt_tk_pytest"
+BASE_IDENTIFIER = "LBTBHoM_pytest"
 
 # simulation directory for downstream processes
 hb_folders.default_simulation_folder = f"C:/Users/{getpass.getuser()}/simulation"

@@ -19,7 +19,7 @@ from matplotlib.ticker import PercentFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import make_interp_spline
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..categorical.categories import (
     UTCI_DEFAULT_CATEGORIES,
     CategoricalComfort,
@@ -30,7 +30,7 @@ from .colormaps import UTCI_DIFFERENCE_COLORMAP
 from .utilities import contrasting_color, lighten_color
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_comfort_band_comparison(
     utci_collections: tuple[HourlyContinuousCollection],
     ax: plt.Axes = None,
@@ -139,7 +139,7 @@ def utci_comfort_band_comparison(
     return ax
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_day_comfort_metrics(
     utci: pd.Series,
     dbt: pd.Series,
@@ -239,7 +239,7 @@ def utci_day_comfort_metrics(
     return ax
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_comparison_diurnal_day(
     utci_collections: list[HourlyContinuousCollection],
     ax: plt.Axes = None,
@@ -368,7 +368,7 @@ def utci_comparison_diurnal_day(
     return ax
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_heatmap_difference(
     utci_collection1: HourlyContinuousCollection,
     utci_collection2: HourlyContinuousCollection,
@@ -419,7 +419,7 @@ def utci_heatmap_difference(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_pie(
     utci_collection: HourlyContinuousCollection,
     ax: plt.Axes = None,
@@ -496,7 +496,7 @@ def utci_pie(
     return ax
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_journey(
     utci_values: tuple[float],
     ax: plt.Axes = None,
@@ -631,7 +631,7 @@ def utci_journey(
     return ax
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_heatmap_histogram(
     utci_collection: HourlyContinuousCollection,
     utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
@@ -724,7 +724,7 @@ def utci_heatmap_histogram(
     return fig
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_histogram(
     utci_collection: HourlyContinuousCollection,
     ax: plt.Axes = None,

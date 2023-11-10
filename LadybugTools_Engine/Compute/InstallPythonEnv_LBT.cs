@@ -37,11 +37,12 @@ namespace BH.Engine.LadybugTools
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
         public static PythonEnvironment InstallPythonEnv_LBT(bool run = false, bool reinstall = false)
         {
-            // check if referenced Python is installed
             string referencedExecutable = @"C:\Program Files\ladybug_tools\python\python.exe";
-            if (!File.Exists(referencedExecutable))
+
+            // NOTE - The version number below relates to the ProductVersion field of the "C:\Program Files\ladybug_tools\uninstall.exe" file, and doesn't necessarily reflect the version of the installer
+            // Pollination 1.35.14 has an uninstaller ProductVersion of 1.38.104
+            if (!Query.IsPollinationInstalled(targetPollinationVersion: "1.38.104", includeBuildNumber: false))
             {
-                Base.Compute.RecordError($"Could not find referenced python executable at {referencedExecutable}. Please install Pollination try again.");
                 return null;
             }
 

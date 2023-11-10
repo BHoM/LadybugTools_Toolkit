@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ...bhom import CONSOLE_LOGGER
+from ...bhom.logging import CONSOLE_LOGGER
 from ...ladybug_extension.analysisperiod import describe_analysis_period
 from ..model import HbModelGeometry
 from ..results import load_ill, load_npy, load_res
@@ -252,9 +252,7 @@ class HoneybeeRadiance:
         recipe_name = "daylight-factor"
         folder_name = "daylight_factor"
 
-        CONSOLE_LOGGER.info(
-            f"Simulating {recipe_name} for model {self.model_name} with detail level {detail_level}"
-        )
+        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -474,9 +472,7 @@ class HoneybeeRadiance:
         recipe_name = "annual-daylight"
         folder_name = "annual_daylight"
 
-        CONSOLE_LOGGER.info(
-            f"Simulating {recipe_name} for model {self.model_name} with detail level {detail_level}"
-        )
+        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -578,9 +574,7 @@ class HoneybeeRadiance:
         recipe_name = "annual-irradiance"
         folder_name = "annual_irradiance"
 
-        CONSOLE_LOGGER.info(
-            f"Simulating {recipe_name} for model {self.model_name} with detail level {detail_level}"
-        )
+        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -687,9 +681,7 @@ class HoneybeeRadiance:
         recipe_name = "sky-view"
         folder_name = "sky_view"
 
-        CONSOLE_LOGGER.info(
-            f"Simulating {recipe_name} for model {self.model_name} with detail level {detail_level}"
-        )
+        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -794,7 +786,7 @@ class HoneybeeRadiance:
         folder_name = "direct_sun_hours"
 
         CONSOLE_LOGGER.info(
-            f"Simulating {recipe_name} for model {self.model_name} over "
+            f"Running {recipe_name} recipe for model {self.model_name} over "
             f"{describe_analysis_period(analysis_period, include_timestep=True)}"
         )
 

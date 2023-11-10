@@ -11,7 +11,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 from ladybug.sql import SQLiteResult
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..ladybug_extension.datacollection import collection_to_series
 
 
@@ -71,7 +71,7 @@ def _load_ill_file(ill_file: Path, sun_up_hours_file: Path = None) -> pd.DataFra
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def load_ill(ill_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .ill file, or list of Radiance .ill files and return a combined DataFrame with the data.
 
@@ -111,7 +111,7 @@ def _load_npy_file(npy_file: Path) -> pd.DataFrame:
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def load_npy(npy_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Honeybee-Radiance .npy file, or list of Honeybee-Radiance
     .npy files and return a combined DataFrame with the data.
@@ -142,7 +142,7 @@ def _load_pts_file(pts_file: Path) -> pd.DataFrame:
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def load_pts(pts_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .pts file, or list of Radiance .pts files and return a combined DataFrame with the data.
 
@@ -172,7 +172,7 @@ def _load_res_file(res_file: Path) -> pd.Series:
     return series
 
 
-@decorator_factory()
+@bhom_analytics()
 def load_res(res_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single Radiance .res file, or list of Radiance .res files and return a combined DataFrame with the data.
 
@@ -247,7 +247,7 @@ def _load_sql_file(sql_file: Path) -> pd.DataFrame:
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def load_sql(sql_files: Path | list[Path]) -> pd.DataFrame:
     """Load a single EnergyPlus .sql file, or list of EnergyPlus .sql
     files and return a combined DataFrame with the data.
@@ -261,7 +261,7 @@ def load_sql(sql_files: Path | list[Path]) -> pd.DataFrame:
     return _load_files(_load_sql_file, sql_files)
 
 
-@decorator_factory()
+@bhom_analytics()
 def load_sun_up_hours(sun_up_hours_file: Path, year: int = 2017) -> pd.DatetimeIndex:
     """Load a HB-Radiance generated sun-up-hours.txt file and return a DatetimeIndex with the data.
 
@@ -285,7 +285,7 @@ def load_sun_up_hours(sun_up_hours_file: Path, year: int = 2017) -> pd.DatetimeI
     return index
 
 
-@decorator_factory()
+@bhom_analytics()
 def make_annual(df: pd.DataFrame) -> pd.DataFrame:
     """Convert a DataFrame with partial annual data to a DataFrame with annual data.
 
