@@ -76,7 +76,6 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-
             return new Location()
             {
                 City = city,
