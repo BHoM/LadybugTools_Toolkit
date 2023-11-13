@@ -67,7 +67,7 @@ namespace BH.Engine.LadybugTools
             {
                 if (versionInfo.ProductVersion != targetPollinationVersion)
                 {
-                    Base.Compute.RecordError($"Polination version installed ({versionInfo.ProductVersion}) is not the same as the version required for this code to function correctly ({targetPollinationVersion}).");
+                    Base.Compute.RecordError($"Pollination version installed ({versionInfo.ProductVersion}) is not the same as the version required for this code to function correctly ({targetPollinationVersion}).");
                     return false;
                 }
             }
