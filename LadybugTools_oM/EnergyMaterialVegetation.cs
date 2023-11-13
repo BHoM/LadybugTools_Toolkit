@@ -23,6 +23,7 @@
 
 using System.ComponentModel;
 using BH.oM.Base.Attributes;
+using BH.oM.Quantities.Attributes;
 
 namespace BH.oM.LadybugTools
 {
@@ -36,12 +37,14 @@ namespace BH.oM.LadybugTools
         public virtual string Identifier { get; set; }
 
         [Description("Thickness of material (m).")]
+        [Length]
         public virtual double Thickness { get; set; }
 
         [Description("Conductivity of material (W/mK).")]
         public virtual double Conductivity { get; set; }
 
         [Description("Density of material (kg/m3).")]
+        [Density]
         public virtual double Density { get; set; }
 
         [Description("Specific heat capacity of material (J/kgK).")]

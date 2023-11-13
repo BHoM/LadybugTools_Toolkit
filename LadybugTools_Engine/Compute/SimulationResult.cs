@@ -44,7 +44,7 @@ namespace BH.Engine.LadybugTools
             // validation prior to passing to Python
             if (epwFile == null)
             {
-                BH.Engine.Base.Compute.RecordError("epwFile input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
                 return null;
             }
             if (!File.Exists(epwFile))
@@ -55,13 +55,13 @@ namespace BH.Engine.LadybugTools
 
             if (groundMaterial == null)
             {
-                BH.Engine.Base.Compute.RecordError("groundMaterial input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(groundMaterial)} input cannot be null.");
                 return null;
             }
 
             if (shadeMaterial == null)
             {
-                BH.Engine.Base.Compute.RecordError("shadeMaterial input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(shadeMaterial)} input cannot be null.");
                 return null;
             }
 

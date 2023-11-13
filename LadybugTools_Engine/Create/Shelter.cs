@@ -34,8 +34,8 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Create a Shelter object.")]
         [Input("vertices", "The vertices of the shelter.")]
-        [Input("windPorosity", "The hourly wind porosity of the shelter (0-1).")]
-        [Input("radiationPorosity", "The hourly radiation porosity of the shelter (0-1).")]
+        [Input("windPorosity", "The hourly wind porosity of the shelter (0-1, where 0 is completely wind-blocking, and 1 allows all wind to pass through).")]
+        [Input("radiationPorosity", "The hourly radiation porosity of the shelter (0-1, where 0 is completely solar-radiation-blocking, and 1 allows all solar radiation to pass through).")]
         [Output("shelter", "A Shelter object.")]
         public static Shelter Shelter(List<Point> vertices, List<double> windPorosity = null, List<double> radiationPorosity = null)
         {
@@ -44,12 +44,12 @@ namespace BH.Engine.LadybugTools
 
             if (windPorosity.Count != 8760)
             {
-                BH.Engine.Base.Compute.RecordError("windPorosity must be a list of 8760 values");
+                BH.Engine.Base.Compute.RecordError($"{nameof(windPorosity)} must be a list of 8760 values.");
                 return null;
             }
             if (windPorosity.Where(x => x < 0 || x > 1).Any())
             {
-                BH.Engine.Base.Compute.RecordError("Shelter wind porosity must be between 0 and 1.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(windPorosity)} must be between 0 and 1.");
                 return null;
             }
 
@@ -58,13 +58,13 @@ namespace BH.Engine.LadybugTools
 
             if (radiationPorosity.Count != 8760)
             {
-                BH.Engine.Base.Compute.RecordError("radiationPorosity must be a list of 8760 values");
+                BH.Engine.Base.Compute.RecordError($"{nameof(radiationPorosity)} must be a list of 8760 values.");
                 return null;
             }
 
             if (radiationPorosity.Where(x => x < 0 || x > 1).Any())
             {
-                BH.Engine.Base.Compute.RecordError("Shelter radiation porosity must be between 0 and 1.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(radiationPorosity)} must be between 0 and 1.");
                 return null;
             }
 

@@ -44,7 +44,7 @@ namespace BH.Engine.LadybugTools
         {
             if (panel == null)
             {
-                Base.Compute.RecordError("Panel is null. Shelter cannot be created.");
+                Base.Compute.RecordError($"{nameof(panel)} is null. Shelter cannot be created.");
                 return null;
             }
 
@@ -58,43 +58,10 @@ namespace BH.Engine.LadybugTools
                 windPorosity = Enumerable.Repeat(0.0, 8760).ToList();
             }
 
-            if (radiationPorosity.Count != 8760)
-            {
-                Base.Compute.RecordError("Radiation porosity list must be 8760 long.");
-                return null;
-            }
-            if (windPorosity.Count != 8760)
-            {
-                Base.Compute.RecordError("Wind porosity list must be 8760 long.");
-                return null;
-            }
-
-            if(radiationPorosity.Where(x => x < 0 || x > 1).Any())
-            {
-                BH.Engine.Base.Compute.RecordError("All Radiation Porosity values must be between 0-1 (inclusive).");
-                return null;
-            }
-            if(windPorosity.Where(x => x < 0 || x > 1).Any())
-            {
-                BH.Engine.Base.Compute.RecordError("All Wind Porosity values must be between 0-1 (inclusive).");
-                return null;
-            }
-
-            if (windPorosity.Sum() + radiationPorosity.Sum() == 0)
-            {
-                Base.Compute.RecordError("This Shelter will have no effect as it is completely transmissive.");
-                return null;
-            }
-
             List<Point> vertices = panel.Vertices().ToList();
             vertices.RemoveAt(vertices.Count - 1); // python Shelter object doesn't want a closed polyline
 
-            return new Shelter()
-            {
-                Vertices = vertices,
-                WindPorosity = windPorosity,
-                RadiationPorosity = radiationPorosity
-            };
+            return BH.Engine.LadybugTools.Create.Shelter(vertices: vertices, windPorosity: windPorosity, radiationPorosity: radiationPorosity);
         }
     }
 }

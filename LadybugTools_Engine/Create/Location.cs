@@ -22,7 +22,6 @@
 
 using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
-using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.Engine.LadybugTools
@@ -33,10 +32,10 @@ namespace BH.Engine.LadybugTools
         [Input("city", "The city of the location.")]
         [Input("state", "The state of the location.")]
         [Input("country", "The country of the location.")]
-        [Input("latitude", "The latitude of the location.")]
-        [Input("longitude", "The longitude of the location.")]
-        [Input("timeZone", "The time zone of the location.")]
-        [Input("elevation", "The elevation of the location.")]
+        [Input("latitude", "The latitude of the location in degrees, between -90 and 90.")]
+        [Input("longitude", "The longitude of the location in degrees, between -180 and 180.")]
+        [Input("timeZone", "The time zone of the location, in hours between -12 (west) and +14 (east).")]
+        [Input("elevation", "The elevation of the location in meters.")]
         [Input("stationId", "The station ID of the location.")]
         [Input("source", "The source of the location.")]
         [Output("location", "A Location object.")]
@@ -54,25 +53,25 @@ namespace BH.Engine.LadybugTools
         {
             if (latitude < -90 || latitude > 90)
             {
-                BH.Engine.Base.Compute.RecordError("latitude must be within -90 to 90");
+                BH.Engine.Base.Compute.RecordError($"{nameof(latitude)} must be between -90 and 90.");
                 return null;
             }
 
             if (longitude < -180 || longitude > 180)
             {
-                BH.Engine.Base.Compute.RecordError("longitude must be within -180 to 180");
+                BH.Engine.Base.Compute.RecordError($"{nameof(longitude)} must be between -180 and 180.");
                 return null;
             }
 
             if (elevation < -1000 || elevation > 10000)
             {
-                BH.Engine.Base.Compute.RecordError("elevation must be within -1000 to 10000");
+                BH.Engine.Base.Compute.RecordError($"{nameof(elevation)} must be between -1000 and 10000.");
                 return null;
             }
 
             if (timeZone < -12 || timeZone > 14)
             {
-                BH.Engine.Base.Compute.RecordError("timeZone must be within -12 to 14");
+                BH.Engine.Base.Compute.RecordError($"{nameof(timeZone)} must be between -12 and 14.");
                 return null;
             }
 

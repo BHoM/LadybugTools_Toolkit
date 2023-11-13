@@ -30,19 +30,19 @@ namespace BH.Engine.LadybugTools
     {
         [Description("Create an EnergyMaterialVegetation object.")]
         [Input("identifier", "The identifier for this material object.")]
-        [Input("thickness", "The thickness of the material.")]
-        [Input("conductivity", "The conductivity of the material.")]
-        [Input("density", "The density of the material.")]
-        [Input("specificHeat", "The specific heat of the material.")]
+        [Input("thickness", "The thickness of the material in meters.")]
+        [Input("conductivity", "The conductivity of the material in W/m-K.")]
+        [Input("density", "The density of the material in kg/m3.")]
+        [Input("specificHeat", "The specific heat of the material in J/kg-K.")]
         [Input("roughness", "The roughness of the material.")]
         [Input("plantHeight", "The height of the vegetation in meters.")]
-        [Input("leafAreaIndex", "The leaf area index of the vegetation.")]
-        [Input("leafReflectivity", "The reflectivity of the leaves.")]
-        [Input("leafEmissivity", "The emissivity of the leaves.")]
-        [Input("minStomatalResist", "The minimum stomatal resistance of the leaves.")]
-        [Input("soilThermalAbsorptance", "The thermal absorptance of the soil.")]
-        [Input("soilSolarAbsorptance", "The solar absorptance of the soil.")]
-        [Input("soilVisibleAbsorptance", "The visible absorptance of the soil.")]
+        [Input("leafAreaIndex", "The leaf area index of the vegetation. Dimensionless value, typically between 0.001 and 5.0.")]
+        [Input("leafReflectivity", "The reflectivity of the leaves. Dimensionless value, typically between 0.18 and 0.25.")]
+        [Input("leafEmissivity", "The emissivity of the leaves. Dimensionless value, typically between 0.8 and 1.0.")]
+        [Input("minStomatalResist", "The minimum stomatal resistance of the leaves (resistance to moisture transport, in s/m, typically between 50 and 300.")]
+        [Input("soilThermalAbsorptance", "The thermal absorptance of the soil. 0-1.")]
+        [Input("soilSolarAbsorptance", "The solar absorptance of the soil. 0-1.")]
+        [Input("soilVisibleAbsorptance", "The visible absorptance of the soil. 0-1.")]
         [Output("energyMaterialVegetation", "An EnergyMaterialVegetation object.")]
         public static EnergyMaterialVegetation EnergyMaterialVegetation(
             string identifier,
@@ -63,79 +63,91 @@ namespace BH.Engine.LadybugTools
         {
             if (identifier.Contains("!"))
             {
-                BH.Engine.Base.Compute.RecordError("identifier cannot contain '!' character");
+                BH.Engine.Base.Compute.RecordError($"{nameof(identifier)} cannot contain '!' character.");
                 return null;
             }
 
             if (identifier.Length > 100)
             {
-                BH.Engine.Base.Compute.RecordError("identifier cannot be longer than 100 characters");
+                BH.Engine.Base.Compute.RecordError($"{nameof(identifier)} cannot be longer than 100 characters.");
                 return null;
             }
 
             if (specificHeat < 100)
             {
-                BH.Engine.Base.Compute.RecordError("specificHeat must be greater than 100");
+                BH.Engine.Base.Compute.RecordError($"{nameof(specificHeat)} must be greater than 100.");
                 return null;
             }
 
             if (conductivity < 0)
             {
-                BH.Engine.Base.Compute.RecordError("conductivity must be greater than 0");
+                BH.Engine.Base.Compute.RecordError($"{nameof(conductivity)} must be greater than 0.");
                 return null;
             }
 
             if (density < 0)
             {
-                BH.Engine.Base.Compute.RecordError("density must be greater than 0");
+                BH.Engine.Base.Compute.RecordError($"{nameof(density)} must be greater than 0.");
                 return null;
             }
 
             if (thickness <= 0)
             {
-                BH.Engine.Base.Compute.RecordError("thickness must be greater than 0");
+                BH.Engine.Base.Compute.RecordError($"{nameof(thickness)} must be greater than 0.");
                 return null;
             }
 
             if (roughness == Roughness.Undefined)
             {
-                BH.Engine.Base.Compute.RecordError("roughness must be defined");
+                BH.Engine.Base.Compute.RecordError($"{nameof(roughness)} must be defined.");
                 return null;
             }
 
-            if (soilThermalAbsorptance < 0 || soilThermalAbsorptance > 1 || soilSolarAbsorptance < 0 || soilSolarAbsorptance > 1 || soilVisibleAbsorptance < 0 || soilVisibleAbsorptance > 1)
+            if (soilThermalAbsorptance < 0 || soilThermalAbsorptance > 1)
             {
-                BH.Engine.Base.Compute.RecordError("soilThermalAbsorptance, soilSolarAbsorptance, and soilVisibleAbsorptance must be between 0 and 1");
+                BH.Engine.Base.Compute.RecordError($"{nameof(soilThermalAbsorptance)} must be between 0 and 1.");
+                return null;
+            }
+
+            if (soilSolarAbsorptance < 0 || soilSolarAbsorptance > 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(soilSolarAbsorptance)} must be between 0 and 1.");
+                return null;
+            }
+
+            if (soilVisibleAbsorptance < 0 || soilVisibleAbsorptance > 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(soilVisibleAbsorptance)} must be between 0 and 1.");
                 return null;
             }
 
             if (plantHeight < 0.005 || plantHeight > 1)
             {
-                BH.Engine.Base.Compute.RecordError("plantHeight must be between 0.005 and 1");
+                BH.Engine.Base.Compute.RecordError($"{nameof(plantHeight)} must be between 0.005 and 1.");
                 return null;
             }
 
             if (leafAreaIndex < 0.001 || leafAreaIndex > 5)
             {
-                BH.Engine.Base.Compute.RecordError("leafAreaIndex must be between 0.001 and 5");
+                BH.Engine.Base.Compute.RecordError($"{nameof(leafAreaIndex)} must be between 0.001 and 5.");
                 return null;
             }
 
             if (leafEmissivity < 0.8 || leafEmissivity > 1)
             {
-                BH.Engine.Base.Compute.RecordError("leafEmissivity must be between 0.8 and 1");
+                BH.Engine.Base.Compute.RecordError($"{nameof(leafEmissivity)} must be between 0.8 and 1.");
                 return null;
             }
 
             if (leafReflectivity < 0.05 || leafReflectivity > 0.5)
             {
-                BH.Engine.Base.Compute.RecordError("leafReflectivity must be between 0.05 and 0.5");
+                BH.Engine.Base.Compute.RecordError($"{nameof(leafReflectivity)} must be between 0.05 and 0.5.");
                 return null;
             }
 
             if (minStomatalResist < 50 || minStomatalResist > 300)
             {
-                BH.Engine.Base.Compute.RecordError("minStomatalResist must be between 50 and 300");
+                BH.Engine.Base.Compute.RecordError($"{nameof(minStomatalResist)} must be between 50 and 300.");
                 return null;
             }
 

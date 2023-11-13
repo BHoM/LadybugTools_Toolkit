@@ -33,9 +33,9 @@ namespace BH.Engine.LadybugTools
         [Description("Create a Typology object.")]
         [Input("identifier", "The identifier of the typology.")]
         [Input("shelters", "The shelters of the typology.")]
-        [Input("evaporativeCoolingEffect", "The hourly evaporative cooling effect of the typology (0-1).")]
-        [Input("targetWindSpeed", "The hourly target wind speed of the typology.")]
-        [Input("radiantTemperatureAdjustment", "The hourly radiant temperature adjustment of the typology.")]
+        [Input("evaporativeCoolingEffect", "A list of hourly-annual dimensionless values by which to adjust the additional of moisture into the air and modify the dry-bulb temperature and relative humidity values. A value 0 means no additional moisure added to air, wheras a value of 1 results in fully moisture saturated air at 100% relative humidity.")]
+        [Input("targetWindSpeed", "The hourly target wind speed of the typology, in m/s. This can also contain \"null\" values in which case the EPW file used alongside this object and the porosity of the shelters will be used to determine wind speed - otherwise, any value input here will overwrite those calculated wind speeds.")]
+        [Input("radiantTemperatureAdjustment", "A list of values in °C, one-per-hour to adjust the mean radiant temperature by.")]
         [Output("typology", "A Typology object.")]
         public static Typology Typology(
             string identifier = null,
@@ -52,13 +52,13 @@ namespace BH.Engine.LadybugTools
 
             if (evaporativeCoolingEffect.Count() != 8760)
             {
-                BH.Engine.Base.Compute.RecordError("evaporativeCoolingEffect must be a list of 8760 values");
+                BH.Engine.Base.Compute.RecordError($"{nameof(evaporativeCoolingEffect)} must be a list of 8760 values.");
                 return null;
             }
 
             if (evaporativeCoolingEffect.Where(x => x < 0 || x > 1).Any())
             {
-                BH.Engine.Base.Compute.RecordError("evaporativeCoolingEffect must be between 0 and 1.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(evaporativeCoolingEffect)} must be between 0 and 1.");
                 return null;
             }
 
@@ -67,13 +67,13 @@ namespace BH.Engine.LadybugTools
 
             if (targetWindSpeed.Count() != 8760)
             {
-                BH.Engine.Base.Compute.RecordError("targetWindSpeed must be a list of 8760 values");
+                BH.Engine.Base.Compute.RecordError($"{nameof(targetWindSpeed)} must be a list of 8760 values.");
                 return null;
             }
 
             if (targetWindSpeed.Where(x => x != null && x.Value < 0).Any())
             {
-                BH.Engine.Base.Compute.RecordError("targetWindSpeed values must be greater than or equal to 0, or null if not relevant for that hour of the year.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(targetWindSpeed)} values must be greater than or equal to 0, or null if not relevant for that hour of the year.");
                 return null;
             }
 
@@ -82,7 +82,7 @@ namespace BH.Engine.LadybugTools
 
             if (radiantTemperatureAdjustment.Count() != 8760)
             {
-                BH.Engine.Base.Compute.RecordError("radiantTemperatureAdjustment must be a list of 8760 values");
+                BH.Engine.Base.Compute.RecordError($"{nameof(radiantTemperatureAdjustment)} must be a list of 8760 values.");
                 return null;
             }
 

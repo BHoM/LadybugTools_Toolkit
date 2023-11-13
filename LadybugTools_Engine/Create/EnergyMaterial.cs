@@ -35,9 +35,9 @@ namespace BH.Engine.LadybugTools
         [Input("density", "The density of the material in kg/m3.")]
         [Input("specificHeat", "The specific heat of the material in J/kg-K.")]
         [Input("roughness", "The roughness of the material.")]
-        [Input("thermalAbsorptance", "The thermal absorptance of the material.")]
-        [Input("solarAbsorptance", "The solar absorptance of the material.")]
-        [Input("visibleAbsorptance", "The visible absorptance of the material.")]
+        [Input("thermalAbsorptance", "The thermal absorptance of the material. 0-1.")]
+        [Input("solarAbsorptance", "The solar absorptance of the material. 0-1.")]
+        [Input("visibleAbsorptance", "The visible absorptance of the material. 0-1.")]
         [Output("energyMaterial", "An EnergyMaterial object.")]
         public static EnergyMaterial EnergyMaterial(
             string identifier,
@@ -53,49 +53,61 @@ namespace BH.Engine.LadybugTools
         {
             if (identifier.Contains("!"))
             {
-                BH.Engine.Base.Compute.RecordError("Identifier cannot contain '!' character");
+                BH.Engine.Base.Compute.RecordError($"{nameof(identifier)} cannot contain '!' character.");
                 return null;
             }
 
             if (identifier.Length > 100)
             {
-                BH.Engine.Base.Compute.RecordError("Identifier cannot be longer than 100 characters");
+                BH.Engine.Base.Compute.RecordError($"{nameof(identifier)} cannot be longer than 100 characters.");
                 return null;
             }
 
             if (specificHeat < 100)
             {
-                BH.Engine.Base.Compute.RecordError("specificHeat must be greater than 100");
+                BH.Engine.Base.Compute.RecordError($"{nameof(specificHeat)} must be greater than 100.");
                 return null;
             }
 
             if (conductivity < 0)
             {
-                BH.Engine.Base.Compute.RecordError("conductivity must be greater than 0");
+                BH.Engine.Base.Compute.RecordError($"{nameof(conductivity)} must be greater than 0.");
                 return null;
             }
 
             if (density < 0)
             {
-                BH.Engine.Base.Compute.RecordError("density must be greater than 0");
+                BH.Engine.Base.Compute.RecordError($"{nameof(density)} must be greater than 0.");
                 return null;
             }
 
             if (thickness <= 0)
             {
-                BH.Engine.Base.Compute.RecordError("thickness must be greater than 0");
+                BH.Engine.Base.Compute.RecordError($"{nameof(thickness)} must be greater than 0.");
                 return null;
             }
 
             if (roughness == Roughness.Undefined)
             {
-                BH.Engine.Base.Compute.RecordError("roughness must be defined");
+                BH.Engine.Base.Compute.RecordError($"{nameof(roughness)} must be defined.");
                 return null;
             }
 
-            if (thermalAbsorptance < 0 || thermalAbsorptance > 1 || solarAbsorptance < 0 || solarAbsorptance > 1 || visibleAbsorptance < 0 || visibleAbsorptance > 1)
+            if (thermalAbsorptance < 0 || thermalAbsorptance > 1)
             {
-                BH.Engine.Base.Compute.RecordError("ThermalAbsorptance, SolarAbsorptance, and VisibleAbsorptance must be between 0 and 1");
+                BH.Engine.Base.Compute.RecordError($"{nameof(thermalAbsorptance)} must be between 0 and 1.");
+                return null;
+            }
+
+            if (solarAbsorptance < 0 || solarAbsorptance > 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(solarAbsorptance)} must be between 0 and 1.");
+                return null;
+            }
+
+            if (visibleAbsorptance < 0 || visibleAbsorptance > 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(visibleAbsorptance)} must be between 0 and 1.");
                 return null;
             }
 
