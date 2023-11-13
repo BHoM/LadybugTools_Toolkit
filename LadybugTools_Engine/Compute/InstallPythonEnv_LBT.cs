@@ -39,10 +39,8 @@ namespace BH.Engine.LadybugTools
         {
             // check if referenced Python is installed
             string referencedExecutable = @"C:\Program Files\ladybug_tools\python\python.exe";
-            
-            // NOTE - The version number below relates to the ProductVersion field of the "C:\Program Files\ladybug_tools\uninstall.exe" file, and doesn't necessarily reflect the version of the installer/uninstaller
-            // Pollination 1.35.14 has an uninstaller ProductVersion of 1.38.104
-            if (!Query.IsPollinationInstalled(targetPollinationVersion: "1.38.104", includeBuildNumber: false))
+
+            if (!Query.IsPollinationInstalled())
             {
                 return null;
             }
