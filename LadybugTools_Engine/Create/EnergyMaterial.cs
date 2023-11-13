@@ -95,7 +95,7 @@ namespace BH.Engine.LadybugTools
 
             if (thermalAbsorptance < 0 || thermalAbsorptance > 1 || solarAbsorptance < 0 || solarAbsorptance > 1 || visibleAbsorptance < 0 || visibleAbsorptance > 1)
             {
-                BH.Engine.Base.Compute.RecordError("thermalAbsorptance, solarAbsorptance, and visibleAbsorptance must be between 0 and 1");
+                BH.Engine.Base.Compute.RecordError("ThermalAbsorptance, SolarAbsorptance, and VisibleAbsorptance must be between 0 and 1");
                 return null;
             }
 
