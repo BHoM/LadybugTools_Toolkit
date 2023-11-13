@@ -21,7 +21,6 @@
  */
 
 using BH.oM.Base.Attributes;
-using BH.oM.Environment.MaterialFragments;
 using BH.oM.LadybugTools;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -31,32 +30,32 @@ namespace BH.Engine.LadybugTools
     public static partial class Create
     {
         [Description("Create an AnalysisPeriod object.")]
-        [Input("stMonth", "The starting month of the analysis period. 1-12.")]
-        [Input("stDay", "The starting day of the analysis period. 1-31.")]
-        [Input("stHour", "The starting hour of the analysis period. 0-23.")]
+        [Input("startMonth", "The starting month of the analysis period. 1-12.")]
+        [Input("startDay", "The starting day of the analysis period. 1-31.")]
+        [Input("startHour", "The starting hour of the analysis period. 0-23.")]
         [Input("endMonth", "The ending month of the analysis period. 1-12.")]
         [Input("endDay", "The ending day of the analysis period. 1-31.")]
         [Input("endHour", "The ending hour of the analysis period. 0-23.")]
         [Input("isLeapYear", "Whether the analysis period represents a leap year.")]
         [Input("timestep", "The number of timesteps per hour. One of {1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60}.")]
         [Output("analysisPeriod", "An AnalysisPeriod object.")]
-        public static AnalysisPeriod AnalysisPeriod(int stMonth = 1, int stDay = 1, int stHour = 0, int endMonth = 12, int endDay = 31, int endHour = 23, bool isLeapYear = false, int timestep = 1)
+        public static AnalysisPeriod AnalysisPeriod(int startMonth = 1, int startDay = 1, int startHour = 0, int endMonth = 12, int endDay = 31, int endHour = 23, bool isLeapYear = false, int timestep = 1)
         {
-            if (stMonth < 1 || stMonth > 12 || endMonth < 1 || endMonth > 12)
+            if (startMonth < 1 || startMonth > 12 || endMonth < 1 || endMonth > 12)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(stMonth)} and {nameof(endMonth)} must be between 1 and 12.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(startMonth)} and {nameof(endMonth)} must be between 1 and 12.");
                 return null;
             }
 
-            if (stDay < 1 || stDay > 31 || endDay < 1 || endDay > 31)
+            if (startDay < 1 || startDay > 31 || endDay < 1 || endDay > 31)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(stDay)} and {nameof(endDay)} must be between 1 and 31.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(startDay)} and {nameof(endDay)} must be between 1 and 31.");
                 return null;
             }
 
-            if (stHour < 0 || stHour > 23 || endHour < 0 || endHour > 23)
+            if (startHour < 0 || startHour > 23 || endHour < 0 || endHour > 23)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(stHour)} and {nameof(endHour)} must be between 0 and 23.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(startHour)} and {nameof(endHour)} must be between 0 and 23.");
                 return null;
             }
 
@@ -69,9 +68,9 @@ namespace BH.Engine.LadybugTools
 
             return new AnalysisPeriod()
             {
-                StMonth = stMonth,
-                StDay = stDay,
-                StHour = stHour,
+                StMonth = startMonth,
+                StDay = startDay,
+                StHour = startHour,
                 EndMonth = endMonth,
                 EndDay = endDay,
                 EndHour = endHour,
