@@ -59,7 +59,7 @@ namespace BH.Engine.LadybugTools
 
             if (identifier.Length > 100)
             {
-                BH.Engine.Base.Compute.RecordError("identifier cannot be longer than 100 characters");
+                BH.Engine.Base.Compute.RecordError("Identifier cannot be longer than 100 characters");
                 return null;
             }
 
