@@ -22,22 +22,23 @@
 
 
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using BH.oM.Geometry;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 
 namespace BH.oM.LadybugTools
 {
+    [NoAutoConstructor]
     public class Shelter : BHoMObject
     {
         [Description("Hourly wind porosity (0-1).")]
-        public virtual List<double> WindPorosity { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+        public virtual List<double> WindPorosity { get; set; }
 
         [Description("Hourly radiation porosity (0-1).")]
-        public virtual List<double> RadiationPorosity { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
-        
+        public virtual List<double> RadiationPorosity { get; set; }
+
         [Description("The vertices of this shelter object.")]
-        public virtual List<Point> Vertices { get; set; } = new List<Point>();
+        public virtual List<Point> Vertices { get; set; }
     }
 }
