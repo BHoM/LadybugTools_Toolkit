@@ -36,6 +36,7 @@ namespace BH.oM.LadybugTools
         public virtual string Identifier { get; set; }
 
         [Description("Thickness of material (m).")]
+        [Length]
         public virtual double Thickness { get; set; }
 
         [Description("Conductivity of material (W/mK).")]
