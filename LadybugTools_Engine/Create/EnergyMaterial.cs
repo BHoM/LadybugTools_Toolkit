@@ -53,7 +53,7 @@ namespace BH.Engine.LadybugTools
         {
             if (identifier.Contains("!"))
             {
-                BH.Engine.Base.Compute.RecordError("identifier cannot contain '!' character");
+                BH.Engine.Base.Compute.RecordError("Identifier cannot contain '!' character");
                 return null;
             }
 
