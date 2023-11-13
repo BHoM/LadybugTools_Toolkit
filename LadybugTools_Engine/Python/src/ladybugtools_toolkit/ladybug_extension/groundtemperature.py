@@ -13,11 +13,11 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybug.epw import EPW
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from .datacollection import collection_from_series, collection_to_series, to_hourly
 
 
-@decorator_factory()
+@bhom_analytics()
 def energyplus_strings(epw: EPW) -> str:
     """Generate strings to add into EnergyPlus simulation for slightly more
     accurate ground surface temperature results.
@@ -54,7 +54,7 @@ def energyplus_strings(epw: EPW) -> str:
     return ground_temperature_str
 
 
-@decorator_factory()
+@bhom_analytics()
 def eplus_otherside_coefficient(epw: EPW) -> str:
     """Generate strings to add into EnergyPlus simulation for annual-hourly
     ground temperature values applied to sub-ground surfaces.
@@ -95,7 +95,7 @@ def eplus_otherside_coefficient(epw: EPW) -> str:
     return ground_temperature_str
 
 
-@decorator_factory()
+@bhom_analytics()
 def ground_temperature_at_depth(
     epw: EPW, depth: float, soil_diffusivity: float = 0.31e-6
 ) -> HourlyContinuousCollection:
@@ -216,7 +216,7 @@ def ground_temperature_at_depth(
         return collection_from_series(gnd_temp_hourly)
 
 
-@decorator_factory()
+@bhom_analytics()
 def hourly_ground_temperature(
     epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
 ) -> HourlyContinuousCollection:
@@ -244,7 +244,7 @@ def hourly_ground_temperature(
         return ground_temperature_at_depth(epw, depth, soil_diffusivity)
 
 
-@decorator_factory()
+@bhom_analytics()
 def monthly_ground_temperature(
     epw: EPW, depth: float = 0.5, soil_diffusivity: float = 0.31e-6
 ) -> MonthlyCollection:

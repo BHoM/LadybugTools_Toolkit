@@ -1,7 +1,6 @@
 """Methods for manipulating Ladybug data collections."""
 
 # pylint: disable=E0401
-import json
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -18,21 +17,14 @@ from ladybug.datacollection import (
     MonthlyCollection,
 )
 from ladybug.datatype.angle import Angle
-from ladybug.datautil import (
-    collections_from_csv,
-    collections_from_json,
-    collections_to_csv,
-    collections_to_json,
-)
 from ladybug.dt import DateTime
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..helpers import circular_weighted_mean, wind_direction_average
 from .analysisperiod import analysis_period_to_datetimes
 from .analysisperiod import describe_analysis_period
 from .header import header_from_string, header_to_string
 
 
-@decorator_factory()
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
 
@@ -59,180 +51,6 @@ def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Ser
     )
 
 
-@decorator_factory()
-def collection_to_json(
-    collections: list[BaseCollection], json_path: Path, indent: int = None
-) -> Path:
-    """Save Ladybug BaseCollection-like objects into a JSON file.
-
-    Args:
-        collections (BaseCollection):
-            A Ladybug BaseCollection-like object.
-        json_path (Path):
-            The path to the JSON file.
-        indent (str, optional):
-            The indentation to use in the resulting JSON file. Defaults to None.
-
-    Returns:
-        Path:
-            The path to the JSON file.
-
-    """
-
-    json_path = Path(json_path)
-
-    if not all(isinstance(n, BaseCollection) for n in collections):
-        raise ValueError(
-            'All elements of the input "collections" must inherit from BaseCollection.'
-        )
-
-    if json_path.suffix != ".json":
-        raise ValueError("The target file must be a *.json file.")
-
-    return Path(
-        collections_to_json(
-            collections,
-            folder=json_path.parent.as_posix(),
-            file_name=json_path.name,
-            indent=indent,
-        )
-    )
-
-
-@decorator_factory()
-def collection_to_csv(collections: list[BaseCollection], csv_path: Path) -> Path:
-    """Save Ladybug BaseCollection-like objects into a CSV file.
-
-    Args:
-        collections (BaseCollection):
-            A Ladybug BaseCollection-like object.
-        csv_path (Path):
-            The path to the CSV file.
-
-    Returns:
-        Path:
-            The path to the CSV file.
-
-    """
-
-    csv_path = Path(csv_path)
-
-    if not all(isinstance(n, BaseCollection) for n in collections):
-        raise ValueError(
-            'All elements of the input "collections" must inherit from BaseCollection.'
-        )
-
-    return Path(
-        collections_to_csv(
-            collections,
-            folder=csv_path.parent.as_posix(),
-            file_name=csv_path.name,
-        )
-    )
-
-
-@decorator_factory()
-def collection_to_array(collection: BaseCollection) -> np.ndarray:
-    """Convert a Ladybug BaseCollection-like object into a numpy array.
-
-    Args:
-        collection: A Ladybug BaseCollection-like object.
-
-    Returns:
-        np.ndarray: A numpy array.
-    """
-
-    return np.array(collection.values)
-
-
-@decorator_factory()
-def percentile(
-    collections: list[BaseCollection], nth_percentile: float
-) -> BaseCollection:
-    """Create an nth percentile of the given data collections.
-
-    Args:
-        collections (list[BaseCollection]):
-            A list of collections.
-        nth_percentile (float):
-            A percentile, between 0 and 1.
-
-    Returns:
-        BaseCollection:
-            The "nth percentile" collection.
-    """
-
-    # check all input collections are of the same underlying datatype
-    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
-
-    series_name = df.columns[0]
-    if len(np.unique(df.columns)) != 1:
-        raise ValueError(
-            'You cannot get the "nth percentile" across non-alike datatypes.'
-        )
-
-    # check if any collections input are angular, in which case, fail
-    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
-        raise ValueError("This method cannot be applied to Angular datatypes.")
-
-    return collection_from_series(
-        df.quantile(nth_percentile, axis=1).rename(series_name)
-    )
-
-
-@decorator_factory()
-def minimum(collections: list[BaseCollection]) -> BaseCollection:
-    """Create a Minimum of the given data collections.
-
-    Args:
-        collections (list[BaseCollection]):
-            A list of collections.
-
-    Returns:
-        BaseCollection:
-            The "Minimum" collection.
-    """
-
-    # check all input collections are of the same underlying datatype
-    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
-
-    series_name = df.columns[0]
-    if len(np.unique(df.columns)) != 1:
-        raise ValueError('You cannot get the "minimum" across non-alike datatypes.')
-
-    # check if any collections input are angular, in which case, fail
-    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
-        raise ValueError("This method cannot be applied to Angular datatypes.")
-    return collection_from_series(df.min(axis=1).rename(series_name))
-
-
-@decorator_factory()
-def maximum(collections: list[BaseCollection]) -> BaseCollection:
-    """Create a Maximum of the given data collections.
-
-    Args:
-        collections (list[BaseCollection]):
-            A list of collections.
-
-    Returns:
-        BaseCollection:
-            The "Maximum" collection.
-    """
-
-    # check all input collections are of the same underlying datatype
-    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
-
-    series_name = df.columns[0]
-    if len(np.unique(df.columns)) != 1:
-        raise ValueError('You cannot get the "maximum" across non-alike datatypes.')
-
-    # check if any collections input are angular, in which case, fail
-    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
-        raise ValueError("This method cannot be applied to Angular datatypes.")
-    return collection_from_series(df.max(axis=1).rename(series_name))
-
-
-@decorator_factory()
 def collection_from_series(series: pd.Series) -> BaseCollection:
     """Convert a Pandas Series object into a Ladybug BaseCollection-like object.
 
@@ -277,74 +95,94 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
     raise ValueError("The series must be hourly or monthly.")
 
 
-@decorator_factory()
-def collection_from_json(json_path: Path) -> list[BaseCollection]:
-    """Load a JSON containing serialised Ladybug BaseCollection-like objects.
+@bhom_analytics()
+def percentile(
+    collections: list[BaseCollection], nth_percentile: float
+) -> BaseCollection:
+    """Create an nth percentile of the given data collections.
 
     Args:
-        json_path (Path): The path to the JSON file.
-
-    Returns:
-        list[BaseCollection]: A list of Ladybug BaseCollection-like object.
-
-    """
-
-    json_path = Path(json_path)
-
-    if json_path.suffix != ".json":
-        raise ValueError("The target file must be a *.json file.")
-
-    return collections_from_json(json_path.as_posix())
-
-
-@decorator_factory()
-def collection_from_dict(dictionary: dict[str, Any]) -> BaseCollection:
-    """Convert a JSON compliant dictionary object into a ladybug EPW.
-
-    Args:
-        dict[str, Any]:
-            A sanitised dictionary.
+        collections (list[BaseCollection]):
+            A list of collections.
+        nth_percentile (float):
+            A percentile, between 0 and 1.
 
     Returns:
         BaseCollection:
-            A ladybug collection object.
+            The "nth percentile" collection.
     """
 
-    json_str = json.dumps(dictionary)
+    # check all input collections are of the same underlying datatype
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
 
-    # custom handling of non-standard JSON NaN/Inf values
-    json_str = json_str.replace('"min": "-inf"', '"min": -Infinity')
-    json_str = json_str.replace('"max": "inf"', '"max": Infinity')
+    series_name = df.columns[0]
+    if len(np.unique(df.columns)) != 1:
+        raise ValueError(
+            'You cannot get the "nth percentile" across non-alike datatypes.'
+        )
 
-    # pylint: disable=broad-exception-caught
-    try:
-        return HourlyContinuousCollection.from_dict(json.loads(json_str))
-    except Exception:
-        return MonthlyCollection.from_dict(json.loads(json_str))
-    # pylint: enable=broad-exception-caught
+    # check if any collections input are angular, in which case, fail
+    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
+        raise ValueError("This method cannot be applied to Angular datatypes.")
+
+    return collection_from_series(
+        df.quantile(nth_percentile, axis=1).rename(series_name)
+    )
 
 
-@decorator_factory()
-def collection_from_csv(csv_path: Path) -> list[BaseCollection]:
-    """Load a CSV containing serialised Ladybug BaseCollection-like objects.
+@bhom_analytics()
+def minimum(collections: list[BaseCollection]) -> BaseCollection:
+    """Create a Minimum of the given data collections.
 
     Args:
-        csv_path (Path): The path to the CSV file.
+        collections (list[BaseCollection]):
+            A list of collections.
 
     Returns:
-        list[BaseCollection]: A list of Ladybug BaseCollection-like object.
-
+        BaseCollection:
+            The "Minimum" collection.
     """
 
-    csv_path = Path(csv_path)
+    # check all input collections are of the same underlying datatype
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
 
-    if csv_path.suffix != ".csv":
-        raise ValueError("The target file must be a *.csv file.")
+    series_name = df.columns[0]
+    if len(np.unique(df.columns)) != 1:
+        raise ValueError('You cannot get the "minimum" across non-alike datatypes.')
 
-    return collections_from_csv(csv_path.as_posix())
+    # check if any collections input are angular, in which case, fail
+    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
+        raise ValueError("This method cannot be applied to Angular datatypes.")
+    return collection_from_series(df.min(axis=1).rename(series_name))
 
 
-@decorator_factory()
+@bhom_analytics()
+def maximum(collections: list[BaseCollection]) -> BaseCollection:
+    """Create a Maximum of the given data collections.
+
+    Args:
+        collections (list[BaseCollection]):
+            A list of collections.
+
+    Returns:
+        BaseCollection:
+            The "Maximum" collection.
+    """
+
+    # check all input collections are of the same underlying datatype
+    df = pd.concat([collection_to_series(i) for i in collections], axis=1)
+
+    series_name = df.columns[0]
+    if len(np.unique(df.columns)) != 1:
+        raise ValueError('You cannot get the "maximum" across non-alike datatypes.')
+
+    # check if any collections input are angular, in which case, fail
+    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
+        raise ValueError("This method cannot be applied to Angular datatypes.")
+    return collection_from_series(df.max(axis=1).rename(series_name))
+
+
+@bhom_analytics()
 def summarise_collection(
     collection: BaseCollection,
     _n_common: int = 3,
@@ -515,7 +353,7 @@ def summarise_collection(
     return descriptions
 
 
-@decorator_factory()
+@bhom_analytics()
 def average(
     collections: list[BaseCollection], weights: list[float] = None
 ) -> BaseCollection:
@@ -568,7 +406,7 @@ def average(
     return collections[0].get_aligned_collection(vals)
 
 
-@decorator_factory()
+@bhom_analytics()
 def to_hourly(
     collection: MonthlyCollection, method: str = None
 ) -> HourlyContinuousCollection:
@@ -613,7 +451,7 @@ def to_hourly(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def peak_time(collection: BaseCollection) -> tuple[Any, tuple[DateTime]]:
     """Find the peak value within a collection, and the time, or times at which it occurs.
 
@@ -635,7 +473,7 @@ def peak_time(collection: BaseCollection) -> tuple[Any, tuple[DateTime]]:
     return peak_value, times
 
 
-@decorator_factory()
+@bhom_analytics()
 def create_typical_day(
     collection: HourlyContinuousCollection,
     centroid: DateTime,

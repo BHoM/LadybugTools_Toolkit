@@ -19,7 +19,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.colors import Colormap
 from matplotlib.patches import Polygon
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
     describe_analysis_period,
@@ -28,7 +28,7 @@ from ..ladybug_extension.epw import EPW, epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
 
 
-@decorator_factory()
+@bhom_analytics()
 def strategy_warning(polygon_name):
     """Give a warning about a polygon not fitting on the chart."""
     msg = (
@@ -144,7 +144,7 @@ class PsychrometricPolygons:
             ), f"PassiveStrategy not of correct type. Use {PassiveStrategy}"
 
 
-@decorator_factory()
+@bhom_analytics()
 def psychrometric(
     epw: EPW,
     cmap: Colormap = "viridis",

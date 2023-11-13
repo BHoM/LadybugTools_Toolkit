@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .bhom import decorator_factory
+from .bhom.analytics import bhom_analytics
 
 
 from .helpers import (
@@ -179,7 +179,7 @@ class DirectionBins:
         """The direction bins as a pandasa IntervalIdex."""
         return pd.IntervalIndex.from_arrays(self.lows, self.highs, closed="left")
 
-    @decorator_factory()
+    @bhom_analytics()
     def bin_data(
         self, direction_data: list[float], other_data: list[float] = None
     ) -> dict[tuple[float], list[float]]:
@@ -225,7 +225,7 @@ class DirectionBins:
             }
         return d
 
-    @decorator_factory()
+    @bhom_analytics()
     def prevailing(
         self, direction_data: list[float], n: int, as_angle: bool = False
     ) -> list[str]:

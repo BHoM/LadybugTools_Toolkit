@@ -38,11 +38,11 @@ from ladybug.sunpath import Sunpath
 from meteostat import Point, Hourly
 from scipy.stats import weibull_min
 from tqdm import tqdm
-from .bhom import decorator_factory, CONSOLE_LOGGER
+from .bhom.analytics import bhom_analytics
+from .bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.dt import lb_datetime_from_datetime
 
 
-@decorator_factory()
 def sanitise_string(string: str) -> str:
     """Sanitise a string so that only path-safe characters remain."""
 
@@ -65,7 +65,7 @@ def convert_keys_to_snake_case(d: dict):
     return d
 
 
-@decorator_factory()
+@bhom_analytics()
 def default_hour_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning times of day."""
     f = io.StringIO()
@@ -80,7 +80,7 @@ def default_hour_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
-@decorator_factory()
+@bhom_analytics()
 def default_month_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning month of year."""
     f = io.StringIO()
@@ -95,7 +95,7 @@ def default_month_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
-@decorator_factory()
+@bhom_analytics()
 def default_combined_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning combinations of time of day and month of year."""
     f = io.StringIO()
@@ -116,7 +116,7 @@ def default_combined_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
-@decorator_factory()
+@bhom_analytics()
 def default_analysis_periods() -> list[AnalysisPeriod]:
     """A set of generic Analysis Period objects, spanning all predefined
     combinations of time of day and month of year."""
@@ -132,7 +132,7 @@ def default_analysis_periods() -> list[AnalysisPeriod]:
     return aps
 
 
-@decorator_factory()
+@bhom_analytics()
 def chunks(lst: list[Any], chunksize: int):
     """Partition an iterable into lists of length "chunksize".
 
@@ -147,7 +147,7 @@ def chunks(lst: list[Any], chunksize: int):
         yield lst[i : i + chunksize]
 
 
-@decorator_factory()
+@bhom_analytics()
 def scrape_weather(
     station: str,
     start_date: str = "1970-01-01",
@@ -357,7 +357,7 @@ def scrape_weather(
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def rolling_window(array: list[Any], window: int):
     """Throwaway function here to roll a window along a list.
 
@@ -393,7 +393,7 @@ class DecayMethod(Enum):
     SIGMOID = auto()
 
 
-@decorator_factory()
+@bhom_analytics()
 def proximity_decay(
     value: float,
     distance_to_value: float,
@@ -430,7 +430,7 @@ def proximity_decay(
     raise ValueError(f"Unknown curve type: {decay_method}")
 
 
-@decorator_factory()
+@bhom_analytics()
 def timedelta_tostring(time_delta: timedelta) -> str:
     """timedelta objects don't have a nice string representation, so this function converts them.
 
@@ -447,7 +447,7 @@ def timedelta_tostring(time_delta: timedelta) -> str:
     return f"{hours:02d}:{minutes:02d}"
 
 
-@decorator_factory()
+@bhom_analytics()
 def decay_rate_smoother(
     series: pd.Series,
     difference_threshold: float = -10,
@@ -498,7 +498,7 @@ def decay_rate_smoother(
     return new_series
 
 
-@decorator_factory()
+@bhom_analytics()
 def cardinality(direction_angle: float, directions: int = 16):
     """Returns the cardinal orientation of a given angle, where that angle is related to north at
         0 degrees.
@@ -588,7 +588,7 @@ def cardinality(direction_angle: float, directions: int = 16):
     return arr[(val % directions)]
 
 
-@decorator_factory()
+@bhom_analytics()
 def angle_from_cardinal(cardinal_direction: str) -> float:
     """
     For a given cardinal direction, return the corresponding angle in degrees.
@@ -1031,7 +1031,7 @@ class OpenMeteoVariable(Enum):
         return value * self.target_multiplier
 
 
-@decorator_factory()
+@bhom_analytics()
 def scrape_openmeteo(
     latitude: float,
     longitude: float,
@@ -1244,7 +1244,7 @@ def scrape_meteostat(
     return data
 
 
-@decorator_factory()
+@bhom_analytics()
 def get_soil_temperatures(
     latitude: float,
     longitude: float,
@@ -1290,7 +1290,7 @@ def get_soil_temperatures(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def weibull_directional(
     binned_data: dict[tuple[float, float], list[float]]
 ) -> pd.DataFrame:
@@ -1314,7 +1314,7 @@ def weibull_directional(
     return pd.DataFrame.from_dict(d, orient="index", columns=["k", "loc", "c"])
 
 
-@decorator_factory()
+@bhom_analytics()
 def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
     """Estimate the two-parameter Weibull parameters for a set of wind speeds.
 
@@ -1343,7 +1343,7 @@ def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
         return (np.nan, np.nan, np.nan)  # type: ignore
 
 
-@decorator_factory()
+@bhom_analytics()
 def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     """Get the average angle from a set of weighted angles.
 
@@ -1384,7 +1384,7 @@ def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     return mean
 
 
-@decorator_factory()
+@bhom_analytics()
 def wind_direction_average(angles: list[float]) -> float:
     """Get the average wind direction from a set of wind directions.
 
@@ -1576,7 +1576,7 @@ def radiation_at_height(
     return reference_value + increase
 
 
-@decorator_factory()
+@bhom_analytics()
 def air_pressure_at_height(
     reference_value: float,
     target_height: float,
@@ -1602,7 +1602,7 @@ def air_pressure_at_height(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def target_wind_speed_collection(
     epw: EPW, target_average_wind_speed: float, target_height: float
 ) -> HourlyContinuousCollection:
@@ -1638,7 +1638,7 @@ def target_wind_speed_collection(
     return epw.wind_speed * adjustment_factor
 
 
-@decorator_factory()
+@bhom_analytics()
 def dry_bulb_temperature_at_height(
     epw: EPW, target_height: float
 ) -> HourlyContinuousCollection:
@@ -1659,7 +1659,7 @@ def dry_bulb_temperature_at_height(
     return dbt_collection
 
 
-@decorator_factory()
+@bhom_analytics()
 def validate_timeseries(
     obj: Any,
     is_annual: bool = False,
@@ -1750,7 +1750,7 @@ def evaporative_cooling_effect(
     return [new_dbt, new_rh]
 
 
-@decorator_factory()
+@bhom_analytics()
 def evaporative_cooling_effect_collection(
     epw: EPW, evaporative_cooling_effectiveness: float = 0.3
 ) -> list[HourlyContinuousCollection]:
@@ -1801,7 +1801,7 @@ def evaporative_cooling_effect_collection(
     return [dbt, rh]
 
 
-@decorator_factory()
+@bhom_analytics()
 def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     """A removal of all timesteps within a time-indexed pandas
     object where the day is the 29th of February."""
@@ -1814,7 +1814,7 @@ def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.S
     return pd_object[~mask]
 
 
-@decorator_factory()
+@bhom_analytics()
 def month_hour_binned_series(
     series: pd.Series,
     month_bins: tuple[tuple[int]] = None,
@@ -1943,7 +1943,7 @@ def month_hour_binned_series(
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def sunrise_sunset(location: Location) -> pd.DataFrame():
     """Calculate sunrise and sunset times for a given location and year. Includes
     civil, nautical and astronomical twilight.
@@ -2010,7 +2010,7 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
     ]
 
 
-@decorator_factory()
+@bhom_analytics()
 def safe_filename(filename: str) -> str:
     """Remove all non-alphanumeric characters from a filename."""
     return "".join(

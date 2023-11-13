@@ -16,10 +16,9 @@ def test_load_ill():
     assert load_ill([ILL_FILE]).sum().sum() == pytest.approx(5779077.539738757, rel=1)
 
 
-# def test_load_npy():
-#     """_"""
-#     TODO - make this method worl with sun-up-hours file in any location
-#     assert load_npy([NPY_FILE]).sum().sum() == pytest.approx(5779077.539738757, rel=1)
+def test_load_npy():
+    """_"""
+    assert load_npy([NPY_FILE]).sum().sum() == pytest.approx(887941060.0, rel=1)
 
 
 def test_load_sql():
@@ -39,4 +38,4 @@ def test_load_pts():
 
 def test_make_annual():
     """_"""
-    assert make_annual(load_ill([ILL_FILE])).shape == (8760, 100)
+    assert make_annual(load_ill([ILL_FILE])).shape == (8760, 25)

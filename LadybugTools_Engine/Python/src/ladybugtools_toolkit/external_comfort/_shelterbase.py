@@ -28,7 +28,7 @@ from matplotlib.figure import Figure
 from mpl_toolkits import mplot3d
 
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..bhom.to_bhom import point3d_to_bhom
 from ..ladybug_extension.epw import sun_position_list
 from ..helpers import convert_keys_to_snake_case
@@ -472,7 +472,7 @@ class Shelter:
         )
         return shd
 
-    @decorator_factory()
+    @bhom_analytics()
     def rotate(self, angle: float, center: Point3D = Point3D()) -> "Shelter":
         """Rotate the shelter about 0, 0, 0 by the given angle in degrees clockwise from north at 0.
 
@@ -493,7 +493,7 @@ class Shelter:
             radiation_porosity=self.radiation_porosity,
         )
 
-    @decorator_factory()
+    @bhom_analytics()
     def move(self, vector: Vector3D) -> "Shelter":
         """Move the shelter by the given vector.
 
@@ -747,7 +747,7 @@ class Shelter:
 
         return _wind_speed
 
-    @decorator_factory()
+    @bhom_analytics()
     def visualise(
         self,
         ax: plt.Axes = None,
@@ -825,7 +825,7 @@ class Shelter:
         return fig
 
 
-@decorator_factory()
+@bhom_analytics()
 def annual_sky_exposure(
     shelters: list[Shelter], include_radiation_porosity: bool = True
 ) -> list[float]:
@@ -865,7 +865,7 @@ def annual_sky_exposure(
     return results.sum(axis=0) / (len(rays) * len(shelters))
 
 
-@decorator_factory()
+@bhom_analytics()
 def annual_sun_exposure(
     shelters: list[Shelter], epw: EPW, include_radiation_porosity: bool = True
 ) -> list[float]:
@@ -895,7 +895,7 @@ def annual_sun_exposure(
     return result
 
 
-@decorator_factory()
+@bhom_analytics()
 def annual_wind_speed(
     shelters: list[Shelter],
     epw: EPW,
@@ -928,7 +928,7 @@ def annual_wind_speed(
     return np.array(results).min(axis=0)
 
 
-@decorator_factory()
+@bhom_analytics()
 def write_shelters_to_hbjson(shelters: list[Shelter], hbjson_path: Path) -> Path:
     """Create a Honeybee JSON file from a list of Shelter objects.
 
