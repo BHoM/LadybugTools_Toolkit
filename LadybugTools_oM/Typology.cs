@@ -22,12 +22,14 @@
 
 
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
 namespace BH.oM.LadybugTools
 {
+    [NoAutoConstructor]
     public class Typology : BHoMObject
     {
         [Description("The name of this Typology.")]
