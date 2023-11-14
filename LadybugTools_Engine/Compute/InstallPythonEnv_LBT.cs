@@ -39,9 +39,9 @@ namespace BH.Engine.LadybugTools
         {
             // check if referenced Python is installed
             string referencedExecutable = @"C:\Program Files\ladybug_tools\python\python.exe";
-            if (!File.Exists(referencedExecutable))
+
+            if (!Query.IsPollinationInstalled())
             {
-                Base.Compute.RecordError($"Could not find referenced python executable at {referencedExecutable}. Please install Pollination try again.");
                 return null;
             }
 
