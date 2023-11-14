@@ -15,10 +15,10 @@ from ladybug_geometry.geometry2d import (
     Vector2D,
 )
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
-@decorator_factory()
+@bhom_analytics()
 def plot_lb_geo_2d(
     lb_geometry: tuple[
         Mesh2D

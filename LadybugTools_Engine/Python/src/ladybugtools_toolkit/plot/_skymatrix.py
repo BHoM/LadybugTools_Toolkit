@@ -16,13 +16,13 @@ from ladybug.wea import Wea
 from matplotlib.collections import PatchCollection
 
 from honeybee_radiance.config import folders as hbr_folders
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..ladybug_extension.analysisperiod import describe_analysis_period
 from ..ladybug_extension.epw import EPW
 from ..ladybug_extension.location import location_to_string
 
 
-@decorator_factory()
+@bhom_analytics()
 def skymatrix(
     epw: EPW,
     ax: plt.Axes = None,

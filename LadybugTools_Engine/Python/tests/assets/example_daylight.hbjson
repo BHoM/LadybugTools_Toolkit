@@ -1,6 +1,6 @@
 {
-    "display_name": "_lbt_tk_pytest_daylight", 
-    "identifier": "_lbt_tk_pytest_daylight", 
+    "display_name": "LBTBHoM_pytest_daylight", 
+    "identifier": "LBTBHoM_pytest_daylight", 
     "tolerance": 0.01, 
     "angle_tolerance": 1.0, 
     "rooms": [

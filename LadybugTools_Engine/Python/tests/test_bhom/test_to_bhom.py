@@ -16,30 +16,44 @@ from ladybugtools_toolkit.bhom.to_bhom import (
     datatype_to_bhom,
     location_to_bhom,
     epw_to_bhom,
+    material_to_bhom,
 )
 from .. import EPW_OBJ
+
+ENERGY_MATERIAL_VEGETATION = EnergyMaterialVegetation(
+    identifier="test",
+    thickness=0.1,
+    conductivity=0.2,
+    density=0.3,
+    specific_heat=1000,
+    roughness="Smooth",
+    soil_thermal_absorptance=0.5,
+    soil_solar_absorptance=0.6,
+    soil_visible_absorptance=0.7,
+    plant_height=0.8,
+    leaf_area_index=0.9,
+    leaf_reflectivity=0.1,
+    leaf_emissivity=0.8,
+    min_stomatal_resist=100,
+)
+
+ENERGY_MATERIAL = EnergyMaterial(
+    identifier="test",
+    roughness="Smooth",
+    thickness=1.0,
+    conductivity=0.5,
+    density=2.0,
+    specific_heat=1000.0,
+    thermal_absorptance=0.6,
+    solar_absorptance=0.7,
+    visible_absorptance=0.8,
+)
 
 
 def test_energymaterialvegetation_to_bhom():
     """_"""
-    obj = EnergyMaterialVegetation(
-        identifier="test",
-        thickness=0.1,
-        conductivity=0.2,
-        density=0.3,
-        specific_heat=1000,
-        roughness="Smooth",
-        soil_thermal_absorptance=0.5,
-        soil_solar_absorptance=0.6,
-        soil_visible_absorptance=0.7,
-        plant_height=0.8,
-        leaf_area_index=0.9,
-        leaf_reflectivity=0.1,
-        leaf_emissivity=0.8,
-        min_stomatal_resist=100,
-    )
 
-    result = energymaterialvegetation_to_bhom(obj)
+    result = energymaterialvegetation_to_bhom(ENERGY_MATERIAL_VEGETATION)
 
     assert result["_t"] == "BH.oM.LadybugTools.EnergyMaterialVegetation"
     assert result["Type"] == "EnergyMaterialVegetation"
@@ -61,19 +75,8 @@ def test_energymaterialvegetation_to_bhom():
 
 def test_energymaterial_to_bhom():
     """_"""
-    obj = EnergyMaterial(
-        identifier="test",
-        roughness="Smooth",
-        thickness=1.0,
-        conductivity=0.5,
-        density=2.0,
-        specific_heat=1000.0,
-        thermal_absorptance=0.6,
-        solar_absorptance=0.7,
-        visible_absorptance=0.8,
-    )
 
-    result = energymaterial_to_bhom(obj)
+    result = energymaterial_to_bhom(ENERGY_MATERIAL)
 
     assert result["_t"] == "BH.oM.LadybugTools.EnergyMaterial"
     assert result["Type"] == "EnergyMaterial"
@@ -86,6 +89,13 @@ def test_energymaterial_to_bhom():
     assert result["ThermalAbsorptance"] == 0.6
     assert result["SolarAbsorptance"] == 0.7
     assert result["VisibleAbsorptance"] == 0.8
+
+
+def test_material_to_bhom():
+    """_"""
+
+    assert material_to_bhom(ENERGY_MATERIAL)["Roughness"] == "Smooth"
+    assert material_to_bhom(ENERGY_MATERIAL_VEGETATION)["MinStomatalResist"] == 100
 
 
 def test_point3d_to_bhom():
@@ -123,7 +133,7 @@ def test_analysisperiod_to_bhom():
     assert result["EndDay"] == 31
     assert result["StMonth"] == 1
     assert result["EndMonth"] == 12
-    assert result["IsLeapYear"] == False
+    assert result["IsLeapYear"] is False
     assert result["Timestep"] == 1
 
 

@@ -14,7 +14,6 @@ from honeybee_energy.material.opaque import (
 from honeybee_radiance.sensorgrid import Sensor, SensorGrid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
 
-# from ..bhom import decorator_factory
 from .material import _material_equality
 
 _ZONE_WIDTH = 10

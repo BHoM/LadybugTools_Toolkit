@@ -27,10 +27,10 @@ from matplotlib.colors import (
 from matplotlib.tri import Triangulation
 from PIL import Image
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
-@decorator_factory()
+@bhom_analytics()
 def animation(
     images: list[str | Path | Image.Image],
     output_gif: str | Path,
@@ -291,7 +291,7 @@ def lighten_color(color: str | tuple, amount: float = 0.5) -> tuple[float]:
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
 
 
-@decorator_factory()
+@bhom_analytics()
 def create_title(text: str, plot_type: str) -> str:
     """Create a title for a plot.
 
@@ -317,7 +317,7 @@ def create_title(text: str, plot_type: str) -> str:
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def average_color(colors: Any, keep_alpha: bool = False) -> str:
     """Return the average color from a list of colors.
 
@@ -347,7 +347,7 @@ def average_color(colors: Any, keep_alpha: bool = False) -> str:
     return rgb2hex(to_rgba_array(colors).mean(axis=0), keep_alpha=keep_alpha)
 
 
-@decorator_factory()
+@bhom_analytics()
 def base64_to_image(base64_string: str, image_path: Path) -> Path:
     """Convert a base64 encoded image into a file on disk.
 
@@ -372,7 +372,7 @@ def base64_to_image(base64_string: str, image_path: Path) -> Path:
     return image_path
 
 
-@decorator_factory()
+@bhom_analytics()
 def image_to_base64(image_path: Path, html: bool = False) -> str:
     """Load an image file from disk and convert to base64 string.
 
@@ -409,7 +409,7 @@ def image_to_base64(image_path: Path, html: bool = False) -> str:
     return base64_string
 
 
-@decorator_factory()
+@bhom_analytics()
 def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
     """Convert a matplotlib figure object into a base64 string.
 
@@ -437,7 +437,7 @@ def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
     return base64_string
 
 
-@decorator_factory()
+@bhom_analytics()
 def figure_to_image(fig: plt.Figure) -> Image:
     """Convert a matplotlib Figure object into a PIL Image.
 
@@ -462,7 +462,7 @@ def figure_to_image(fig: plt.Figure) -> Image:
     return Image.fromarray(buf)
 
 
-@decorator_factory()
+@bhom_analytics()
 def tile_images(
     imgs: list[Path] | list[Image.Image], rows: int, cols: int
 ) -> Image.Image:
@@ -507,7 +507,7 @@ def tile_images(
     return grid
 
 
-@decorator_factory()
+@bhom_analytics()
 def triangulation_area(triang: Triangulation) -> float:
     """Calculate the area of a matplotlib Triangulation.
 
@@ -539,7 +539,7 @@ def triangulation_area(triang: Triangulation) -> float:
     return area
 
 
-@decorator_factory()
+@bhom_analytics()
 def create_triangulation(
     x: list[float],
     y: list[float],
@@ -610,7 +610,7 @@ def create_triangulation(
     return triang
 
 
-@decorator_factory()
+@bhom_analytics()
 def format_polar_plot(ax: plt.Axes) -> plt.Axes:
     """Format a polar plot, to svae on having to write this every time!"""
     ax.set_theta_zero_location("N")

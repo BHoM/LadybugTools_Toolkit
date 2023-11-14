@@ -9,14 +9,14 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..helpers import evaporative_cooling_effect
 from ..ladybug_extension.epw import AnalysisPeriod, collection_to_series
 from ._simulatebase import SimulationResult
 from .utci import utci
 
 
-@decorator_factory()
+@bhom_analytics()
 def ranked_mitigations(
     simulation_result: SimulationResult,
     n_steps: int = 8,

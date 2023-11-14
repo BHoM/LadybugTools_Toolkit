@@ -42,7 +42,7 @@ from ...plot._utci import (
 from ...plot.utilities import create_triangulation
 from ...plot._sunpath import sunpath
 from .._simulatebase import SimulationResult
-from ...bhom import CONSOLE_LOGGER
+from ...bhom.logging import CONSOLE_LOGGER
 
 # from ..simulate import direct_sun_hours as dsh
 from ..utci import utci, utci_parallel

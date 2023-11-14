@@ -8,13 +8,13 @@ import warnings
 
 import numpy as np
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ._externalcomfortbase import ExternalComfort
 from ._shelterbase import Shelter
 from ._typologybase import Typology
 
 
-@decorator_factory()
+@bhom_analytics()
 def modify_external_comfort(
     external_comfort: ExternalComfort,
     additional_shelters: tuple[Shelter] = (),

@@ -3,10 +3,10 @@
 import numpy as np
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.material.opaque import EnergyMaterial
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
-@decorator_factory()
+@bhom_analytics()
 def calculate_sri(
     solar_reflectance: float,
     thermal_emittance: float,
@@ -140,7 +140,7 @@ def calculate_sri(
     return solar_reflective_index
 
 
-@decorator_factory()
+@bhom_analytics()
 def material_sri(
     material: EnergyMaterial,
     insolation: float = 1000,
@@ -173,7 +173,7 @@ def material_sri(
     )
 
 
-@decorator_factory()
+@bhom_analytics()
 def construction_sri(
     construction: OpaqueConstruction,
     insolation: float = 1000,

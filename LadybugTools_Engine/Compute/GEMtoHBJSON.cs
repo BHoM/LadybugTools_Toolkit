@@ -20,13 +20,11 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.Engine.Python;
 using BH.oM.Python;
 using BH.oM.Base.Attributes;
 
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
@@ -51,26 +49,21 @@ namespace BH.Engine.LadybugTools
 
             PythonEnvironment env = InstallPythonEnv_LBT(true);
 
-            string gemFile = System.IO.Path.GetFullPath(gem);
-            string outputDirectory = System.IO.Path.GetDirectoryName(gem);
-            string fileName = System.IO.Path.GetFileNameWithoutExtension(gem);
+            gem = System.IO.Path.GetFullPath(gem);
+            string hbjsonFile = System.IO.Path.ChangeExtension(gem, ".hbjson");
 
-            string pythonScript = String.Join("\n", new List<string>()
+            string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "gem_to_hbjson.py");
+
+            // run the process
+            string command = $"{env.Executable} {script} -g \"{gem}\"";
+            string result = Python.Compute.RunCommandStdout(command: command, hideWindows: true);
+
+            if (!File.Exists(hbjsonFile))
             {
-                "import traceback",
-                "from honeybee.model import Model",
-                "from honeybee_ies.reader import model_from_ies",
-                "",
-                "try:",
-                $"    model = model_from_ies(r\"{gemFile}\")",
-                $"    hbjson_file = model.to_hbjson(folder=r\"{outputDirectory}\", name=\"{fileName}\")",
-                "    print(hbjson_file)",
-                "except Exception as exc:",
-                "    print(traceback.format_exc())",
-            });
+                BH.Engine.Base.Compute.RecordError($"File conversion failed due to {result}");
+            }
 
-            return env.RunPythonString(pythonScript).Trim();
+            return hbjsonFile;
         }
     }
 }
-

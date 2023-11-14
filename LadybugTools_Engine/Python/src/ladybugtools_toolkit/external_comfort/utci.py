@@ -21,7 +21,7 @@ from ladybug_comfort.collection.utci import UTCI
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoricalComfort
 from ..helpers import evaporative_cooling_effect, month_hour_binned_series
 from ..ladybug_extension.datacollection import (
@@ -738,7 +738,7 @@ def _utci_collection(
     ).universal_thermal_climate_index
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci_parallel(
     ta: np.ndarray, tr: np.ndarray, vel: np.ndarray, rh: np.ndarray
 ) -> np.ndarray:
@@ -783,7 +783,7 @@ def utci_parallel(
     return np.concatenate(results).reshape(ta.shape)
 
 
-@decorator_factory()
+@bhom_analytics()
 def utci(
     air_temperature: HourlyContinuousCollection
     | pd.DataFrame
@@ -895,7 +895,7 @@ def utci(
         ) from e
 
 
-@decorator_factory()
+@bhom_analytics()
 def compare_monthly_utci(
     utci_collections: list[HourlyContinuousCollection],
     utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
@@ -955,7 +955,7 @@ def compare_monthly_utci(
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def shade_benefit_category(
     unshaded_utci: HourlyContinuousCollection | pd.Series,
     shaded_utci: HourlyContinuousCollection | pd.Series,
@@ -1043,7 +1043,7 @@ def shade_benefit_category(
     return pd.Series(shade_categories, index=unshaded_utci.index)
 
 
-@decorator_factory()
+@bhom_analytics()
 def distance_to_comfortable(
     utci_value: int
     | float
@@ -1133,7 +1133,7 @@ def distance_to_comfortable(
     return distance
 
 
-@decorator_factory()
+@bhom_analytics()
 def feasible_utci_limits(
     epw: EPW, include_additional_moisture: float = 0, as_dataframe: bool = False
 ) -> tuple[HourlyContinuousCollection] | pd.DataFrame:
@@ -1228,7 +1228,7 @@ def feasible_utci_limits(
     return min_utci, max_utci
 
 
-@decorator_factory()
+@bhom_analytics()
 def feasible_utci_category_limits(
     epw: EPW,
     include_additional_moisture: float = 0,
@@ -1289,7 +1289,7 @@ def feasible_utci_category_limits(
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def month_hour_binned(
     utci_data: pd.Series | HourlyContinuousCollection,
     month_bins: tuple[tuple[int]] = None,
@@ -1341,7 +1341,7 @@ def month_hour_binned(
     return df
 
 
-@decorator_factory()
+@bhom_analytics()
 def met_rate_adjustment(
     utci_collection: HourlyContinuousCollection, met: float
 ) -> HourlyContinuousCollection:

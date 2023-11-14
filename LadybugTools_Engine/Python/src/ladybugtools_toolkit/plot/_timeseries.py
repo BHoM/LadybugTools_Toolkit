@@ -6,11 +6,11 @@ from datetime import datetime  # pylint: disable=E0401
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..helpers import validate_timeseries
 
 
-@decorator_factory()
+@bhom_analytics()
 def timeseries(
     series: pd.Series,
     ax: plt.Axes = None,

@@ -1,10 +1,11 @@
 {
-  "MessageForDeleted": {
-    "BH.Engine.LadybugTools.Convert.FromHoneybeeSurface(System.Object)": "This method has been removed as part of the removal of the dependency from Rhino in the LadybugTools_Toolkit.",
-    "BH.Engine.LadybugTools.Create.Typology(System.Collections.Generic.List<BH.oM.LadybugTools.Shelter>, System.String, System.Double, System.Double, System.Double)": "This method only did validation for creating the object, which has been moved to methods that take a Typology as an input.",
-    "BH.Engine.LadybugTools.Convert.SnakeCaseToPascalCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
-    "BH.Engine.LadybugTools.Convert.PascalCaseToSnakeCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
-    "BH.Engine.LadybugTools.Query.GetMaterial(System.String)": "Due to a refactor of the underlying python libraries, this method was broken. To get materials for use within python scripts, get them within the scripts.",
-    "BH.Engine.LadybugTools.Query.GetTypology(System.String)": "Due to a refactor of the underlying python libraries, this method was broken. To get typologies for use within python scripts, get them within the scripts."
-  }
+    "MessageForDeleted": {
+        "BH.Engine.LadybugTools.Convert.FromHoneybeeSurface(System.Object)": "This method has been removed as part of the removal of the dependency from Rhino in the LadybugTools_Toolkit.",
+        "BH.Engine.LadybugTools.Create.Typology(System.Collections.Generic.List<BH.oM.LadybugTools.Shelter>, System.String, System.Double, System.Double, System.Double)": "This method only did validation for creating the object, which has been moved to methods that take a Typology as an input.",
+        "BH.Engine.LadybugTools.Convert.SnakeCaseToPascalCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
+        "BH.Engine.LadybugTools.Convert.PascalCaseToSnakeCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
+        "BH.Engine.LadybugTools.Query.GetMaterial(System.String)": "Due to a refactor of the underlying python libraries, this method was broken. To get materials for use within python scripts, get them within the scripts.",
+        "BH.Engine.LadybugTools.Query.GetTypology(System.String)": "Due to a refactor of the underlying python libraries, this method was broken. To get typologies for use within python scripts, get them within the scripts.",
+        "BH.Engine.LadybugTools.Compute.EPWtoCustomObject(System.String)": "Due to inclusion of EPW as an object, this method is no longer required and has been removed."
+    }
 }

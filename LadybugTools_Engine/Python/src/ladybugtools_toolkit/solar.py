@@ -18,7 +18,8 @@ from ladybug.wea import EPW, AnalysisPeriod, Wea
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from .bhom import decorator_factory, CONSOLE_LOGGER
+from .bhom.analytics import bhom_analytics
+from .bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.analysisperiod import (
     analysis_period_to_boolean,
     analysis_period_to_datetimes,
@@ -76,7 +77,7 @@ class Solar:
             raise ValueError("n_azimuths must be an integer >= 3.")
         return np.linspace(0, 360, n_azimuths).tolist()
 
-    @decorator_factory()
+    @bhom_analytics()
     def directional_irradiance_matrix(
         self,
         altitude: float | int = 0,
@@ -159,7 +160,7 @@ class Solar:
 
         return df
 
-    @decorator_factory()
+    @bhom_analytics()
     def detailed_irradiance_matrix(
         self,
         n_altitudes: int = 3,
@@ -247,7 +248,7 @@ class Solar:
 
         return df
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_tilt_orientation_factor(
         self,
         ax: plt.Axes = None,
@@ -378,7 +379,7 @@ class Solar:
         ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def plot_directional_irradiance(
         self,
         ax: plt.Axes = None,

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as mtri
 import numpy as np
 from honeybee_radiance.sensorgrid import SensorGrid
-from ladybug_geometry.geometry3d import Plane, Point3D
+from ladybug_geometry.geometry3d import Plane, Point3D, Vector3D
 from scipy.spatial.distance import cdist
 
 from ...ladybug_geometry_extension import mesh3d_get_plane
@@ -50,14 +50,42 @@ def get_plane(sensorgrid: SensorGrid) -> Plane:
             A ladybug-geometry Plane.
     """
 
-    plane = Plane.from_three_points(
-        *[Point3D.from_array(i.pos) for i in np.random.choice(sensorgrid.sensors, 3)]
-    )
+    if len(sensorgrid.sensors) < 3:
+        raise ValueError(
+            "sensor grid must contain at least 3 points to create a plane."
+        )
+
+    for sensor in sensorgrid.sensors[2:]:
+        plane = Plane.from_three_points(
+            o=Point3D(*sensorgrid.sensors[0].pos),
+            p2=Point3D(*sensorgrid.sensors[1].pos),
+            p3=Point3D(*sensor.pos),
+        )
+        if sum(plane.n.to_array()) != 0:
+            break
+
+    if sum(plane.n.to_array()) == 0:
+        raise ValueError(
+            "sensor grid contains points which are colinear and cannot create a triangle."
+        )
+
+    if plane.n.z == -1:
+        plane = plane.flip()
+
+    origin = list(plane.o.to_array())
+    normal = list(plane.n.to_array())
+
+    for n, i in enumerate(origin):
+        if abs(i) == i:
+            origin[n] = abs(i)
+    for n, i in enumerate(normal):
+        if abs(i) == i:
+            normal[n] = abs(i)
 
     if not is_planar(sensorgrid):
         raise ValueError("sensorgrid must be planar to create a plane.")
 
-    return plane
+    return Plane(o=Point3D(*origin), n=Vector3D(*normal))
 
 
 def groupby_level(
@@ -226,9 +254,17 @@ def plot_values(
         mcollections.PatchCollection: The matplotlib PatchCollection.
     """
 
+    if ax is None:
+        ax = plt.gca()
+
     pc = as_patchcollection(sensorgrid, **kwargs)
     pc.set_array(values)
-    return ax.add_collection(pc)
+    ax.add_collection(pc)
+
+    ax.autoscale_view()
+    ax.set_aspect("equal")
+
+    return ax
 
 
 def get_limits(sensorgrids: list[SensorGrid], buffer: float = 2) -> tuple[tuple[float]]:

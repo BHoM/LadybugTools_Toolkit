@@ -7,10 +7,10 @@ from matplotlib.figure import Figure
 from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 
 
-@decorator_factory()
+@bhom_analytics()
 def spatial_heatmap(
     triangulations: list[Triangulation],
     values: list[list[float]],

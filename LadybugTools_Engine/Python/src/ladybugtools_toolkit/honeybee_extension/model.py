@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from honeybee.model import AirBoundary, Face3D, Floor, Model, RoofCeiling, Wall
 from ladybug_geometry.geometry3d import LineSegment3D, Plane
 from matplotlib.collections import PolyCollection
+import numpy as np
 
 
 class HbModelGeometry(Enum):
@@ -261,6 +262,7 @@ def slice_geometry(
                 for segment in segments
             ]
         )
+    _vertices = np.array(_vertices)
     ax.add_artist(
         PolyCollection(
             verts=_vertices,
@@ -269,6 +271,9 @@ def slice_geometry(
             **kwargs,
         ),
     )
+
+    ax.autoscale_view()
+    ax.set_aspect("equal")
 
     return ax
 
@@ -348,5 +353,8 @@ def slice_model(model: Model, plane: Plane, ax: plt.Axes = None) -> plt.Axes:
 
     for _, v in meta.items():
         slice_geometry(hb_objects=v["objects"], plane=plane, ax=ax, **v["poly_kwargs"])
+
+    ax.autoscale_view()
+    ax.set_aspect("equal")
 
     return ax

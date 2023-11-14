@@ -22,7 +22,7 @@ from matplotlib.colors import (
 from matplotlib.legend import Legend
 import matplotlib.ticker as mticker
 
-from ..bhom import decorator_factory
+from ..bhom.analytics import bhom_analytics
 from ..helpers import rolling_window, validate_timeseries
 from ..plot.utilities import contrasting_color
 from ..plot._heatmap import heatmap
@@ -259,7 +259,7 @@ class Categorical:
         """
         return dict(zip(self.interval_index, self.bin_names))
 
-    @decorator_factory()
+    @bhom_analytics()
     def interval_from_bin_name(self, bin_name: str) -> pd.Interval:
         """Return the interval from the bin name.
 
@@ -276,7 +276,7 @@ class Categorical:
         except KeyError:
             return self._detailed_bin_name_interval[bin_name]
 
-    @decorator_factory()
+    @bhom_analytics()
     def bin_name_from_interval(self, interval: pd.Interval) -> str:
         """Return the bin name from the interval.
 
@@ -290,7 +290,7 @@ class Categorical:
         """
         return self._interval_bin_name[interval]
 
-    @decorator_factory()
+    @bhom_analytics()
     def color_from_bin_name(self, bin_name: str) -> str:
         """Return the color from the bin name.
 
@@ -304,7 +304,7 @@ class Categorical:
         """
         return dict(zip(self.bin_names, self.colors))[bin_name]
 
-    @decorator_factory()
+    @bhom_analytics()
     def get_color(self, value: float | int, as_array: bool = False) -> str:
         """Return the color associated with the categorised value.
 
@@ -328,7 +328,7 @@ class Categorical:
             return to_hex(color, keep_alpha=True)
         return color
 
-    @decorator_factory()
+    @bhom_analytics()
     def categorise(self, data: Any) -> pd.Categorical:
         """Categorise the data.
 
@@ -349,7 +349,7 @@ class Categorical:
             )
         return categorical
 
-    @decorator_factory()
+    @bhom_analytics()
     def value_counts(
         self,
         data: Any,
@@ -372,7 +372,7 @@ class Categorical:
             return result / len(data)
         return result
 
-    @decorator_factory()
+    @bhom_analytics()
     def timeseries_summary_monthly(
         self, series: pd.Series, density: bool = False
     ) -> pd.DataFrame:
@@ -404,7 +404,7 @@ class Categorical:
             return counts.div(counts.sum(axis=1), axis=0)
         return counts
 
-    @decorator_factory()
+    @bhom_analytics()
     def summarise(
         self,
         data: Any,
@@ -429,7 +429,7 @@ class Categorical:
             )
         return "\n".join(statements)
 
-    @decorator_factory()
+    @bhom_analytics()
     def create_legend(
         self, ax: plt.Axes = None, verbose: bool = True, **kwargs
     ) -> Legend:
@@ -467,7 +467,7 @@ class Categorical:
         lgd = ax.legend(handles=handles, labels=labels, **kwargs)
         return lgd
 
-    @decorator_factory()
+    @bhom_analytics()
     def annual_monthly_histogram(
         self,
         series: pd.Series,
@@ -546,7 +546,7 @@ class Categorical:
 
         return ax
 
-    @decorator_factory()
+    @bhom_analytics()
     def annual_heatmap(
         self, series: pd.Series, ax: plt.Axes = None, **kwargs
     ) -> plt.Axes:
@@ -630,7 +630,7 @@ class CategoricalComfort(Categorical):
             )
         return super().__post_init__()
 
-    @decorator_factory()
+    @bhom_analytics()
     def simplify(self) -> "CategoricalComfort":
         """Return a simplified version of this object based on the assigned comfort clases.
 
