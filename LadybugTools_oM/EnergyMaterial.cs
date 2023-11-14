@@ -22,39 +22,44 @@
 
 
 using System.ComponentModel;
+using BH.oM.Base.Attributes;
+using BH.oM.Quantities.Attributes;
 
 namespace BH.oM.LadybugTools
 {
+    [NoAutoConstructor]
     public class EnergyMaterial : IEnergyMaterialOpaque
     {
         [Description("The object type - for use Python-side")]
         public virtual string Type { get; set; } = "EnergyMaterial";
-        
+
         [Description("The name of this EnergyMaterial.")]
-        public virtual string Identifier { get; set; } = "Generic Opaque Material";
-        
+        public virtual string Identifier { get; set; }
+
         [Description("Thickness of material (m).")]
-        public virtual double Thickness { get; set; } = 0.1;
-        
+        [Length]
+        public virtual double Thickness { get; set; }
+
         [Description("Conductivity of material (W/mK).")]
-        public virtual double Conductivity { get; set; } = 2;
-        
+        public virtual double Conductivity { get; set; }
+
         [Description("Density of material (kg/m3).")]
-        public virtual double Density { get; set; } = 2000;
-        
+        [Density]
+        public virtual double Density { get; set; }
+
         [Description("Specific heat capacity of material (J/kgK).")]
-        public virtual double SpecificHeat { get; set; } = 800;
-        
+        public virtual double SpecificHeat { get; set; }
+
         [Description("The roughness of the material.")]
-        public virtual Roughness Roughness { get; set; } = Roughness.MediumRough;
-        
+        public virtual Roughness Roughness { get; set; }
+
         [Description("Thermal absorptivity (emissivity) of material (0-1).")]
-        public virtual double ThermalAbsorptance { get; set; } = 0.9;
-        
+        public virtual double ThermalAbsorptance { get; set; }
+
         [Description("Solar absorptivity of material (0-1).")]
-        public virtual double SolarAbsorptance { get; set; } = 0.7;
-        
+        public virtual double SolarAbsorptance { get; set; }
+
         [Description("Light absorptivity (1 - albedo) of material (0-1).")]
-        public virtual double VisibleAbsorptance { get; set; } = 0.7;
+        public virtual double VisibleAbsorptance { get; set; }
     }
 }

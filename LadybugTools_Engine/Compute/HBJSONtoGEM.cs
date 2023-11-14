@@ -37,7 +37,7 @@ namespace BH.Engine.LadybugTools
         {
             if (hbjson == null)
             {
-                BH.Engine.Base.Compute.RecordError("hbjson input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(hbjson)} input cannot be null.");
                 return null;
             }
 
