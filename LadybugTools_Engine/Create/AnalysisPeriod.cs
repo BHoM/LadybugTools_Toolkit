@@ -62,7 +62,7 @@ namespace BH.Engine.LadybugTools
             List<int> allowedTimesteps = new List<int>() { 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60 };
             if (!allowedTimesteps.Contains(timestep))
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(timestep)} must be one of {{1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60}}.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(timestep)} must be one of {string.Join(", ", allowedTimesteps)}.");
                 return null;
             }
 
