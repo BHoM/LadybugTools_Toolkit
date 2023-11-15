@@ -21,25 +21,26 @@
  */
 
 
+using BH.oM.Base;
 using BH.oM.Base.Attributes;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class AnalysisPeriod : ILadybugTools
+    public class AnalysisPeriod : BHoMObject, ILadybugTools
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "AnalysisPeriod";
 
         [Description("The start month.")]
-        public virtual int StMonth { get; set; }
+        public virtual int StartMonth { get; set; }
 
         [Description("The start day.")]
-        public virtual int StDay { get; set; }
+        public virtual int StartDay { get; set; }
 
         [Description("The start hour.")]
-        public virtual int StHour { get; set; }
+        public virtual int StartHour { get; set; }
 
         [Description("The end month.")]
         public virtual int EndMonth { get; set; }
@@ -54,6 +55,6 @@ namespace BH.oM.LadybugTools
         public virtual bool IsLeapYear { get; set; }
 
         [Description("The number of timesteps per hour.")]
-        public virtual int Timestep { get; set; }
+        public virtual int TimeStep { get; set; }
     }
 }

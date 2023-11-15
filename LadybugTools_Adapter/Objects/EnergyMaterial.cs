@@ -22,22 +22,32 @@
 
 
 using System.ComponentModel;
-using System.Collections.Generic;
-using System.Linq;
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class HourlyContinuousCollection : BHoMObject, ILadybugTools
+    [NoAutoConstructor]
+    public class EnergyMaterial : BHoMObject, IEnergyMaterialOpaque
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "HourlyContinuous";
-        
-        [Description("An approximation of a Ladybug Header object.")]
-        public virtual Header Header { get; set; } = new Header();
+        public virtual string Type { get; set; } = "EnergyMaterial";
 
-        [Description("A list of values.")]
-        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+        public virtual string Identifier { get; set; }
 
+        public virtual double Thickness { get; set; }
+
+        public virtual double Conductivity { get; set; }
+
+        public virtual double Density { get; set; }
+
+        public virtual double SpecificHeat { get; set; }
+
+        public virtual oM.LadybugTools.Roughness Roughness { get; set; }
+
+        public virtual double ThermalAbsorptance { get; set; }
+
+        public virtual double SolarAbsorptance { get; set; }
+
+        public virtual double VisibleAbsorptance { get; set; }
     }
 }

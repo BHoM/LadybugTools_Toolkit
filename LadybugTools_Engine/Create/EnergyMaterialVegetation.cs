@@ -166,7 +166,7 @@ namespace BH.Engine.LadybugTools
                 SoilThermalAbsorptance = soilThermalAbsorptance,
                 SoilSolarAbsorptance = soilSolarAbsorptance,
                 SoilVisibleAbsorptance = soilVisibleAbsorptance,
-                MinStomatalResist = minStomatalResist,
+                MinimumStomatalResistance = minStomatalResist,
             };
         }
     }

@@ -26,7 +26,7 @@ using BH.oM.Base;
 using BH.oM.Base.Attributes;
 using BH.oM.Quantities.Attributes;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
     [NoAutoConstructor]
     public class EnergyMaterialVegetation : BHoMObject, IEnergyMaterialOpaque
@@ -52,7 +52,7 @@ namespace BH.oM.LadybugTools
         public virtual double SpecificHeat { get; set; }
 
         [Description("The roughness of the material.")]
-        public virtual Roughness Roughness { get; set; }
+        public virtual oM.LadybugTools.Roughness Roughness { get; set; }
 
         [Description("A number between 0 and 1 for the fraction of incident long wavelength radiation that is absorbed by the soil material.")]
         public virtual double SoilThermalAbsorptance { get; set; }
@@ -76,6 +76,6 @@ namespace BH.oM.LadybugTools
         public virtual double LeafEmissivity { get; set; }
 
         [Description("A number between 50 and 300 for the resistance of the plants to moisture transport [s/m]. Plants with low values of stomatal resistance will result in higher evapotranspiration rates than plants with high resistance.")]
-        public virtual double MinimumStomatalResistance { get; set; }
+        public virtual double MinStomatalResist { get; set; }
     }
 }

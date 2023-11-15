@@ -22,12 +22,13 @@
 
 
 using System.ComponentModel;
+using BH.oM.Base;
 using BH.oM.Base.Attributes;
 
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class Location : ILadybugTools
+    public class Location : BHoMObject, ILadybugTools
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "Location";

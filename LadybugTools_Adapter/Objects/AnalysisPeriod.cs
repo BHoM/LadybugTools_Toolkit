@@ -21,23 +21,31 @@
  */
 
 
-using System.ComponentModel;
-using System.Collections.Generic;
-using System.Linq;
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
+using System.ComponentModel;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class HourlyContinuousCollection : BHoMObject, ILadybugTools
+    [NoAutoConstructor]
+    public class AnalysisPeriod : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "HourlyContinuous";
-        
-        [Description("An approximation of a Ladybug Header object.")]
-        public virtual Header Header { get; set; } = new Header();
+        public virtual string Type { get; set; } = "AnalysisPeriod";
 
-        [Description("A list of values.")]
-        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+        public virtual int StMonth { get; set; }
 
+        public virtual int StDay { get; set; }
+
+        public virtual int StHour { get; set; }
+
+        public virtual int EndMonth { get; set; }
+
+        public virtual int EndDay { get; set; }
+
+        public virtual int EndHour { get; set; }
+
+        public virtual bool IsLeapYear { get; set; }
+
+        public virtual int Timestep { get; set; }
     }
 }

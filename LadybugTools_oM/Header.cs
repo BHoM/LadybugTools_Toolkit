@@ -21,12 +21,13 @@
  */
 
 
+using BH.oM.Base;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class Header : ILadybugTools
+    public class Header : BHoMObject, ILadybugTools
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "Header";

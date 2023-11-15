@@ -7,7 +7,7 @@
     <Version>6.0.0</Version>
     <Authors>BHoM</Authors>
     <Copyright>Copyright © https://github.com/BHoM</Copyright>
-    <RootNamespace>BH.Adapter.LadyBugTools</RootNamespace>
+    <RootNamespace>BH.Adapter.LadybugTools</RootNamespace>
     <FileVersion>7.0.0.0</FileVersion>
     <OutputPath>..\Build\</OutputPath>
   </PropertyGroup>
@@ -62,6 +62,12 @@
       <HintPath>$(ProgramData)\BHoM\Assemblies\Physical_oM.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="Serialiser_Engine">
+      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\Serialiser_Engine.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Extensions">
+      <HintPath>..\libs\System.Web.Extensions.dll</HintPath>
     </Reference>
   </ItemGroup>
 

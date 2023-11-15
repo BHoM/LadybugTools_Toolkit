@@ -21,23 +21,25 @@
  */
 
 
-using System.ComponentModel;
-using System.Collections.Generic;
-using System.Linq;
 using BH.oM.Base;
+using System.Collections.Generic;
+using System.ComponentModel;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class HourlyContinuousCollection : BHoMObject, ILadybugTools
+    public class EPW : BHoMObject, ILadybugTools
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "HourlyContinuous";
-        
-        [Description("An approximation of a Ladybug Header object.")]
-        public virtual Header Header { get; set; } = new Header();
+        public virtual string Type { get; set; } = "EPW";
 
-        [Description("A list of values.")]
-        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+        [Description("The Location of this EPW.")]
+        public virtual Location Location { get; set; } = new Location();
+
+        [Description("The data collections within this EPW.")]
+        public virtual List<HourlyContinuousCollection> DataCollections { get; set; } = new List<HourlyContinuousCollection>();
+
+        [Description("Metadata associated with this EPW.")]
+        public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
 
     }
 }
