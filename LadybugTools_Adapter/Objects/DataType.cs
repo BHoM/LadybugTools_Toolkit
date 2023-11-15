@@ -26,7 +26,7 @@ using System.ComponentModel;
 
 namespace BH.Adapter.LadybugTools
 {
-    public class DataType : BHoMObject, ILadybugTools
+    public class DataType : BHoMObject, ILBTSerialisable
     {
         public virtual string Type { get; set; } = "DataType";
         

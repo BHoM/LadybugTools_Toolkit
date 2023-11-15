@@ -28,7 +28,7 @@ using BH.oM.Base.Attributes;
 namespace BH.Adapter.LadybugTools
 {
     [NoAutoConstructor]
-    public class Location : BHoMObject, ILadybugTools
+    public class Location : BHoMObject, ILBTSerialisable
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "Location";

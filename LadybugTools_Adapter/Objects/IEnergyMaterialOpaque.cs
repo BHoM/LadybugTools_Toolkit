@@ -26,7 +26,7 @@ using System.ComponentModel;
 
 namespace BH.Adapter.LadybugTools
 {
-    public interface IEnergyMaterialOpaque : ILadybugTools
+    public interface IEnergyMaterialOpaque : ILBTSerialisable
     {
         [Description("The identifier for this material object.")]
         string Identifier { get; set; }

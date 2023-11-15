@@ -33,10 +33,8 @@ namespace BH.Adapter.LadybugTools
 
             if (type == typeof(AnalysisPeriod))
             {
-                
                 return rtnObjs;
             }
-
 
             return rtnObjs;
         }
