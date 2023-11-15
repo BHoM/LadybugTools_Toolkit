@@ -1,4 +1,4 @@
-"""Method to wrap for access to pre-defined materials."""
+"""Method to wrap for access to pre-defined typologies."""
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import traceback
