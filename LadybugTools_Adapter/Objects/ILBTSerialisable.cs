@@ -26,7 +26,7 @@ using System.ComponentModel;
 
 namespace BH.Adapter.LadybugTools
 {
-    public interface ILadybugTools : IBHoMObject
+    public interface ILBTSerialisable : IBHoMObject
     {
         [Description("The object type - for use deserialising Python-side.")]
         string Type { get; set; }

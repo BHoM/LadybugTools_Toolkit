@@ -28,7 +28,7 @@ using BH.oM.Base;
 
 namespace BH.Adapter.LadybugTools
 {
-    public class HourlyContinuousCollection : BHoMObject, ILadybugTools
+    public class HourlyContinuousCollection : BHoMObject, ILBTSerialisable
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "HourlyContinuous";

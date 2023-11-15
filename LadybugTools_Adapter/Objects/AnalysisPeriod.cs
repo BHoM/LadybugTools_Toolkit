@@ -28,7 +28,7 @@ using System.ComponentModel;
 namespace BH.Adapter.LadybugTools
 {
     [NoAutoConstructor]
-    public class AnalysisPeriod : BHoMObject, ILadybugTools
+    public class AnalysisPeriod : BHoMObject, ILBTSerialisable
     {
         public virtual string Type { get; set; } = "AnalysisPeriod";
 

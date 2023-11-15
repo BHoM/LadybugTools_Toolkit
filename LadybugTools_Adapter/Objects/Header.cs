@@ -27,7 +27,7 @@ using System.ComponentModel;
 
 namespace BH.Adapter.LadybugTools
 {
-    public class Header : BHoMObject, ILadybugTools
+    public class Header : BHoMObject, ILBTSerialisable
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "Header";
