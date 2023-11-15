@@ -21,23 +21,14 @@
  */
 
 
-using System.ComponentModel;
-using System.Collections.Generic;
-using System.Linq;
 using BH.oM.Base;
+using System.ComponentModel;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class HourlyContinuousCollection : BHoMObject, ILadybugTools
+    public interface ILadybugTools : IBHoMObject
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "HourlyContinuous";
-        
-        [Description("An approximation of a Ladybug Header object.")]
-        public virtual Header Header { get; set; } = new Header();
-
-        [Description("A list of values.")]
-        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
-
+        [Description("The object type - for use deserialising Python-side.")]
+        string Type { get; set; }
     }
 }

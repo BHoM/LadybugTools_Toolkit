@@ -68,14 +68,14 @@ namespace BH.Engine.LadybugTools
 
             return new AnalysisPeriod()
             {
-                StMonth = startMonth,
-                StDay = startDay,
-                StHour = startHour,
+                StartMonth = startMonth,
+                StartDay = startDay,
+                StartHour = startHour,
                 EndMonth = endMonth,
                 EndDay = endDay,
                 EndHour = endHour,
                 IsLeapYear = isLeapYear,
-                Timestep = timestep
+                TimeStep = timestep
             };
         }
     }

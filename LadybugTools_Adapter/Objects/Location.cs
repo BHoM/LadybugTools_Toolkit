@@ -22,22 +22,42 @@
 
 
 using System.ComponentModel;
-using System.Collections.Generic;
-using System.Linq;
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class HourlyContinuousCollection : BHoMObject, ILadybugTools
+    [NoAutoConstructor]
+    public class Location : BHoMObject, ILadybugTools
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "HourlyContinuous";
-        
-        [Description("An approximation of a Ladybug Header object.")]
-        public virtual Header Header { get; set; } = new Header();
+        public virtual string Type { get; set; } = "Location";
 
-        [Description("A list of values.")]
-        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+        [Description("The City of this object.")]
+        public virtual string City { get; set; }
 
+        [Description("The State of this object.")]
+        public virtual string State { get; set; }
+
+        [Description("The Country of this object.")]
+        public virtual string Country { get; set; }
+
+        [Description("The Latitude of this object.")]
+        public virtual double Latitude { get; set; }
+
+        [Description("The Longitude of this object.")]
+        public virtual double Longitude { get; set; }
+
+        [Description("The Time Zone of this object.")]
+        public virtual double TimeZone { get; set; }
+
+        [Description("The Elevation (in m) of this object.")]
+        public virtual double Elevation { get; set; }
+
+        [Description("The Station ID of this object.")]
+        public virtual string StationId { get; set; }
+
+        [Description("The Source of this object.")]
+        public virtual string Source { get; set; }
     }
 }

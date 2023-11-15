@@ -26,7 +26,7 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class DataType : ILadybugTools
+    public class DataType : BHoMObject, ILadybugTools
     {
         [Description("The Ladybug datatype of this object, used for deserialisation.")]
         public virtual string Type { get; set; } = "DataType";

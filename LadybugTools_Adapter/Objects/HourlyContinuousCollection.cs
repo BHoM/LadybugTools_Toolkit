@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BH.oM.Base;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
     public class HourlyContinuousCollection : BHoMObject, ILadybugTools
     {

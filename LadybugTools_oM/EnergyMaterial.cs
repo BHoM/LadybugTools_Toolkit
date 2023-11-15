@@ -22,13 +22,14 @@
 
 
 using System.ComponentModel;
+using BH.oM.Base;
 using BH.oM.Base.Attributes;
 using BH.oM.Quantities.Attributes;
 
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class EnergyMaterial : IEnergyMaterialOpaque
+    public class EnergyMaterial : BHoMObject, IEnergyMaterialOpaque
     {
         [Description("The object type - for use Python-side")]
         public virtual string Type { get; set; } = "EnergyMaterial";
