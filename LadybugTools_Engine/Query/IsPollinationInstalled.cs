@@ -41,7 +41,7 @@ namespace BH.Engine.LadybugTools
         public static bool IsPollinationInstalled(string targetPollinationVersion = "1.38.104", bool includeBuildNumber = false)
         {
             // check if referenced Python is installed
-            string referencedExecutable = @"C:\Program Files\ladybug_tools\python\python.exe";
+            string referencedExecutable = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles) + @"\ladybug_tools\python\python.exe";
             if (!File.Exists(referencedExecutable))
             {
                 Base.Compute.RecordError($"Could not find referenced python executable at {referencedExecutable}. Please install Pollination version {targetPollinationVersion} and try again.");
@@ -49,7 +49,7 @@ namespace BH.Engine.LadybugTools
             }
 
             // obtain version of pollination installed
-            string referencedUninstaller = @"C:\Program Files\ladybug_tools\uninstall.exe";
+            string referencedUninstaller = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles) + @"\ladybug_tools\uninstall.exe";
             FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(referencedUninstaller);
             if (includeBuildNumber && (versionInfo.ProductVersion != targetPollinationVersion))
             {
