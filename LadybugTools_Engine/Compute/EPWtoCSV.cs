@@ -62,6 +62,7 @@ namespace BH.Engine.LadybugTools
             if (!File.Exists(csvFile))
             {
                 BH.Engine.Base.Compute.RecordError($"File conversion failed due to {result}");
+                return null;
             }
 
             return csvFile;
