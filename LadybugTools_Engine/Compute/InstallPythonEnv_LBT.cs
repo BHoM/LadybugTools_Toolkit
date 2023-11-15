@@ -38,7 +38,7 @@ namespace BH.Engine.LadybugTools
         public static PythonEnvironment InstallPythonEnv_LBT(bool run = false, bool reinstall = false)
         {
             // check if referenced Python is installed
-            string referencedExecutable = @"C:\Program Files\ladybug_tools\python\python.exe";
+            string referencedExecutable = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles) + @"\ladybug_tools\python\python.exe";
 
             if (!Query.IsPollinationInstalled())
             {

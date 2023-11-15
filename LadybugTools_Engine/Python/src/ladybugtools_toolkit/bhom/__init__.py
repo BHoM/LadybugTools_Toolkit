@@ -1,17 +1,16 @@
 """Root for the bhom subpackage."""
 
 from pathlib import Path  # pylint: disable=E0401
+from os import path
 
 from win32api import HIWORD, LOWORD, GetFileVersionInfo
 
-BHOM_ASSEMBLIES_DIRECTORY = Path("C:/ProgramData/BHoM/Assemblies")
-BHOM_DIRECTORY = Path("C:/ProgramData/BHoM")
-BHOM_LOG_FOLDER = Path("C:/ProgramData/BHoM/Logs")
+BHOM_ASSEMBLIES_DIRECTORY = Path(path.expandvars("%PROGRAMDATA%/BHoM/Assemblies"))
+BHOM_DIRECTORY = Path(path.expandvars("%PROGRAMDATA%/BHoM"))
+BHOM_LOG_FOLDER = Path(path.expandvars("%PROGRAMDATA%/BHoM/Logs"))
 
-PYTHON_CODE_DIRECTORY = Path("C:/ProgramData/BHoM/Extensions/PythonCode")
-PYTHON_ENVIRONMENTS_DIRECTORY = Path(
-    "C:/ProgramData/BHoM/Extensions/PythonEnvironments"
-)
+PYTHON_CODE_DIRECTORY = Path(path.expandvars("%PROGRAMDATA%/BHoM/Extensions/PythonCode"))
+PYTHON_ENVIRONMENTS_DIRECTORY = Path(path.expandvars("%PROGRAMDATA%/BHoM/Extensions/PythonEnvironments"))
 
 TOOLKIT_NAME = "LadybugTools_Toolkit"
 
