@@ -8,16 +8,9 @@ namespace BH.Adapter.LadybugTools
     {
         public static BH.oM.LadybugTools.DataType DataType(BH.Adapter.LadybugTools.DataType oldObject)
         {
-            return new oM.LadybugTools.AnalysisPeriod()
+            return new oM.LadybugTools.DataType()
             {
-                StartMonth = oldObject.StMonth,
-                StartDay = oldObject.StDay,
-                StartHour = oldObject.StHour,
-                EndMonth = oldObject.EndMonth,
-                EndDay = oldObject.EndDay,
-                EndHour = oldObject.EndHour,
-                IsLeapYear = oldObject.IsLeapYear,
-                TimeStep = oldObject.Timestep,
+                Data_Type = oldObject.Data_Type
             };
         }
     }

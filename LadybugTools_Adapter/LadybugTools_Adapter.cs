@@ -33,10 +33,7 @@ namespace BH.Adapter.LadybugTools
         public LadybugToolsAdapter()
         {
             m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
-
-            return;
         }
-
     }
 }
 

@@ -28,7 +28,7 @@ using BH.oM.Base.Attributes;
 namespace BH.Adapter.LadybugTools
 {
     [NoAutoConstructor]
-    public class EnergyMaterial : BHoMObject, IEnergyMaterialOpaque
+    public class EnergyMaterial : BHoMObject, IEnergyMaterialOpaque, ILBTSerialisable
     {
         public virtual string Type { get; set; } = "EnergyMaterial";
 

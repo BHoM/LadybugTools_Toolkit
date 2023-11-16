@@ -18,6 +18,15 @@ namespace BH.Adapter.LadybugTools
             string json = File.ReadAllText(jsonFile.GetFullFileName());
             ILBTSerialisable LBTObject = Engine.Serialiser.Convert.FromJson(json) as ILBTSerialisable;
 
+            return IDeserialise(LBTObject);
+        }
+
+        /*********************************/
+        /* Deserialise methods           */
+        /*********************************/
+
+        private static ILadybugTools IDeserialise(ILBTSerialisable LBTObject)
+        {
             return Deserialise(LBTObject as dynamic);
         }
 
@@ -41,6 +50,34 @@ namespace BH.Adapter.LadybugTools
             return EnergyMaterialVegetation(LBTObject);
         }
 
-        private static ILadybugTools Deserialise
+        private static ILadybugTools Deserialise(BH.Adapter.LadybugTools.EPW LBTObject)
+        {
+            return EPW(LBTObject);
+        }
+
+        private static ILadybugTools Deserialise(BH.Adapter.LadybugTools.Header LBTObject)
+        {
+            return Header(LBTObject);
+        }
+
+        private static ILadybugTools Deserialise(BH.Adapter.LadybugTools.HourlyContinuousCollection LBTObject)
+        {
+            return HourlyContinuousCollection(LBTObject);
+        }
+
+        private static ILadybugTools Deserialise(BH.Adapter.LadybugTools.Location LBTObject)
+        {
+            return Location(LBTObject);
+        }
+        
+        /*********************************/
+        /* Fallback Methods              */
+        /*********************************/
+
+        private static ILadybugTools Deserialise(ILadybugTools LBTObject)
+        {
+            BH.Engine.Base.Compute.RecordError($"Objects of type: {LBTObject.GetType()}, can not be deserialised.");
+            return null;
+        }
     }
 }

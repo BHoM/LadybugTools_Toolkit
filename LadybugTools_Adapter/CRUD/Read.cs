@@ -24,6 +24,10 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Please provide a valid LadybugConfig for pulling from ladybug json");
                 return new List<IBHoMObject>();
             }
+            else if (config.JsonFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError("Please provide a valid JsonFile FileSettings object.");
+            }
             if (type == null)
             {
                 BH.Engine.Base.Compute.RecordError("Please provide the type of object represented in the ladybug json file.");
@@ -33,6 +37,7 @@ namespace BH.Adapter.LadybugTools
 
             if (type == typeof(AnalysisPeriod))
             {
+                rtnObjs.Add(config.JsonFile.ToBHoM());
                 return rtnObjs;
             }
 
