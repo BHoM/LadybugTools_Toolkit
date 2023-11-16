@@ -11,7 +11,8 @@ namespace BH.Adapter.LadybugTools
         {
             return new oM.LadybugTools.DataType()
             {
-                Data_Type = (string)oldObject["Data_Type"]
+                Data_Type = (string)oldObject["data_type"],
+                Name = (string)oldObject["name"]
             };
         }
 
@@ -19,9 +20,9 @@ namespace BH.Adapter.LadybugTools
         {
             return new Dictionary<string, object>
             {
-                { "Type", "DataType" },
-                { "Name", "" },
-                { "Data_Type", dataType.Data_Type }
+                { "type", "DataType" },
+                { "name", "" },
+                { "data_type", dataType.Data_Type }
             };
         }
     }

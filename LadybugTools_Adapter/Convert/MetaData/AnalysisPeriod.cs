@@ -11,14 +11,14 @@ namespace BH.Adapter.LadybugTools
         {
             return new oM.LadybugTools.AnalysisPeriod()
             {
-                StartMonth = (int)customObject["StMonth"],
-                StartDay = (int)customObject["StDay"],
-                StartHour = (int)customObject["StHour"],
-                EndMonth = (int)customObject["EndMonth"],
-                EndDay = (int)customObject["EndDay"],
-                EndHour = (int)customObject["EndHour"],
-                IsLeapYear = (bool)customObject["IsLeapYear"],
-                TimeStep = (int)customObject["TimeStep"]
+                StartMonth = (int)customObject["st_month"],
+                StartDay = (int)customObject["st_day"],
+                StartHour = (int)customObject["st_hour"],
+                EndMonth = (int)customObject["end_month"],
+                EndDay = (int)customObject["end_day"],
+                EndHour = (int)customObject["end_hour"],
+                IsLeapYear = (bool)customObject["is_leap_year"],
+                TimeStep = (int)customObject["timestep"]
             };
         }
 
