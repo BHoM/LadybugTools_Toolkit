@@ -28,7 +28,5 @@ namespace BH.oM.LadybugTools
 {
     public interface ILadybugTools : IBHoMObject
     {
-        [Description("The object type - for use deserialising Python-side.")]
-        string Type { get; set; }
     }
 }

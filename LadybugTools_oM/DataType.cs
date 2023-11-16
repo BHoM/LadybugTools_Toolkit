@@ -28,11 +28,9 @@ namespace BH.oM.LadybugTools
 {
     public class DataType : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "DataType";
         
         [Description("The name of this data type.")]
-        public virtual string Name { get; set; } = string.Empty;
+        public override string Name { get; set; } = string.Empty;
         
         [Description("The data type of this data type.")]
         public virtual string Data_Type { get; set; } = string.Empty;

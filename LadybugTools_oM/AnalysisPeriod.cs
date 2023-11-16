@@ -30,31 +30,28 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class AnalysisPeriod : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "AnalysisPeriod";
-
         [Description("The start month.")]
-        public virtual int StartMonth { get; set; }
+        public virtual int StartMonth { get; set; } = 1;
 
         [Description("The start day.")]
-        public virtual int StartDay { get; set; }
+        public virtual int StartDay { get; set; } = 1;
 
         [Description("The start hour.")]
-        public virtual int StartHour { get; set; }
+        public virtual int StartHour { get; set; } = 0;
 
         [Description("The end month.")]
-        public virtual int EndMonth { get; set; }
+        public virtual int EndMonth { get; set; } = 12;
 
         [Description("The end day.")]
-        public virtual int EndDay { get; set; }
+        public virtual int EndDay { get; set; } = 31;
 
         [Description("The end hour.")]
-        public virtual int EndHour { get; set; }
+        public virtual int EndHour { get; set; } = 23;
 
         [Description("Boolean flag for whether this represents a leap year.")]
-        public virtual bool IsLeapYear { get; set; }
+        public virtual bool IsLeapYear { get; set; } = false;
 
         [Description("The number of timesteps per hour.")]
-        public virtual int TimeStep { get; set; }
+        public virtual int TimeStep { get; set; } = 1;
     }
 }

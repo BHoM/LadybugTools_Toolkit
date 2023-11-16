@@ -26,15 +26,15 @@ namespace BH.Adapter.LadybugTools
         {
             return new Dictionary<string, object>
             {
-                { "Type", "AnalysisPeriod" },
-                { "StMonth", analysisPeriod.StartMonth },
-                { "StDay", analysisPeriod.StartDay },
-                { "StHour", analysisPeriod.StartHour },
-                { "EndMonth", analysisPeriod.EndMonth },
-                { "EndDay", analysisPeriod.EndDay },
-                { "EndHour", analysisPeriod.EndHour },
-                { "IsLeapYear", analysisPeriod.IsLeapYear },
-                { "TimeStep", analysisPeriod.TimeStep }
+                { "type", "AnalysisPeriod" },
+                { "st_month", analysisPeriod.StartMonth },
+                { "st_day", analysisPeriod.StartDay },
+                { "st_hour", analysisPeriod.StartHour },
+                { "end_month", analysisPeriod.EndMonth },
+                { "end_day", analysisPeriod.EndDay },
+                { "end_hour", analysisPeriod.EndHour },
+                { "is_leap_year", analysisPeriod.IsLeapYear },
+                { "timestep", analysisPeriod.TimeStep }
             };
         }
     }

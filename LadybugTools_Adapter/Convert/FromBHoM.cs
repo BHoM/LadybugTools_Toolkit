@@ -13,32 +13,49 @@ namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
     {
-        public static bool FromBHoM(this ILadybugTools input, FileSettings json)
+        public static bool FromBHoM(this ILadybugTools input, FileSettings file)
         {
-            Dictionary<string, object> obj = ICustomify(input);
-            File.WriteAllText(json.GetFullFileName(), obj.ToJson());
+            string json = ICustomify(input);
+            File.WriteAllText(file.GetFullFileName(), json);
             List<Event> events = BH.Engine.Base.Query.CurrentEvents();
             return events.Count == 0;
         }
 
-        public static Dictionary<string, object> ICustomify(this ILadybugTools LBTObject)
+        public static string ICustomify(this ILadybugTools LBTObject)
         {
             if (LBTObject == null)
             {
                 BH.Engine.Base.Compute.RecordError("Input object is null.");
                 return null;
             }
-            return Dictify(LBTObject as dynamic);
+            return Jsonify(LBTObject as dynamic);
         }
 
-        private static Dictionary<string, object> Dictify(this oM.LadybugTools.AnalysisPeriod analysisPeriod)
+        private static string Jsonify(this oM.LadybugTools.AnalysisPeriod analysisPeriod)
         {
-            return FromAnalysisPeriod(analysisPeriod);
+            
+            return FromAnalysisPeriod(analysisPeriod).ToJson();
         }
 
-        private static Dictionary<string, object> Dictify(this oM.LadybugTools.DataType dataType)
+        private static string Jsonify(this oM.LadybugTools.DataType dataType)
         {
-            return FromDataType(dataType);
+            return FromDataType(dataType).ToJson();
+        }
+
+        private static string Jsonify(this oM.LadybugTools.HourlyContinuousCollection collection)
+        {
+            return FromHourlyContinuousCollection(collection);
+        }
+
+        private static string Jsonify(this oM.LadybugTools.Header header)
+        {
+            return FromHeader(header).ToJson();
+        }
+
+        private static Dictionary<string, object> Jsonify(this ILadybugTools obj)
+        {
+            BH.Engine.Base.Compute.RecordError($"The type: {obj.GetType()} is not convertible to ladybug serialisable json yet.");
+            return null;
         }
     }
 }

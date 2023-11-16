@@ -16,14 +16,15 @@ namespace BH.Adapter.LadybugTools
         public static ILadybugTools ToBHoM(this FileSettings jsonFile)
         {
             string json = File.ReadAllText(jsonFile.GetFullFileName());
-            BH.Adapter.LadybugTools.AnalysisPeriod testinput = new AnalysisPeriod();
-            CustomObject LBTObject = Engine.Serialiser.Convert.FromJson(json) as CustomObject;
-            switch (LBTObject.CustomData["Type"] as string)
+            Dictionary<string, object> LBTObject = Engine.Serialiser.Convert.FromJson(json) as Dictionary<string, object>;
+            switch (LBTObject["type"] as string)
             {
                 case "AnalysisPeriod":
-                    return ToAnalysisPeriod(LBTObject.CustomData);
+                    return ToAnalysisPeriod(LBTObject);
                 case "DataType":
-                    return ToDataType(LBTObject.CustomData);
+                    return ToDataType(LBTObject);
+                case "HourlyContinuousCollection":
+                    return ToHourlyContinuousCollection(LBTObject);
                 default:
                     BH.Engine.Base.Compute.RecordError("The json file given is not convertable to a LadybugTools object.");
                     return null;

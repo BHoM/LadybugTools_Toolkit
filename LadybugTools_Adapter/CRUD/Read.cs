@@ -28,20 +28,13 @@ namespace BH.Adapter.LadybugTools
             {
                 BH.Engine.Base.Compute.RecordError("Please provide a valid JsonFile FileSettings object.");
             }
-            if (type == null)
-            {
-                BH.Engine.Base.Compute.RecordError("Please provide the type of object represented in the ladybug json file.");
-            }
 
             List<IBHoMObject> rtnObjs = new List<IBHoMObject>();
 
-            if (type == typeof(BH.oM.LadybugTools.AnalysisPeriod))
-            {
-                rtnObjs.Add(config.JsonFile.ToBHoM());
-                return rtnObjs;
-            }
+            rtnObjs.Add(config.JsonFile.ToBHoM());
 
             return rtnObjs;
+
         }
     }
 }
