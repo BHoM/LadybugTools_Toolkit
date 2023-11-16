@@ -11,7 +11,7 @@ namespace BH.Adapter.LadybugTools
         {
             return new oM.LadybugTools.Header()
             {
-                AnalysisPeriod = AnalysisPeriod(oldObject.AnalysisPeriod),
+                //AnalysisPeriod = AnalysisPeriod(oldObject.AnalysisPeriod),
             };
         }
     }

@@ -35,7 +35,7 @@ namespace BH.Adapter.LadybugTools
 
             List<IBHoMObject> rtnObjs = new List<IBHoMObject>();
 
-            if (type == typeof(AnalysisPeriod))
+            if (type == typeof(BH.oM.LadybugTools.AnalysisPeriod))
             {
                 rtnObjs.Add(config.JsonFile.ToBHoM());
                 return rtnObjs;

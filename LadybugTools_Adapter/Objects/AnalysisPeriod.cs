@@ -27,25 +27,24 @@ using System.ComponentModel;
 
 namespace BH.Adapter.LadybugTools
 {
-    [NoAutoConstructor]
     public class AnalysisPeriod : BHoMObject, ILBTSerialisable
     {
         public virtual string Type { get; set; } = "AnalysisPeriod";
 
-        public virtual int StMonth { get; set; }
+        public virtual int StMonth { get; set; } = 0;
 
-        public virtual int StDay { get; set; }
+        public virtual int StDay { get; set; } = 0;
 
-        public virtual int StHour { get; set; }
+        public virtual int StHour { get; set; } = 0;
 
-        public virtual int EndMonth { get; set; }
+        public virtual int EndMonth { get; set; } = 0;
 
-        public virtual int EndDay { get; set; }
+        public virtual int EndDay { get; set; } = 0;
 
-        public virtual int EndHour { get; set; }
+        public virtual int EndHour { get; set; } = 0;
 
-        public virtual bool IsLeapYear { get; set; }
+        public virtual bool IsLeapYear { get; set; } = false;
 
-        public virtual int Timestep { get; set; }
+        public virtual int Timestep { get; set; } = 1;
     }
 }
