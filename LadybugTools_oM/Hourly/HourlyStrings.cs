@@ -21,17 +21,18 @@
  */
 
 
-using BH.oM.Base;
 using System.ComponentModel;
+using System.Collections.Generic;
+using System.Linq;
+using BH.oM.Base;
 
-namespace BH.Adapter.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public class DataType : BHoMObject, ILBTSerialisable
+    public class HourlyStrings : BHoMObject, IHourly
     {
-        public virtual string Type { get; set; } = "DataType";
-        
-        public override string Name { get; set; } = string.Empty;
-        
-        public virtual string Data_Type { get; set; } = string.Empty;
+
+        [Description("A list of strings.")]
+        public virtual List<string> Values { get; set; } = Enumerable.Repeat("", 8760).ToList();
+
     }
 }

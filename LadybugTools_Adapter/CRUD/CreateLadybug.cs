@@ -11,7 +11,7 @@ namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
-        public static bool SerialiseToPython(List<ILadybugTools> objects, ActionConfig actionConfig = null)
+        public static bool CreateLadybug(List<ILadybugTools> objects, ActionConfig actionConfig = null)
         {
             LadybugConfig config = actionConfig as LadybugConfig;
             if (config is null)
@@ -21,7 +21,7 @@ namespace BH.Adapter.LadybugTools
             }
             if (objects.Count() == 0)
             {
-                BH.Engine.Base.Compute.RecordError("Please put an input into objects.");
+                BH.Engine.Base.Compute.RecordError("Please input an object.");
                 return false;
             }
             foreach (var item in objects)

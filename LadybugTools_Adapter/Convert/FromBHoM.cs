@@ -36,10 +36,29 @@ namespace BH.Adapter.LadybugTools
             
             return FromAnalysisPeriod(analysisPeriod).ToJson();
         }
-
         private static string Jsonify(this oM.LadybugTools.DataType dataType)
         {
             return FromDataType(dataType).ToJson();
+        }
+
+        private static string Jsonify(this oM.LadybugTools.EnergyMaterial energyMaterial)
+        {
+            return FromEnergyMaterial(energyMaterial).ToJson();
+        }
+
+        private static string Jsonify(this oM.LadybugTools.EnergyMaterialVegetation energyMaterial)
+        {
+            return FromEnergyMaterialVegetation(energyMaterial).ToJson();
+        }
+
+        private static string Jsonify(this oM.LadybugTools.EPW epw)
+        {
+            return FromEPW(epw);
+        }
+
+        private static string Jsonify(this oM.LadybugTools.Header header)
+        {
+            return FromHeader(header).ToJson();
         }
 
         private static string Jsonify(this oM.LadybugTools.HourlyContinuousCollection collection)
@@ -47,9 +66,9 @@ namespace BH.Adapter.LadybugTools
             return FromHourlyContinuousCollection(collection);
         }
 
-        private static string Jsonify(this oM.LadybugTools.Header header)
+        private static string Jsonify(this oM.LadybugTools.Location location)
         {
-            return FromHeader(header).ToJson();
+            return FromLocation(location).ToJson();
         }
 
         private static Dictionary<string, object> Jsonify(this ILadybugTools obj)

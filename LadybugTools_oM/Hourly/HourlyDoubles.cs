@@ -21,14 +21,17 @@
  */
 
 
-using BH.oM.Base;
 using System.ComponentModel;
+using System.Collections.Generic;
+using System.Linq;
+using BH.oM.Base;
 
-namespace BH.Adapter.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public interface IEnergyMaterialOpaque : ILBTSerialisable
+    public class HourlyDoubles : BHoMObject, IHourly
     {
-        [Description("The identifier for this material object.")]
-        string Identifier { get; set; }
+        [Description("A list of doubles.")]
+        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+
     }
 }

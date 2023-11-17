@@ -21,7 +21,7 @@ namespace BH.Adapter.LadybugTools
                 return new List<object>();
             }
             
-            SerialiseToPython(objects.Cast<ILadybugTools>().ToList(), actionConfig);
+            CreateLadybug(objects.Cast<ILadybugTools>().ToList(), actionConfig);
             return objects.ToList();
         }
     }

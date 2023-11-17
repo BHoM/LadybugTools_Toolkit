@@ -38,8 +38,11 @@ namespace BH.oM.LadybugTools
         [Description("The data collections within this EPW.")]
         public virtual List<HourlyContinuousCollection> DataCollections { get; set; } = new List<HourlyContinuousCollection>();
 
+        [Description("The data source and uncertainty field of this EPW.")]
+        public virtual List<string> DataSourceUncertainty { get; set; } = new List<string>();
+
         [Description("Metadata associated with this EPW.")]
-        public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
+        public virtual Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
     }
 }

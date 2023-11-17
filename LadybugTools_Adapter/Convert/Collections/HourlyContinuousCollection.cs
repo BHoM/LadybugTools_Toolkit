@@ -1,4 +1,6 @@
-﻿using BH.Engine.Serialiser;
+﻿using BH.Engine.Base;
+using BH.Engine.Serialiser;
+using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
@@ -11,18 +13,42 @@ namespace BH.Adapter.LadybugTools
     {
         public static BH.oM.LadybugTools.HourlyContinuousCollection ToHourlyContinuousCollection(Dictionary<string, object> oldObject)
         {
+            if (oldObject["header"].GetType() == typeof(CustomObject))
+            {
+                oldObject["header"] = (oldObject["header"] as CustomObject).CustomData;
+            }
+            List<object> objectList = oldObject["values"] as List<object>;
+            List<IHourly> hourlyValues = new List<IHourly>();
+            if (double.TryParse(objectList[0].ToString(), out double result))
+            {
+                HourlyDoubles values = new HourlyDoubles() { Values = new List<double>() };
+                foreach (string item in objectList.Select(x => x.ToString()))
+                {
+                    values.Values.Add(double.Parse(item));
+                }
+                hourlyValues.Add(values);
+            }
+            else
+            {
+                HourlyStrings values = new HourlyStrings() {  Values = objectList.Select(x => x.ToString()).ToList() };
+                hourlyValues.Add(values);
+            }
             return new oM.LadybugTools.HourlyContinuousCollection()
             {
-                Values = (List<double>)oldObject["Values"],
+                Values = hourlyValues[0],
+                Header = ToHeader(oldObject["header"] as Dictionary<string, object>)
             };
         }
 
         public static string FromHourlyContinuousCollection(BH.oM.LadybugTools.HourlyContinuousCollection collection)
         {
+            /*
             string type = "\"type\" : \"HourlyContinuous\"";
-            string values = "\"values\" : [" + string.Join(", ", collection.Values.Select(x => x.ToString()).ToList()) + " ]";
-            string header = "\"header\" : " + ICustomify(collection.Header);
-            return "{ " + type + "," + values + "," + header + " }";
+            string values = "\"values\" : [ " + string.Join(" , ", collection.Values.Select(x => x.ToString()).ToList()) + " ]";
+            string header = "\"header\" : " + FromHeader(collection.Header).ToJson();
+            return "{ " + type + ", " + values + ", " + header + " }";
+            */
+            return null;
         }
     }
 }

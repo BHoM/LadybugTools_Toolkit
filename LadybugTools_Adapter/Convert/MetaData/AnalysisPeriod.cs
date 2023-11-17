@@ -7,18 +7,18 @@ namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
     {
-        public static BH.oM.LadybugTools.AnalysisPeriod ToAnalysisPeriod(Dictionary<string, object> customObject)
+        public static BH.oM.LadybugTools.AnalysisPeriod ToAnalysisPeriod(Dictionary<string, object> oldObject)
         {
             return new oM.LadybugTools.AnalysisPeriod()
             {
-                StartMonth = (int)customObject["st_month"],
-                StartDay = (int)customObject["st_day"],
-                StartHour = (int)customObject["st_hour"],
-                EndMonth = (int)customObject["end_month"],
-                EndDay = (int)customObject["end_day"],
-                EndHour = (int)customObject["end_hour"],
-                IsLeapYear = (bool)customObject["is_leap_year"],
-                TimeStep = (int)customObject["timestep"]
+                StartMonth = (int)oldObject["st_month"],
+                StartDay = (int)oldObject["st_day"],
+                StartHour = (int)oldObject["st_hour"],
+                EndMonth = (int)oldObject["end_month"],
+                EndDay = (int)oldObject["end_day"],
+                EndHour = (int)oldObject["end_hour"],
+                IsLeapYear = (bool)oldObject["is_leap_year"],
+                TimeStep = (int)oldObject["timestep"]
             };
         }
 
