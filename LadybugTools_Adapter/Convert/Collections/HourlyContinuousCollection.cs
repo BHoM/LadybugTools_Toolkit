@@ -49,7 +49,7 @@ namespace BH.Adapter.LadybugTools
             }
             else if (collection.Values.GetType() == typeof(HourlyStrings))
             {
-                valuesAsString = string.Join(@""", """, (collection.Values as HourlyStrings).Values);
+                valuesAsString = string.Join(@", ", (collection.Values as HourlyStrings).Values);
             }
             string type = "\"type\" : \"HourlyContinuous\"";
             string values = "\"values\" : [ " + valuesAsString + " ]";
