@@ -42,13 +42,19 @@ namespace BH.Adapter.LadybugTools
 
         public static string FromHourlyContinuousCollection(BH.oM.LadybugTools.HourlyContinuousCollection collection)
         {
-            /*
+            string valuesAsString = null;
+            if (collection.Values.GetType() == typeof(HourlyDoubles))
+            {
+                valuesAsString = string.Join(", ", (collection.Values as HourlyDoubles).Values.Select(x => x.ToString()));
+            }
+            else if (collection.Values.GetType() == typeof(HourlyStrings))
+            {
+                valuesAsString = string.Join(@""", """, (collection.Values as HourlyStrings).Values);
+            }
             string type = "\"type\" : \"HourlyContinuous\"";
-            string values = "\"values\" : [ " + string.Join(" , ", collection.Values.Select(x => x.ToString()).ToList()) + " ]";
+            string values = "\"values\" : [ " + valuesAsString + " ]";
             string header = "\"header\" : " + FromHeader(collection.Header).ToJson();
             return "{ " + type + ", " + values + ", " + header + " }";
-            */
-            return null;
         }
     }
 }
