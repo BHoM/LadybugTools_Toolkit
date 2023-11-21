@@ -49,11 +49,11 @@ namespace BH.Adapter.LadybugTools
             }
             else if (collection.Values.GetType() == typeof(HourlyStrings))
             {
-                valuesAsString = string.Join(@""", """, (collection.Values as HourlyStrings).Values);
+                valuesAsString = "\"" + string.Join("\", \"", (collection.Values as HourlyStrings).Values) + "\"";
             }
-            string type = "\"type\" : \"HourlyContinuous\"";
-            string values = "\"values\" : [ " + valuesAsString + " ]";
-            string header = "\"header\" : " + FromHeader(collection.Header).ToJson();
+            string type = @"""type"" : ""HourlyContinuous""";
+            string values = @"""values"" : [ " + valuesAsString + " ]";
+            string header = @"""header"" : " + FromHeader(collection.Header).ToJson();
             return "{ " + type + ", " + values + ", " + header + " }";
         }
     }

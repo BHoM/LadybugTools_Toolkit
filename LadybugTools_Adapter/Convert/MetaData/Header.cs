@@ -39,7 +39,7 @@ namespace BH.Adapter.LadybugTools
                 { "data_type", FromDataType(header.DataType) },
                 { "unit", header.Unit },
                 { "analysis_period", FromAnalysisPeriod(header.AnalysisPeriod) },
-                { "MetaData", header.Metadata }
+                { "metadata", header.Metadata }
             };
         }
     }

@@ -41,7 +41,7 @@ namespace BH.Adapter.LadybugTools
                     return ToEPW(LBTObject);
                 case "Header":
                     return ToHeader(LBTObject);
-                case "HourlyContinuousCollection":
+                case "HourlyContinuous":
                     return ToHourlyContinuousCollection(LBTObject);
                 case "Location":
                     return ToLocation(LBTObject);
