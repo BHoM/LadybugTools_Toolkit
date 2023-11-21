@@ -19,6 +19,7 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Please input a valid LadybugConfig.");
                 return false;
             }
+
             if (objects.Count() == 0)
             {
                 BH.Engine.Base.Compute.RecordError("Please input an object.");
@@ -27,10 +28,15 @@ namespace BH.Adapter.LadybugTools
             
             if (objects.Count > 1)
             {
-                BH.Engine.Base.Compute.RecordWarning("The adapter does not currently support pushing multiple objects to one file, only the first object will be saved.");
+                BH.Engine.Base.Compute.RecordWarning("The LadybugToolsAdapter does not currently support pushing multiple objects to one file, only the first object will be saved.");
             }
 
-            return Convert.FromBHoM(objects[0], config.JsonFile);
+            if (!Convert.FromBHoM(objects[0], config.JsonFile))
+            {
+                BH.Engine.Base.Compute.RecordError("An error occurred during conversion to json:");
+                return false;
+            }
+            return true;
         }
     }
 }
