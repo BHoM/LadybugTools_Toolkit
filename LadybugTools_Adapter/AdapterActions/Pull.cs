@@ -1,4 +1,6 @@
-﻿using BH.oM.Adapter;
+﻿using BH.Engine.Adapter;
+using BH.oM.Adapter;
+using BH.oM.Base;
 using BH.oM.Data.Requests;
 using BH.oM.LadybugTools;
 using System;
@@ -17,7 +19,7 @@ namespace BH.Adapter.LadybugTools
                 return Read(filterRequest.Type, actionConfig: actionConfig);
             }
             else
-                return new List<object>();
+                return Read(null, actionConfig);
         }
     }
 }

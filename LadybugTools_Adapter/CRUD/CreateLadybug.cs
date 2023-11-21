@@ -24,16 +24,13 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Please input an object.");
                 return false;
             }
-            foreach (var item in objects)
+            
+            if (objects.Count > 1)
             {
-                bool success = Convert.FromBHoM(item, config.JsonFile);
-                if (!success)
-                {
-                    return false;
-                }
+                BH.Engine.Base.Compute.RecordWarning("The adapter does not currently support pushing multiple objects to one file, only the first object will be saved.");
             }
 
-            return true;
+            return Convert.FromBHoM(objects[0], config.JsonFile);
         }
     }
 }
