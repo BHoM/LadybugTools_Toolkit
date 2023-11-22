@@ -29,9 +29,6 @@ namespace BH.oM.LadybugTools
 {
     public class Location : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "Location";
-
         [Description("The City of this object.")]
         public virtual string City { get; set; } = "";
 

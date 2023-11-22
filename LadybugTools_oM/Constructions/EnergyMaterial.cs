@@ -31,11 +31,8 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class EnergyMaterial : BHoMObject, IEnergyMaterialOpaque
     {
-        [Description("The object type - for use Python-side")]
-        public virtual string Type { get; set; } = "EnergyMaterial";
-
         [Description("The name of this EnergyMaterial.")]
-        public virtual string Identifier { get; set; }
+        public override string Name { get; set; } = string.Empty;
 
         [Description("Thickness of material (m).")]
         [Length]

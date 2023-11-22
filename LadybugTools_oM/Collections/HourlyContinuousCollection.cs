@@ -30,9 +30,6 @@ namespace BH.oM.LadybugTools
 {
     public class HourlyContinuousCollection : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "HourlyContinuous";
-        
         [Description("An approximation of a Ladybug Header object.")]
         public virtual Header Header { get; set; } = new Header();
 

@@ -29,9 +29,6 @@ namespace BH.oM.LadybugTools
 {
     public class EPW : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "EPW";
-
         [Description("The Location of this EPW.")]
         public virtual Location Location { get; set; } = new Location();
 

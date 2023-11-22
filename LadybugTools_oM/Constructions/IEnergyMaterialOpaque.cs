@@ -28,7 +28,5 @@ namespace BH.oM.LadybugTools
 {
     public interface IEnergyMaterialOpaque : ILadybugTools
     {
-        [Description("The identifier for this material object.")]
-        string Identifier { get; set; }
     }
 }

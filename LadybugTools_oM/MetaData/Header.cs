@@ -29,9 +29,6 @@ namespace BH.oM.LadybugTools
 {
     public class Header : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "Header";
-        
         [Description("The data type the data associated with this header object represents.")]
         public virtual DataType DataType { get; set; } = new DataType();
         
