@@ -17,21 +17,29 @@ namespace BH.Adapter.LadybugTools
         {
             string json = File.ReadAllText(jsonFile.GetFullFileName());
             var obj = Engine.Serialiser.Convert.FromJson(json);
+
             Dictionary<string, object> LBTObject = null;
+
             if (obj.GetType() == typeof(CustomObject))
             {
                 LBTObject = (obj as CustomObject).CustomData;
             }
-            else
+            else if (obj.GetType() == typeof(Dictionary<string, object>))
             {
                 BH.Engine.Base.Compute.RecordWarning("The object was not deserialised as a CustomObject, are you sure that this file came from a LadybugTools Python object? \n Trying to cast to Dictionary...");
                 LBTObject = obj as Dictionary<string, object>;
             }
+            else
+            {
+                BH.Engine.Base.Compute.RecordWarning($"The json given already deserialises to a BHoM object of type: {obj.GetType().FullName} - please use the BHoM Engine serialiser to deserialise this object.");
+                return null;
+            }
+
             switch (LBTObject["type"] as string)
             {
                 case "AnalysisPeriod":
                     return ToAnalysisPeriod(LBTObject);
-                case "DataType":
+                case "GenericDataType":
                     return ToDataType(LBTObject);
                 case "EnergyMaterial":
                     return ToEnergyMaterial(LBTObject);

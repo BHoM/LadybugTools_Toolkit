@@ -20,8 +20,8 @@ namespace BH.Adapter.LadybugTools
         {
             return new Dictionary<string, object>
             {
-                { "type", "DataType" },
-                { "name", "" },
+                { "type", "GenericDataType" },
+                { "name", dataType.Name },
                 { "data_type", dataType.Data_Type }
             };
         }

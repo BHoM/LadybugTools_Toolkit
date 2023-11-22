@@ -17,10 +17,12 @@ namespace BH.Adapter.LadybugTools
             {
                 oldObject["location"] = (oldObject["location"] as CustomObject).CustomData;
             }
+
             if (oldObject["metadata"].GetType() == typeof(CustomObject))
             {
                 oldObject["metadata"] = (oldObject["metadata"] as CustomObject).CustomData;
             }
+
             List<BH.oM.LadybugTools.HourlyContinuousCollection> collections = new List<BH.oM.LadybugTools.HourlyContinuousCollection>();
             foreach (var collection in oldObject["data_collections"] as List<object>)
             {
@@ -33,6 +35,7 @@ namespace BH.Adapter.LadybugTools
                     collections.Add(ToHourlyContinuousCollection(collection as Dictionary<string, object>));
                 }
             }
+
             return new oM.LadybugTools.EPW()
             {
                 Location = ToLocation(oldObject["location"] as Dictionary<string, object>),

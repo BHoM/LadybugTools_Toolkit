@@ -33,7 +33,6 @@ namespace BH.Adapter.LadybugTools
 
         private static string Jsonify(this oM.LadybugTools.AnalysisPeriod analysisPeriod)
         {
-            
             return FromAnalysisPeriod(analysisPeriod).ToJson();
         }
         private static string Jsonify(this oM.LadybugTools.DataType dataType)
