@@ -58,8 +58,5 @@ namespace BH.oM.LadybugTools
 
         [Description("The Source of this object.")]
         public virtual string Source { get; set; } = "";
-
-        //why does the serialiser need this? no-one knows
-        public virtual string source { get; set; } = "";
     }
 }

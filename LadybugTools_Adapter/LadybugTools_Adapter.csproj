@@ -68,12 +68,8 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Serialiser_Engine">
-      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\Serialiser_Engine.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Web.Extensions">
-      <HintPath>..\libs\System.Web.Extensions.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Serialiser_Engine.dll</HintPath>
+    </Reference>  </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Convert\Geometry\" />
