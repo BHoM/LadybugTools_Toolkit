@@ -35,13 +35,33 @@ namespace BH.Adapter.LadybugTools
     {
         public override IEnumerable<object> Pull(IRequest request, PullType pullType = PullType.AdapterDefault, ActionConfig actionConfig = null) 
         {
+            LadybugConfig config = actionConfig as LadybugConfig;
+            if (config == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"The type of actionConfig provided: {actionConfig.GetType().FullName} is not valid for this adapter. Please provide a valid LadybugConfig actionConfig.");
+                return new List<IBHoMObject>();
+            }
+
+            if (config.JsonFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError("Please provide a valid JsonFile FileSettings object.");
+                return new List<IBHoMObject>();
+            }
+
+            if (!System.IO.File.Exists(config.JsonFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"The file at {config.JsonFile.GetFullFileName()} does not exist to pull from.");
+                return new List<IBHoMObject>();
+            }
+
+
             if (request != null)
             {
                 FilterRequest filterRequest = request as FilterRequest;
-                return Read(filterRequest.Type, actionConfig: actionConfig);
+                return Read(filterRequest.Type, actionConfig: config);
             }
             else
-                return Read(null, actionConfig);
+                return Read(null, config);
         }
     }
 }
