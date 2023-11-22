@@ -28,7 +28,7 @@ using BH.oM.Base;
 
 namespace BH.oM.LadybugTools
 {
-    public interface IHourly : IBHoMObject
+    public interface ICollection : IBHoMObject
     {
     }
 }

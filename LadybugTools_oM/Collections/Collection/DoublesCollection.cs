@@ -28,10 +28,10 @@ using BH.oM.Base;
 
 namespace BH.oM.LadybugTools
 {
-    public class HourlyDoubles : BHoMObject, IHourly
+    public class DoublesCollection : BHoMObject, ICollection
     {
         [Description("A list of doubles.")]
-        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
+        public virtual List<double> Values { get; set; } = null;
 
     }
 }

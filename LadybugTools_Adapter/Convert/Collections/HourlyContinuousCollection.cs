@@ -18,10 +18,10 @@ namespace BH.Adapter.LadybugTools
                 oldObject["header"] = (oldObject["header"] as CustomObject).CustomData;
             }
             List<object> objectList = oldObject["values"] as List<object>;
-            List<IHourly> hourlyValues = new List<IHourly>();
+            List<ICollection> hourlyValues = new List<ICollection>();
             if (double.TryParse(objectList[0].ToString(), out double result))
             {
-                HourlyDoubles values = new HourlyDoubles() { Values = new List<double>() };
+                DoublesCollection values = new DoublesCollection() { Values = new List<double>() };
                 foreach (string item in objectList.Select(x => x.ToString()))
                 {
                     values.Values.Add(double.Parse(item));
@@ -30,7 +30,7 @@ namespace BH.Adapter.LadybugTools
             }
             else
             {
-                HourlyStrings values = new HourlyStrings() {  Values = objectList.Select(x => x.ToString()).ToList() };
+                StringsCollection values = new StringsCollection() {  Values = objectList.Select(x => x.ToString()).ToList() };
                 hourlyValues.Add(values);
             }
             return new oM.LadybugTools.HourlyContinuousCollection()
@@ -43,13 +43,13 @@ namespace BH.Adapter.LadybugTools
         public static string FromHourlyContinuousCollection(BH.oM.LadybugTools.HourlyContinuousCollection collection)
         {
             string valuesAsString = null;
-            if (collection.Values.GetType() == typeof(HourlyDoubles))
+            if (collection.Values.GetType() == typeof(DoublesCollection))
             {
-                valuesAsString = string.Join(", ", (collection.Values as HourlyDoubles).Values.Select(x => x.ToString()));
+                valuesAsString = string.Join(", ", (collection.Values as DoublesCollection).Values.Select(x => x.ToString()));
             }
-            else if (collection.Values.GetType() == typeof(HourlyStrings))
+            else if (collection.Values.GetType() == typeof(StringsCollection))
             {
-                valuesAsString = "\"" + string.Join("\", \"", (collection.Values as HourlyStrings).Values) + "\"";
+                valuesAsString = "\"" + string.Join("\", \"", (collection.Values as StringsCollection).Values) + "\"";
             }
             string type = @"""type"" : ""HourlyContinuous""";
             string values = @"""values"" : [ " + valuesAsString + " ]";

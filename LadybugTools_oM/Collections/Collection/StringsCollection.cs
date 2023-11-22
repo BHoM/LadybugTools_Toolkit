@@ -28,11 +28,11 @@ using BH.oM.Base;
 
 namespace BH.oM.LadybugTools
 {
-    public class HourlyStrings : BHoMObject, IHourly
+    public class StringsCollection : BHoMObject, ICollection
     {
 
         [Description("A list of strings.")]
-        public virtual List<string> Values { get; set; } = Enumerable.Repeat("", 8760).ToList();
+        public virtual List<string> Values { get; set; } = null;
 
     }
 }
