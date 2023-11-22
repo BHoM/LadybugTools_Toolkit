@@ -34,7 +34,7 @@ namespace BH.oM.LadybugTools
         public virtual Header Header { get; set; } = new Header();
 
         [Description("A list of values.")]
-        public virtual ICollection Values { get; set; } = null;
+        public virtual List<string> Values { get; set; } = new List<string>();
 
     }
 }

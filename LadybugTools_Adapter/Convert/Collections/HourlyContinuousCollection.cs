@@ -38,25 +38,10 @@ namespace BH.Adapter.LadybugTools
             if (oldObject["header"].GetType() == typeof(CustomObject))
                 oldObject["header"] = (oldObject["header"] as CustomObject).CustomData;
 
-            List<object> objectList = oldObject["values"] as List<object>;
-            List<ICollection> hourlyValues = new List<ICollection>();
-
-            if (double.TryParse(objectList[0].ToString(), out double result))
-            {
-                DoublesCollection collection = new DoublesCollection() { Values = new List<double>() };
-                foreach (string item in objectList.Select(x => x.ToString()))
-                    collection.Values.Add(double.Parse(item));
-
-                hourlyValues.Add(collection);
-            }
-            else
-            {
-                StringsCollection collection = new StringsCollection() {  Values = objectList.Select(x => x.ToString()).ToList() };
-                hourlyValues.Add(collection);
-            }
+            List<string> hourlyValues = (oldObject["values"] as List<object>).Select(x => x.ToString()).ToList();
             return new oM.LadybugTools.HourlyContinuousCollection()
             {
-                Values = hourlyValues[0],
+                Values = hourlyValues,
                 Header = ToHeader(oldObject["header"] as Dictionary<string, object>)
             };
         }
@@ -64,10 +49,10 @@ namespace BH.Adapter.LadybugTools
         public static string FromHourlyContinuousCollection(BH.oM.LadybugTools.HourlyContinuousCollection collection)
         {
             string valuesAsString = null;
-            if (collection.Values.GetType() == typeof(DoublesCollection))
-                valuesAsString = string.Join(", ", (collection.Values as DoublesCollection).Values.Select(x => x.ToString()));
-            else if (collection.Values.GetType() == typeof(StringsCollection))
-                valuesAsString = "\"" + string.Join("\", \"", (collection.Values as StringsCollection).Values) + "\"";
+            if (double.TryParse(collection.Values[0], out double result))
+                valuesAsString = string.Join(", ", collection.Values);
+            else
+                valuesAsString = "\"" + string.Join("\", \"", collection.Values) + "\"";
 
             string type = @"""type"" : ""HourlyContinuous""";
             string values = @"""values"" : [ " + valuesAsString + " ]";
