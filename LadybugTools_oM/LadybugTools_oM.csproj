@@ -14,7 +14,9 @@
 
   <ItemGroup>
     <Reference Include="Adapter_oM">
-      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\Adapter_oM.dll</HintPath>
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Adapter_oM.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="BHoM">
       <HintPath>$(ProgramData)\BHoM\Assemblies\BHoM.dll</HintPath>
