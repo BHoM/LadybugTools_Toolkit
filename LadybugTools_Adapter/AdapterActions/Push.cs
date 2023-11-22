@@ -37,7 +37,7 @@ namespace BH.Adapter.LadybugTools
     {
         public override List<object> Push(IEnumerable<object> objects, string tag = "", PushType pushType = PushType.AdapterDefault, ActionConfig actionConfig = null)
         {
-            if (actionConfig is null)
+            if (actionConfig == null)
             {
                 BH.Engine.Base.Compute.RecordError("Please input an actionconfig before setting active to true.");
                 return new List<object>();
