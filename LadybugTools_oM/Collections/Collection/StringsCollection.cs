@@ -30,7 +30,6 @@ namespace BH.oM.LadybugTools
 {
     public class StringsCollection : BHoMObject, ICollection
     {
-
         [Description("A list of strings.")]
         public virtual List<string> Values { get; set; } = null;
 

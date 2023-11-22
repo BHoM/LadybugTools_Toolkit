@@ -11,17 +11,14 @@ namespace BH.Adapter.LadybugTools
         public static BH.oM.LadybugTools.Header ToHeader(Dictionary<string, object> oldObject)
         {
             if (oldObject["data_type"].GetType() == typeof(CustomObject))
-            {
                 oldObject["data_type"] = (oldObject["data_type"] as CustomObject).CustomData;
-            }
+
             if (oldObject["analysis_period"].GetType() == typeof(CustomObject))
-            {
                 oldObject["analysis_period"] = (oldObject["analysis_period"] as CustomObject).CustomData;
-            }
+
             if (oldObject["metadata"].GetType() == typeof(CustomObject))
-            {
                 oldObject["metadata"] = (oldObject["metadata"] as CustomObject).CustomData;
-            }
+
             return new oM.LadybugTools.Header()
             {
                 Unit = (string)oldObject["unit"],

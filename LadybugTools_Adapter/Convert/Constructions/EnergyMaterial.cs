@@ -35,6 +35,7 @@ namespace BH.Adapter.LadybugTools
         {
             return new Dictionary<string, object>()
             {
+                { "type", "EnergyMaterial" },
                 { "identifier", energyMaterial.Name },
                 { "thickness", energyMaterial.Thickness },
                 { "conductivity", energyMaterial.Conductivity },

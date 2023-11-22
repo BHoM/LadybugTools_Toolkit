@@ -27,9 +27,7 @@ namespace BH.Adapter.LadybugTools
             }
             
             if (objects.Count > 1)
-            {
                 BH.Engine.Base.Compute.RecordWarning("The LadybugToolsAdapter does not currently support pushing multiple objects to one file, only the first object will be saved.");
-            }
 
             if (!Convert.FromBHoM(objects[0], config.JsonFile))
             {

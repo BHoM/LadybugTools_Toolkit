@@ -27,7 +27,6 @@ namespace BH.Adapter.LadybugTools
                     LeafReflectivity = (double)oldObject["leaf_reflectivity"],
                     LeafEmissivity = (double)oldObject["leaf_emissivity"],
                     MinimumStomatalResistance = (double)oldObject["min_stomatal_resist"],
-                    //apparently there are some extra keys in the serialised Ladybug object - but they are not reflected in the EnergyMaterialVegetation object, so are not handled here
                 };
             }
             else

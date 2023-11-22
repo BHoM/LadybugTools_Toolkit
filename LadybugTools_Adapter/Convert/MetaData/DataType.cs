@@ -11,13 +11,10 @@ namespace BH.Adapter.LadybugTools
         {
             string BaseUnit;
             if (oldObject.ContainsKey("base_unit"))
-            {
                 BaseUnit = (string)oldObject["base_unit"];
-            }
             else
-            {
                 BaseUnit = "";
-            }
+
             return new oM.LadybugTools.DataType()
             {
                 Data_Type = (string)oldObject["data_type"],
@@ -34,10 +31,10 @@ namespace BH.Adapter.LadybugTools
                 { "name", dataType.Name },
                 { "data_type", dataType.Data_Type }
             };
+
             if (dataType.BaseUnit != "")
-            {
                 returnDict.Add("base_unit", dataType.BaseUnit);
-            }
+
             return returnDict;
         }
     }
