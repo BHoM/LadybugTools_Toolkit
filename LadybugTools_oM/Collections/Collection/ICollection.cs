@@ -28,6 +28,7 @@ using BH.oM.Base;
 
 namespace BH.oM.LadybugTools
 {
+    [Description("An interface for different types of collections.")]
     public interface ICollection : IBHoMObject
     {
     }

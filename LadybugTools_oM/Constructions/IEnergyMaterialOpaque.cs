@@ -26,6 +26,7 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
+    [Description("An interface for opaque energy materials.")]
     public interface IEnergyMaterialOpaque : ILadybugTools
     {
     }
