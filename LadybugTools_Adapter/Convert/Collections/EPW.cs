@@ -61,7 +61,7 @@ namespace BH.Adapter.LadybugTools
             }
             catch (Exception ex)
             {
-                BH.Engine.Base.Compute.RecordError($"An error occured during conversion of Metadata, returning without Metadata:\n The error: {ex}");
+                BH.Engine.Base.Compute.RecordError($"An error occurred during conversion of Metadata, returning without Metadata:\n The error: {ex}");
                 return epw;
             }
         }

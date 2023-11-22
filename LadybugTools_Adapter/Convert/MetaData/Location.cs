@@ -48,7 +48,7 @@ namespace BH.Adapter.LadybugTools
             }
             catch (Exception ex)
             {
-                BH.Engine.Base.Compute.RecordError($"An error ocurred during conversion of a {typeof(Location).FullName}. Returning a default {typeof(Location).FullName}:\n The error: {ex}");
+                BH.Engine.Base.Compute.RecordError($"An error occurred during conversion of a {typeof(Location).FullName}. Returning a default {typeof(Location).FullName}:\n The error: {ex}");
                 return new Location();
             }
         }

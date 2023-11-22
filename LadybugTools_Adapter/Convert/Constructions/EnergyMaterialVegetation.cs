@@ -55,7 +55,7 @@ namespace BH.Adapter.LadybugTools
                 }
                 catch (Exception ex)
                 {
-                    BH.Engine.Base.Compute.RecordError($"An error ocurred during conversion of a {typeof(EnergyMaterialVegetation).FullName}. Returning a default {typeof(EnergyMaterialVegetation).FullName}:\n The error: {ex}");
+                    BH.Engine.Base.Compute.RecordError($"An error occurred during conversion of a {typeof(EnergyMaterialVegetation).FullName}. Returning a default {typeof(EnergyMaterialVegetation).FullName}:\n The error: {ex}");
                     return new EnergyMaterialVegetation();
                 }
             }

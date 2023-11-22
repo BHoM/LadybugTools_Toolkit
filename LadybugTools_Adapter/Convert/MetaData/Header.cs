@@ -55,7 +55,7 @@ namespace BH.Adapter.LadybugTools
             }
             catch (Exception ex)
             {
-                BH.Engine.Base.Compute.RecordError($"An error occured during conversion, returning without Metadata and Unit:\n The error: {ex}");
+                BH.Engine.Base.Compute.RecordError($"An error occurred during conversion, returning without Metadata and Unit:\n The error: {ex}");
                 return header;
             }
         }
