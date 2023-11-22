@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BH.oM.LadybugTools
 {
-    public class LadybugConfig : ActionConfig, ILadybugConfig
+    public class LadybugConfig : ActionConfig
     {
         public virtual FileSettings JsonFile { get; set; } = null;
     }
