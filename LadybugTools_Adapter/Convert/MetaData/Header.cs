@@ -21,6 +21,7 @@
  */
 
 using BH.oM.Base;
+using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -41,13 +42,22 @@ namespace BH.Adapter.LadybugTools
             if (oldObject["metadata"].GetType() == typeof(CustomObject))
                 oldObject["metadata"] = (oldObject["metadata"] as CustomObject).CustomData;
 
-            return new oM.LadybugTools.Header()
+            Header header = new Header()
             {
-                Unit = (string)oldObject["unit"],
                 DataType = ToDataType(oldObject["data_type"] as Dictionary<string, object>),
-                AnalysisPeriod = ToAnalysisPeriod(oldObject["analysis_period"] as Dictionary<string, object>),
-                Metadata = (Dictionary<string, object>)oldObject["metadata"],
+                AnalysisPeriod = ToAnalysisPeriod(oldObject["analysis_period"] as Dictionary<string, object>)
             };
+            try
+            {
+                header.Unit = (string)oldObject["unit"];
+                header.Metadata = (Dictionary<string, object>)oldObject["metadata"];
+                return header;
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occured during conversion, returning without Metadata and Unit:\n The error: {ex}");
+                return header;
+            }
         }
 
         public static Dictionary<string, object> FromHeader(BH.oM.LadybugTools.Header header)

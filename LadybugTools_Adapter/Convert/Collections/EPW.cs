@@ -49,13 +49,21 @@ namespace BH.Adapter.LadybugTools
                 else
                     collections.Add(ToHourlyContinuousCollection(collection as Dictionary<string, object>));
             }
-
-            return new oM.LadybugTools.EPW()
+            EPW epw = new EPW()
             {
                 Location = ToLocation(oldObject["location"] as Dictionary<string, object>),
-                DataCollections = collections,
-                Metadata = (Dictionary<string, object>)oldObject["metadata"]
+                DataCollections = collections
             };
+            try
+            {
+                epw.Metadata = (Dictionary<string, object>)oldObject["metadata"];
+                return epw;
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occured during conversion of Metadata, returning without Metadata:\n The error: {ex}");
+                return epw;
+            }
         }
         
         public static string FromEPW(BH.oM.LadybugTools.EPW epw)

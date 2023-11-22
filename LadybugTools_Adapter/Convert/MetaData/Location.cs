@@ -20,6 +20,7 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,18 +31,26 @@ namespace BH.Adapter.LadybugTools
     {
         public static BH.oM.LadybugTools.Location ToLocation(Dictionary<string, object> oldObject)
         {
-            return new oM.LadybugTools.Location()
+            try
             {
-                City = (string)oldObject["city"],
-                State = (string)oldObject["state"],
-                Country = (string)oldObject["country"],
-                Latitude = (double)oldObject["latitude"],
-                Longitude = (double)oldObject["longitude"],
-                TimeZone = (double)oldObject["time_zone"],
-                Elevation = (double)oldObject["elevation"],
-                StationId = (string)oldObject["station_id"],
-                Source = (string)oldObject["source"]
-            };
+                return new oM.LadybugTools.Location()
+                {
+                    City = (string)oldObject["city"],
+                    State = (string)oldObject["state"],
+                    Country = (string)oldObject["country"],
+                    Latitude = (double)oldObject["latitude"],
+                    Longitude = (double)oldObject["longitude"],
+                    TimeZone = (double)oldObject["time_zone"],
+                    Elevation = (double)oldObject["elevation"],
+                    StationId = (string)oldObject["station_id"],
+                    Source = (string)oldObject["source"]
+                };
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error ocurred during conversion of a {typeof(Location).FullName}. Returning a default {typeof(Location).FullName}:\n The error: {ex}");
+                return new Location();
+            }
         }
 
         public static Dictionary<string, object> FromLocation(BH.oM.LadybugTools.Location location)

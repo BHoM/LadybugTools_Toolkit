@@ -33,18 +33,26 @@ namespace BH.Adapter.LadybugTools
         {
             if (Enum.TryParse((string)oldObject["roughness"], out Roughness roughness))
             {
-                return new oM.LadybugTools.EnergyMaterial()
+                try
                 {
-                    Name = (string)oldObject["identifier"],
-                    Thickness = (double)oldObject["thickness"],
-                    Conductivity = (double)oldObject["conductivity"],
-                    Density = (double)oldObject["density"],
-                    SpecificHeat = (double)oldObject["specific_heat"],
-                    Roughness = roughness,
-                    ThermalAbsorptance = (double)oldObject["thermal_absorptance"],
-                    SolarAbsorptance = (double)oldObject["solar_absorptance"],
-                    VisibleAbsorptance = (double)oldObject["visible_absorptance"]
-                };
+                    return new oM.LadybugTools.EnergyMaterial()
+                    {
+                        Name = (string)oldObject["identifier"],
+                        Thickness = (double)oldObject["thickness"],
+                        Conductivity = (double)oldObject["conductivity"],
+                        Density = (double)oldObject["density"],
+                        SpecificHeat = (double)oldObject["specific_heat"],
+                        Roughness = roughness,
+                        ThermalAbsorptance = (double)oldObject["thermal_absorptance"],
+                        SolarAbsorptance = (double)oldObject["solar_absorptance"],
+                        VisibleAbsorptance = (double)oldObject["visible_absorptance"]
+                    };
+                }
+                catch (Exception ex)
+                {
+                    BH.Engine.Base.Compute.RecordError($"An error ocurred during conversion of a {typeof(EnergyMaterial).FullName}. Returning a default {typeof(EnergyMaterial).FullName}:\n The error: {ex}");
+                    return new EnergyMaterial();
+                }
             }
             else
             {

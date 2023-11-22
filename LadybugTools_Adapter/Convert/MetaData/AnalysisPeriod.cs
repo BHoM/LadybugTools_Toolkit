@@ -21,6 +21,7 @@
  */
 
 using BH.oM.Base;
+using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -31,17 +32,25 @@ namespace BH.Adapter.LadybugTools
     {
         public static BH.oM.LadybugTools.AnalysisPeriod ToAnalysisPeriod(Dictionary<string, object> oldObject)
         {
-            return new oM.LadybugTools.AnalysisPeriod()
+            try
             {
-                StartMonth = (int)oldObject["st_month"],
-                StartDay = (int)oldObject["st_day"],
-                StartHour = (int)oldObject["st_hour"],
-                EndMonth = (int)oldObject["end_month"],
-                EndDay = (int)oldObject["end_day"],
-                EndHour = (int)oldObject["end_hour"],
-                IsLeapYear = (bool)oldObject["is_leap_year"],
-                TimeStep = (int)oldObject["timestep"]
-            };
+                return new oM.LadybugTools.AnalysisPeriod()
+                {
+                    StartMonth = (int)oldObject["st_month"],
+                    StartDay = (int)oldObject["st_day"],
+                    StartHour = (int)oldObject["st_hour"],
+                    EndMonth = (int)oldObject["end_month"],
+                    EndDay = (int)oldObject["end_day"],
+                    EndHour = (int)oldObject["end_hour"],
+                    IsLeapYear = (bool)oldObject["is_leap_year"],
+                    TimeStep = (int)oldObject["timestep"]
+                };
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error ocurred during conversion of a {typeof(AnalysisPeriod).FullName}. Returning a default {typeof(AnalysisPeriod).FullName}:\n The error: {ex}");
+                return new AnalysisPeriod();
+            }
         }
 
         public static Dictionary<string, object> FromAnalysisPeriod(BH.oM.LadybugTools.AnalysisPeriod analysisPeriod)

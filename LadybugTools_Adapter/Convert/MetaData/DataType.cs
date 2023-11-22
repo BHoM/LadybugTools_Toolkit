@@ -21,6 +21,7 @@
  */
 
 using BH.oM.Base;
+using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,13 +37,20 @@ namespace BH.Adapter.LadybugTools
                 baseUnit = (string)oldObject["base_unit"];
             else
                 baseUnit = "";
-
-            return new oM.LadybugTools.DataType()
+            try
             {
-                Data_Type = (string)oldObject["data_type"],
-                Name = (string)oldObject["name"],
-                BaseUnit = baseUnit
-            };
+                return new oM.LadybugTools.DataType()
+                {
+                    Data_Type = (string)oldObject["data_type"],
+                    Name = (string)oldObject["name"],
+                    BaseUnit = baseUnit
+                };
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error ocurred during conversion of a {typeof(DataType).FullName}. Returning a default {typeof(DataType).FullName}:\n The error: {ex}");
+                return new DataType();
+            }
         }
 
         public static Dictionary<string, object> FromDataType(BH.oM.LadybugTools.DataType dataType)

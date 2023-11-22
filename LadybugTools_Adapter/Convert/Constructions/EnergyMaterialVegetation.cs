@@ -33,23 +33,31 @@ namespace BH.Adapter.LadybugTools
         {
             if (Enum.TryParse((string)oldObject["roughness"], out Roughness roughness))
             {
-                return new oM.LadybugTools.EnergyMaterialVegetation()
+                try
                 {
-                    Name = (string)oldObject["identifier"],
-                    Thickness = (double)oldObject["thickness"],
-                    Conductivity = (double)oldObject["conductivity"],
-                    Density = (double)oldObject["density"],
-                    SpecificHeat = (double)oldObject["specific_heat"],
-                    Roughness = roughness,
-                    SoilThermalAbsorptance = (double)oldObject["soil_thermal_absorptance"],
-                    SoilSolarAbsorptance = (double)oldObject["soil_solar_absorptance"],
-                    SoilVisibleAbsorptance = (double)oldObject["soil_visible_absorptance"],
-                    PlantHeight = (double)oldObject["plant_height"],
-                    LeafAreaIndex = (double)oldObject["leaf_area_index"],
-                    LeafReflectivity = (double)oldObject["leaf_reflectivity"],
-                    LeafEmissivity = (double)oldObject["leaf_emissivity"],
-                    MinimumStomatalResistance = (double)oldObject["min_stomatal_resist"],
-                };
+                    return new oM.LadybugTools.EnergyMaterialVegetation()
+                    {
+                        Name = (string)oldObject["identifier"],
+                        Thickness = (double)oldObject["thickness"],
+                        Conductivity = (double)oldObject["conductivity"],
+                        Density = (double)oldObject["density"],
+                        SpecificHeat = (double)oldObject["specific_heat"],
+                        Roughness = roughness,
+                        SoilThermalAbsorptance = (double)oldObject["soil_thermal_absorptance"],
+                        SoilSolarAbsorptance = (double)oldObject["soil_solar_absorptance"],
+                        SoilVisibleAbsorptance = (double)oldObject["soil_visible_absorptance"],
+                        PlantHeight = (double)oldObject["plant_height"],
+                        LeafAreaIndex = (double)oldObject["leaf_area_index"],
+                        LeafReflectivity = (double)oldObject["leaf_reflectivity"],
+                        LeafEmissivity = (double)oldObject["leaf_emissivity"],
+                        MinimumStomatalResistance = (double)oldObject["min_stomatal_resist"],
+                    };
+                }
+                catch (Exception ex)
+                {
+                    BH.Engine.Base.Compute.RecordError($"An error ocurred during conversion of a {typeof(EnergyMaterialVegetation).FullName}. Returning a default {typeof(EnergyMaterialVegetation).FullName}:\n The error: {ex}");
+                    return new EnergyMaterialVegetation();
+                }
             }
             else
             {
