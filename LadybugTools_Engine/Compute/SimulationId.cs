@@ -62,8 +62,8 @@ namespace BH.Engine.LadybugTools
             }
 
             string epwId = Convert.SanitiseString(Path.GetFileNameWithoutExtension(epwFile));
-            string groundMaterialId = Convert.SanitiseString(groundMaterial.Identifier);
-            string shadeMaterialId = Convert.SanitiseString(shadeMaterial.Identifier);
+            string groundMaterialId = Convert.SanitiseString(groundMaterial.Name);
+            string shadeMaterialId = Convert.SanitiseString(shadeMaterial.Name);
             return $"{epwId}__{groundMaterialId}__{shadeMaterialId}";
         }
     }

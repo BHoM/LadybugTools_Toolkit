@@ -61,7 +61,7 @@ namespace BH.Engine.LadybugTools
                 materialObjects.Add((IEnergyMaterialOpaque)materialObject);
             }
 
-            return materialObjects.Where(m => m.Identifier.Contains(filter)).ToList();
+            return materialObjects.Where(m => m.Name.Contains(filter)).ToList();
         }
     }
 }

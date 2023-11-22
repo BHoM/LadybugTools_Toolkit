@@ -153,7 +153,7 @@ namespace BH.Engine.LadybugTools
 
             return new oM.LadybugTools.EnergyMaterialVegetation()
             {
-                Identifier = identifier,
+                Name = identifier,
                 Thickness = thickness,
                 Conductivity = conductivity,
                 Density = density,
