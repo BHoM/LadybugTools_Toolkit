@@ -35,6 +35,5 @@ namespace BH.oM.LadybugTools
 
         [Description("A list of values.")]
         public virtual List<string> Values { get; set; } = new List<string>();
-
     }
 }
