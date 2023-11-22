@@ -31,17 +31,17 @@ namespace BH.Adapter.LadybugTools
     {
         public static BH.oM.LadybugTools.DataType ToDataType(Dictionary<string, object> oldObject)
         {
-            string BaseUnit;
+            string baseUnit;
             if (oldObject.ContainsKey("base_unit"))
-                BaseUnit = (string)oldObject["base_unit"];
+                baseUnit = (string)oldObject["base_unit"];
             else
-                BaseUnit = "";
+                baseUnit = "";
 
             return new oM.LadybugTools.DataType()
             {
                 Data_Type = (string)oldObject["data_type"],
                 Name = (string)oldObject["name"],
-                BaseUnit = BaseUnit
+                BaseUnit = baseUnit
             };
         }
 

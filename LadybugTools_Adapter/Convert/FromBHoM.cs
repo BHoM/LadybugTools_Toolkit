@@ -43,14 +43,14 @@ namespace BH.Adapter.LadybugTools
             return events.Count == 0;
         }
 
-        public static string ICustomify(this ILadybugTools LBTObject)
+        public static string ICustomify(this ILadybugTools lbtObject)
         {
-            if (LBTObject == null)
+            if (lbtObject == null)
             {
                 BH.Engine.Base.Compute.RecordError("Input object is null.");
                 return null;
             }
-            return Jsonify(LBTObject as dynamic);
+            return Jsonify(lbtObject as dynamic);
         }
 
         private static string Jsonify(this oM.LadybugTools.AnalysisPeriod analysisPeriod)

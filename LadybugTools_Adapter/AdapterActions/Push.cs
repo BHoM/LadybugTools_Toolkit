@@ -37,13 +37,24 @@ namespace BH.Adapter.LadybugTools
     {
         public override List<object> Push(IEnumerable<object> objects, string tag = "", PushType pushType = PushType.AdapterDefault, ActionConfig actionConfig = null)
         {
-            if (actionConfig is null)
+            LadybugConfig config = actionConfig as LadybugConfig;
+            if (config is null)
             {
-                BH.Engine.Base.Compute.RecordError("Please input an actionconfig before setting active to true.");
+                BH.Engine.Base.Compute.RecordError("Please input a valid LadybugConfig.");
                 return new List<object>();
             }
-            
-            CreateLadybug(objects.Cast<ILadybugTools>().ToList(), actionConfig);
+
+            if (objects.Count() == 0)
+            {
+                BH.Engine.Base.Compute.RecordError("Please input a valid LadybugTools object.");
+                return new List<object>();
+            }
+
+            if (objects.Count() > 1)
+                BH.Engine.Base.Compute.RecordWarning("The LadybugToolsAdapter does not currently support pushing multiple objects to one file, only the first object will be saved.");
+
+
+            CreateLadybug(objects.Cast<ILadybugTools>().ToList(), config);
             return objects.ToList();
         }
     }
