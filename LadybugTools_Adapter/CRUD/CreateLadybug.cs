@@ -20,27 +20,31 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-
+using BH.Engine.Adapter;
+using BH.oM.Adapter;
+using BH.oM.Base.Debugging;
+using BH.oM.LadybugTools;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Text;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class Header : ILadybugTools
+    public partial class LadybugToolsAdapter : BHoMAdapter
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "Header";
-        
-        [Description("The data type the data associated with this header object represents.")]
-        public virtual DataType DataType { get; set; } = new DataType();
-        
-        [Description("The unit for this header object.")]
-        public virtual string Unit { get; set; } = string.Empty;
-        
-        [Description("The analysis period associated with this header object.")]
-        public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
+        public static void CreateLadybug(List<ILadybugTools> objects, LadybugConfig config = null)
+        {
+            List<string> jsonObjects = new List<string>();
+            
+            foreach (ILadybugTools lbtObject in objects)
+            {
+                jsonObjects.Add(lbtObject.FromBHoM());
+            }
 
-        [Description("The metadata associated with this header object.")]
-        public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
+            string json = "[" + string.Join(", ", jsonObjects) + "]";
+            File.WriteAllText(config.JsonFile.GetFullFileName(), json);
+        }
     }
 }

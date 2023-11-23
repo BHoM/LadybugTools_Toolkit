@@ -20,25 +20,24 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-
+using BH.Engine.Adapter;
+using BH.Engine.Serialiser;
+using BH.oM.Adapter;
+using BH.oM.Base;
+using BH.oM.LadybugTools;
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Text;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class EPW : ILadybugTools
+    public partial class LadybugToolsAdapter : BHoMAdapter
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "EPW";
-
-        [Description("The Location of this EPW.")]
-        public virtual Location Location { get; set; } = new Location();
-
-        [Description("The data collections within this EPW.")]
-        public virtual List<HourlyContinuousCollection> DataCollections { get; set; } = new List<HourlyContinuousCollection>();
-
-        [Description("Metadata associated with this EPW.")]
-        public virtual Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
-
+        protected override IEnumerable<IBHoMObject> IRead(Type type, IList indices = null, ActionConfig actionConfig = null)
+        {
+            LadybugConfig config = actionConfig as LadybugConfig;
+            return config.JsonFile.ToBHoM();
+        }
     }
 }

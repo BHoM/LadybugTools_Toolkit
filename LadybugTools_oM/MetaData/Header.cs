@@ -20,20 +20,25 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+
+using BH.oM.Base;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    [Description("An enum for the roughness of an EnergyMaterial.")]
-    public enum Roughness
+    public class Header : BHoMObject, ILadybugTools
     {
-        Undefined,
-        VeryRough,
-        Rough,
-        MediumRough,
-        MediumSmooth,
-        Smooth,
-        VerySmooth
-    };
-}
+        [Description("The data type the data associated with this header object represents.")]
+        public virtual DataType DataType { get; set; } = new DataType();
+        
+        [Description("The unit for this header object.")]
+        public virtual string Unit { get; set; } = string.Empty;
+        
+        [Description("The analysis period associated with this header object.")]
+        public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
 
+        [Description("The metadata associated with this header object.")]
+        public virtual Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+    }
+}

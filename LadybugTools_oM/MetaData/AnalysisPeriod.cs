@@ -20,20 +20,38 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+
+using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    [Description("An enum for the roughness of an EnergyMaterial.")]
-    public enum Roughness
+    [NoAutoConstructor]
+    public class AnalysisPeriod : BHoMObject, ILadybugTools
     {
-        Undefined,
-        VeryRough,
-        Rough,
-        MediumRough,
-        MediumSmooth,
-        Smooth,
-        VerySmooth
-    };
-}
+        [Description("The start month.")]
+        public virtual int StartMonth { get; set; } = 1;
 
+        [Description("The start day.")]
+        public virtual int StartDay { get; set; } = 1;
+
+        [Description("The start hour.")]
+        public virtual int StartHour { get; set; } = 0;
+
+        [Description("The end month.")]
+        public virtual int EndMonth { get; set; } = 12;
+
+        [Description("The end day.")]
+        public virtual int EndDay { get; set; } = 31;
+
+        [Description("The end hour.")]
+        public virtual int EndHour { get; set; } = 23;
+
+        [Description("Boolean flag for whether this represents a leap year.")]
+        public virtual bool IsLeapYear { get; set; } = false;
+
+        [Description("The number of timesteps per hour.")]
+        public virtual int TimeStep { get; set; } = 1;
+    }
+}

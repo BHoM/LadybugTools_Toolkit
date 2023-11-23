@@ -22,19 +22,17 @@
 
 
 using System.ComponentModel;
+using BH.oM.Base;
 using BH.oM.Base.Attributes;
 using BH.oM.Quantities.Attributes;
 
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class EnergyMaterialVegetation : IEnergyMaterialOpaque
+    public class EnergyMaterialVegetation : BHoMObject, IEnergyMaterialOpaque
     {
-        [Description("The object type - for use Python-side")]
-        public virtual string Type { get; set; } = "EnergyMaterialVegetation";
-
         [Description("The name of this EnergyMaterialVegetation.")]
-        public virtual string Identifier { get; set; }
+        public override string Name { get; set; } = string.Empty;
 
         [Description("Thickness of material (m).")]
         [Length]
@@ -75,6 +73,6 @@ namespace BH.oM.LadybugTools
         public virtual double LeafEmissivity { get; set; }
 
         [Description("A number between 50 and 300 for the resistance of the plants to moisture transport [s/m]. Plants with low values of stomatal resistance will result in higher evapotranspiration rates than plants with high resistance.")]
-        public virtual double MinStomatalResist { get; set; }
+        public virtual double MinimumStomatalResistance { get; set; }
     }
 }

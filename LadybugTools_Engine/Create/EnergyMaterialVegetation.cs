@@ -153,7 +153,7 @@ namespace BH.Engine.LadybugTools
 
             return new oM.LadybugTools.EnergyMaterialVegetation()
             {
-                Identifier = identifier,
+                Name = identifier,
                 Thickness = thickness,
                 Conductivity = conductivity,
                 Density = density,
@@ -166,7 +166,7 @@ namespace BH.Engine.LadybugTools
                 SoilThermalAbsorptance = soilThermalAbsorptance,
                 SoilSolarAbsorptance = soilSolarAbsorptance,
                 SoilVisibleAbsorptance = soilVisibleAbsorptance,
-                MinStomatalResist = minStomatalResist,
+                MinimumStomatalResistance = minStomatalResist,
             };
         }
     }

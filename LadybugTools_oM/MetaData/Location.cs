@@ -21,20 +21,39 @@
  */
 
 
-using BH.oM.Base;
 using System.ComponentModel;
+using BH.oM.Base;
+using BH.oM.Base.Attributes;
 
 namespace BH.oM.LadybugTools
 {
-    public class DataType : ILadybugTools
+    public class Location : BHoMObject, ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "DataType";
-        
-        [Description("The name of this data type.")]
-        public virtual string Name { get; set; } = string.Empty;
-        
-        [Description("The data type of this data type.")]
-        public virtual string Data_Type { get; set; } = string.Empty;
+        [Description("The City of this object.")]
+        public virtual string City { get; set; } = "";
+
+        [Description("The State of this object.")]
+        public virtual string State { get; set; } = "";
+
+        [Description("The Country of this object.")]
+        public virtual string Country { get; set; } = "";
+
+        [Description("The Latitude of this object.")]
+        public virtual double Latitude { get; set; } = 0;
+
+        [Description("The Longitude of this object.")]
+        public virtual double Longitude { get; set; } = 0;
+
+        [Description("The Time Zone of this object.")]
+        public virtual double TimeZone { get; set; } = 0;
+
+        [Description("The Elevation (in m) of this object.")]
+        public virtual double Elevation { get; set; } = 0;
+
+        [Description("The Station ID of this object.")]
+        public virtual string StationId { get; set; } = "";
+
+        [Description("The Source of this object.")]
+        public virtual string Source { get; set; } = "";
     }
 }

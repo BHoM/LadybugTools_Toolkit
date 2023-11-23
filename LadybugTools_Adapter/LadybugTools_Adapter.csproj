@@ -7,10 +7,14 @@
     <Version>6.0.0</Version>
     <Authors>BHoM</Authors>
     <Copyright>Copyright © https://github.com/BHoM</Copyright>
-    <RootNamespace>BH.Adapter.LadyBugTools</RootNamespace>
+    <RootNamespace>BH.Adapter.LadybugTools</RootNamespace>
     <FileVersion>7.0.0.0</FileVersion>
     <OutputPath>..\Build\</OutputPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_Engine\LadybugTools_Engine.csproj" />
@@ -63,6 +67,15 @@
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Serialiser_Engine">
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Serialiser_Engine.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Convert\Geometry\" />
+    <Folder Include="Objects\" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

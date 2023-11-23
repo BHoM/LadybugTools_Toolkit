@@ -21,22 +21,13 @@
  */
 
 
+using BH.oM.Base;
 using System.ComponentModel;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace BH.oM.LadybugTools
 {
-    public class HourlyContinuousCollection : ILadybugTools
+    [Description("An interface for opaque energy materials.")]
+    public interface IEnergyMaterialOpaque : ILadybugTools
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "HourlyContinuous";
-        
-        [Description("An approximation of a Ladybug Header object.")]
-        public virtual Header Header { get; set; } = new Header();
-
-        [Description("A list of values.")]
-        public virtual List<double> Values { get; set; } = Enumerable.Repeat(0.0, 8760).ToList();
-
     }
 }

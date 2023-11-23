@@ -20,40 +20,18 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-
-using BH.oM.Base.Attributes;
+using BH.oM.Adapter;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Text;
 
 namespace BH.oM.LadybugTools
 {
-    [NoAutoConstructor]
-    public class AnalysisPeriod : ILadybugTools
+    [Description("The action config for the LadybugTools Adapter.")]
+    public class LadybugConfig : ActionConfig
     {
-        [Description("The Ladybug datatype of this object, used for deserialisation.")]
-        public virtual string Type { get; set; } = "AnalysisPeriod";
-
-        [Description("The start month.")]
-        public virtual int StMonth { get; set; }
-
-        [Description("The start day.")]
-        public virtual int StDay { get; set; }
-
-        [Description("The start hour.")]
-        public virtual int StHour { get; set; }
-
-        [Description("The end month.")]
-        public virtual int EndMonth { get; set; }
-
-        [Description("The end day.")]
-        public virtual int EndDay { get; set; }
-
-        [Description("The end hour.")]
-        public virtual int EndHour { get; set; }
-
-        [Description("Boolean flag for whether this represents a leap year.")]
-        public virtual bool IsLeapYear { get; set; }
-
-        [Description("The number of timesteps per hour.")]
-        public virtual int Timestep { get; set; }
+        [Description("File settings for the json file to pull/push to.")]
+        public virtual FileSettings JsonFile { get; set; } = null;
     }
 }

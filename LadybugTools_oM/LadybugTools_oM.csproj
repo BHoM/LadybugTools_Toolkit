@@ -7,12 +7,17 @@
     <Version>6.0.0</Version>
     <Authors>BHoM</Authors>
     <Copyright>Copyright © https://github.com/BHoM</Copyright>
-    <RootNamespace>BH.oM.LadyBugTools</RootNamespace>
+    <RootNamespace>BH.oM.LadybugTools</RootNamespace>
     <FileVersion>7.0.0.0</FileVersion>
     <OutputPath>..\Build\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="Adapter_oM">
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Adapter_oM.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
     <Reference Include="BHoM">
       <HintPath>$(ProgramData)\BHoM\Assemblies\BHoM.dll</HintPath>
       <Private>False</Private>

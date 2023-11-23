@@ -20,20 +20,22 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+
+using BH.oM.Base;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    [Description("An enum for the roughness of an EnergyMaterial.")]
-    public enum Roughness
+    public class DataType : BHoMObject, ILadybugTools
     {
-        Undefined,
-        VeryRough,
-        Rough,
-        MediumRough,
-        MediumSmooth,
-        Smooth,
-        VerySmooth
-    };
-}
+        
+        [Description("The name of this data type.")]
+        public override string Name { get; set; } = string.Empty;
+        
+        [Description("The data type of this data type.")]
+        public virtual string Data_Type { get; set; } = string.Empty;
 
+        [Description(@"The base type of this data type. This is used if Data_Type is set to ""GenericDataType"".")]
+        public virtual string BaseUnit { get; set; } = string.Empty;
+    }
+}

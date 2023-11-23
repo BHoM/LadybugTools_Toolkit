@@ -22,13 +22,24 @@
 
 
 using BH.oM.Base;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public interface IEnergyMaterialOpaque : ILadybugTools
+    public class EPW : BHoMObject, ILadybugTools
     {
-        [Description("The identifier for this material object.")]
-        string Identifier { get; set; }
+        [Description("The Location of this EPW.")]
+        public virtual Location Location { get; set; } = new Location();
+
+        [Description("The data collections within this EPW.")]
+        public virtual List<HourlyContinuousCollection> DataCollections { get; set; } = new List<HourlyContinuousCollection>();
+
+        [Description("The data source and uncertainty field of this EPW.")]
+        public virtual List<string> DataSourceUncertainty { get; set; } = new List<string>();
+
+        [Description("Metadata associated with this EPW.")]
+        public virtual Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+
     }
 }
