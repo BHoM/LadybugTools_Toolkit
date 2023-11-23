@@ -38,7 +38,6 @@ namespace BH.Adapter.LadybugTools
         {
             LadybugConfig config = actionConfig as LadybugConfig;
             return config.JsonFile.ToBHoM();
-
         }
     }
 }
