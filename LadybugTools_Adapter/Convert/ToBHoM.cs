@@ -35,7 +35,7 @@ namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
     {
-        public static ILadybugTools ToBHoM(this FileSettings jsonFile)
+        public static IBHoMObject ToBHoM(this FileSettings jsonFile)
         {
             string json = File.ReadAllText(jsonFile.GetFullFileName());
             var obj = Engine.Serialiser.Convert.FromJson(json);
@@ -53,8 +53,8 @@ namespace BH.Adapter.LadybugTools
             }
             else
             {
-                BH.Engine.Base.Compute.RecordWarning($"The json given already deserialises to a BHoM object of type: {obj.GetType().FullName} - please use the BHoM Engine serialiser to deserialise this object.");
-                return null;
+                BH.Engine.Base.Compute.RecordWarning($"The json given already deserialises to a BHoM object of type: {obj.GetType().FullName}. Returning this object.");
+                return (IBHoMObject)obj;
             }
             if (lbtObject.ContainsKey("type"))
             {
