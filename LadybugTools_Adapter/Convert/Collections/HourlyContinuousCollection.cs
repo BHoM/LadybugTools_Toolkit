@@ -35,9 +35,18 @@ namespace BH.Adapter.LadybugTools
     {
         public static BH.oM.LadybugTools.HourlyContinuousCollection ToHourlyContinuousCollection(Dictionary<string, object> oldObject)
         {
+            Header header = new Header();
             List<string> hourlyValues = new List<string>();
-            if (oldObject["header"].GetType() == typeof(CustomObject))
-                oldObject["header"] = (oldObject["header"] as CustomObject).CustomData;
+            try
+            {
+                if (oldObject["header"].GetType() == typeof(CustomObject))
+                    oldObject["header"] = (oldObject["header"] as CustomObject).CustomData;
+                header = ToHeader(oldObject["header"] as Dictionary<string, object>);
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the Header of the HourlyContinuousCollection. returning a default Header.\n The error: {ex}");
+            }
 
             try
             {
@@ -51,7 +60,7 @@ namespace BH.Adapter.LadybugTools
             return new oM.LadybugTools.HourlyContinuousCollection()
             {
                 Values = hourlyValues,
-                Header = ToHeader(oldObject["header"] as Dictionary<string, object>)
+                Header = header
             };
         }
 

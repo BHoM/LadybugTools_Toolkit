@@ -35,36 +35,55 @@ namespace BH.Adapter.LadybugTools
     {
         public static BH.oM.LadybugTools.EPW ToEPW(Dictionary<string, object> oldObject)
         {
-            if (oldObject["location"].GetType() == typeof(CustomObject))
-                oldObject["location"] = (oldObject["location"] as CustomObject).CustomData;
-
-            if (oldObject["metadata"].GetType() == typeof(CustomObject))
-                oldObject["metadata"] = (oldObject["metadata"] as CustomObject).CustomData;
-
-            List<BH.oM.LadybugTools.HourlyContinuousCollection> collections = new List<BH.oM.LadybugTools.HourlyContinuousCollection>();
-            foreach (var collection in oldObject["data_collections"] as List<object>)
-            {
-                if (collection.GetType() == typeof(CustomObject))
-                    collections.Add(ToHourlyContinuousCollection((collection as CustomObject).CustomData));
-                else
-                    collections.Add(ToHourlyContinuousCollection(collection as Dictionary<string, object>));
-            }
-            EPW epw = new EPW()
-            {
-                Location = ToLocation(oldObject["location"] as Dictionary<string, object>),
-                DataCollections = collections
-            };
+            Location location = new Location();
+            Dictionary<string, object> metaData = new Dictionary<string, object>();
 
             try
             {
-                epw.Metadata = (Dictionary<string, object>)oldObject["metadata"];
-                return epw;
+                if (oldObject["location"].GetType() == typeof(CustomObject))
+                    oldObject["location"] = (oldObject["location"] as CustomObject).CustomData;
+                location = ToLocation(oldObject["location"] as Dictionary<string, object>);
             }
             catch (Exception ex)
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred during conversion of Metadata, returning without Metadata:\n The error: {ex}");
-                return epw;
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the Location of the EPW. returning a default Location.\n The error: {ex}");
             }
+
+            try
+            {
+                if (oldObject["metadata"].GetType() == typeof(CustomObject))
+                    oldObject["metadata"] = (oldObject["metadata"] as CustomObject).CustomData;
+                metaData = (Dictionary<string, object>)oldObject["metadata"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the meta data of the EPW. returning an empty metadata object.\n The error: {ex}");
+            }
+
+            List<BH.oM.LadybugTools.HourlyContinuousCollection> collections = new List<BH.oM.LadybugTools.HourlyContinuousCollection>();
+
+            if (oldObject.ContainsKey("data_collections"))
+            {
+                foreach (var collection in oldObject["data_collections"] as List<object>)
+                {
+                    if (collection.GetType() == typeof(CustomObject))
+                        collections.Add(ToHourlyContinuousCollection((collection as CustomObject).CustomData));
+                    else
+                        collections.Add(ToHourlyContinuousCollection(collection as Dictionary<string, object>));
+                }
+            }
+            else
+            {
+                BH.Engine.Base.Compute.RecordError($"Could not find any data collections for this EPW object. Returning an empty list.");
+            }
+            
+            return new EPW()
+            {
+                Location = location,
+                DataCollections = collections,
+                Metadata = metaData
+            };
+
         }
         
         public static string FromEPW(BH.oM.LadybugTools.EPW epw)
