@@ -56,28 +56,35 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordWarning($"The json given already deserialises to a BHoM object of type: {obj.GetType().FullName} - please use the BHoM Engine serialiser to deserialise this object.");
                 return null;
             }
-
-            switch (lbtObject["type"] as string)
+            if (lbtObject.ContainsKey("type"))
             {
-                case "AnalysisPeriod":
-                    return ToAnalysisPeriod(lbtObject);
-                case "GenericDataType":
-                    return ToDataType(lbtObject);
-                case "EnergyMaterial":
-                    return ToEnergyMaterial(lbtObject);
-                case "EnergyMaterialVegetation":
-                    return ToEnergyMaterialVegetation(lbtObject);
-                case "EPW":
-                    return ToEPW(lbtObject);
-                case "Header":
-                    return ToHeader(lbtObject);
-                case "HourlyContinuous":
-                    return ToHourlyContinuousCollection(lbtObject);
-                case "Location":
-                    return ToLocation(lbtObject);
-                default:
-                    BH.Engine.Base.Compute.RecordError("The json file given is not convertable to a LadybugTools object.");
-                    return null;
+                switch (lbtObject["type"] as string)
+                {
+                    case "AnalysisPeriod":
+                        return ToAnalysisPeriod(lbtObject);
+                    case "GenericDataType":
+                        return ToDataType(lbtObject);
+                    case "EnergyMaterial":
+                        return ToEnergyMaterial(lbtObject);
+                    case "EnergyMaterialVegetation":
+                        return ToEnergyMaterialVegetation(lbtObject);
+                    case "EPW":
+                        return ToEPW(lbtObject);
+                    case "Header":
+                        return ToHeader(lbtObject);
+                    case "HourlyContinuous":
+                        return ToHourlyContinuousCollection(lbtObject);
+                    case "Location":
+                        return ToLocation(lbtObject);
+                    default:
+                        BH.Engine.Base.Compute.RecordError("The json file given is not convertable to a LadybugTools object.");
+                        return null;
+                }
+            }
+            else
+            {
+                BH.Engine.Base.Compute.RecordError("The json file given does not specify the type of the object contained.");
+                return null;
             }
         }
     }
