@@ -22,12 +22,16 @@
 
 using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
+using BH.Adapter.LadybugTools;
+using BH.Engine.Adapter;
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using BH.oM.Python;
 using System.IO;
 using System;
+using BH.oM.Adapter;
+using BH.oM.Data.Requests;
 
 namespace BH.Engine.LadybugTools
 {
@@ -39,27 +43,26 @@ namespace BH.Engine.LadybugTools
         public static List<IEnergyMaterialOpaque> GetMaterial(string filter = "")
         {
             PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            LadybugToolsAdapter adapter = new LadybugToolsAdapter();
+            LadybugConfig config = new LadybugConfig()
+            {
+                JsonFile = new FileSettings()
+                {
+                    FileName = $"LBTBHoM_Materials_{DateTime.Now:yyyyMMdd}.json",
+                    Directory = Path.GetTempPath()
+                }
+            };
 
-            string jsonFile = Path.Combine(Path.GetTempPath(), $"LBTBHoM_Materials_{DateTime.Now:yyyyMMdd}.json");
-
-            if (!File.Exists(jsonFile))
+            if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
                 string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_material.py");
 
-                string command = $"{env.Executable} {script} -j \"{jsonFile}\"";
+                string command = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
 
                 Python.Compute.RunCommandStdout(command: command, hideWindows: true);
             }
 
-            string jsonContent = File.ReadAllText(jsonFile);
-
-            List<object> materials = (List<object>)BH.Engine.Serialiser.Convert.FromJsonArray(jsonContent);
-
-            List<IEnergyMaterialOpaque> materialObjects = new List<IEnergyMaterialOpaque>();
-            foreach (object materialObject in materials)
-            {
-                materialObjects.Add((IEnergyMaterialOpaque)materialObject);
-            }
+            List<IEnergyMaterialOpaque> materialObjects = adapter.Pull(new FilterRequest(), actionConfig: config).Cast<IEnergyMaterialOpaque>().ToList();
 
             return materialObjects.Where(m => m.Name.Contains(filter)).ToList();
         }

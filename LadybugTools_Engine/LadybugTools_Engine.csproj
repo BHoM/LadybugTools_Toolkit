@@ -17,6 +17,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Adapter_Engine">
+      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\Adapter_Engine.dll</HintPath>
+    </Reference>
+    <Reference Include="Adapter_oM">
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Adapter_oM.dll</HintPath>
+    </Reference>
     <Reference Include="Analytical_oM">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Analytical_oM.dll</HintPath>
       <Private>False</Private>
@@ -26,6 +32,9 @@
       <HintPath>$(ProgramData)\BHoM\Assemblies\BHoM.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="BHoM_Adapter">
+      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\BHoM_Adapter.dll</HintPath>
     </Reference>
     <Reference Include="BHoM_Engine">
       <HintPath>$(ProgramData)\BHoM\Assemblies\BHoM_Engine.dll</HintPath>
@@ -61,6 +70,9 @@
       <HintPath>$(ProgramData)\BHoM\Assemblies\Geometry_oM.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="LadybugTools_Adapter">
+      <HintPath>$(ProgramData)\BHoM\Assemblies\LadybugTools_Adapter.dll</HintPath>
     </Reference>
     <Reference Include="Python_Engine">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Python_Engine.dll</HintPath>
