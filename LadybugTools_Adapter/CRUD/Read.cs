@@ -37,8 +37,6 @@ namespace BH.Adapter.LadybugTools
         protected override IEnumerable<IBHoMObject> IRead(Type type, IList indices = null, ActionConfig actionConfig = null)
         {
             LadybugConfig config = actionConfig as LadybugConfig;
-            
-
             return new List<IBHoMObject>() { config.JsonFile.ToBHoM() };
 
         }

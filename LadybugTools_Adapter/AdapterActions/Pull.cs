@@ -54,7 +54,6 @@ namespace BH.Adapter.LadybugTools
                 return new List<IBHoMObject>();
             }
 
-
             if (request != null)
             {
                 FilterRequest filterRequest = request as FilterRequest;

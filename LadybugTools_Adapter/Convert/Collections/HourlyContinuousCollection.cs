@@ -38,6 +38,7 @@ namespace BH.Adapter.LadybugTools
             List<string> hourlyValues = new List<string>();
             if (oldObject["header"].GetType() == typeof(CustomObject))
                 oldObject["header"] = (oldObject["header"] as CustomObject).CustomData;
+
             try
             {
                hourlyValues = (oldObject["values"] as List<object>).Select(x => x.ToString()).ToList();
@@ -46,6 +47,7 @@ namespace BH.Adapter.LadybugTools
             {
                 BH.Engine.Base.Compute.RecordError($"An error occurred when converting the values in a collection. Returning an empty collection: \n The error: {ex}");
             }
+
             return new oM.LadybugTools.HourlyContinuousCollection()
             {
                 Values = hourlyValues,

@@ -47,6 +47,7 @@ namespace BH.Adapter.LadybugTools
                 DataType = ToDataType(oldObject["data_type"] as Dictionary<string, object>),
                 AnalysisPeriod = ToAnalysisPeriod(oldObject["analysis_period"] as Dictionary<string, object>)
             };
+
             try
             {
                 header.Unit = (string)oldObject["unit"];

@@ -54,6 +54,7 @@ namespace BH.Adapter.LadybugTools
                 Location = ToLocation(oldObject["location"] as Dictionary<string, object>),
                 DataCollections = collections
             };
+
             try
             {
                 epw.Metadata = (Dictionary<string, object>)oldObject["metadata"];

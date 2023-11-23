@@ -34,10 +34,9 @@ namespace BH.Adapter.LadybugTools
     {
         public static bool CreateLadybug(List<ILadybugTools> objects, LadybugConfig config = null)
         {
-            
             if (!Convert.FromBHoM(objects[0], config.JsonFile))
             {
-                BH.Engine.Base.Compute.RecordError("An error occurred during conversion to json:");
+                BH.Engine.Base.Compute.RecordError("An error occurred during conversion to Ladybug JSON.");
                 return false;
             }
             return true;

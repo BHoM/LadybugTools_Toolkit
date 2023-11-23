@@ -37,6 +37,7 @@ namespace BH.Adapter.LadybugTools
                 baseUnit = (string)oldObject["base_unit"];
             else
                 baseUnit = "";
+
             try
             {
                 return new oM.LadybugTools.DataType()
