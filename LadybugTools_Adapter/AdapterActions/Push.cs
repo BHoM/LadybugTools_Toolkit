@@ -56,11 +56,15 @@ namespace BH.Adapter.LadybugTools
                 return new List<object>();
             }
 
-            if (objects.Count() > 1)
-                BH.Engine.Base.Compute.RecordWarning("The LadybugToolsAdapter does not currently support pushing multiple objects to one file, only the first object will be saved.");
+            List<ILadybugTools> lbtObjects = objects.Where(x => typeof(ILadybugTools).IsAssignableFrom(x.GetType())).Cast<ILadybugTools>().ToList();
 
-            CreateLadybug(objects.Cast<ILadybugTools>().ToList(), config);
-            return objects.ToList();
+            if (lbtObjects.Count() < objects.Count())
+            {
+                BH.Engine.Base.Compute.RecordWarning("The LadybugTools Toolkit adapter does not support converting non-ILadybugTools objects to json, skipping all objects that are not an ILadybugTools");
+            }
+
+            CreateLadybug(lbtObjects, config);
+            return objects.Where(x => typeof(ILadybugTools).IsAssignableFrom(x.GetType())).ToList();
         }
     }
 }

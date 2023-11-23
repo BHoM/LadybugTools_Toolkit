@@ -20,7 +20,9 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.Engine.Adapter;
 using BH.oM.Adapter;
+using BH.oM.Base.Debugging;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
@@ -32,14 +34,17 @@ namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
-        public static bool CreateLadybug(List<ILadybugTools> objects, LadybugConfig config = null)
+        public static void CreateLadybug(List<ILadybugTools> objects, LadybugConfig config = null)
         {
-            if (!Convert.FromBHoM(objects[0], config.JsonFile))
+            List<string> jsonObjects = new List<string>();
+            
+            foreach (ILadybugTools lbtObject in objects)
             {
-                BH.Engine.Base.Compute.RecordError("An error occurred during conversion to Ladybug JSON.");
-                return false;
+                jsonObjects.Add(lbtObject.FromBHoM());
             }
-            return true;
+
+            string json = "[" + string.Join(", ", jsonObjects) + "]";
+            File.WriteAllText(config.JsonFile.GetFullFileName(), json);
         }
     }
 }

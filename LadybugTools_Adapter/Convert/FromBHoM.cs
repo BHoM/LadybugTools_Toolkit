@@ -35,12 +35,9 @@ namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
     {
-        public static bool FromBHoM(this ILadybugTools input, FileSettings file)
+        public static string FromBHoM(this ILadybugTools input)
         {
-            string json = ICustomify(input);
-            File.WriteAllText(file.GetFullFileName(), json);
-            List<Event> events = BH.Engine.Base.Query.CurrentEvents();
-            return events.Count == 0;
+            return ICustomify(input);
         }
 
         public static string ICustomify(this ILadybugTools lbtObject)
