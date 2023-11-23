@@ -91,8 +91,6 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"An error occurred when reading the specific heat of the EnergyMaterial. returning specific heat as default ({specificHeat}).\n The error: {ex}");
             }
 
-
-
             if (Enum.TryParse((string)oldObject["roughness"], out Roughness result))
                 roughness = result;
             else
