@@ -37,6 +37,12 @@ namespace BH.Adapter.LadybugTools
     {
         public override List<object> Push(IEnumerable<object> objects, string tag = "", PushType pushType = PushType.AdapterDefault, ActionConfig actionConfig = null)
         {
+            if (actionConfig == null)
+            {
+                BH.Engine.Base.Compute.RecordError("Please provide a valid LadybugConfig ActionConfig.");
+                return new List<object>();
+            }
+
             LadybugConfig config = actionConfig as LadybugConfig;
             if (config == null)
             {

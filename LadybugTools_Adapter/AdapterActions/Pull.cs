@@ -35,6 +35,12 @@ namespace BH.Adapter.LadybugTools
     {
         public override IEnumerable<object> Pull(IRequest request, PullType pullType = PullType.AdapterDefault, ActionConfig actionConfig = null) 
         {
+            if (actionConfig == null)
+            {
+                BH.Engine.Base.Compute.RecordError("Please provide a valid LadybugConfig ActionConfig.");
+                return new List<IBHoMObject>();
+            }
+
             LadybugConfig config = actionConfig as LadybugConfig;
             if (config == null)
             {
