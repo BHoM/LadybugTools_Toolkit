@@ -33,6 +33,10 @@ namespace BH.Adapter.LadybugTools
         public static BH.oM.LadybugTools.DataType ToDataType(Dictionary<string, object> oldObject)
         {
             string baseUnit;
+            string dataType = "GenericType";
+            string name = "";
+
+            //base_unit only occurs when Data_Type is "GenericType".
             if (oldObject.ContainsKey("base_unit"))
                 baseUnit = (string)oldObject["base_unit"];
             else
@@ -40,18 +44,29 @@ namespace BH.Adapter.LadybugTools
 
             try
             {
-                return new oM.LadybugTools.DataType()
-                {
-                    Data_Type = (string)oldObject["data_type"],
-                    Name = (string)oldObject["name"],
-                    BaseUnit = baseUnit
-                };
+                dataType = (string)oldObject["data_type"];
             }
             catch (Exception ex)
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred during conversion of a {typeof(DataType).FullName}. Returning a default {typeof(DataType).FullName}:\n The error: {ex}");
-                return new DataType();
+                //This DataType object won't work properly in ladybug python when serialised again as it required a base_unit.
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the data type of the DataType. returning data type as default ({dataType}).\n The error: {ex}");
             }
+
+            try
+            {
+                name = (string)oldObject["name"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the name of the DataType. returning name as default (\"\").\n The error: {ex}");
+            }
+
+            return new oM.LadybugTools.DataType()
+            {
+                Data_Type = dataType,
+                Name = name,
+                BaseUnit = baseUnit
+            };
         }
 
         public static Dictionary<string, object> FromDataType(BH.oM.LadybugTools.DataType dataType)
