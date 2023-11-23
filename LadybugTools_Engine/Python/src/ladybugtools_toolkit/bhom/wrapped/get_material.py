@@ -12,7 +12,7 @@ def main(json_file: str) -> None:
         from ladybugtools_toolkit.bhom.to_bhom import material_to_bhom
 
         with open(json_file, "w") as f:
-            json.dump([material_to_bhom(material.value) for material in Materials], f)
+            json.dump([material.value.to_dict() for material in Materials], f)
 
     except Exception as e:
         print(e)
