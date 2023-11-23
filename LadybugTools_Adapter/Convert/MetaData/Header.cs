@@ -33,32 +33,60 @@ namespace BH.Adapter.LadybugTools
         //TODO - find out if Header is needed or should just return an AnalysisPeriod
         public static BH.oM.LadybugTools.Header ToHeader(Dictionary<string, object> oldObject)
         {
-            if (oldObject["data_type"].GetType() == typeof(CustomObject))
-                oldObject["data_type"] = (oldObject["data_type"] as CustomObject).CustomData;
-
-            if (oldObject["analysis_period"].GetType() == typeof(CustomObject))
-                oldObject["analysis_period"] = (oldObject["analysis_period"] as CustomObject).CustomData;
-
-            if (oldObject["metadata"].GetType() == typeof(CustomObject))
-                oldObject["metadata"] = (oldObject["metadata"] as CustomObject).CustomData;
-
-            Header header = new Header()
-            {
-                DataType = ToDataType(oldObject["data_type"] as Dictionary<string, object>),
-                AnalysisPeriod = ToAnalysisPeriod(oldObject["analysis_period"] as Dictionary<string, object>)
-            };
+            string unit = "";
+            DataType dataType = new DataType();
+            AnalysisPeriod analysisPeriod = new AnalysisPeriod();
+            Dictionary<string, object> metaData = new Dictionary<string, object>();
 
             try
             {
-                header.Unit = (string)oldObject["unit"];
-                header.Metadata = (Dictionary<string, object>)oldObject["metadata"];
-                return header;
+                if (oldObject["data_type"].GetType() == typeof(CustomObject))
+                    oldObject["data_type"] = (oldObject["data_type"] as CustomObject).CustomData;
+                dataType = ToDataType(oldObject["data_type"] as Dictionary<string, object>);
             }
             catch (Exception ex)
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred during conversion, returning without Metadata and Unit:\n The error: {ex}");
-                return header;
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the DataType of the Header. returning a default DataType object instead.\n The error: {ex}");
             }
+
+            try
+            {
+                if (oldObject["analysis_period"].GetType() == typeof(CustomObject))
+                    oldObject["analysis_period"] = (oldObject["analysis_period"] as CustomObject).CustomData;
+                analysisPeriod = ToAnalysisPeriod(oldObject["analysis_period"] as Dictionary<string, object>);
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the AnalysisPeriod of the Header. returning a default AnalysisPeriod.\n The error: {ex}");
+            }
+
+            try
+            {
+                if (oldObject["metadata"].GetType() == typeof(CustomObject))
+                    oldObject["metadata"] = (oldObject["metadata"] as CustomObject).CustomData;
+                metaData = (Dictionary<string, object>)oldObject["metadata"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the meta data of the Header. returning an empty metadata object.\n The error: {ex}");
+            }
+
+            try
+            {
+                unit = (string)oldObject["unit"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the unit of the Header. returning unit as default (\"\").\n The error: {ex}");
+            }
+
+            return new Header()
+            {
+                Unit = unit,
+                DataType = dataType,
+                AnalysisPeriod = analysisPeriod,
+                Metadata = metaData
+            };
         }
 
         public static Dictionary<string, object> FromHeader(BH.oM.LadybugTools.Header header)
