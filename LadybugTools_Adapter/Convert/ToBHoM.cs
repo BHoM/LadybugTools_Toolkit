@@ -56,6 +56,7 @@ namespace BH.Adapter.LadybugTools
                 {
                     BH.Engine.Base.Compute.RecordWarning($"One of the objects in the json given already deserialises to a BHoM object of type: {obj.GetType().FullName}. Returning this object.");
                     returnObjects.Add((IBHoMObject)obj);
+                    continue;
                 }
                 if (lbtObject.ContainsKey("type"))
                 {
