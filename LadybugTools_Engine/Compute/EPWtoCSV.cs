@@ -51,7 +51,7 @@ namespace BH.Engine.LadybugTools
             PythonEnvironment env = InstallPythonEnv_LBT(true);
 
             epwFile = System.IO.Path.GetFullPath(epwFile);
-            string csvFile = System.IO.Path.ChangeExtension(epwFile, ".hbjson");
+            string csvFile = System.IO.Path.ChangeExtension(epwFile, ".csv");
 
             string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "epw_to_csv.py");
 
@@ -62,6 +62,7 @@ namespace BH.Engine.LadybugTools
             if (!File.Exists(csvFile))
             {
                 BH.Engine.Base.Compute.RecordError($"File conversion failed due to {result}");
+                return null;
             }
 
             return csvFile;
