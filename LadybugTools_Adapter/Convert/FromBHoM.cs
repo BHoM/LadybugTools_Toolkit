@@ -82,6 +82,11 @@ namespace BH.Adapter.LadybugTools
             return FromLocation(location).ToJson();
         }
 
+        private static string Jsonify(this oM.LadybugTools.Shelter shelter)
+        {
+            return FromShelter(shelter);
+        }
+
         private static Dictionary<string, object> Jsonify(this ILadybugTools obj)
         {
             BH.Engine.Base.Compute.RecordError($"The type: {obj.GetType()} is not convertible to ladybug serialisable json yet.");
