@@ -20,27 +20,28 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
     {
-        public static BH.oM.LadybugTools.DataType ToDataType(Dictionary<string, object> oldObject)
+        public static BH.oM.LadybugTools.IDataType ToDataType(Dictionary<string, object> oldObject)
         {
-            string baseUnit;
-            string dataType = "GenericType";
             string name = "";
+            string dataType = "";
+            string unit = "";
 
-            //base_unit only occurs when Data_Type is "GenericType".
-            if (oldObject.ContainsKey("base_unit"))
-                baseUnit = (string)oldObject["base_unit"];
-            else
-                baseUnit = "";
+            try
+            {
+                name = (string)oldObject["name"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the name of the DataType. returning name as default (\"\").\n The error: {ex}");
+            }
 
             try
             {
@@ -54,32 +55,46 @@ namespace BH.Adapter.LadybugTools
 
             try
             {
-                name = (string)oldObject["name"];
+                unit = (string)oldObject["unit"];
             }
-            catch (Exception ex)
+            catch (Exception _)
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred when reading the name of the DataType. returning name as default (\"\").\n The error: {ex}");
+                try
+                {
+                    unit = (string)oldObject["base_unit"];
+                }
+                catch (Exception ex)
+                {
+                    //This DataType object won't work properly in ladybug python when serialised again as it requires either a base_unit or unit.
+                    BH.Engine.Base.Compute.RecordError($"An error occurred when reading the unit of the DataType. returning unit as default ({unit}).\n The error: {ex}");
+                }
             }
 
-            return new oM.LadybugTools.DataType()
+            if (dataType == "GenericType")
             {
-                Data_Type = dataType,
-                Name = name,
-                BaseUnit = baseUnit
-            };
+                return new oM.LadybugTools.GenericDataType() { BaseUnit = unit, Data_Type = dataType, Name = name };
+            }
+            else
+            {
+                return new oM.LadybugTools.DataType() { Unit = unit, Data_Type = dataType, Name = name };
+            }
+            BH.Engine.Base.Compute.RecordError($"The data type being converted is borked.");
         }
 
-        public static Dictionary<string, object> FromDataType(BH.oM.LadybugTools.DataType dataType)
+        public static Dictionary<string, object> FromDataType(IDataType dataType)
         {
-            Dictionary<string, object> returnDict = new Dictionary<string, object>
+            Dictionary<string, object> returnDict = new Dictionary<string, object>();
+            if (dataType.GetType().GetProperty("BaseUnit") != null)
             {
-                { "type", "GenericDataType" },
-                { "name", dataType.Name },
-                { "data_type", dataType.Data_Type }
-            };
+                returnDict.Add("base_unit", ((GenericDataType)dataType).BaseUnit);
+            }
+            else
+            {
+                returnDict.Add("unit", ((DataType)dataType).Unit);
+            }
 
-            if (dataType.BaseUnit != "")
-                returnDict.Add("base_unit", dataType.BaseUnit);
+            returnDict.Add("name", ((DataType)dataType).Name);
+            returnDict.Add("data_type", dataType.Data_Type);
 
             return returnDict;
         }

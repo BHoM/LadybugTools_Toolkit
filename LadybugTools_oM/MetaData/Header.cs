@@ -30,9 +30,9 @@ namespace BH.oM.LadybugTools
     public class Header : BHoMObject, ILadybugTools
     {
         [Description("The data type the data associated with this header object represents.")]
-        public virtual DataType DataType { get; set; } = new DataType();
+        public virtual IDataType DataType { get; set; }
         
-        [Description("The unit for this header object.")]
+        [Description("The unit for this header object. Should be the same, or convertible from the unit given for the DataType.")]
         public virtual string Unit { get; set; } = string.Empty;
         
         [Description("The analysis period associated with this header object.")]

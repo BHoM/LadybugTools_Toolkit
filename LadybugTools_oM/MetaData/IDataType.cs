@@ -21,17 +21,10 @@
  */
 
 
-using BH.oM.Base;
-using System.ComponentModel;
-
 namespace BH.oM.LadybugTools
 {
-    public class DataType : BHoMObject, IDataType
+    public interface IDataType : ILadybugTools
     {
-        [Description("The data type of this data type.")]
-        public virtual string Data_Type { get; set; } = string.Empty;
-
-        [Description(@"The unit of this data type.")]
-        public virtual string Unit { get; set; } = string.Empty;
+        string Data_Type { get; set; }
     }
 }

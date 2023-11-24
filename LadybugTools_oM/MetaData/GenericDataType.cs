@@ -26,12 +26,12 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    public class DataType : BHoMObject, IDataType
+    public class GenericDataType : BHoMObject, IDataType
     {
         [Description("The data type of this data type.")]
         public virtual string Data_Type { get; set; } = string.Empty;
 
-        [Description(@"The unit of this data type.")]
-        public virtual string Unit { get; set; } = string.Empty;
+        [Description("The base unit of this data type.")]
+        public virtual string BaseUnit { get; set; } = string.Empty;
     }
 }

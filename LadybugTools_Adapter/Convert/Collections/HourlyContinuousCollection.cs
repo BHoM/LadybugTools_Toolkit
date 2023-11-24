@@ -20,14 +20,12 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.Engine.Base;
 using BH.Engine.Serialiser;
 using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace BH.Adapter.LadybugTools
 {

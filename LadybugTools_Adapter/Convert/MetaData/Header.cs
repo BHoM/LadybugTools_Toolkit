@@ -34,7 +34,7 @@ namespace BH.Adapter.LadybugTools
         public static BH.oM.LadybugTools.Header ToHeader(Dictionary<string, object> oldObject)
         {
             string unit = "";
-            DataType dataType = new DataType();
+            IDataType dataType = null;
             AnalysisPeriod analysisPeriod = new AnalysisPeriod();
             Dictionary<string, object> metaData = new Dictionary<string, object>();
 

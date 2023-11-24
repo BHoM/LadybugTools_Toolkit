@@ -68,6 +68,9 @@ namespace BH.Adapter.LadybugTools
                         case "GenericDataType":
                             returnObjects.Add(ToDataType(lbtObject));
                             break;
+                        case "DataType":
+                            returnObjects.Add(ToDataType(lbtObject));
+                            break;
                         case "EnergyMaterial":
                             returnObjects.Add(ToEnergyMaterial(lbtObject));
                             break;

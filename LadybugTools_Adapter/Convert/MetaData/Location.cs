@@ -20,10 +20,8 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace BH.Adapter.LadybugTools
 {

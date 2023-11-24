@@ -20,27 +20,19 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.LadybugTools;
-using System;
 using BH.Engine.Serialiser;
 using System.Collections.Generic;
-using System.Text;
-using BH.oM.Base;
-using System.IO;
-using BH.oM.Adapter;
-using BH.Engine.Adapter;
-using BH.oM.Base.Debugging;
 
 namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
     {
-        public static string FromBHoM(this ILadybugTools input)
+        public static string FromBHoM(this BH.oM.LadybugTools.ILadybugTools input)
         {
             return ICustomify(input);
         }
 
-        public static string ICustomify(this ILadybugTools lbtObject)
+        public static string ICustomify(this BH.oM.LadybugTools.ILadybugTools lbtObject)
         {
             if (lbtObject == null)
             {
@@ -50,22 +42,22 @@ namespace BH.Adapter.LadybugTools
             return Jsonify(lbtObject as dynamic);
         }
 
-        private static string Jsonify(this oM.LadybugTools.AnalysisPeriod analysisPeriod)
+        private static string Jsonify(this BH.oM.LadybugTools.AnalysisPeriod analysisPeriod)
         {
             return FromAnalysisPeriod(analysisPeriod).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.DataType dataType)
+        private static string Jsonify(this BH.oM.LadybugTools.IDataType dataType)
         {
             return FromDataType(dataType).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.EnergyMaterial energyMaterial)
+        private static string Jsonify(this BH.oM.LadybugTools.EnergyMaterial energyMaterial)
         {
             return FromEnergyMaterial(energyMaterial).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.EnergyMaterialVegetation energyMaterial)
+        private static string Jsonify(this BH.oM.LadybugTools.EnergyMaterialVegetation energyMaterial)
         {
             return FromEnergyMaterialVegetation(energyMaterial).ToJson();
         }
@@ -75,22 +67,22 @@ namespace BH.Adapter.LadybugTools
             return FromEPW(epw);
         }
 
-        private static string Jsonify(this oM.LadybugTools.Header header)
+        private static string Jsonify(this BH.oM.LadybugTools.Header header)
         {
             return FromHeader(header).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.HourlyContinuousCollection collection)
+        private static string Jsonify(this BH.oM.LadybugTools.HourlyContinuousCollection collection)
         {
             return FromHourlyContinuousCollection(collection);
         }
 
-        private static string Jsonify(this oM.LadybugTools.Location location)
+        private static string Jsonify(this BH.oM.LadybugTools.Location location)
         {
             return FromLocation(location).ToJson();
         }
 
-        private static Dictionary<string, object> Jsonify(this ILadybugTools obj)
+        private static Dictionary<string, object> Jsonify(this BH.oM.LadybugTools.ILadybugTools obj)
         {
             BH.Engine.Base.Compute.RecordError($"The type: {obj.GetType()} is not convertible to ladybug serialisable json yet.");
             return null;
