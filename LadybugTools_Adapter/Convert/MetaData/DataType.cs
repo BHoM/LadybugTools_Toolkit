@@ -82,7 +82,7 @@ namespace BH.Adapter.LadybugTools
             if (dataType.Data_Type == "GenericType")
             {
                 type = "GenericDataType";
-                returnDict.Add("bast_unit", dataType.BaseUnit);
+                returnDict.Add("base_unit", dataType.BaseUnit);
             }
             else
             {
