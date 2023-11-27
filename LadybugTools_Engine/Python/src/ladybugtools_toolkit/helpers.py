@@ -15,15 +15,11 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
-
 from caseconverter import snakecase
-from ladybug.datatype.temperature import WetBulbTemperature
 from honeybee.config import folders as hb_folders
-from ladybug_geometry.geometry2d import Vector2D
+from ladybug.datatype.temperature import WetBulbTemperature
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
 from ladybug.psychrometrics import wet_bulb_from_db_rh
 from ladybug.skymodel import (
@@ -35,12 +31,16 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
-from meteostat import Point, Hourly
+from ladybug_geometry.geometry2d import Vector2D
+from meteostat import Hourly, Point
 from scipy.stats import weibull_min
 from tqdm import tqdm
+
 from .bhom.analytics import bhom_analytics
 from .bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.dt import lb_datetime_from_datetime
+
+# pylint: enable=E0401
 
 
 def sanitise_string(string: str) -> str:
@@ -1122,6 +1122,7 @@ def scrape_openmeteo(
     df = df.apply(pd.to_numeric, errors="coerce")
 
     if not convert_units:
+        df.to_hdf(sp, key="df", complevel=9, complib="blosc:zlib")
         return df
 
     new_df = []

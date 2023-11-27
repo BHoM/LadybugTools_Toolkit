@@ -2,43 +2,36 @@
 
 # pylint: disable=E0401
 import calendar
+import json
 import warnings
 from dataclasses import dataclass
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-
 # pylint: enable=E0401
 
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Rectangle
+import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-
+import numpy as np
 import pandas as pd
-
 from ladybug.dt import DateTime
 from ladybug.epw import EPW
-
+from matplotlib.cm import ScalarMappable
+from matplotlib.collections import PatchCollection
+from matplotlib.colors import Normalize
+from matplotlib.patches import Rectangle
 from tqdm import tqdm
 
 from .bhom.analytics import bhom_analytics
-
-
-from .plot.utilities import contrasting_color, format_polar_plot
 from .categorical.categories import BEAUFORT_CATEGORIES
+from .directionbins import DirectionBins
 from .helpers import (
+    OpenMeteoVariable,
     angle_from_north,
     angle_to_vector,
-    OpenMeteoVariable,
     circular_weighted_mean,
-    convert_keys_to_snake_case,
     rolling_window,
     scrape_meteostat,
     scrape_openmeteo,
@@ -53,7 +46,7 @@ from .ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
 )
 from .plot._timeseries import timeseries
-from .directionbins import DirectionBins
+from .plot.utilities import contrasting_color, format_polar_plot
 
 
 @dataclass(init=True, eq=True, repr=True)
@@ -69,12 +62,16 @@ class Wind:
             An iterable of datetime-like objects.
         height_above_ground (float, optional):
             The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
+        source (str, optional):
+                A source string to describe where the input data comes from. Defaults to None.
     """
 
     wind_speeds: list[float]
     wind_directions: list[float]
     datetimes: list[datetime] | pd.DatetimeIndex
     height_above_ground: Optional[float]
+
+    source: str = None
 
     def __post_init__(self):
         if self.height_above_ground < 0.1:
@@ -119,33 +116,39 @@ class Wind:
 
     def __repr__(self) -> str:
         """The printable representation of the given object"""
+        if self.source:
+            if self.source.endswith(".epw"):
+                return f"{self.__class__.__name__}(@{self.height_above_ground}m) from {self.source}"
+
         return (
             f"{self.__class__.__name__}({min(self.datetimes):%Y-%m-%d} to "
             f"{max(self.datetimes):%Y-%m-%d}, n={len(self.datetimes)} @{self.freq}, "
-            f"@{self.height_above_ground}m)"
+            f"@{self.height_above_ground}m) from {self.source}"
         )
+
+    def __str__(self) -> str:
+        """The string representation of the given object"""
+        return self.__repr__()
+
+    #################
+    # CLASS METHODS #
+    #################
 
     def to_dict(self) -> dict:
         """Return the object as a dictionary."""
 
         return {
             "_t": "BH.oM.LadybugTools.Wind",
-            "WindSpeeds": [float(i) for i in self.wind_speeds],
-            "WindDirections": [float(i) for i in self.wind_directions],
-            "Datetimes": [i.isoformat() for i in self.datetimes],
-            "HeightAboveGround": self.height_above_ground,
+            "wind_speeds": [float(i) for i in self.wind_speeds],
+            "wind_directions": [float(i) for i in self.wind_directions],
+            "datetimes": [i.isoformat() for i in self.datetimes],
+            "height_above_ground": self.height_above_ground,
+            "source": self.source,
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "Wind":
         """Create a DirectionBins object from a dictionary."""
-
-        d = convert_keys_to_snake_case(d)
-
-        # datetimes = []
-        # for dt in d["datetimes"]:
-        #     if isinstance(dt, (str)):
-        #         datetimes.append(datetime.fromordinal(int(dt)))
 
         return cls(
             wind_speeds=d["wind_speeds"],
@@ -180,6 +183,301 @@ class Wind:
         """Create this object from a JSON file."""
         with open(Path(path), "r") as fp:
             return cls.from_json(fp.read())
+
+    @classmethod
+    def from_dataframe(
+        cls,
+        df: pd.DataFrame,
+        wind_speed_column: Any,
+        wind_direction_column: Any,
+        height_above_ground: float = 10,
+        source: str = None,
+    ) -> "Wind":
+        """Create a Wind object from a Pandas DataFrame, with WindSpeed and WindDirection columns.
+
+        Args:
+            df (pd.DataFrame):
+                A DataFrame object containing speed and direction columns, and a datetime index.
+            wind_speed_column (str):
+                The name of the column where wind-speed data exists.
+            wind_direction_column (str):
+                The name of the column where wind-direction data exists.
+            height_above_ground (float, optional):
+                Defaults to 10m.
+            source (str, optional):
+                A source string to describe where the input data comes from. Defaults to None.
+        """
+
+        if not isinstance(df, pd.DataFrame):
+            raise ValueError(f"df must be of type {type(pd.DataFrame)}")
+
+        if not isinstance(df.index, pd.DatetimeIndex):
+            raise ValueError(
+                f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}"
+            )
+
+        # remove NaN values
+        df.dropna(axis=0, how="any", inplace=True)
+
+        # remove duplicates in input dataframe
+        df = df.loc[~df.index.duplicated()]
+
+        return Wind(
+            wind_speeds=df[wind_speed_column].tolist(),
+            wind_directions=df[wind_direction_column].tolist(),
+            datetimes=df.index.tolist(),
+            height_above_ground=height_above_ground,
+            source=source,
+        )
+
+    @classmethod
+    def from_csv(
+        cls,
+        csv_path: Path,
+        wind_speed_column: str,
+        wind_direction_column: str,
+        height_above_ground: float = 10,
+        **kwargs,
+    ) -> "Wind":
+        """Create a Wind object from a csv containing wind speed and direction columns.
+
+        Args:
+            csv_path (Path):
+                The path to the CSV file containing speed and direction columns, and a datetime index.
+            wind_speed_column (str):
+                The name of the column where wind-speed data exists.
+            wind_direction_column (str):
+                The name of the column where wind-direction data exists.
+            height_above_ground (float, optional):
+                Defaults to 10m.
+            **kwargs:
+                Additional keyword arguments passed to pd.read_csv.
+        """
+        csv_path = Path(csv_path)
+        df = pd.read_csv(csv_path, **kwargs)
+        return Wind.from_dataframe(
+            df,
+            wind_speed_column=wind_speed_column,
+            wind_direction_column=wind_direction_column,
+            height_above_ground=height_above_ground,
+            source=csv_path.name,
+        )
+
+    @classmethod
+    def from_epw(cls, epw: Path | EPW) -> "Wind":
+        """Create a Wind object from an EPW file or object.
+
+        Args:
+            epw (Path | EPW):
+                The path to the EPW file, or an EPW object.
+        """
+
+        if isinstance(epw, (str, Path)):
+            source = Path(epw).name
+            epw = EPW(epw)
+        else:
+            source = Path(epw.file_path).name
+
+        return Wind(
+            wind_speeds=epw.wind_speed.values,
+            wind_directions=epw.wind_direction.values,
+            datetimes=analysis_period_to_datetimes(AnalysisPeriod()),
+            height_above_ground=10,
+            source=source,
+        )
+
+    @classmethod
+    def from_openmeteo(
+        cls,
+        latitude: float,
+        longitude: float,
+        start_date: datetime | str,
+        end_date: datetime | str,
+    ) -> "Wind":
+        """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
+
+        Args:
+            latitude (float):
+                The latitude of the target site, in degrees.
+            longitude (float):
+                The longitude of the target site, in degrees.
+            start_date (datetime | str):
+                The start-date from which records will be obtained.
+            end_date (datetime | str):
+                The end-date beyond which records will be ignored.
+        """
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
+        df = scrape_openmeteo(
+            latitude=latitude,
+            longitude=longitude,
+            start_date=start_date,
+            end_date=end_date,
+            variables=[
+                OpenMeteoVariable.WINDSPEED_10M,
+                OpenMeteoVariable.WINDDIRECTION_10M,
+            ],
+            convert_units=True,
+        )
+
+        df.dropna(how="any", axis=0, inplace=True)
+        wind_speeds = df["Wind Speed (m/s)"].tolist()
+        wind_directions = df["Wind Direction (degrees)"].tolist()
+        if len(wind_speeds) == 0 or len(wind_directions) == 0:
+            raise ValueError(
+                "OpenMeteo did not return any data for the given latitude, longitude and start/end dates."
+            )
+        datetimes = df.index.tolist()
+
+        warnings.warn(
+            "Data from OpenMeteo can under-represent winds from the North, typically by about 30% (e.g., if wind from 355-5degrees occurs 10 times, then it is likely that it actually occurs 13-times)."
+        )
+
+        return Wind(
+            wind_speeds=wind_speeds,
+            wind_directions=wind_directions,
+            datetimes=datetimes,
+            height_above_ground=10,
+            source="OpenMeteo",
+        )
+
+    @classmethod
+    def from_meteostat(
+        cls,
+        latitude: float,
+        longitude: float,
+        start_date: datetime | str,
+        end_date: datetime | str,
+        altitude: float = 10,
+    ) -> "Wind":
+        """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
+
+        Args:
+            latitude (float):
+                The latitude of the target site, in degrees.
+            longitude (float):
+                The longitude of the target site, in degrees.
+            start_date (datetime | str):
+                The start-date from which records will be obtained.
+            end_date (datetime | str):
+                The end-date beyond which records will be ignored.
+            altitude (float, optional):
+                The altitude of the target site, in meters. Defaults to 10.
+        """
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
+        df = scrape_meteostat(
+            latitude=latitude,
+            longitude=longitude,
+            start_date=start_date,
+            end_date=end_date,
+            altitude=altitude,
+            convert_units=True,
+        )[["Wind Speed (m/s)", "Wind Direction (degrees)"]]
+
+        df.dropna(axis=0, inplace=True, how="any")
+
+        return Wind.from_dataframe(
+            df=df,
+            wind_speed_column="Wind Speed (m/s)",
+            wind_direction_column="Wind Direction (degrees)",
+            height_above_ground=altitude,
+            source="Meteostat",
+        )
+
+    @classmethod
+    def from_average(
+        cls, wind_objects: list["Wind"], weights: list[float] = None
+    ) -> "Wind":
+        """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
+
+        # create default weightings if None
+        if weights is None:
+            weights = [1 / len(wind_objects)] * len(wind_objects)
+        else:
+            if sum(weights) != 1:
+                raise ValueError("weights must total 1.")
+
+        # create source string
+        source = []
+        for src, wgt in list(zip([wind_objects, weights])):
+            source.append(f"{src.source}|{wgt}")
+        source = "_".join(source)
+
+        # align collections so that intersection only is created
+        df_ws = pd.concat([i.ws for i in wind_objects], axis=1).dropna()
+        df_wd = pd.concat([i.wd for i in wind_objects], axis=1).dropna()
+
+        # construct the weighted means
+        wd_avg = np.array(
+            [circular_weighted_mean(i, weights) for _, i in df_wd.iterrows()]
+        )
+        ws_avg = np.average(df_ws, axis=1, weights=weights)
+        dts = df_ws.index
+
+        # return the new averaged object
+        return Wind(
+            wind_speeds=ws_avg.tolist(),
+            wind_directions=wd_avg.tolist(),
+            datetimes=dts,
+            height_above_ground=np.average(
+                [i.height_above_ground for i in wind_objects], weights=weights
+            ),
+            source=source,
+        )
+
+    @classmethod
+    def from_uv(
+        cls,
+        u: list[float],
+        v: list[float],
+        datetimes: list[datetime],
+        height_above_ground: float = 10,
+        source: str = None,
+    ) -> "Wind":
+        """Create a Wind object from a set of U, V wind components.
+
+        Args:
+            u (list[float]):
+                An iterable of U (eastward) wind components in m/s.
+            v (list[float]):
+                An iterable of V (northward) wind components in m/s.
+            datetimes (list[datetime]):
+                An iterable of datetime-like objects.
+            height_above_ground (float, optional):
+                The height above ground (in m) where the input wind speeds and directions were collected.
+                Defaults to 10m.
+            source (str, optional):
+                A source string to describe where the input data comes from. Defaults to None.
+
+        Returns:
+            Wind:
+                A Wind object!
+        """
+
+        # convert UV into angle and magnitude
+        wind_direction = angle_from_north(np.stack([u, v]))
+        wind_speed = np.sqrt(np.square(u) + np.square(v))
+
+        if any(wind_direction[wind_speed == 0] == 90):
+            warnings.warn(
+                "Some input vectors have velocity of 0. This is not bad, but can mean directions may be misreported."
+            )
+
+        return Wind(
+            wind_speeds=wind_speed.tolist(),
+            wind_directions=wind_direction.tolist(),
+            datetimes=datetimes,
+            height_above_ground=height_above_ground,
+            source=source,
+        )
 
     # ##############
     # # PROPERTIES #
@@ -232,273 +530,6 @@ class Wind:
         """Return the U and V wind components in m/s."""
         u, v = angle_to_vector(self.wd)
         return pd.concat([u * self.ws, v * self.ws], axis=1, keys=["u", "v"])
-
-    #################
-    # CLASS METHODS #
-    #################
-
-    @classmethod
-    def from_dataframe(
-        cls,
-        df: pd.DataFrame,
-        wind_speed_column: Any,
-        wind_direction_column: Any,
-        height_above_ground: float = 10,
-    ) -> "Wind":
-        """Create a Wind object from a Pandas DataFrame, with WindSpeed and WindDirection columns.
-
-        Args:
-            df (pd.DataFrame):
-                A DataFrame object containing speed and direction columns, and a datetime index.
-            wind_speed_column (str):
-                The name of the column where wind-speed data exists.
-            wind_direction_column (str):
-                The name of the column where wind-direction data exists.
-            height_above_ground (float, optional):
-                Defaults to 10m.
-        """
-
-        if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"df must be of type {type(pd.DataFrame)}")
-
-        if not isinstance(df.index, pd.DatetimeIndex):
-            raise ValueError(
-                f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}"
-            )
-
-        # remove NaN values
-        df.dropna(axis=0, how="any", inplace=True)
-
-        # remove duplicates in input dataframe
-        df = df.loc[~df.index.duplicated()]
-
-        return Wind(
-            wind_speeds=df[wind_speed_column].tolist(),
-            wind_directions=df[wind_direction_column].tolist(),
-            datetimes=df.index.tolist(),
-            height_above_ground=height_above_ground,
-        )
-
-    @classmethod
-    def from_csv(
-        cls,
-        csv_path: Path,
-        wind_speed_column: str,
-        wind_direction_column: str,
-        height_above_ground: float = 10,
-        **kwargs,
-    ) -> "Wind":
-        """Create a Wind object from a csv containing wind speed and direction columns.
-
-        Args:
-            csv_path (Path):
-                The path to the CSV file containing speed and direction columns, and a datetime index.
-            wind_speed_column (str):
-                The name of the column where wind-speed data exists.
-            wind_direction_column (str):
-                The name of the column where wind-direction data exists.
-            height_above_ground (float, optional):
-                Defaults to 10m.
-            **kwargs:
-                Additional keyword arguments passed to pd.read_csv.
-        """
-        df = pd.read_csv(csv_path, **kwargs)
-        return Wind.from_dataframe(
-            df,
-            wind_speed_column=wind_speed_column,
-            wind_direction_column=wind_direction_column,
-            height_above_ground=height_above_ground,
-        )
-
-    @classmethod
-    def from_epw(cls, epw: Path | EPW) -> "Wind":
-        """Create a Wind object from an EPW file or object.
-
-        Args:
-            epw (Path | EPW):
-                The path to the EPW file, or an EPW object.
-        """
-
-        if isinstance(epw, (str, Path)):
-            epw = EPW(epw)
-
-        return Wind(
-            wind_speeds=epw.wind_speed.values,
-            wind_directions=epw.wind_direction.values,
-            datetimes=analysis_period_to_datetimes(AnalysisPeriod()),
-            height_above_ground=10,
-        )
-
-    @classmethod
-    def from_openmeteo(
-        cls,
-        latitude: float,
-        longitude: float,
-        start_date: datetime | str,
-        end_date: datetime | str,
-    ) -> "Wind":
-        """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
-
-        Args:
-            latitude (float):
-                The latitude of the target site, in degrees.
-            longitude (float):
-                The longitude of the target site, in degrees.
-            start_date (datetime | str):
-                The start-date from which records will be obtained.
-            end_date (datetime | str):
-                The end-date beyond which records will be ignored.
-        """
-        if isinstance(start_date, str):
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        if isinstance(end_date, str):
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
-        df = scrape_openmeteo(
-            latitude,
-            longitude,
-            start_date,
-            end_date,
-            [OpenMeteoVariable.WINDSPEED_10M, OpenMeteoVariable.WINDDIRECTION_10M],
-        )
-        df.dropna(how="any", axis=0, inplace=True)
-        wind_speeds = np.multiply(
-            df["windspeed_10m (km/h)"].astype(float), 0.277778
-        ).tolist()
-        wind_directions = df["winddirection_10m (°)"].astype(float).tolist()
-        if len(wind_speeds) == 0 or len(wind_directions) == 0:
-            raise ValueError(
-                "OpenMeteo did not return any data for the given latitude, longitude and start/end dates."
-            )
-        datetimes = df.index.tolist()
-        return Wind(
-            wind_speeds=wind_speeds,
-            wind_directions=wind_directions,
-            datetimes=datetimes,
-            height_above_ground=10,
-        )
-
-    @classmethod
-    def from_meteostat(
-        cls,
-        latitude: float,
-        longitude: float,
-        start_date: datetime | str,
-        end_date: datetime | str,
-        altitude: float = 10,
-    ) -> "Wind":
-        """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
-
-        Args:
-            latitude (float):
-                The latitude of the target site, in degrees.
-            longitude (float):
-                The longitude of the target site, in degrees.
-            start_date (datetime | str):
-                The start-date from which records will be obtained.
-            end_date (datetime | str):
-                The end-date beyond which records will be ignored.
-            altitude (float, optional):
-                The altitude of the target site, in meters. Defaults to 10.
-        """
-        if isinstance(start_date, str):
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-
-        if isinstance(end_date, str):
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
-
-        df = scrape_meteostat(
-            latitude=latitude,
-            longitude=longitude,
-            start_date=start_date,
-            end_date=end_date,
-            altitude=altitude,
-            convert_units=True,
-        )[["Wind Speed (m/s)", "Wind Direction (degrees)"]]
-
-        df.dropna(axis=0, inplace=True, how="any")
-
-        return Wind.from_dataframe(
-            df=df,
-            wind_speed_column="Wind Speed (m/s)",
-            wind_direction_column="Wind Direction (degrees)",
-            height_above_ground=altitude,
-        )
-
-    @classmethod
-    def from_average(
-        cls, wind_objects: list["Wind"], weights: list[float] = None
-    ) -> "Wind":
-        """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
-
-        # create default weightings if None
-        if weights is None:
-            weights = [1 / len(wind_objects)] * len(wind_objects)
-        else:
-            if sum(weights) != 1:
-                raise ValueError("weights must total 1.")
-
-        # align collections so that intersection only is created
-        df_ws = pd.concat([i.ws for i in wind_objects], axis=1).dropna()
-        df_wd = pd.concat([i.wd for i in wind_objects], axis=1).dropna()
-
-        # construct the weighted means
-        wd_avg = np.array(
-            [circular_weighted_mean(i, weights) for _, i in df_wd.iterrows()]
-        )
-        ws_avg = np.average(df_ws, axis=1, weights=weights)
-        dts = df_ws.index
-
-        # return the new averaged object
-        return Wind(
-            wind_speeds=ws_avg.tolist(),
-            wind_directions=wd_avg.tolist(),
-            datetimes=dts,
-            height_above_ground=np.average(
-                [i.height_above_ground for i in wind_objects], weights=weights
-            ),
-        )
-
-    @classmethod
-    def from_uv(
-        cls,
-        u: list[float],
-        v: list[float],
-        datetimes: list[datetime],
-        height_above_ground: float = 10,
-    ) -> "Wind":
-        """Create a Wind object from a set of U, V wind components.
-
-        Args:
-            u (list[float]):
-                An iterable of U (eastward) wind components in m/s.
-            v (list[float]):
-                An iterable of V (northward) wind components in m/s.
-            datetimes (list[datetime]):
-                An iterable of datetime-like objects.
-            height_above_ground (float, optional):
-                The height above ground (in m) where the input wind speeds and directions were collected.
-                Defaults to 10m.
-
-        Returns:
-            Wind:
-                A Wind object!
-        """
-
-        # convert UV into angle and magnitude
-        wind_direction = angle_from_north(np.stack([u, v]))
-        wind_speed = np.sqrt(np.square(u) + np.square(v))
-
-        if any(wind_direction[wind_speed == 0] == 90):
-            warnings.warn(
-                "Some input vectors have velocity of 0. This is not bad, but can mean directions may be misreported."
-            )
-
-        return Wind(
-            wind_speeds=wind_speed.tolist(),
-            wind_directions=wind_direction.tolist(),
-            datetimes=datetimes,
-            height_above_ground=height_above_ground,
-        )
 
     ###################
     # GENERAL METHODS #
@@ -1210,14 +1241,12 @@ class Wind:
     ##################################
 
     @bhom_analytics()
-    def plot_timeseries(self, ax: plt.Axes = None, color: str = "grey", **kwargs) -> plt.Axes:  # type: ignore
+    def plot_timeseries(self, ax: plt.Axes = None, **kwargs) -> plt.Axes:  # type: ignore
         """Create a simple line plot of wind speed.
 
         Args:
             ax (plt.Axes, optional):
                 The axes to plot on. If None, the current axes will be used.
-            color (str, optional):
-                The color of the line to plot. Default is "blue".
             **kwargs:
                 Additional keyword arguments to pass to the function. These include:
                 title (str, optional):
@@ -1232,11 +1261,11 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        timeseries(self.ws, ax=ax, color=color)
-        _, yhigh = ax.get_ylim()
-        ax.set_ylim(0, yhigh)
-        title = [kwargs.pop("title", None), repr(self)]
+        title = [kwargs.pop("title", None), str(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
+
+        timeseries(self.ws, ax=ax, **kwargs)
+
         ax.set_ylabel(self.ws.name)
 
         return ax
@@ -1310,13 +1339,13 @@ class Wind:
             raise ValueError("The opening must be between 0 and 1.")
         opening = 1 - opening
 
-        title = [kwargs.pop("title", None), repr(self)]
+        title = [kwargs.pop("title", None), str(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         # set data binning defaults
         _data_bins: list[float] = data_bins
         if isinstance(data_bins, int):
-            _data_bins = np.linspace(min(data), max(data), data_bins + 1)
+            _data_bins = np.round(np.linspace(min(data), max(data), data_bins + 1), 1)
 
         # get colormap
         cmap = plt.get_cmap(
@@ -1370,6 +1399,9 @@ class Wind:
 
         # construct legend
         if include_legend:
+            if isinstance(data, pd.Series) and kwargs.get("data_unit", None) is None:
+                kwargs["data_unit"] = data.name
+
             handles = [
                 mpatches.Patch(color=colors[n], label=f"{i} to {j}")
                 for n, (i, j) in enumerate(rolling_window(_data_bins, 2))
@@ -1383,6 +1415,7 @@ class Wind:
                 frameon=False,
                 fontsize="small",
                 title=kwargs.pop("data_unit", None),
+                title_fontsize="small",
             )
 
         return ax
@@ -1410,7 +1443,7 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        title = [kwargs.pop("title", None), repr(self)]
+        title = [kwargs.pop("title", None), str(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         direction_bins = kwargs.pop("direction_bins", DirectionBins())
@@ -1476,7 +1509,7 @@ class Wind:
         if ax is None:
             _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
-        title = [kwargs.pop("title", None), repr(self)]
+        title = [kwargs.pop("title", None), str(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
@@ -1559,7 +1592,7 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        title = [kwargs.pop("title", None), repr(self)]
+        title = [kwargs.pop("title", None), str(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         df = self.wind_matrix()
@@ -1666,7 +1699,7 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        title = [kwargs.pop("title", None), repr(self)]
+        title = [kwargs.pop("title", None), str(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         kwargs.pop("include_counts", None)  # remove include_counts if present
@@ -1721,7 +1754,7 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
-        title = [kwargs.pop("title", None), repr(self)]
+        title = [kwargs.pop("title", None), str(self)]
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         data = self.cumulative_density_function(**kwargs).sum(axis=1)
