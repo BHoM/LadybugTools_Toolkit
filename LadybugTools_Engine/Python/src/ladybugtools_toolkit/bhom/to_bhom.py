@@ -64,10 +64,10 @@ def energymaterialvegetation_to_bhom(obj: EnergyMaterialVegetation) -> dict:
 def point3d_to_bhom(obj: Point3D) -> dict:
     """Convert this object into a BHOM deserialisable dictionary."""
     return {
-        "_t": "BH.oM.Geometry.Point",
-        "X": obj.x,
-        "Y": obj.y,
-        "Z": obj.z,
+        #"_t": "BH.oM.Geometry.Point",
+        "x": obj.x,
+        "y": obj.y,
+        "z": obj.z,
     }
 
 

@@ -104,10 +104,10 @@ class Shelter:
             point_dicts.append(point3d_to_bhom(point))
 
         d = {
-            "_t": "BH.oM.LadybugTools.Shelter",
-            "Vertices": point_dicts,
-            "WindPorosity": self.wind_porosity,
-            "RadiationPorosity": self.radiation_porosity,
+            "type": "Shelter",
+            "vertices": point_dicts,
+            "wind_porosity": self.wind_porosity,
+            "radiation_porosity": self.radiation_porosity,
         }
         return d
 

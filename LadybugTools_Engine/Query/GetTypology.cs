@@ -28,6 +28,10 @@ using System.ComponentModel;
 using BH.oM.Python;
 using System.IO;
 using System;
+using BH.oM.Adapter;
+using BH.Engine.Adapter;
+using BH.Adapter.LadybugTools;
+using BH.oM.Data.Requests;
 
 namespace BH.Engine.LadybugTools
 {
@@ -39,27 +43,27 @@ namespace BH.Engine.LadybugTools
         public static List<Typology> GetTypology(string filter = "")
         {
             PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            LadybugToolsAdapter adapter = new LadybugToolsAdapter();
+            LadybugConfig config = new LadybugConfig()
+            {
+                JsonFile = new FileSettings()
+                {
+                    FileName = $"LBTBHoM_Typologies_{DateTime.Now:yyyyMMdd}.json",
+                    Directory = Path.GetTempPath()
+                }
+            };
 
-            string jsonFile = Path.Combine(Path.GetTempPath(), $"LBTBHoM_Typologies_{DateTime.Now:yyyyMMdd}.json");
-
-            if (!File.Exists(jsonFile))
+            if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
                 string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_typology.py");
 
-                string command = $"{env.Executable} {script} -j \"{jsonFile}\"";
+                string command = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
 
                 Python.Compute.RunCommandStdout(command: command, hideWindows: true);
             }
 
-            string jsonContent = File.ReadAllText(jsonFile);
-
-            List<object> typologies = (List<object>)BH.Engine.Serialiser.Convert.FromJsonArray(jsonContent);
-
-            List<Typology> typologyObjects = new List<Typology>();
-            foreach (object typologyObject in typologies)
-            {
-                typologyObjects.Add((Typology)typologyObject);
-            }
+            List<Typology> typologyObjects = adapter.Pull(new FilterRequest(), actionConfig: config).Cast<Typology>().ToList();
+                new List<Typology>();
 
             return typologyObjects.Where(m => m.Name.Contains(filter)).ToList();
         }
