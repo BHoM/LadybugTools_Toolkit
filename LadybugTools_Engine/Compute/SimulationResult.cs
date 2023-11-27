@@ -71,7 +71,7 @@ namespace BH.Engine.LadybugTools
                 EpwFile = Path.GetFullPath(epwFile).Replace(@"\", "/"),
                 GroundMaterial = groundMaterial,
                 ShadeMaterial = shadeMaterial,
-                Identifier = Compute.SimulationID(epwFile, groundMaterial, shadeMaterial)
+                Name = Compute.SimulationID(epwFile, groundMaterial, shadeMaterial)
             };
             string jsonPreSimulation = simulationResult.ToJson();
             string jsonFile = Path.Combine(Path.GetTempPath(), $"LBTBHoM_{Guid.NewGuid()}.json");

@@ -61,7 +61,7 @@ namespace BH.Engine.LadybugTools
                 typologyObjects.Add((Typology)typologyObject);
             }
 
-            return typologyObjects.Where(m => m.Identifier.Contains(filter)).ToList();
+            return typologyObjects.Where(m => m.Name.Contains(filter)).ToList();
         }
     }
 }

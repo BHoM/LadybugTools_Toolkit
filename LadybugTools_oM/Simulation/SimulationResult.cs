@@ -40,7 +40,7 @@ namespace BH.oM.LadybugTools
         public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; }
 
         [Description("The identifier used to distinguish existing results for this object.")]
-        public virtual string Identifier { get; set; }
+        public virtual string Name { get; set; }
 
         // simulated properties
 
