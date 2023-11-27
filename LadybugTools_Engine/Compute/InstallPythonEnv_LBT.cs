@@ -37,43 +37,29 @@ namespace BH.Engine.LadybugTools
         [Output("env", "The LadybugTools_Toolkit Python Environment, with BHoM code accessible.")]
         public static PythonEnvironment InstallPythonEnv_LBT(bool run = false, bool reinstall = false)
         {
-            // check if referenced Python is installed
-            string referencedExecutable = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles) + @"\ladybug_tools\python\python.exe";
-
-            if (!Query.IsPollinationInstalled())
-            {
-                return null;
-            }
-
             if (!run)
                 return null;
 
-            // find out whether this environment already exists
-            bool exists = Python.Query.VirtualEnvironmentExists(Query.ToolkitName());
-
-            if (reinstall)
-                Python.Compute.RemoveVirtualEnvironment(Query.ToolkitName());
-
-            // obtain python version
+            // check if referenced Python is installed, and get executable and version if it is
+            if (!Query.IsPollinationInstalled())
+                return null;
+            string referencedExecutable = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles) + @"\ladybug_tools\python\python.exe";
             PythonVersion pythonVersion = Python.Query.Version(referencedExecutable);
 
-            // create virtualenvironment
-            PythonEnvironment env = Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: true);
+            // check if environment already exists. If it does, and no reinstall requested, load it
+            bool exists = Python.Query.VirtualEnvironmentExists(envName: Query.ToolkitName(), pythonVersion: pythonVersion);
+            if (run && exists && !reinstall)
+                return Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: true);
 
-            // return null if environment could not be created/loaded
-            if (env == null)
-                return null;
+            // create environment from scratch
+            PythonEnvironment env = Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: false);
 
-            // install packages if this is a reinstall, or the environment did not originally exist
-            if (reinstall || !exists)
-            {
-                // install local package
-                env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName()));
+            // install local package
+            env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName()));
 
-                // create requiremetns from referenced executable
-                string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
-                env.InstallRequirements(requirementsTxt);
-            }
+            // create requirements from referenced executable
+            string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
+            env.InstallRequirements(requirementsTxt);
 
             return env;
         }
