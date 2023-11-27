@@ -30,7 +30,7 @@ using System.Linq;
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class Typology : BHoMObject
+    public class Typology : BHoMObject, ILadybugTools
     {
         [Description("The name of this Typology.")]
         public virtual string Identifier { get; set; } = string.Empty;

@@ -97,6 +97,9 @@ namespace BH.Adapter.LadybugTools
                         case "Shelter":
                             returnObjects.Add(ToShelter(lbtObject));
                             break;
+                        case "Typology":
+                            returnObjects.Add(ToTypology(lbtObject));
+                            break;
                         default:
                             BH.Engine.Base.Compute.RecordError($"Objects of type {lbtObject["type"]} are not yet supported for conversion to a LadybugTools object.");
                             break;
