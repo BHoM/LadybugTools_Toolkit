@@ -1262,7 +1262,6 @@ class Wind:
             ax = plt.gca()
 
         title = [kwargs.pop("title", None), str(self)]
-        print(title)
         ax.set_title("\n".join([i for i in title if i is not None]))
 
         timeseries(self.ws, ax=ax, **kwargs)
