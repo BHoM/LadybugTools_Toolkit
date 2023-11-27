@@ -29,11 +29,11 @@ namespace BH.Adapter.LadybugTools
 
             try
             {
-                if (oldObject["shelters"].GetType() == typeof(CustomObject))
-                    oldObject["shelters"] = (List<Dictionary<string, object>>)(oldObject["shelters"] as CustomObject).CustomData["values"];
-
-                foreach (Dictionary<string, object> shelter in oldObject["shelters"] as List<Dictionary<string, object>>)
-                    shelters.Add(ToShelter(shelter));
+                foreach (var shelter in oldObject["shelters"] as List<object>)
+                    if (shelter.GetType() == typeof(CustomObject))
+                        shelters.Add(ToShelter(((CustomObject)shelter).CustomData));
+                    else
+                        shelters.Add(ToShelter((Dictionary<string, object>)shelter));
             }
             catch (Exception ex)
             {
@@ -58,7 +58,9 @@ namespace BH.Adapter.LadybugTools
                 List<double?> values = new List<double?>();
                 foreach (object value in oldObject["target_wind_speed"] as List<object>)
                 {
-                    if (double.TryParse(value.ToString(), out double result))
+                    if (value == null)
+                        values.Add(null);
+                    else if (double.TryParse(value.ToString(), out double result))
                         values.Add(result);
                     else
                         values.Add(null);
@@ -99,7 +101,7 @@ namespace BH.Adapter.LadybugTools
             string identifier = typology.Name;
             string shelters = "[" + string.Join(", ", typology.Shelters.Select(s => FromShelter(s)).ToList()) + "]";
             string evaporativeCoolingEffect = "[" + string.Join(", ", typology.EvaporativeCoolingEffect) + "]";
-            string targetWindSpeed = "[" + string.Join(", ", typology.TargetWindSpeed) + "]";
+            string targetWindSpeed = "[" + string.Join(", ", typology.TargetWindSpeed.Select(x => x.ToString()).Select(x => x == "" ? x = "null": x)) + "]";
             string radiantTemperatureAdjustment = "[" + string.Join(", ", typology.RadiantTemperatureAdjustment) + "]";
             return @"{""type"": ""Typology""," + 
                 @"""identifier"": """ + identifier + 
