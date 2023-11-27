@@ -28,7 +28,7 @@ using System.ComponentModel;
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class SimulationResult : BHoMObject
+    public class SimulationResult : BHoMObject, ILadybugTools
     {
         [Description("The EPW file associated with this object.")]
         public virtual string EpwFile { get; set; }
@@ -40,7 +40,7 @@ namespace BH.oM.LadybugTools
         public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; }
 
         [Description("The identifier used to distinguish existing results for this object.")]
-        public virtual string Name { get; set; }
+        public override string Name { get; set; }
 
         // simulated properties
 
