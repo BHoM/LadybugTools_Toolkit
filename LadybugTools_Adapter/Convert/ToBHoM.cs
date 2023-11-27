@@ -39,13 +39,10 @@ namespace BH.Adapter.LadybugTools
         {
             string json = File.ReadAllText(jsonFile.GetFullFileName());
             if (!json.StartsWith("["))
-            {
                 json = "[" + json;
-            }
+                
             if (!json.EndsWith("]"))
-            {
                 json = json + "]";
-            }
             IEnumerable<object> objs = Engine.Serialiser.Convert.FromJsonArray(json);
             List<IBHoMObject> returnObjects = new List<IBHoMObject>();
             foreach (var obj in objs)
