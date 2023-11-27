@@ -92,6 +92,7 @@ def test_wind_from_epw():
     """."""
     assert isinstance(Wind.from_epw(EPW_OBJ), Wind)
     assert isinstance(Wind.from_epw(EPW_FILE), Wind)
+    assert Wind.from_epw(EPW_FILE).source == EPW_FILE.name
 
 
 def test_wind_from_dataframe():
@@ -127,15 +128,17 @@ def test_wind_from_dataframe():
 
 def test_wind_from_openmeteo():
     """."""
+    w = Wind.from_openmeteo(
+        latitude=51.5074,
+        longitude=0.1278,
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+    )
     assert isinstance(
-        Wind.from_openmeteo(
-            latitude=51.5074,
-            longitude=0.1278,
-            start_date="2020-01-01",
-            end_date="2020-01-02",
-        ),
+        w,
         Wind,
     )
+    assert w.source == "OpenMeteo"
 
 
 def test_wind_from_uv():
