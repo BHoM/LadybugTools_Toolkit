@@ -73,13 +73,18 @@ namespace BH.Adapter.LadybugTools
         {
             Dictionary<string, object> returnDict = new Dictionary<string, object>
             {
-                { "type", "GenericDataType" },
                 { "name", dataType.Name },
                 { "data_type", dataType.Data_Type }
             };
+            
+            string type = "DataType";
 
-            if (dataType.BaseUnit != "")
+            if (dataType.Data_Type == "GenericType")
+            {
+                type = "GenericDataType";
                 returnDict.Add("base_unit", dataType.BaseUnit);
+            }
+            returnDict.Add("type", type);
 
             return returnDict;
         }

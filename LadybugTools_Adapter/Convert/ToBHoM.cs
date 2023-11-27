@@ -38,6 +38,11 @@ namespace BH.Adapter.LadybugTools
         public static List<IBHoMObject> ToBHoM(this FileSettings jsonFile)
         {
             string json = File.ReadAllText(jsonFile.GetFullFileName());
+            if (!json.StartsWith("["))
+                json = "[" + json;
+                
+            if (!json.EndsWith("]"))
+                json = json + "]";
             IEnumerable<object> objs = Engine.Serialiser.Convert.FromJsonArray(json);
             List<IBHoMObject> returnObjects = new List<IBHoMObject>();
             foreach (var obj in objs)
@@ -66,6 +71,9 @@ namespace BH.Adapter.LadybugTools
                             returnObjects.Add(ToAnalysisPeriod(lbtObject));
                             break;
                         case "GenericDataType":
+                            returnObjects.Add(ToDataType(lbtObject));
+                            break;
+                        case "DataType":
                             returnObjects.Add(ToDataType(lbtObject));
                             break;
                         case "EnergyMaterial":

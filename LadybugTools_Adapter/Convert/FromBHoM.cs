@@ -21,16 +21,8 @@
  */
 
 using BH.oM.LadybugTools;
-using System;
 using BH.Engine.Serialiser;
 using System.Collections.Generic;
-using System.Text;
-using BH.oM.Base;
-using System.IO;
-using BH.oM.Adapter;
-using BH.Engine.Adapter;
-using BH.oM.Base.Debugging;
-
 namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
@@ -50,42 +42,42 @@ namespace BH.Adapter.LadybugTools
             return Jsonify(lbtObject as dynamic);
         }
 
-        private static string Jsonify(this oM.LadybugTools.AnalysisPeriod analysisPeriod)
+        private static string Jsonify(this AnalysisPeriod analysisPeriod)
         {
             return FromAnalysisPeriod(analysisPeriod).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.DataType dataType)
+        private static string Jsonify(this DataType dataType)
         {
             return FromDataType(dataType).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.EnergyMaterial energyMaterial)
+        private static string Jsonify(this EnergyMaterial energyMaterial)
         {
             return FromEnergyMaterial(energyMaterial).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.EnergyMaterialVegetation energyMaterial)
+        private static string Jsonify(this EnergyMaterialVegetation energyMaterial)
         {
             return FromEnergyMaterialVegetation(energyMaterial).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.EPW epw)
+        private static string Jsonify(this EPW epw)
         {
             return FromEPW(epw);
         }
 
-        private static string Jsonify(this oM.LadybugTools.Header header)
+        private static string Jsonify(this Header header)
         {
             return FromHeader(header).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.HourlyContinuousCollection collection)
+        private static string Jsonify(this HourlyContinuousCollection collection)
         {
             return FromHourlyContinuousCollection(collection);
         }
 
-        private static string Jsonify(this oM.LadybugTools.Location location)
+        private static string Jsonify(this Location location)
         {
             return FromLocation(location).ToJson();
         }
