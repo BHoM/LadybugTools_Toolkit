@@ -42,9 +42,7 @@ namespace BH.Engine.LadybugTools
 
             // check if referenced Python is installed, and get executable and version if it is
             if (!Query.IsPollinationInstalled())
-            {
                 return null;
-            }
             string referencedExecutable = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles) + @"\ladybug_tools\python\python.exe";
             PythonVersion pythonVersion = Python.Query.Version(referencedExecutable);
 
