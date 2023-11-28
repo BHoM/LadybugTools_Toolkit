@@ -1,4 +1,5 @@
-﻿using BH.oM.Base;
+﻿using BH.Engine.Base;
+using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
@@ -146,35 +147,50 @@ namespace BH.Adapter.LadybugTools
             string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile}\", ";
             string groundMaterial = $"\"ground_material\": {FromBHoM(simulationResult.GroundMaterial)}, ";
             string shadeMaterial = $"\"shade_material\": {FromBHoM(simulationResult.ShadeMaterial)}, ";
-            string name = $"\"identifier\": \"{simulationResult.Name}\", ";
-            List<string> properties = new List<string>()
-            {
-                "\"shaded_down_temperature\": ",
-                "\"shaded_up_temperature\": ",
-                "\"shaded_radiant_temperature\": ",
-                "\"shaded_longwave_mean_radiant_temperature_delta\": ",
-                "\"shaded_shortwave_mean_radiant_temperature_delta\": ",
-                "\"shaded_mean_radiant_temperature\": ",
-                "\"unshaded_down_temperature\": ",
-                "\"unshaded_up_temperature\": ",
-                "\"unshaded_radiant_temperature\": ",
-                "\"unshaded_longwave_mean_radiant_temperature_delta\": ",
-                "\"unshaded_shortwave_mean_radiant_temperature_delta\": ",
-                "\"unshaded_mean_radiant_temperature\": "
-            };
-            properties[0] += FromHourlyContinuousCollection(simulationResult.ShadedDownTemperature);
-            properties[1] += FromHourlyContinuousCollection(simulationResult.ShadedUpTemperature);
-            properties[2] += FromHourlyContinuousCollection(simulationResult.ShadedRadiantTemperature);
-            properties[3] += FromHourlyContinuousCollection(simulationResult.ShadedLongwaveMeanRadiantTemperatureDelta);
-            properties[4] += FromHourlyContinuousCollection(simulationResult.ShadedShortwaveMeanRadiantTemperatureDelta);
-            properties[5] += FromHourlyContinuousCollection(simulationResult.ShadedMeanRadiantTemperature);
-            properties[6] += FromHourlyContinuousCollection(simulationResult.UnshadedUpTemperature);
-            properties[7] += FromHourlyContinuousCollection(simulationResult.UnshadedDownTemperature);
-            properties[8] += FromHourlyContinuousCollection(simulationResult.UnshadedRadiantTemperature);
-            properties[9] += FromHourlyContinuousCollection(simulationResult.UnshadedLongwaveMeanRadiantTemperatureDelta);
-            properties[10] += FromHourlyContinuousCollection(simulationResult.UnshadedShortwaveMeanRadiantTemperatureDelta);
-            properties[11] += FromHourlyContinuousCollection(simulationResult.UnshadedMeanRadiantTemperature);
+            string name = $"\"identifier\": \"{simulationResult.Name}\"";
+            List<string> properties = new List<string>();
+
+            if (simulationResult.ShadedDownTemperature != null)
+                properties.Add("\"shaded_down_temperature\": " + FromHourlyContinuousCollection(simulationResult.ShadedDownTemperature));
+
+            if (simulationResult.ShadedUpTemperature != null)
+                properties.Add("\"shaded_up_temperature\": " + FromHourlyContinuousCollection(simulationResult.ShadedUpTemperature));
+
+            if (simulationResult.ShadedRadiantTemperature != null)
+                properties.Add("\"shaded_radiant_temperature\": " + FromHourlyContinuousCollection(simulationResult.ShadedRadiantTemperature));
+
+            if (simulationResult.ShadedLongwaveMeanRadiantTemperatureDelta != null)
+                properties.Add("\"shaded_longwave_mean_radiant_temperature_delta\": " + FromHourlyContinuousCollection(simulationResult.ShadedLongwaveMeanRadiantTemperatureDelta));
+
+            if (simulationResult.ShadedShortwaveMeanRadiantTemperatureDelta != null)
+                properties.Add("\"shaded_shortwave_mean_radiant_temperature_delta\": " + FromHourlyContinuousCollection(simulationResult.ShadedShortwaveMeanRadiantTemperatureDelta));
+
+            if (simulationResult.ShadedMeanRadiantTemperature != null)
+                properties.Add("\"shaded_mean_radiant_temperature\": " + FromHourlyContinuousCollection(simulationResult.ShadedMeanRadiantTemperature));
+
+            if (simulationResult.UnshadedUpTemperature != null)
+                properties.Add("\"unshaded_up_temperature\": " + FromHourlyContinuousCollection(simulationResult.UnshadedUpTemperature));
+
+            if (simulationResult.UnshadedDownTemperature != null)
+                properties.Add("\"unshaded_down_temperature\": " + FromHourlyContinuousCollection(simulationResult.UnshadedDownTemperature));
+
+            if (simulationResult.UnshadedRadiantTemperature != null)
+                properties.Add("\"unshaded_radiant_temperature\": " + FromHourlyContinuousCollection(simulationResult.UnshadedRadiantTemperature));
+
+            if (simulationResult.UnshadedLongwaveMeanRadiantTemperatureDelta != null)
+                properties.Add("\"unshaded_longwave_mean_radiant_temperature_delta\": " + FromHourlyContinuousCollection(simulationResult.UnshadedLongwaveMeanRadiantTemperatureDelta));
+
+            if (simulationResult.UnshadedShortwaveMeanRadiantTemperatureDelta != null)
+                properties.Add("\"unshaded_shortwave_mean_radiant_temperature_delta\": " + FromHourlyContinuousCollection(simulationResult.UnshadedShortwaveMeanRadiantTemperatureDelta));
+
+            if (simulationResult.UnshadedMeanRadiantTemperature != null)
+                properties.Add("\"unshaded_mean_radiant_temperature\": " + FromHourlyContinuousCollection(simulationResult.UnshadedMeanRadiantTemperature));
+
             string simulatedProperties = string.Join(", ", properties);
+            if (simulatedProperties.Length > 0)
+            {
+                simulatedProperties = ", " + simulatedProperties;
+            }
             return "{" + type + epwFile + groundMaterial + shadeMaterial + name + simulatedProperties + "}";
         }
     }

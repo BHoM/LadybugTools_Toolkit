@@ -45,39 +45,39 @@ namespace BH.oM.LadybugTools
         // simulated properties
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedDownTemperature { get; set; }
+        public virtual HourlyContinuousCollection ShadedDownTemperature { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedUpTemperature { get; set; }
+        public virtual HourlyContinuousCollection ShadedUpTemperature { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedRadiantTemperature { get; set; }
+        public virtual HourlyContinuousCollection ShadedRadiantTemperature { get; set; } = null;     
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedLongwaveMeanRadiantTemperatureDelta { get; set; }
+        public virtual HourlyContinuousCollection ShadedLongwaveMeanRadiantTemperatureDelta { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedShortwaveMeanRadiantTemperatureDelta { get; set; }
+        public virtual HourlyContinuousCollection ShadedShortwaveMeanRadiantTemperatureDelta { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedMeanRadiantTemperature { get; set; }
+        public virtual HourlyContinuousCollection ShadedMeanRadiantTemperature { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedDownTemperature { get; set; }
+        public virtual HourlyContinuousCollection UnshadedDownTemperature { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedUpTemperature { get; set; }
+        public virtual HourlyContinuousCollection UnshadedUpTemperature { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedRadiantTemperature { get; set; }
+        public virtual HourlyContinuousCollection UnshadedRadiantTemperature { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedLongwaveMeanRadiantTemperatureDelta { get; set; }
+        public virtual HourlyContinuousCollection UnshadedLongwaveMeanRadiantTemperatureDelta { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedShortwaveMeanRadiantTemperatureDelta { get; set; }
+        public virtual HourlyContinuousCollection UnshadedShortwaveMeanRadiantTemperatureDelta { get; set; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedMeanRadiantTemperature { get; set; }
+        public virtual HourlyContinuousCollection UnshadedMeanRadiantTemperature { get; set; } = null;
     }
 }
