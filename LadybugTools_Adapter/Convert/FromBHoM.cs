@@ -67,6 +67,11 @@ namespace BH.Adapter.LadybugTools
             return FromEPW(epw);
         }
 
+        private static string Jsonify(this ExternalComfort externalComfort)
+        {
+            return FromExternalComfort(externalComfort);
+        }
+
         private static string Jsonify(this Header header)
         {
             return FromHeader(header).ToJson();

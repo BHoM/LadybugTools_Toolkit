@@ -85,6 +85,9 @@ namespace BH.Adapter.LadybugTools
                         case "EPW":
                             returnObjects.Add(ToEPW(lbtObject));
                             break;
+                        case "ExternalComfort":
+                            returnObjects.Add(ToExternalComfort(lbtObject));
+                            break;
                         case "Header":
                             returnObjects.Add(ToHeader(lbtObject));
                             break;
