@@ -84,8 +84,8 @@ namespace BH.Adapter.LadybugTools
         public static string FromExternalComfort(ExternalComfort externalComfort)
         {
             string type = "\"type\": \"ExternalComfort\", ";
-            string simulationResult = "\"simulation_result\": " + FromSimulationResult(externalComfort.SimulationResult) + ", ";
-            string typology = "\"typology\": " + FromTypology(externalComfort.Typology);
+            string simulationResult = $"\"simulation_result\": {FromSimulationResult(externalComfort.SimulationResult)}, ";
+            string typology = $"\"typology\": {FromTypology(externalComfort.Typology)}";
             List<string> properties = new List<string>();
 
             if (externalComfort.DryBulbTemperature != null)

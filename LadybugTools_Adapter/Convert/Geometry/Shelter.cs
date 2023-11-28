@@ -75,15 +75,15 @@ namespace BH.Adapter.LadybugTools
 
         public static string FromShelter(oM.LadybugTools.Shelter shelter)
         {
-            string radiationPorosity = @"""radiation_porosity"": [" + string.Join(", ", shelter.RadiationPorosity) + "]";
-            string windPorosity = @"""wind_porosity"": [" + string.Join(", ", shelter.WindPorosity) + "]";
+            string radiationPorosity = $@"""radiation_porosity"": [{string.Join(", ", shelter.RadiationPorosity)}]";
+            string windPorosity = $@"""wind_porosity"": [{string.Join(", ", shelter.WindPorosity)}]";
 
             List<string> points = new List<string>();
             foreach (Point point in shelter.Vertices)
             {
                 points.Add(FromPoint(point));
             }
-            string vertices = @"""vertices"": [" + string.Join(", ", points) + "]";
+            string vertices = $@"""vertices"": [{string.Join(", ", points)}]";
 
             return @"{ ""type"": ""Shelter""," + vertices + ", " + radiationPorosity + ", " + windPorosity + "}";
         }

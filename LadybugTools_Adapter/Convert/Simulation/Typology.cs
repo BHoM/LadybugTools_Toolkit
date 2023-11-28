@@ -103,12 +103,12 @@ namespace BH.Adapter.LadybugTools
             string evaporativeCoolingEffect = "[" + string.Join(", ", typology.EvaporativeCoolingEffect) + "]";
             string targetWindSpeed = "[" + string.Join(", ", typology.TargetWindSpeed.Select(x => x.ToString()).Select(x => x == "" ? x = "null": x)) + "]";
             string radiantTemperatureAdjustment = "[" + string.Join(", ", typology.RadiantTemperatureAdjustment) + "]";
-            return @"{""type"": ""Typology""," + 
-                @"""identifier"": """ + identifier + 
-                @""", ""shelters"": " + shelters + 
-                @", ""evaporative_cooling_effect"": " + evaporativeCoolingEffect + 
-                @", ""target_wind_speed"": " + targetWindSpeed + 
-                @", ""radiant_temperature_adjustment"": " + radiantTemperatureAdjustment + "}";
+            return @"{""type"": ""Typology"", " + 
+                $@"""identifier"": ""{identifier}"", " + 
+                $@"""shelters"": {shelters}, " + 
+                $@"""evaporative_cooling_effect"": {evaporativeCoolingEffect}, " + 
+                $@"""target_wind_speed"": {targetWindSpeed}, " + 
+                $@"""radiant_temperature_adjustment"": {radiantTemperatureAdjustment}" + "}";
         }
     }
 }
