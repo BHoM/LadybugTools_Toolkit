@@ -127,15 +127,14 @@ class ExternalComfort:
         attr_dict = {}
         for attr in _ATTRIBUTES:
             if getattr(self, attr):
-                attr_dict[pascalcase(attr)] = hourlycontinuouscollection_to_bhom(
-                    getattr(self, attr)
-                )
+                attr_dict[attr] = getattr(self, attr).to_dict()
 
         d = {
             **{
-                "_t": "BH.oM.LadybugTools.ExternalComfort",
-                "SimulationResult": self.simulation_result.to_dict(),
-                "Typology": self.typology.to_dict(),
+                #"_t": "BH.oM.LadybugTools.ExternalComfort",
+                "type": "ExternalComfort",
+                "simulation_result": self.simulation_result.to_dict(),
+                "typology": self.typology.to_dict(),
             },
             **attr_dict,
         }
@@ -157,6 +156,10 @@ class ExternalComfort:
             if d.get(attr, None):
                 if isinstance(d[attr], dict):
                     d[attr] = HourlyContinuousCollection.from_dict(d[attr])
+                else:
+                    d[attr] = None    
+            else:
+                d[attr] = None
 
         return cls(
             simulation_result=d["simulation_result"],
