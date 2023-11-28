@@ -28,6 +28,12 @@ using BH.Engine.Serialiser;
 using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
 using BH.oM.Python;
+using BH.oM.Adapter;
+using BH.Adapter.LadybugTools;
+using BH.Engine.Adapter;
+using System.Collections.Generic;
+using BH.oM.Data.Requests;
+using System.Linq;
 
 namespace BH.Engine.LadybugTools
 {
@@ -51,30 +57,39 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
+            LadybugToolsAdapter adapter = new LadybugToolsAdapter();
+            LadybugConfig config = new LadybugConfig()
+            {
+                JsonFile = new FileSettings()
+                {
+                    FileName = $"LBTBHoM_{Guid.NewGuid()}.json",
+                    Directory = Path.GetTempPath()
+                }
+            };
+
             // construct the base object
             ExternalComfort externalComfort = new ExternalComfort()
             {
                 SimulationResult = simulationResult,
                 Typology = typology,
             };
-            string jsonPreSimulation = externalComfort.ToJson();
-            string jsonFile = Path.Combine(Path.GetTempPath(), $"LBTBHoM_{Guid.NewGuid()}.json");
-            File.WriteAllText(jsonFile, jsonPreSimulation);
+
+            // push objects to json file
+            adapter.Push(new List<ExternalComfort>() { externalComfort }, actionConfig: config);
 
             // locate the Python executable and file containing the simulation code
             PythonEnvironment env = InstallPythonEnv_LBT(true);
             string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "external_comfort.py");
 
             // run the calculation
-            string command = $"{env.Executable} {script} -j \"{jsonFile}\"";
+            string command = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
             Python.Compute.RunCommandStdout(command: command, hideWindows: true);
 
             // reload from Python results
-            string jsonPostSimulation = File.ReadAllText(jsonFile);
-            BH.oM.LadybugTools.ExternalComfort externalComfortPopulated = (BH.oM.LadybugTools.ExternalComfort)BH.Engine.Serialiser.Convert.FromJson(jsonPostSimulation);
+            ExternalComfort externalComfortPopulated = adapter.Pull(new FilterRequest(), actionConfig: config).Cast<ExternalComfort>().ToList()[0];
 
             // remove temporary file
-            File.Delete(jsonFile);
+            File.Delete(config.JsonFile.GetFullFileName());
 
             return externalComfortPopulated;
         }
