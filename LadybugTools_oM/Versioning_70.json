@@ -13,10 +13,12 @@
   },
   "Property": {
     "ToNew": {
-      "BH.oM.LadybugTools.Typology.WindSpeedMultiplier": "BH.oM.LadybugTools.Typology.TargetWindSpeed"
+      "BH.oM.LadybugTools.Typology.WindSpeedMultiplier": "BH.oM.LadybugTools.Typology.TargetWindSpeed",
+      "BH.oM.LadybugTools.SimulationResult.Identifier": "BH.oM.LadybugTools.SimulationResult.Name"
     },
     "ToOld": {
-      "BH.oM.LadybugTools.Typology.TargetWindSpeed": "BH.oM.LadybugTools.Typology.WindSpeedMultiplier"
+      "BH.oM.LadybugTools.Typology.TargetWindSpeed": "BH.oM.LadybugTools.Typology.WindSpeedMultiplier",
+      "BH.oM.LadybugTools.SimulationResult.Name": "BH.oM.LadybugTools.SimulationResult.Identifier"
     }
   }
 }
