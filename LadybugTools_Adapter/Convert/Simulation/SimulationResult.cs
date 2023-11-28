@@ -1,0 +1,181 @@
+﻿using BH.oM.Base;
+using BH.oM.LadybugTools;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace BH.Adapter.LadybugTools
+{
+    public static partial class Convert
+    {
+        public static SimulationResult ToSimulationResult(Dictionary<string, object> oldObject)
+        {
+            string epwFile = "";
+            IEnergyMaterialOpaque groundMaterial = new EnergyMaterial();
+            IEnergyMaterialOpaque ShadeMaterial = new EnergyMaterial();
+            string name = "";
+            List<HourlyContinuousCollection> simulatedProperties = new List<HourlyContinuousCollection>();
+            List<string> properties = new List<string>()
+            {
+                "shaded_down_temperature",
+                "shaded_up_temperature",
+                "shaded_radiant_temperature",
+                "shaded_longwave_mean_radiant_temperature_delta",
+                "shaded_shortwave_mean_radiant_temperature_delta",
+                "shaded_mean_radiant_temperature",
+                "unshaded_down_temperature",
+                "unshaded_up_temperature",
+                "unshaded_radiant_temperature",
+                "unshaded_longwave_mean_radiant_temperature_delta",
+                "unshaded_shortwave_mean_radiant_temperature_delta",
+                "unshaded_mean_radiant_temperature"
+            };
+
+            try
+            {
+                epwFile = (string)oldObject["epw_file"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred during parsing of the epw file path of the SimulationResult. Returning default value (\"\").\n The error: {ex}");
+            }
+
+            try
+            {
+                if (oldObject["ground_material"].GetType() == typeof(CustomObject))
+                    oldObject["ground_material"] = ((CustomObject)oldObject["ground_material"]).CustomData;
+                switch ((oldObject["ground_material"] as Dictionary<string, object>)["Type"])
+                {
+                    case "EnergyMaterial":
+                        groundMaterial = ToEnergyMaterial(oldObject["ground_material"] as Dictionary<string, object>);
+                        break;
+                    case "EnergyMaterialVegetation":
+                        groundMaterial = ToEnergyMaterialVegetation(oldObject["ground_material"] as Dictionary<string, object>);
+                        break;
+                    default:
+                        BH.Engine.Base.Compute.RecordError("The ground material given has no \"Type\" key, so cannot be explicitly converted to an EnergyMaterialOpaque. Trying convert to EnergyMaterial...");
+                        groundMaterial = ToEnergyMaterial(oldObject["ground_material"] as Dictionary<string, object>);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when deserialising the ground material of the SimulationResult. returning a default EnergyMaterial.\n The error: {ex}");
+            }
+
+            try
+            {
+                name = (string)oldObject["identifier"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred while parsing the name of the SimulationResult. Returning default value (\"\").\n The error: {ex}");
+            }
+
+            try
+            {
+                if (oldObject["shade_material"].GetType() == typeof(CustomObject))
+                    oldObject["shade_material"] = ((CustomObject)oldObject["shade_material"]).CustomData;
+                switch ((oldObject["shade_material"] as Dictionary<string, object>)["Type"])
+                {
+                    case "EnergyMaterial":
+                        groundMaterial = ToEnergyMaterial(oldObject["shade_material"] as Dictionary<string, object>);
+                        break;
+                    case "EnergyMaterialVegetation":
+                        groundMaterial = ToEnergyMaterialVegetation(oldObject["shade_material"] as Dictionary<string, object>);
+                        break;
+                    default:
+                        BH.Engine.Base.Compute.RecordWarning("The shade material given has no \"Type\" key, so cannot be explicitly converted to an EnergyMaterialOpaque. Trying convert to EnergyMaterial...");
+                        groundMaterial = ToEnergyMaterial(oldObject["shade_material"] as Dictionary<string, object>);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when deserialising the shade material of the SimulationResult. returning a default EnergyMaterial.\n The error: {ex}");
+            }
+
+            foreach (string property in properties)
+            {
+                if (oldObject.ContainsKey(property))
+                {
+                    try
+                    {
+                        if (oldObject[property].GetType() == typeof(CustomObject))
+                            oldObject[property] = ((CustomObject)oldObject[property]).CustomData;
+                        simulatedProperties.Add(ToHourlyContinuousCollection(oldObject[property] as Dictionary<string, object>));
+                    }
+                    catch (Exception ex)
+                    {
+                        BH.Engine.Base.Compute.RecordError($"An error occurred while parsing the collection {property} of the SimulationResult. Returning an empty collection in its place.\n The error: {ex}");
+                        simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                    }
+                }
+                else
+                {
+                    BH.Engine.Base.Compute.RecordError($"The incoming json does not contain the key: {property}. Returning an empty collection in it's place.");
+                    simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                }
+            }
+
+            return new SimulationResult()
+            {
+                EpwFile = epwFile,
+                GroundMaterial = groundMaterial,
+                ShadeMaterial = ShadeMaterial,
+                Name = name,
+                ShadedDownTemperature = simulatedProperties[0],
+                ShadedUpTemperature = simulatedProperties[1],
+                ShadedRadiantTemperature = simulatedProperties[2],
+                ShadedLongwaveMeanRadiantTemperatureDelta = simulatedProperties[3],
+                ShadedShortwaveMeanRadiantTemperatureDelta = simulatedProperties[4],
+                ShadedMeanRadiantTemperature = simulatedProperties[5],
+                UnshadedDownTemperature = simulatedProperties[6],
+                UnshadedUpTemperature = simulatedProperties[7],
+                UnshadedRadiantTemperature = simulatedProperties[8],
+                UnshadedLongwaveMeanRadiantTemperatureDelta = simulatedProperties[9],
+                UnshadedShortwaveMeanRadiantTemperatureDelta = simulatedProperties[10],
+                UnshadedMeanRadiantTemperature = simulatedProperties[11]
+            };
+        }
+
+        public static string FromSimulationResult(SimulationResult simulationResult)
+        {
+            string type = $"\"Type\": \"SimulationResult\", ";
+            string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile}\", ";
+            string groundMaterial = $"\"ground_material\": {FromBHoM(simulationResult.GroundMaterial)}, ";
+            string shadeMaterial = $"\"shade_material\": {FromBHoM(simulationResult.ShadeMaterial)}, ";
+            string name = $"\"identifier\": \"{simulationResult.Name}\", ";
+            List<string> properties = new List<string>()
+            {
+                "\"shaded_down_temperature\": ",
+                "\"shaded_up_temperature\": ",
+                "\"shaded_radiant_temperature\": ",
+                "\"shaded_longwave_mean_radiant_temperature_delta\": ",
+                "\"shaded_shortwave_mean_radiant_temperature_delta\": ",
+                "\"shaded_mean_radiant_temperature\": ",
+                "\"unshaded_down_temperature\": ",
+                "\"unshaded_up_temperature\": ",
+                "\"unshaded_radiant_temperature\": ",
+                "\"unshaded_longwave_mean_radiant_temperature_delta\": ",
+                "\"unshaded_shortwave_mean_radiant_temperature_delta\": ",
+                "\"unshaded_mean_radiant_temperature\": "
+            };
+            properties[0] += FromHourlyContinuousCollection(simulationResult.ShadedDownTemperature);
+            properties[1] += FromHourlyContinuousCollection(simulationResult.ShadedUpTemperature);
+            properties[2] += FromHourlyContinuousCollection(simulationResult.ShadedRadiantTemperature);
+            properties[3] += FromHourlyContinuousCollection(simulationResult.ShadedLongwaveMeanRadiantTemperatureDelta);
+            properties[4] += FromHourlyContinuousCollection(simulationResult.ShadedShortwaveMeanRadiantTemperatureDelta);
+            properties[5] += FromHourlyContinuousCollection(simulationResult.ShadedMeanRadiantTemperature);
+            properties[6] += FromHourlyContinuousCollection(simulationResult.UnshadedUpTemperature);
+            properties[7] += FromHourlyContinuousCollection(simulationResult.UnshadedDownTemperature);
+            properties[8] += FromHourlyContinuousCollection(simulationResult.UnshadedRadiantTemperature);
+            properties[9] += FromHourlyContinuousCollection(simulationResult.UnshadedLongwaveMeanRadiantTemperatureDelta);
+            properties[10] += FromHourlyContinuousCollection(simulationResult.UnshadedShortwaveMeanRadiantTemperatureDelta);
+            properties[11] += FromHourlyContinuousCollection(simulationResult.UnshadedMeanRadiantTemperature);
+            string simulatedProperties = string.Join(", ", properties);
+            return "{" + type + epwFile + groundMaterial + shadeMaterial + name + simulatedProperties + "}";
+        }
+    }
+}

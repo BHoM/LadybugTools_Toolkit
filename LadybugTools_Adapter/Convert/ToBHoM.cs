@@ -97,6 +97,9 @@ namespace BH.Adapter.LadybugTools
                         case "Shelter":
                             returnObjects.Add(ToShelter(lbtObject));
                             break;
+                        case "SimulationResult":
+                            returnObjects.Add(ToSimulationResult(lbtObject));
+                            break;
                         case "Typology":
                             returnObjects.Add(ToTypology(lbtObject));
                             break;

@@ -82,12 +82,17 @@ namespace BH.Adapter.LadybugTools
             return FromLocation(location).ToJson();
         }
 
-        private static string Jsonify(this oM.LadybugTools.Shelter shelter)
+        private static string Jsonify(this Shelter shelter)
         {
             return FromShelter(shelter);
         }
 
-        private static string Jsonify(this oM.LadybugTools.Typology typology)
+        private static string Jsonify(this SimulationResult simulationResult)
+        {
+            return FromSimulationResult(simulationResult);
+        }
+
+        private static string Jsonify(this Typology typology)
         {
             return FromTypology(typology);
         }
