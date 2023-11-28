@@ -44,17 +44,5 @@ namespace BH.Engine.LadybugTools
             string json = serializer.Serialize(dictConverted);
             return json;
         }
-
-        [Description("Convert this object to its Ladybug JSON string.")]
-        [Input("collection", "A HourlyContinuousCollection object.")]
-        [Output("str", "The JSON string representation of this BHoM object, ready for deserialistion in Python using Ladybug.")]
-        public static string ToPythonString(this HourlyContinuousCollection collection)
-        {
-            JavaScriptSerializer serializer = new JavaScriptSerializer();
-            var dict = serializer.Deserialize<Dictionary<string, object>>(collection.ToJson());
-            var dictConverted = ToSnakeCase(dict);
-            string json = serializer.Serialize(dictConverted);
-            return json.Replace("data__type", "data_type");
-        }
     }
 }
