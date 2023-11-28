@@ -44,7 +44,7 @@ namespace BH.Adapter.LadybugTools
             }
             string json = "{}";
             if (jsonObjects.Count > 1)
-                json = "[" + string.Join(", ", jsonObjects) + "]";
+                json = $"[{string.Join(", ", jsonObjects)}]";
             else if (jsonObjects.Count == 1)
                 json = jsonObjects[0];
             File.WriteAllText(config.JsonFile.GetFullFileName(), json);
