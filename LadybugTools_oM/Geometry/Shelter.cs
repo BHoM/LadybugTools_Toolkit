@@ -30,7 +30,7 @@ using System.ComponentModel;
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class Shelter : BHoMObject
+    public class Shelter : BHoMObject, ILadybugTools
     {
         [Description("Hourly wind porosity (0-1).")]
         public virtual List<double> WindPorosity { get; set; }

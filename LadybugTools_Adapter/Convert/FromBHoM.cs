@@ -67,6 +67,11 @@ namespace BH.Adapter.LadybugTools
             return FromEPW(epw);
         }
 
+        private static string Jsonify(this ExternalComfort externalComfort)
+        {
+            return FromExternalComfort(externalComfort);
+        }
+
         private static string Jsonify(this Header header)
         {
             return FromHeader(header).ToJson();
@@ -80,6 +85,21 @@ namespace BH.Adapter.LadybugTools
         private static string Jsonify(this Location location)
         {
             return FromLocation(location).ToJson();
+        }
+
+        private static string Jsonify(this Shelter shelter)
+        {
+            return FromShelter(shelter);
+        }
+
+        private static string Jsonify(this SimulationResult simulationResult)
+        {
+            return FromSimulationResult(simulationResult);
+        }
+
+        private static string Jsonify(this Typology typology)
+        {
+            return FromTypology(typology);
         }
 
         private static Dictionary<string, object> Jsonify(this ILadybugTools obj)

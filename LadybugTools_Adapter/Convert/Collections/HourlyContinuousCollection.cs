@@ -73,8 +73,8 @@ namespace BH.Adapter.LadybugTools
                 valuesAsString = "\"" + string.Join("\", \"", collection.Values) + "\"";
 
             string type = @"""type"" : ""HourlyContinuous""";
-            string values = @"""values"" : [ " + valuesAsString + " ]";
-            string header = @"""header"" : " + FromHeader(collection.Header).ToJson();
+            string values = $@"""values"" : [{valuesAsString}]";
+            string header = $@"""header"" : {FromHeader(collection.Header).ToJson()}";
 
             return "{ " + type + ", " + values + ", " + header + " }";
         }

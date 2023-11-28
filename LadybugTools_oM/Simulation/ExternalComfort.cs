@@ -28,7 +28,7 @@ using System.ComponentModel;
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class ExternalComfort : BHoMObject
+    public class ExternalComfort : BHoMObject, ILadybugTools
     {
         [Description("The SimulationResult associated with this object.")]
         public virtual SimulationResult SimulationResult { get; set; }

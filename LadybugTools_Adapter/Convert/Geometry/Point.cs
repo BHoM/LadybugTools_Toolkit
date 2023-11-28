@@ -20,34 +20,62 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.Engine.Adapter;
-using BH.oM.Adapter;
-using BH.oM.Base.Debugging;
-using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
+using BH.oM.LadybugTools;
+using BH.oM.Geometry;
 
 namespace BH.Adapter.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public static partial class Convert
     {
-        public static void CreateLadybug(List<ILadybugTools> objects, LadybugConfig config = null)
+        public static Point ToPoint(Dictionary<string, object> oldObject)
         {
-            List<string> jsonObjects = new List<string>();
-            
-            foreach (ILadybugTools lbtObject in objects)
+            double x = 0.0;
+            double y = 0.0;
+            double z = 0.0;
+
+            try
             {
-                jsonObjects.Add(lbtObject.FromBHoM());
+                x = (double)oldObject["x"];
             }
-            string json = "{}";
-            if (jsonObjects.Count > 1)
-                json = $"[{string.Join(", ", jsonObjects)}]";
-            else if (jsonObjects.Count == 1)
-                json = jsonObjects[0];
-            File.WriteAllText(config.JsonFile.GetFullFileName(), json);
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading x of the Point. returning x as default ({x}).\n The error: {ex}");
+            }
+
+            try
+            {
+                y = (double)oldObject["y"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading y of the Point. returning y as default ({y}).\n The error: {ex}");
+            }
+
+            try
+            {
+                z = (double)oldObject["z"];
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred when reading z of the Point. returning z as default ({z}).\n The error: {ex}");
+            }
+
+            return new Point()
+            {
+                X = x,
+                Y = y,
+                Z = z
+            };
+        }
+
+        public static string FromPoint(Point point)
+        {
+            string type = @"""Point3D""";
+            string xyz = $@"""x"" : {point.X}, ""y"" : {point.Y}, ""z"" : {point.Z}";
+            return @"{""type"" : " + type + ", " + xyz + "}";
         }
     }
 }

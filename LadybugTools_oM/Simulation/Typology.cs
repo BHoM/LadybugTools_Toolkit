@@ -30,11 +30,11 @@ using System.Linq;
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class Typology : BHoMObject
+    public class Typology : BHoMObject, ILadybugTools
     {
         [Description("The name of this Typology.")]
-        public virtual string Identifier { get; set; } = string.Empty;
-        
+        public override string Name { get; set; } = string.Empty;
+
         [Description("The shelters for this Typology.")]
         public virtual List<Shelter> Shelters { get; set; } = new List<Shelter>();
         

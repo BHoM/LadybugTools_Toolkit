@@ -110,7 +110,7 @@ namespace BH.Engine.LadybugTools
 
             return new Typology()
             {
-                Identifier = identifier,
+                Name = identifier,
                 Shelters = shelters,
                 EvaporativeCoolingEffect = evaporativeCoolingEffect,
                 TargetWindSpeed = targetWindSpeed,

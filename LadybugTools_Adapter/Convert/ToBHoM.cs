@@ -85,6 +85,9 @@ namespace BH.Adapter.LadybugTools
                         case "EPW":
                             returnObjects.Add(ToEPW(lbtObject));
                             break;
+                        case "ExternalComfort":
+                            returnObjects.Add(ToExternalComfort(lbtObject));
+                            break;
                         case "Header":
                             returnObjects.Add(ToHeader(lbtObject));
                             break;
@@ -93,6 +96,15 @@ namespace BH.Adapter.LadybugTools
                             break;
                         case "Location":
                             returnObjects.Add(ToLocation(lbtObject));
+                            break;
+                        case "Shelter":
+                            returnObjects.Add(ToShelter(lbtObject));
+                            break;
+                        case "SimulationResult":
+                            returnObjects.Add(ToSimulationResult(lbtObject));
+                            break;
+                        case "Typology":
+                            returnObjects.Add(ToTypology(lbtObject));
                             break;
                         default:
                             BH.Engine.Base.Compute.RecordError($"Objects of type {lbtObject["type"]} are not yet supported for conversion to a LadybugTools object.");
