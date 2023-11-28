@@ -28,6 +28,12 @@ using System.IO;
 using BH.oM.LadybugTools;
 using System;
 using BH.Engine.Serialiser;
+using BH.Adapter.LadybugTools;
+using BH.oM.Adapter;
+using System.Collections.Generic;
+using BH.oM.Data.Requests;
+using BH.Engine.Adapter;
+using System.Linq;
 
 namespace BH.Engine.LadybugTools
 {
@@ -65,6 +71,17 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
+            // construct adapter and config
+            LadybugToolsAdapter adapter = new LadybugToolsAdapter();
+            LadybugConfig config = new LadybugConfig()
+            {
+                JsonFile = new FileSettings()
+                {
+                    FileName = $"LBTBHoM_{Guid.NewGuid()}.json",
+                    Directory = Path.GetTempPath()
+                }
+            };
+
             // construct the base object and file to be passed to Python for simulation
             SimulationResult simulationResult = new SimulationResult()
             {
@@ -73,24 +90,23 @@ namespace BH.Engine.LadybugTools
                 ShadeMaterial = shadeMaterial,
                 Name = Compute.SimulationID(epwFile, groundMaterial, shadeMaterial)
             };
-            string jsonPreSimulation = simulationResult.ToJson();
-            string jsonFile = Path.Combine(Path.GetTempPath(), $"LBTBHoM_{Guid.NewGuid()}.json");
-            File.WriteAllText(jsonFile, jsonPreSimulation);
+
+            // push object to json file
+            adapter.Push(new List<SimulationResult>() { simulationResult }, actionConfig: config);
 
             // locate the Python executable and file containing the simulation code
             PythonEnvironment env = InstallPythonEnv_LBT(true);
             string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "simulation_result.py");
             
             // run the simulation
-            string command = $"{env.Executable} {script} -j \"{jsonFile}\"";
+            string command = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
             Python.Compute.RunCommandStdout(command: command, hideWindows: true);
 
             // reload from Python results
-            string jsonPostSimulation = File.ReadAllText(jsonFile);
-            SimulationResult simulationResultPopulated = (SimulationResult)BH.Engine.Serialiser.Convert.FromJson(jsonPostSimulation);
-
+            SimulationResult simulationResultPopulated = adapter.Pull(new FilterRequest(), actionConfig: config).Cast<SimulationResult>().ToList()[0];
+            
             // remove temporary file
-            File.Delete(jsonFile);
+            File.Delete(config.JsonFile.GetFullFileName());
 
             return simulationResultPopulated;
         }
