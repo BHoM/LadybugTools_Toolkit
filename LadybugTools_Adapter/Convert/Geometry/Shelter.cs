@@ -19,7 +19,6 @@ namespace BH.Adapter.LadybugTools
             List<double> windPorosity = Enumerable.Repeat(0.0, 8760).ToList();
             if (oldObject.ContainsKey("vertices"))
             {
-                
                 foreach (var vertex in oldObject["vertices"] as List<object>)
                 {
                     Dictionary<string, object> point;
