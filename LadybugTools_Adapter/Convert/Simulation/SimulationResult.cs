@@ -13,7 +13,7 @@ namespace BH.Adapter.LadybugTools
         {
             string epwFile = "";
             IEnergyMaterialOpaque groundMaterial = new EnergyMaterial();
-            IEnergyMaterialOpaque ShadeMaterial = new EnergyMaterial();
+            IEnergyMaterialOpaque shadeMaterial = new EnergyMaterial();
             string name = "";
             List<HourlyContinuousCollection> simulatedProperties = new List<HourlyContinuousCollection>();
             List<string> properties = new List<string>()
@@ -45,7 +45,7 @@ namespace BH.Adapter.LadybugTools
             {
                 if (oldObject["ground_material"].GetType() == typeof(CustomObject))
                     oldObject["ground_material"] = ((CustomObject)oldObject["ground_material"]).CustomData;
-                switch ((oldObject["ground_material"] as Dictionary<string, object>)["Type"])
+                switch ((oldObject["ground_material"] as Dictionary<string, object>)["type"])
                 {
                     case "EnergyMaterial":
                         groundMaterial = ToEnergyMaterial(oldObject["ground_material"] as Dictionary<string, object>);
@@ -54,7 +54,7 @@ namespace BH.Adapter.LadybugTools
                         groundMaterial = ToEnergyMaterialVegetation(oldObject["ground_material"] as Dictionary<string, object>);
                         break;
                     default:
-                        BH.Engine.Base.Compute.RecordError("The ground material given has no \"Type\" key, so cannot be explicitly converted to an EnergyMaterialOpaque. Trying convert to EnergyMaterial...");
+                        BH.Engine.Base.Compute.RecordError($"The ground material given is not an IEnergyMaterialOpaque but {(oldObject["ground_material"] as Dictionary<string, object>)["type"]}, so cannot be explicitly converted to an EnergyMaterialOpaque. Trying convert to EnergyMaterial...");
                         groundMaterial = ToEnergyMaterial(oldObject["ground_material"] as Dictionary<string, object>);
                         break;
                 }
@@ -77,17 +77,17 @@ namespace BH.Adapter.LadybugTools
             {
                 if (oldObject["shade_material"].GetType() == typeof(CustomObject))
                     oldObject["shade_material"] = ((CustomObject)oldObject["shade_material"]).CustomData;
-                switch ((oldObject["shade_material"] as Dictionary<string, object>)["Type"])
+                switch ((oldObject["shade_material"] as Dictionary<string, object>)["type"])
                 {
                     case "EnergyMaterial":
-                        groundMaterial = ToEnergyMaterial(oldObject["shade_material"] as Dictionary<string, object>);
+                        shadeMaterial = ToEnergyMaterial(oldObject["shade_material"] as Dictionary<string, object>);
                         break;
                     case "EnergyMaterialVegetation":
-                        groundMaterial = ToEnergyMaterialVegetation(oldObject["shade_material"] as Dictionary<string, object>);
+                        shadeMaterial = ToEnergyMaterialVegetation(oldObject["shade_material"] as Dictionary<string, object>);
                         break;
                     default:
-                        BH.Engine.Base.Compute.RecordWarning("The shade material given has no \"Type\" key, so cannot be explicitly converted to an EnergyMaterialOpaque. Trying convert to EnergyMaterial...");
-                        groundMaterial = ToEnergyMaterial(oldObject["shade_material"] as Dictionary<string, object>);
+                        BH.Engine.Base.Compute.RecordWarning($"The shade material given is not an IEnergyMaterialOpaque but {(oldObject["shade_material"] as Dictionary<string, object>)["type"]}, so cannot be explicitly converted to an EnergyMaterialOpaque. Trying convert to EnergyMaterial...");
+                        shadeMaterial = ToEnergyMaterial(oldObject["shade_material"] as Dictionary<string, object>);
                         break;
                 }
             }
@@ -123,7 +123,7 @@ namespace BH.Adapter.LadybugTools
             {
                 EpwFile = epwFile,
                 GroundMaterial = groundMaterial,
-                ShadeMaterial = ShadeMaterial,
+                ShadeMaterial = shadeMaterial,
                 Name = name,
                 ShadedDownTemperature = simulatedProperties[0],
                 ShadedUpTemperature = simulatedProperties[1],
@@ -142,7 +142,7 @@ namespace BH.Adapter.LadybugTools
 
         public static string FromSimulationResult(SimulationResult simulationResult)
         {
-            string type = $"\"Type\": \"SimulationResult\", ";
+            string type = $"\"type\": \"SimulationResult\", ";
             string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile}\", ";
             string groundMaterial = $"\"ground_material\": {FromBHoM(simulationResult.GroundMaterial)}, ";
             string shadeMaterial = $"\"shade_material\": {FromBHoM(simulationResult.ShadeMaterial)}, ";
