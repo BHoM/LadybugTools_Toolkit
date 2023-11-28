@@ -72,7 +72,12 @@ namespace BH.Adapter.LadybugTools
             return new ExternalComfort()
             {
                 SimulationResult = simulationResult,
-                Typology = typology
+                Typology = typology,
+                DryBulbTemperature = simulatedProperties[0],
+                RelativeHumidity = simulatedProperties[1],
+                WindSpeed = simulatedProperties[2],
+                MeanRadiantTemperature = simulatedProperties[3],
+                UniversalThermalClimateIndex = simulatedProperties[4]
             };
         }
 
