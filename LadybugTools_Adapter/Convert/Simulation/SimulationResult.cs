@@ -115,7 +115,7 @@ namespace BH.Adapter.LadybugTools
                 }
                 else
                 {
-                    BH.Engine.Base.Compute.RecordError($"The incoming json does not contain the key: {property}. Returning an empty collection in it's place.");
+                    BH.Engine.Base.Compute.RecordError($"The incoming json does not contain the key: {property}. Returning an empty collection in its place.");
                     simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
                 }
             }
@@ -186,11 +186,11 @@ namespace BH.Adapter.LadybugTools
             if (simulationResult.UnshadedMeanRadiantTemperature != null)
                 properties.Add("\"unshaded_mean_radiant_temperature\": " + FromHourlyContinuousCollection(simulationResult.UnshadedMeanRadiantTemperature));
 
+            if (properties.Count > 0)
+                properties[0] = ", " + properties[0];
+
             string simulatedProperties = string.Join(", ", properties);
-            if (simulatedProperties.Length > 0)
-            {
-                simulatedProperties = ", " + simulatedProperties;
-            }
+
             return "{" + type + epwFile + groundMaterial + shadeMaterial + name + simulatedProperties + "}";
         }
     }
