@@ -14,14 +14,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_oM\LadybugTools_oM.csproj" />
+	<ProjectReference Include="..\LadybugTools_Adapter\LadybugTools_Adapter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Adapter_Engine">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Adapter_Engine.dll</HintPath>
+	  <Private>False</Private>
+	  <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Adapter_oM">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Adapter_oM.dll</HintPath>
+	  <Private>False</Private>
+	  <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Analytical_oM">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Analytical_oM.dll</HintPath>
@@ -70,9 +75,6 @@
       <HintPath>$(ProgramData)\BHoM\Assemblies\Geometry_oM.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="LadybugTools_Adapter">
-      <HintPath>$(ProgramData)\BHoM\Assemblies\LadybugTools_Adapter.dll</HintPath>
     </Reference>
     <Reference Include="Python_Engine">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Python_Engine.dll</HintPath>
