@@ -53,6 +53,7 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
                 return null;
             }
+
             if (!File.Exists(epwFile))
             {
                 BH.Engine.Base.Compute.RecordError($"{epwFile} does not exist.");
