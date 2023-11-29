@@ -101,8 +101,6 @@ class Typology:
     @classmethod
     def from_dict(cls, d: dict) -> "Shelter":
         """Create this object from a dictionary."""
-        d = convert_keys_to_snake_case(d)
-
         new_shelters = []
         for shelter in d["shelters"]:
             if isinstance(shelter, dict):

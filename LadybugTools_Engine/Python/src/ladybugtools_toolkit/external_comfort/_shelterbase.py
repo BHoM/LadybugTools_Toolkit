@@ -116,9 +116,6 @@ class Shelter:
     @classmethod
     def from_dict(cls, d: dict) -> "Shelter":
         """Create this object from a dictionary."""
-
-        #d = convert_keys_to_snake_case(d)
-
         new_vertices = []
         for vertex in d["vertices"]:
             if isinstance(vertex, dict):

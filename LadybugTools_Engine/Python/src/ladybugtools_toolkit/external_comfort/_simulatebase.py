@@ -439,7 +439,6 @@ class SimulationResult:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert this object to a dictionary."""
-
         ground_material_dict = self.ground_material.to_dict()
         shade_material_dict = self.shade_material.to_dict()
 
@@ -450,7 +449,6 @@ class SimulationResult:
 
         d = {
             **{
-                #"_t": "BH.oM.LadybugTools.SimulationResult",
                 "type": "SimulationResult",
                 "epw_file": self.epw_file.as_posix(),
                 "ground_material": ground_material_dict,
@@ -465,9 +463,6 @@ class SimulationResult:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "SimulationResult":
         """Create this object from a dictionary."""
-
-        #d = convert_keys_to_snake_case(d)
-
         if isinstance(d["ground_material"], dict):
             d["ground_material"] = dict_to_material(d["ground_material"])
 

@@ -123,7 +123,6 @@ class ExternalComfort:
 
     def to_dict(self) -> str:
         """Convert this object to a dictionary."""
-
         attr_dict = {}
         for attr in _ATTRIBUTES:
             if getattr(self, attr):
@@ -131,7 +130,6 @@ class ExternalComfort:
 
         d = {
             **{
-                #"_t": "BH.oM.LadybugTools.ExternalComfort",
                 "type": "ExternalComfort",
                 "simulation_result": self.simulation_result.to_dict(),
                 "typology": self.typology.to_dict(),
@@ -142,10 +140,7 @@ class ExternalComfort:
 
     @classmethod
     def from_dict(cls, d: dict) -> "ExternalComfort":
-        """_"""
-
-        d = convert_keys_to_snake_case(d)
-
+        """Create a dictionary from this object."""
         if isinstance(d["simulation_result"], dict):
             d["simulation_result"] = SimulationResult.from_dict(d["simulation_result"])
 
@@ -157,7 +152,7 @@ class ExternalComfort:
                 if isinstance(d[attr], dict):
                     d[attr] = HourlyContinuousCollection.from_dict(d[attr])
                 else:
-                    d[attr] = None    
+                    d[attr] = None
             else:
                 d[attr] = None
 
