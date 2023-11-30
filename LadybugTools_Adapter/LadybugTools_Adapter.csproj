@@ -68,10 +68,14 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Python_Engine">
-      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\Python_Engine.dll</HintPath>
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Python_Engine.dll</HintPath>
+	  <Private>False</Private>
+	  <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Python_oM">
-      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\Python_oM.dll</HintPath>
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Python_oM.dll</HintPath>
+	  <Private>False</Private>
+	  <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Serialiser_Engine">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Serialiser_Engine.dll</HintPath>

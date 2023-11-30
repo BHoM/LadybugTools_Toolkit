@@ -28,11 +28,6 @@ using BH.Engine.Serialiser;
 using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
 using BH.oM.Python;
-using BH.oM.Adapter;
-using BH.Adapter.LadybugTools;
-using BH.Engine.Adapter;
-using System.Collections.Generic;
-using BH.oM.Data.Requests;
 using System.Linq;
 
 namespace BH.Engine.LadybugTools
@@ -45,6 +40,7 @@ namespace BH.Engine.LadybugTools
         [Output("externalComfort", "An external comfort result object containing simulation results.")]
         public static ExternalComfort ExternalComfort(SimulationResult simulationResult, Typology typology)
         {
+            /*
             if (simulationResult == null)
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(simulationResult)} input cannot be null.");
@@ -91,7 +87,8 @@ namespace BH.Engine.LadybugTools
             // remove temporary file
             File.Delete(config.JsonFile.GetFullFileName());
 
-            return externalComfortPopulated;
+            return externalComfortPopulated;*/
+            return null;
         }
     }
 }

@@ -28,9 +28,6 @@ using System.ComponentModel;
 using BH.oM.Python;
 using System.IO;
 using System;
-using BH.oM.Adapter;
-using BH.Engine.Adapter;
-using BH.Adapter.LadybugTools;
 using BH.oM.Data.Requests;
 
 namespace BH.Engine.LadybugTools
@@ -42,7 +39,7 @@ namespace BH.Engine.LadybugTools
         [Output("typologies", "A list of Typology objects.")]
         public static List<Typology> GetTypology(string filter = "")
         {
-            PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            /*PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
             LadybugToolsAdapter adapter = new LadybugToolsAdapter();
             LadybugConfig config = new LadybugConfig()
             {
@@ -65,7 +62,8 @@ namespace BH.Engine.LadybugTools
             List<Typology> typologyObjects = adapter.Pull(new FilterRequest(), actionConfig: config).Cast<Typology>().ToList();
                 new List<Typology>();
 
-            return typologyObjects.Where(m => m.Name.Contains(filter)).ToList();
+            return typologyObjects.Where(m => m.Name.Contains(filter)).ToList();*/
+            return null;
         }
     }
 }

@@ -28,11 +28,9 @@ using System.IO;
 using BH.oM.LadybugTools;
 using System;
 using BH.Engine.Serialiser;
-using BH.Adapter.LadybugTools;
 using BH.oM.Adapter;
 using System.Collections.Generic;
 using BH.oM.Data.Requests;
-using BH.Engine.Adapter;
 using System.Linq;
 
 namespace BH.Engine.LadybugTools
@@ -47,6 +45,7 @@ namespace BH.Engine.LadybugTools
         [PreviousVersion("7.0", "BH.Engine.LadybugTools.Compute.SimulationResult(System.String, BH.oM.LadybugTools.ILadybugToolsMaterial, BH.oM.LadybugTools.ILadybugToolsMaterial)")]
         public static SimulationResult SimulationResult(string epwFile, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial)
         {
+            /*
             // validation prior to passing to Python
             if (epwFile == null)
             {
@@ -109,7 +108,8 @@ namespace BH.Engine.LadybugTools
             // remove temporary file
             File.Delete(config.JsonFile.GetFullFileName());
 
-            return simulationResultPopulated;
+            return simulationResultPopulated;*/
+            return null;
         }
     }
 }

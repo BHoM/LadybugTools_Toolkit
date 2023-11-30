@@ -22,16 +22,12 @@
 
 using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
-using BH.Adapter.LadybugTools;
-using BH.Engine.Adapter;
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using BH.oM.Python;
 using System.IO;
 using System;
-using BH.oM.Adapter;
-using BH.oM.Data.Requests;
 
 namespace BH.Engine.LadybugTools
 {
@@ -42,7 +38,7 @@ namespace BH.Engine.LadybugTools
         [Output("materials", "A list of materials.")]
         public static List<IEnergyMaterialOpaque> GetMaterial(string filter = "")
         {
-            PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
+            /*PythonEnvironment env = Compute.InstallPythonEnv_LBT(true);
             LadybugToolsAdapter adapter = new LadybugToolsAdapter();
             LadybugConfig config = new LadybugConfig()
             {
@@ -64,7 +60,8 @@ namespace BH.Engine.LadybugTools
 
             List<IEnergyMaterialOpaque> materialObjects = adapter.Pull(new FilterRequest(), actionConfig: config).Cast<IEnergyMaterialOpaque>().ToList();
 
-            return materialObjects.Where(m => m.Name.Contains(filter)).ToList();
+            return materialObjects.Where(m => m.Name.Contains(filter)).ToList();*/
+            return null;
         }
     }
 }
