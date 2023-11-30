@@ -22,14 +22,12 @@ namespace BH.Adapter.LadybugTools
             Output<List<object>, bool> output = new Output<List<object>, bool>() { Item1 = new List<object>(), Item2 = false };
 
             List<object> temp = IRunCommand(command);
-            bool success = !(BH.Engine.Base.Query.CurrentEvents().Where(x => x.Type == oM.Base.Debugging.EventType.Error).Any());
+
             output.Item1 = temp;
-            output.Item2 = success;
+            output.Item2 = !(BH.Engine.Base.Query.CurrentEvents().Where(x => x.Type == oM.Base.Debugging.EventType.Error).Any());
 
             return output;
         }
-
-
 
         /**************************************************/
         /* Public methods - Interface                     */
@@ -42,11 +40,12 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Please input a valid Ladybug Command to execute.");
                 return new List<object>();
             }
+
             return RunCommand(command as dynamic);
         }
 
         /**************************************************/
-        /* Private methods - Ladybug Commands             */
+        /* Private methods - Run Ladybug Command          */
         /**************************************************/
 
         private List<object> RunCommand(GetMaterialCommand command)
