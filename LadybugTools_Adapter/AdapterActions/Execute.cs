@@ -39,14 +39,16 @@ namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
+        bool m_executeSuccess = false;
         public override Output<List<object>, bool> Execute(IExecuteCommand command, ActionConfig actionConfig = null)
         {
+            m_executeSuccess = false;
             Output<List<object>, bool> output = new Output<List<object>, bool>() { Item1 = new List<object>(), Item2 = false };
 
             List<object> temp = IRunCommand(command);
 
             output.Item1 = temp;
-            output.Item2 = !(BH.Engine.Base.Query.CurrentEvents().Where(x => x.Type == oM.Base.Debugging.EventType.Error).Any());
+            output.Item2 = m_executeSuccess;
 
             return output;
         }
@@ -93,6 +95,7 @@ namespace BH.Adapter.LadybugTools
 
             List<object> materialObjects = Pull(new FilterRequest(), actionConfig: config).ToList();
 
+            m_executeSuccess = true;
             return materialObjects.Where(m => (m as IEnergyMaterialOpaque).Name.Contains(command.Filter)).ToList();
         }
 
@@ -121,6 +124,7 @@ namespace BH.Adapter.LadybugTools
 
             List<object> typologyObjects = Pull(new FilterRequest(), actionConfig: config).ToList();
 
+            m_executeSuccess = true;
             return typologyObjects.Where(m => (m as Typology).Name.Contains(command.Filter)).ToList();
         }
 
@@ -189,6 +193,7 @@ namespace BH.Adapter.LadybugTools
             // remove temporary file
             File.Delete(config.JsonFile.GetFullFileName());
 
+            m_executeSuccess = true;
             return simulationResultPopulated;
         }
 
@@ -241,6 +246,7 @@ namespace BH.Adapter.LadybugTools
             // remove temporary file
             File.Delete(config.JsonFile.GetFullFileName());
 
+            m_executeSuccess = true;
             return externalComfortPopulated;
         }
 
