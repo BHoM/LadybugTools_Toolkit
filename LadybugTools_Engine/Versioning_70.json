@@ -8,6 +8,6 @@
     "BH.Engine.LadybugTools.Query.GetMaterial(System.String)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method.",
     "BH.Engine.LadybugTools.Query.GetTypology(System.String)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method.",
     "BH.Engine.LadybugTools.Compute.ExternalComfort(BH.oM.LadybugTools.SimulationResult, BH.oM.LadybugTools.Typology)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method.",
-    "BH.Engine.LadybugTools.Compute.SimulationResult(System.String, BH.oM.LadybugTools.IEnergyMaterialOpaque, BH.oM.LadybugTools.IEnergyMaterialOpaque)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method."
+    "BH.Engine.LadybugTools.Compute.SimulationResult(System.String, BH.oM.LadybugTools.ILadybugToolsMaterial, BH.oM.LadybugTools.ILadybugToolsMaterial)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method."
   }
 }
