@@ -10,6 +10,6 @@ namespace BH.oM.LadybugTools
     public class GetTypologyCommand : ILadybugCommand, IObject
     {
         [Description("Text to filter the resultant list by. Filter applies to the Typology Name. Leave blank to return all Typologies.")]
-        public static string Filter { get; set; } = "";
+        public virtual string Filter { get; set; } = "";
     }
 }

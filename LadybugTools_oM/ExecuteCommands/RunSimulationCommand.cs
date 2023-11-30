@@ -12,12 +12,12 @@ namespace BH.oM.LadybugTools
     public class RunSimulationCommand : ILadybugCommand, IObject
     {
         [Description("FileSettings for an EPW file to run the simulation with.")]
-        public static FileSettings EpwFile { get; set; } = new FileSettings();
+        public virtual FileSettings EpwFile { get; set; } = new FileSettings();
 
         [Description("The ground material for the simulation to use.")]
-        public static IEnergyMaterialOpaque GroundMaterial { get; set; } = null;
+        public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = null;
 
         [Description("The shade material for the simulation to use.")]
-        public static IEnergyMaterialOpaque ShadeMaterial { get; set; } = null;
+        public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; } = null;
     }
 }

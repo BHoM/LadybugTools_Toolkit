@@ -10,6 +10,6 @@ namespace BH.oM.LadybugTools
     public class GetMaterialCommand : ILadybugCommand, IObject
     {
         [Description("Text to filter the resultant list by. Filter applies to the Material Name. Leave blank to return all Materials.")]
-        public static string Filter { get; set; } = "";
+        public virtual string Filter { get; set; } = "";
     }
 }
