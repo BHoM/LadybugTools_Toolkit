@@ -1,9 +1,13 @@
 {
-    "MessageForDeleted": {
-        "BH.Engine.LadybugTools.Convert.FromHoneybeeSurface(System.Object)": "This method has been removed as part of the removal of the dependency from Rhino in the LadybugTools_Toolkit.",
-        "BH.Engine.LadybugTools.Create.Typology(System.Collections.Generic.List<BH.oM.LadybugTools.Shelter>, System.String, System.Double, System.Double, System.Double)": "This method only did validation for creating the object, which has been moved to methods that take a Typology as an input.",
-        "BH.Engine.LadybugTools.Convert.SnakeCaseToPascalCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
-        "BH.Engine.LadybugTools.Convert.PascalCaseToSnakeCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
-        "BH.Engine.LadybugTools.Compute.EPWtoCustomObject(System.String)": "Due to inclusion of EPW as an object, this method is no longer required and has been removed."
-    }
+  "MessageForDeleted": {
+    "BH.Engine.LadybugTools.Convert.FromHoneybeeSurface(System.Object)": "This method has been removed as part of the removal of the dependency from Rhino in the LadybugTools_Toolkit.",
+    "BH.Engine.LadybugTools.Create.Typology(System.Collections.Generic.List<BH.oM.LadybugTools.Shelter>, System.String, System.Double, System.Double, System.Double)": "This method only did validation for creating the object, which has been moved to methods that take a Typology as an input.",
+    "BH.Engine.LadybugTools.Convert.SnakeCaseToPascalCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
+    "BH.Engine.LadybugTools.Convert.PascalCaseToSnakeCase(System.String)": "This method and other case conversion methods in the LBT Toolkit have been replaced by a single method that can do case conversions when given a case type.",
+    "BH.Engine.LadybugTools.Compute.EPWtoCustomObject(System.String)": "Due to inclusion of EPW as an object, this method is no longer required and has been removed.",
+    "BH.Engine.LadybugTools.Query.GetMaterial(System.String)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method.",
+    "BH.Engine.LadybugTools.Query.GetTypology(System.String)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method.",
+    "BH.Engine.LadybugTools.Compute.ExternalComfort(BH.oM.LadybugTools.SimulationResult, BH.oM.LadybugTools.Typology)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method.",
+    "BH.Engine.LadybugTools.Compute.SimulationResult(System.String, BH.oM.LadybugTools.IEnergyMaterialOpaque, BH.oM.LadybugTools.IEnergyMaterialOpaque)": "All methods that involve serialisation of Ladybug Python objects have been converted into adapter Execute Commands, to access, use a LadybugToolsAdapter with the Execute method."
+  }
 }
