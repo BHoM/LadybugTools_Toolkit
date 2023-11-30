@@ -1078,8 +1078,7 @@ class Wind:
             )
 
         # repeat first element in inputs to apply to the two directions centered about North
-        if direction_bins.is_split:
-            factors = factors + [factors[0]]  # type: ignore
+        factors = factors + [factors[0]]  # type: ignore
 
         # create direction bins for factor to be applied
         intervals = direction_bins.interval_index

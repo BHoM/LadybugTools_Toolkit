@@ -26,9 +26,6 @@ class DirectionBins:
     Args:
         directions (int, optional):
             The number of direction bins that should be created. Defaults to 8.
-        centered (bool, optional):
-            Whether the data should be centered about North - True, or starting from
-            North - False. Defaults to True.
 
     Returns:
         DirectionBins:
@@ -36,20 +33,22 @@ class DirectionBins:
     """
 
     directions: int = 8
-    centered: bool = True
 
     def __len__(self) -> int:
         return self.directions
 
     def __str__(self) -> str:
-        return f"DirectionBins_{self.directions}_{self.centered}"
+        return f"DirectionBins_{self.directions}"
+
+    def __post_init__(self):
+        if self.directions <= 2:
+            raise ValueError("directions must be > 2.")
 
     def to_dict(self) -> dict:
         """Return the object as a dictionary."""
         return {
             "_t": "BH.oM.LadybugTools.DirectionBins",
             "directions": self.directions,
-            "centered": self.centered,
         }
 
     @classmethod
@@ -57,7 +56,6 @@ class DirectionBins:
         """Create a DirectionBins object from a dictionary."""
         return cls(
             directions=data["directions"],
-            centered=data["centered"],
         )
 
     def to_json(self) -> str:
@@ -90,7 +88,7 @@ class DirectionBins:
     @property
     def bins(self) -> list[list[float]]:
         """The direction bins as a list of lists."""
-        return self.direction_bin_edges(self.directions, self.centered)
+        return self.direction_bin_edges(self.directions)
 
     @property
     def lows(self) -> list[float]:
@@ -104,10 +102,8 @@ class DirectionBins:
 
     @property
     def midpoints(self) -> list[float]:
-        """The mipoints within the direction bins."""
-        if self.is_split:
-            return np.concatenate([[0], np.mean(self.bins, axis=1)[1:-1]])
-        return np.mean(self.bins, axis=1)
+        """The midpoints within the direction bins."""
+        return np.concatenate([[0], np.mean(self.bins, axis=1)[1:-1]])
 
     @property
     def bin_width(self) -> float:
@@ -115,51 +111,33 @@ class DirectionBins:
         return 360 / self.directions
 
     @property
-    def is_split(self) -> bool:
-        """True if the "north" bin is split into two parts - before and after north."""
-        return len(self.bins) != self.directions
-
-    @property
     def cardinal_directions(self) -> list[str]:
         """The direction bins as cardinal directions."""
         return [cardinality(i, directions=32) for i in self.midpoints]
 
     @staticmethod
-    def direction_bin_edges(directions: int, centered: bool) -> list[list[float]]:
+    def direction_bin_edges(directions: int) -> list[list[float]]:
         """Create a list of start/end points for wind directions, each bin increasing from the previous one.
-            This method assumes that North is at 0 degrees.
-            If the direction bins cross North then the bins returned are all increasing, with the one crossing north
-            split into two (and placed at either end of the list of bins).
+            This method assumes that North is at 0 degrees. The bins returned are all increasing,
+            with the one crossing north split into two (and placed at either end of the list of bins).
 
         Args:
             directions (int, optional):
                 The number of directions to bin wind data into.
-            centered (bool, optional):
-                Whether the data should be centered about North - True, or starting from
-                North - False. Defaults to True.
 
         Returns:
             list[list[float]]:
                 A set of bin edges.
         """
 
-        if directions < 2:
-            raise ValueError("n_directions must be ≥ 2.")
-
         # get angle for each bin
         bin_angle = 360 / directions
 
         # get all bin edge angles for 0-360deg
-        bin_edges = np.arange(
-            0 if not centered else 0 - (bin_angle / 2), 360, bin_angle
-        )
+        bin_edges = np.arange(0 - (bin_angle / 2), 360, bin_angle)
 
         # replace -Ve values with the 360-X version
         bin_edges = np.where(bin_edges < 0, 360 + bin_edges, bin_edges)
-
-        # add north to sequence if required
-        if not centered:
-            bin_edges = np.concatenate([bin_edges, [360]])
 
         # create pairs of edges for each bin
         bin_edges = rolling_window(bin_edges, 2)
@@ -216,13 +194,12 @@ class DirectionBins:
         for low, high in bin_labels:
             d[(low, high)] = temp[1][(temp[0] > low) & (temp[0] <= high)].tolist()
 
-        # combine split bins if present
-        if self.is_split:
-            combined_bin = d[bin_labels[0]] + d[bin_labels[-1]]
-            d = {
-                **{(bin_labels[-1][0], bin_labels[0][1]): combined_bin},
-                **dict(list(d.items())[1:-1]),
-            }
+        # combine split bins across north
+        combined_bin = d[bin_labels[0]] + d[bin_labels[-1]]
+        d = {
+            **{(bin_labels[-1][0], bin_labels[0][1]): combined_bin},
+            **dict(list(d.items())[1:-1]),
+        }
         return d
 
     @bhom_analytics()

@@ -1074,8 +1074,13 @@ def scrape_openmeteo(
 
     if isinstance(start_date, str):
         start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    if not isinstance(start_date, datetime):
+        raise ValueError("The start_date must be a datetime object or string.")
+
     if isinstance(end_date, str):
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
+    if not isinstance(end_date, datetime):
+        raise ValueError("The end_date must be a datetime object or string.")
 
     if start_date > end_date:
         raise ValueError("The start_date must be before the end_date.")
@@ -1095,6 +1100,7 @@ def scrape_openmeteo(
     missing_variables = []
     available_data = []
     for var in variables:
+        # TODO - add check in here for whether data exists as subset of longer time period within cache
         sp = (
             _dir
             / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
@@ -1179,6 +1185,8 @@ def scrape_meteostat(
             A DataFrame containing scraped data.
     """
 
+    # TODO - implement caching in here, similar to how it's done for the OpenMeteo method
+
     if latitude < -90 or latitude > 90:
         raise ValueError("The latitude must be between -90 and 90 degrees.")
     if longitude < -180 or longitude > 180:
@@ -1186,8 +1194,13 @@ def scrape_meteostat(
 
     if isinstance(start_date, str):
         start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    if not isinstance(start_date, datetime):
+        raise ValueError("The start_date must be a datetime object or string.")
+
     if isinstance(end_date, str):
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
+    if not isinstance(end_date, datetime):
+        raise ValueError("The end_date must be a datetime object or string.")
 
     location = Point(latitude, longitude, altitude)
     data = Hourly(location, start_date, end_date).fetch()
