@@ -128,12 +128,13 @@ def test_wind_from_dataframe():
 
 def test_wind_from_openmeteo():
     """."""
-    w = Wind.from_openmeteo(
-        latitude=51.5074,
-        longitude=0.1278,
-        start_date="2020-01-01",
-        end_date="2020-01-02",
-    )
+    with pytest.warns(UserWarning):
+        w = Wind.from_openmeteo(
+            latitude=EPW_OBJ.location.latitude,
+            longitude=EPW_OBJ.location.longitude,
+            start_date="2021-01-01",
+            end_date="2021-02-01",
+        )
     assert isinstance(
         w,
         Wind,

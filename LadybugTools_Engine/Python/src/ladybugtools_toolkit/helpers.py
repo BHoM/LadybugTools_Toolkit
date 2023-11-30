@@ -1090,18 +1090,25 @@ def scrape_openmeteo(
 
     _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_openmeteo"
     _dir.mkdir(exist_ok=True, parents=True)
-    sp = (
-        _dir
-        / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{int(convert_units)}_{len(variables):02d}.h5"
-    )
 
-    if sp.exists():
-        if (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 28:
-            CONSOLE_LOGGER.info(f"Loading cached data from {sp}.")
-            return pd.read_hdf(sp, key="df")
+    # check _dir for existence of scraped data matching this query
+    missing_variables = []
+    available_data = []
+    for var in variables:
+        sp = (
+            _dir
+            / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
+        )
+        if sp.exists() and (
+            (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 60
+        ):
+            # CONSOLE_LOGGER.info(f"Reloading cached data for {var.name}")
+            available_data.append(pd.read_csv(sp, index_col=0, parse_dates=True))
+        else:
+            missing_variables.append(var)
 
     # construct query string
-    var_strings = ",".join([i.openmeteo_name for i in variables])
+    var_strings = ",".join([var.openmeteo_name for var in missing_variables])
     query_string = (
         "https://archive-api.open-meteo.com/v1/era5?latitude="
         f"{latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&"
@@ -1112,32 +1119,35 @@ def scrape_openmeteo(
     with urllib.request.urlopen(query_string) as url:
         data = json.load(url)
 
-    # convert resultant data to dataframe
-    headers = [f"{k} ({v})" for (k, v) in data["hourly_units"].items()]
-    values = [v for _, v in data["hourly"].items()]
-    df = pd.DataFrame(np.array(values).T, columns=headers)
-    df = df.set_index(df.columns[0])
+    # construct dataframe
+    df = pd.DataFrame(data["hourly"])
+    df.set_index("time", inplace=True, drop=True)
     df.index.name = None
     df.index = pd.to_datetime(df.index)
     df = df.apply(pd.to_numeric, errors="coerce")
 
+    # write to cache
+    for col in df.columns:
+        sp = (
+            _dir
+            / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv"
+        )
+        df[col].to_csv(sp)
+
+    # append available_data
+    df = pd.concat(available_data + [df], axis=1)
+
     if not convert_units:
-        df.to_hdf(sp, key="df", complevel=9, complib="blosc:zlib")
         return df
 
     new_df = []
     for i in OpenMeteoVariable:
         try:
-            new_df.append(
-                i.convert(df[i.openmeteo_table_name]).rename(i.target_table_name)
-            )
+            new_df.append(i.convert(df[i.openmeteo_name]).rename(i.target_table_name))
         except KeyError:
             pass
 
-    df = pd.concat(new_df, axis=1)
-    df.to_hdf(sp, key="df", complevel=9, complib="blosc:zlib")
-
-    return df
+    return pd.concat(new_df, axis=1)
 
 
 def scrape_meteostat(
@@ -1344,7 +1354,6 @@ def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
         return (np.nan, np.nan, np.nan)  # type: ignore
 
 
-@bhom_analytics()
 def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     """Get the average angle from a set of weighted angles.
 
@@ -1359,6 +1368,8 @@ def circular_weighted_mean(angles: list[float], weights: list[float] = None):
             An average wind direction.
     """
     angles = np.array(angles)
+    angles = np.where(angles == 360, 0, angles)
+
     if weights is None:
         weights = np.ones_like(angles) / len(angles)
     weights = np.array(weights)
@@ -1369,8 +1380,21 @@ def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     if np.any(angles < 0) or np.any(angles > 360):
         raise ValueError("Input angles exist outside of expected range (0-360).")
 
-    weights = np.array(weights)
-    weights = weights / sum(weights)
+    # checks for opposing or equally spaced angles, with equal weighting
+    if len(set(weights)) == 1:
+        _sorted = np.sort(angles)
+        if len(set(angles)) == 2:
+            a, b = np.meshgrid(_sorted, _sorted)
+            if np.any(a - b == 180):
+                warnings.warn(
+                    "Input angles are opposing, meaning determining the mean is impossible. An attempt will be made to determine the mean, but this will be perpendicular to the opposing angles and not accurate."
+                )
+        if any(np.diff(_sorted) == 360 / len(angles)):
+            warnings.warn(
+                "Input angles are equally spaced, meaning determining the mean is impossible. An attempt will be made to determine the mean, but this will not be accurate."
+            )
+
+    weights = np.array(weights) / sum(weights)
 
     x = y = 0.0
     for angle, weight in zip(angles, weights):
@@ -1382,44 +1406,10 @@ def circular_weighted_mean(angles: list[float], weights: list[float] = None):
     if mean < 0:
         mean = 360 + mean
 
-    return mean
+    if mean in (360.0, -0.0):
+        mean = 0.0
 
-
-@bhom_analytics()
-def wind_direction_average(angles: list[float]) -> float:
-    """Get the average wind direction from a set of wind directions.
-
-    Args:
-        angles (list[float]):
-            A collection of equally weighted wind directions, in degrees from North (0).
-
-    Returns:
-        float:
-            An average angle.
-    """
-
-    angles = np.array(angles)  # type: ignore
-
-    if np.any(angles < 0) or np.any(angles > 360):  # type: ignore
-        raise ValueError("Input angles exist outside of expected range (0-360).")
-
-    if len(angles) == 0:
-        return np.NaN
-
-    angles = np.radians(angles)  # type: ignore
-
-    average_angle = np.round(
-        np.arctan2(
-            (1 / len(angles) * np.sin(angles)).sum(),
-            (1 / len(angles) * np.cos(angles)).sum(),
-        ),
-        2,
-    )
-
-    if average_angle < 0:
-        average_angle = (np.pi * 2) - -average_angle
-
-    return np.degrees(average_angle)
+    return np.round(mean, 5)
 
 
 def wind_speed_at_height(
@@ -1944,7 +1934,6 @@ def month_hour_binned_series(
     return df
 
 
-@bhom_analytics()
 def sunrise_sunset(location: Location) -> pd.DataFrame():
     """Calculate sunrise and sunset times for a given location and year. Includes
     civil, nautical and astronomical twilight.

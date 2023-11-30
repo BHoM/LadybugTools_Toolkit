@@ -37,7 +37,6 @@ from .helpers import (
     scrape_openmeteo,
     weibull_directional,
     weibull_pdf,
-    wind_direction_average,
     wind_speed_at_height,
 )
 from .ladybug_extension.analysisperiod import (
@@ -599,7 +598,7 @@ class Wind:
 
         resampled_speeds = self.ws.resample(rule).mean()
         resampled_datetimes = resampled_speeds.index.tolist()
-        resampled_directions = self.wd.resample(rule).apply(wind_direction_average)
+        resampled_directions = self.wd.resample(rule).apply(circular_weighted_mean)
 
         if resampled_speeds.isna().sum() > 0:
             warnings.warn(
@@ -1188,7 +1187,7 @@ class Wind:
                 (
                     self.wd.groupby(
                         [self.wd.index.month, self.wd.index.hour], axis=0
-                    ).apply(wind_direction_average)
+                    ).apply(circular_weighted_mean)
                     # + 90
                 )
                 % 360
@@ -1317,7 +1316,7 @@ class Wind:
             _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
         # remove 0-speed values
-        local_w = self.filter_by_speed(min_speed=0.001)
+        local_w = self  # .filter_by_speed(min_speed=0.001)
 
         if not data:
             data = local_w.ws
