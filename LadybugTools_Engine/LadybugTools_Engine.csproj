@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LadybugTools_oM\LadybugTools_oM.csproj" />
-	<ProjectReference Include="..\LadybugTools_Adapter\LadybugTools_Adapter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
