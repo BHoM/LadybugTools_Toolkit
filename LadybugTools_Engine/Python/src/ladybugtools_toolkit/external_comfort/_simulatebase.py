@@ -439,24 +439,21 @@ class SimulationResult:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert this object to a dictionary."""
-
-        ground_material_dict = material_to_bhom(self.ground_material)
-        shade_material_dict = material_to_bhom(self.shade_material)
+        ground_material_dict = self.ground_material.to_dict()
+        shade_material_dict = self.shade_material.to_dict()
 
         attr_dict = {}
         for attr in _ATTRIBUTES:
             if getattr(self, attr):
-                attr_dict[pascalcase(attr)] = hourlycontinuouscollection_to_bhom(
-                    getattr(self, attr)
-                )
+                attr_dict[attr] = getattr(self, attr).to_dict()
 
         d = {
             **{
-                "_t": "BH.oM.LadybugTools.SimulationResult",
-                "EpwFile": self.epw_file.as_posix(),
-                "GroundMaterial": ground_material_dict,
-                "ShadeMaterial": shade_material_dict,
-                "Identifier": self.identifier,
+                "type": "SimulationResult",
+                "epw_file": self.epw_file.as_posix(),
+                "ground_material": ground_material_dict,
+                "shade_material": shade_material_dict,
+                "identifier": self.identifier,
             },
             **attr_dict,
         }
@@ -466,9 +463,6 @@ class SimulationResult:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "SimulationResult":
         """Create this object from a dictionary."""
-
-        d = convert_keys_to_snake_case(d)
-
         if isinstance(d["ground_material"], dict):
             d["ground_material"] = dict_to_material(d["ground_material"])
 
@@ -479,6 +473,8 @@ class SimulationResult:
             if d.get(attr, None):
                 if isinstance(d[attr], dict):
                     d[attr] = HourlyContinuousCollection.from_dict(d[attr])
+            else:
+                d[attr] = None
 
         return cls(
             epw_file=d["epw_file"],

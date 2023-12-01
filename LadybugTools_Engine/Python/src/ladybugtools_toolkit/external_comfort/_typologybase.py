@@ -89,20 +89,18 @@ class Typology:
             shelter_dicts.append(shelter.to_dict())
 
         d = {
-            "_t": "BH.oM.LadybugTools.Typology",
-            "Identifier": self.identifier,
-            "Shelters": shelter_dicts,
-            "EvaporativeCoolingEffect": self.evaporative_cooling_effect,
-            "TargetWindSpeed": self.target_wind_speed,
-            "RadiantTemperatureAdjustment": self.radiant_temperature_adjustment,
+            "type": "Typology",
+            "identifier": self.identifier,
+            "shelters": shelter_dicts,
+            "evaporative_cooling_effect": self.evaporative_cooling_effect,
+            "target_wind_speed": self.target_wind_speed,
+            "radiant_temperature_adjustment": self.radiant_temperature_adjustment,
         }
         return d
 
     @classmethod
     def from_dict(cls, d: dict) -> "Shelter":
         """Create this object from a dictionary."""
-        d = convert_keys_to_snake_case(d)
-
         new_shelters = []
         for shelter in d["shelters"]:
             if isinstance(shelter, dict):
