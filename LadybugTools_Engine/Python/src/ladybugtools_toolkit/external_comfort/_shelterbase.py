@@ -101,28 +101,26 @@ class Shelter:
         """Convert this object to a dictionary."""
         point_dicts = []
         for point in self.vertices:
-            point_dicts.append(point3d_to_bhom(point))
+            point_dict = point.to_dict()
+            point_dict["type"] = "Point3D"
+            point_dicts.append(point_dict)
 
         d = {
-            "_t": "BH.oM.LadybugTools.Shelter",
-            "Vertices": point_dicts,
-            "WindPorosity": self.wind_porosity,
-            "RadiationPorosity": self.radiation_porosity,
+            "type": "Shelter",
+            "vertices": point_dicts,
+            "wind_porosity": self.wind_porosity,
+            "radiation_porosity": self.radiation_porosity,
         }
         return d
 
     @classmethod
     def from_dict(cls, d: dict) -> "Shelter":
         """Create this object from a dictionary."""
-
-        d = convert_keys_to_snake_case(d)
-
-        new_verts = []
-        for vert in d["vertices"]:
-            if isinstance(vert, dict):
-                vert["Type"] = "Point3D"
-                new_verts.append(Point3D.from_dict(vert))
-        d["vertices"] = new_verts
+        new_vertices = []
+        for vertex in d["vertices"]:
+            if isinstance(vertex, dict):
+                new_vertices.append(Point3D.from_dict(vertex))
+        d["vertices"] = new_vertices
 
         return cls(
             vertices=d["vertices"],

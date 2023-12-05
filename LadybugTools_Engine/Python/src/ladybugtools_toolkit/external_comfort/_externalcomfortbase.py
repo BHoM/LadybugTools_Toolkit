@@ -123,19 +123,16 @@ class ExternalComfort:
 
     def to_dict(self) -> str:
         """Convert this object to a dictionary."""
-
         attr_dict = {}
         for attr in _ATTRIBUTES:
             if getattr(self, attr):
-                attr_dict[pascalcase(attr)] = hourlycontinuouscollection_to_bhom(
-                    getattr(self, attr)
-                )
+                attr_dict[attr] = getattr(self, attr).to_dict()
 
         d = {
             **{
-                "_t": "BH.oM.LadybugTools.ExternalComfort",
-                "SimulationResult": self.simulation_result.to_dict(),
-                "Typology": self.typology.to_dict(),
+                "type": "ExternalComfort",
+                "simulation_result": self.simulation_result.to_dict(),
+                "typology": self.typology.to_dict(),
             },
             **attr_dict,
         }
@@ -143,10 +140,7 @@ class ExternalComfort:
 
     @classmethod
     def from_dict(cls, d: dict) -> "ExternalComfort":
-        """_"""
-
-        d = convert_keys_to_snake_case(d)
-
+        """Create a dictionary from this object."""
         if isinstance(d["simulation_result"], dict):
             d["simulation_result"] = SimulationResult.from_dict(d["simulation_result"])
 
@@ -157,6 +151,10 @@ class ExternalComfort:
             if d.get(attr, None):
                 if isinstance(d[attr], dict):
                     d[attr] = HourlyContinuousCollection.from_dict(d[attr])
+                else:
+                    d[attr] = None
+            else:
+                d[attr] = None
 
         return cls(
             simulation_result=d["simulation_result"],
