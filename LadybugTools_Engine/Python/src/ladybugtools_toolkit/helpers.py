@@ -35,6 +35,7 @@ from ladybug_geometry.geometry2d import Vector2D
 from meteostat import Hourly, Point
 
 from .bhom.analytics import bhom_analytics
+from .bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.dt import lb_datetime_from_datetime
 
 # pylint: enable=E0401
@@ -1105,7 +1106,7 @@ def scrape_openmeteo(
         if sp.exists() and (
             (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 60
         ):
-            # CONSOLE_LOGGER.info(f"Reloading cached data for {var.name}")
+            CONSOLE_LOGGER.info(f"Reloading cached data for {var.name}")
             available_data.append(pd.read_csv(sp, index_col=0, parse_dates=True))
         else:
             missing_variables.append(var)
@@ -1143,14 +1144,16 @@ def scrape_openmeteo(
     if not convert_units:
         return df
 
-    new_df = []
-    for i in OpenMeteoVariable:
-        try:
-            new_df.append(i.convert(df[i.openmeteo_name]).rename(i.target_table_name))
-        except KeyError:
-            pass
+    renamer = dict(
+        zip(
+            *[
+                [i.openmeteo_name for i in OpenMeteoVariable],
+                [i.target_table_name for i in OpenMeteoVariable],
+            ]
+        )
+    )
 
-    return pd.concat(new_df, axis=1)
+    return df.rename(columns=renamer)
 
 
 def scrape_meteostat(

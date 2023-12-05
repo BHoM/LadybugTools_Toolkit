@@ -144,7 +144,7 @@ class Wind:
 
     @classmethod
     def from_dict(cls, d: dict) -> "Wind":
-        """Create a DirectionBins object from a dictionary."""
+        """Create this object from a dictionary."""
 
         return cls(
             wind_speeds=d["wind_speeds"],
@@ -1204,7 +1204,7 @@ class Wind:
         """Calculate the prevailing wind direction/s for this object.
 
         Args:
-            directions (DirectionBins, optional):
+            directions (int, optional):
                 The number of wind directions to bin values into.
             n (int, optional):
                 The number of prevailing directions to return. Default is 1.

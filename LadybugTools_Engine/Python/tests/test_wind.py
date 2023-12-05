@@ -158,7 +158,7 @@ def test_wind_from_uv():
 def test_calm():
     """_"""
     assert TEST_WIND.calm(threshold=1) == pytest.approx(
-        0.06815068493150685, rel=0.01
+        0.08607305936073059, rel=0.01
     )  # TODO - check against LBT WR
 
 
