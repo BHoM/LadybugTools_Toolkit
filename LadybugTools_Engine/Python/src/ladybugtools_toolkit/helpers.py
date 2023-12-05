@@ -33,11 +33,8 @@ from ladybug.skymodel import (
 from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d import Vector2D
 from meteostat import Hourly, Point
-from scipy.stats import weibull_min
-from tqdm import tqdm
 
 from .bhom.analytics import bhom_analytics
-from .bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.dt import lb_datetime_from_datetime
 
 # pylint: enable=E0401
@@ -1312,59 +1309,6 @@ def get_soil_temperatures(
         variables=variables,
         convert_units=True,
     )
-
-
-@bhom_analytics()
-def weibull_directional(
-    binned_data: dict[tuple[float, float], list[float]]
-) -> pd.DataFrame:
-    """Calculate the weibull coefficients for a given set of binned data in the form
-    {(low, high): [speeds], (low, high): [speeds]}, binned by the number of
-    directions specified.
-    Args:
-        binned_data (dict[tuple[float, float], list[float]]):
-            A dictionary of binned wind speed data.
-    Returns:
-        pd.DataFrame:
-            A DataFrame with (direction_bin_low, direction_bin_high) as index,
-            and weibull coefficients as columns.
-    """
-    d = {}
-    for (low, high), speeds in tqdm(
-        binned_data.items(), desc="Calculating Weibull shape parameters"
-    ):
-        d[(low, high)] = weibull_pdf(speeds)
-
-    return pd.DataFrame.from_dict(d, orient="index", columns=["k", "loc", "c"])
-
-
-@bhom_analytics()
-def weibull_pdf(wind_speeds: list[float]) -> tuple[float]:
-    """Estimate the two-parameter Weibull parameters for a set of wind speeds.
-
-    Args:
-        wind_speeds (list[float]):
-            A list of wind speeds.
-
-    Returns:
-        k (float):
-            Shape parameter.
-        loc (float):
-            Location parameter.
-        c (float):
-            Scale parameter.
-    """
-
-    ws = np.array(wind_speeds)
-    ws = ws[ws != 0]
-    ws = ws[~np.isnan(ws)]
-    if ws.min() < 0:
-        raise ValueError("Wind speeds must be positive.")
-    try:
-        return weibull_min.fit(ws)
-    except ValueError as exc:
-        warnings.warn(f"Not enough data to calculate Weibull parameters.\n{exc}")
-        return (np.nan, np.nan, np.nan)  # type: ignore
 
 
 def circular_weighted_mean(angles: list[float], weights: list[float] = None):

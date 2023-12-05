@@ -36,7 +36,6 @@ from ladybugtools_toolkit.helpers import (
     temperature_at_height,
     timedelta_tostring,
     validate_timeseries,
-    weibull_pdf,
     wind_speed_at_height,
 )
 
@@ -173,35 +172,6 @@ def test_temperature_at_height():
 
     # Test case 3: input with kwargs
     assert temperature_at_height(10, 10, 200, lapse_rate=0.009) == 8.29
-
-
-def test_weibull_pdf():
-    """_"""
-    # Test case 1: normal input
-    wind_speeds = [1, 2, 3, 4, 5]
-    k, loc, c = weibull_pdf(wind_speeds)
-    assert isinstance(k, float)
-    assert isinstance(loc, float)
-    assert isinstance(c, float)
-
-    # Test case 2: input with zeros
-    wind_speeds = [0, 1, 2, 3, 4, 5]
-    k, loc, c = weibull_pdf(wind_speeds)
-    assert isinstance(k, float)
-    assert isinstance(loc, float)
-    assert isinstance(c, float)
-
-    # Test case 3: input with NaNs
-    wind_speeds = [1, 2, 3, 4, 5, float("nan")]
-    k, loc, c = weibull_pdf(wind_speeds)
-    assert isinstance(k, float)
-    assert isinstance(loc, float)
-    assert isinstance(c, float)
-
-    # Test case 4: input with negative values
-    wind_speeds = [-1, 1, 2, 3, 4, 5]
-    with pytest.raises(ValueError):
-        k, loc, c = weibull_pdf(wind_speeds)
 
 
 def test_circular_weighted_mean():

@@ -26,7 +26,6 @@ from .ladybug_extension.analysisperiod import (
     describe_analysis_period,
 )
 from .ladybug_extension.location import location_to_string
-from .directionbins import DirectionBins
 from .ladybug_extension.datacollection import header_to_string
 
 from .plot.utilities import contrasting_color, format_polar_plot
