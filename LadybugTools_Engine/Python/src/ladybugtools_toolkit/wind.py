@@ -1808,13 +1808,6 @@ class Wind:
             remove_calm=True,
         )
 
-        # set y-axis limits
-        if not ylim:
-            ylim = (0, max(binned.sum(axis=1)) + 0.01 if label else 0)
-        if len(ylim) != 2:
-            raise ValueError("ylim must be a tuple of length 2.")
-        ax.set_ylim(ylim)
-
         # set colors
         if colors is None:
             if other_data is None:
@@ -1845,8 +1838,6 @@ class Wind:
         # HACK end
 
         ax.set_title(textwrap.fill(f"{self.source}", 75))
-
-        format_polar_plot(ax)
 
         theta_width = np.deg2rad(360 / directions)
         patches = []
@@ -1890,6 +1881,16 @@ class Wind:
                 title=binned.columns.name,
                 title_fontsize="small",
             )
+
+        # set y-axis limits
+        if ylim is None:
+            ylim = (0, max(binned.sum(axis=1)))
+        if len(ylim) != 2:
+            raise ValueError("ylim must be a tuple of length 2.")
+        ax.set_ylim(ylim)
+        ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
+
+        format_polar_plot(ax, yticklabels=True)
 
         return ax
 
