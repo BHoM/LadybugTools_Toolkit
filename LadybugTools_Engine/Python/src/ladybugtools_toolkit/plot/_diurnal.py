@@ -118,7 +118,7 @@ def diurnal(
     ax.set_title(
         create_title(
             kwargs.pop("title", None),
-            f"Average {period} diurnal profile (~{samples_per_timestep:0.0f} samples per timestep)",
+            f"Average {period} diurnal profile (≈{samples_per_timestep:0.0f} samples per timestep)",
         )
     )
 
