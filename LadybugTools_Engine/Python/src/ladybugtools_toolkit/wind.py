@@ -1184,11 +1184,12 @@ class Wind:
             if b not in df.columns:
                 df[b] = 0
         df.sort_index(axis=1, inplace=True)
-
+        df = df.T
         for b in direction_bin_tuples:
-            if b not in df.index:
-                df.loc[b] = 0
-        df.sort_index(axis=0, inplace=True)
+            if b not in df.columns:
+                df[b] = 0
+        df.sort_index(axis=1, inplace=True)
+        df = df.T
 
         if density:
             df = df / df.values.sum()
