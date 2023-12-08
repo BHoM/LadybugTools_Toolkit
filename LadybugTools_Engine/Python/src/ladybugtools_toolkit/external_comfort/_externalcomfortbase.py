@@ -218,7 +218,7 @@ class ExternalComfort:
                 The resultant PMV for this Typology, in the given
                 SimulationResult location.
         """
-        CONSOLE_LOGGER(
+        CONSOLE_LOGGER.info(
             f"{self.__class__.__name__} - calculating standard effective temperature"
         )
         pmv = PMV(

@@ -611,14 +611,14 @@ def create_triangulation(
 
 
 @bhom_analytics()
-def format_polar_plot(ax: plt.Axes) -> plt.Axes:
-    """Format a polar plot, to svae on having to write this every time!"""
+def format_polar_plot(ax: plt.Axes, yticklabels: bool = True) -> plt.Axes:
+    """Format a polar plot, to save on having to write this every time!"""
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
 
     # format plot area
     ax.spines["polar"].set_visible(False)
-    ax.grid(True, which="both", ls="--", zorder=0, alpha=0.5)
+    ax.grid(True, which="both", ls="--", zorder=0, alpha=0.3)
     ax.yaxis.set_major_locator(plt.MaxNLocator(6))
     plt.setp(ax.get_yticklabels(), fontsize="small")
     ax.set_xticks(np.radians((0, 90, 180, 270)), minor=False)
@@ -647,4 +647,5 @@ def format_polar_plot(ax: plt.Axes) -> plt.Axes:
         minor=True,
         **{"fontsize": "x-small"},
     )
-    ax.set_yticklabels([])
+    if not yticklabels:
+        ax.set_yticklabels([])

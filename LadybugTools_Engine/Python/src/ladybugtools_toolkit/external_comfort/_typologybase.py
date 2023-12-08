@@ -172,7 +172,7 @@ class Typology:
 
         ws = []
         for sh_ws, tgt_ws in list(zip(shelter_wind_speed, self.target_wind_speed)):
-            if tgt_ws is None:
+            if tgt_ws is None or np.isnan(tgt_ws):
                 ws.append(sh_ws)
             else:
                 ws.append(tgt_ws)

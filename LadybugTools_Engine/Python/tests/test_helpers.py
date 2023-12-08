@@ -1,4 +1,5 @@
-from datetime import timedelta  # pylint: disable=E0401
+from datetime import timedelta
+import warnings  # pylint: disable=E0401
 
 
 import numpy as np
@@ -35,8 +36,6 @@ from ladybugtools_toolkit.helpers import (
     temperature_at_height,
     timedelta_tostring,
     validate_timeseries,
-    weibull_pdf,
-    wind_direction_average,
     wind_speed_at_height,
 )
 
@@ -77,6 +76,7 @@ def test_epw_wind_vectors():
 def test_scrape_openmeteo():
     """_"""
     with pytest.raises(ValueError):
+        # latitude out of range
         scrape_openmeteo(
             latitude=180,
             longitude=EPW_OBJ.location.longitude,
@@ -87,6 +87,7 @@ def test_scrape_openmeteo():
                 OpenMeteoVariable.DEWPOINT_2M,
             ],
         )
+        # longitude out of range
         scrape_openmeteo(
             latitude=EPW_OBJ.location.latitude,
             longitude=-1000,
@@ -97,6 +98,7 @@ def test_scrape_openmeteo():
                 OpenMeteoVariable.DEWPOINT_2M,
             ],
         )
+        # start date after end date
         scrape_openmeteo(
             latitude=EPW_OBJ.location.latitude,
             longitude=EPW_OBJ.location.longitude,
@@ -109,6 +111,7 @@ def test_scrape_openmeteo():
                 OpenMeteoVariable.TEMPERATURE_2M,
             ],
         )
+        # invalid variable
         scrape_openmeteo(
             latitude=EPW_OBJ.location.latitude,
             longitude=EPW_OBJ.location.longitude,
@@ -127,8 +130,8 @@ def test_scrape_openmeteo():
         start_date="2021-01-01",
         end_date="2021-02-01",
         variables=[
-            OpenMeteoVariable.DEWPOINT_2M,
-            OpenMeteoVariable.SOIL_MOISTURE_28_TO_100CM,
+            OpenMeteoVariable.WINDSPEED_10M,
+            OpenMeteoVariable.WINDDIRECTION_10M,
             OpenMeteoVariable.TEMPERATURE_2M,
         ],
     ).shape == (768, 3)
@@ -137,29 +140,6 @@ def test_scrape_openmeteo():
 def test_chunks():
     """_"""
     assert len(list(chunks([1, 2, 3, 4, 5, 6, 7, 8, 9], 2))) == 5
-
-
-def test_wind_direction_average():
-    """_"""
-    # Test empty list
-    assert np.isnan(wind_direction_average([]))
-
-    # Test single angle
-    assert wind_direction_average([90]) == pytest.approx(90, rel=0.05)
-
-    # Test two angles
-    assert wind_direction_average([0, 180]) == pytest.approx(90, rel=0.05)
-
-    # Test three angles
-    assert wind_direction_average([90, 100, 110]) == pytest.approx(100.3, rel=0.05)
-
-    # Test angles outside of expected range
-    with pytest.raises(ValueError):
-        wind_direction_average([-10, 0, 90, 180, 270, 360, 400])
-
-    # Test large number of angles
-    angles = [i for i in range(10, 350, 5)]
-    assert wind_direction_average(angles) == pytest.approx(178, rel=0.05)
 
 
 def test_radiation_at_height():
@@ -194,35 +174,6 @@ def test_temperature_at_height():
     assert temperature_at_height(10, 10, 200, lapse_rate=0.009) == 8.29
 
 
-def test_weibull_pdf():
-    """_"""
-    # Test case 1: normal input
-    wind_speeds = [1, 2, 3, 4, 5]
-    k, loc, c = weibull_pdf(wind_speeds)
-    assert isinstance(k, float)
-    assert isinstance(loc, float)
-    assert isinstance(c, float)
-
-    # Test case 2: input with zeros
-    wind_speeds = [0, 1, 2, 3, 4, 5]
-    k, loc, c = weibull_pdf(wind_speeds)
-    assert isinstance(k, float)
-    assert isinstance(loc, float)
-    assert isinstance(c, float)
-
-    # Test case 3: input with NaNs
-    wind_speeds = [1, 2, 3, 4, 5, float("nan")]
-    k, loc, c = weibull_pdf(wind_speeds)
-    assert isinstance(k, float)
-    assert isinstance(loc, float)
-    assert isinstance(c, float)
-
-    # Test case 4: input with negative values
-    wind_speeds = [-1, 1, 2, 3, 4, 5]
-    with pytest.raises(ValueError):
-        k, loc, c = weibull_pdf(wind_speeds)
-
-
 def test_circular_weighted_mean():
     """_"""
 
@@ -249,9 +200,15 @@ def test_circular_weighted_mean():
     weights = [1 / 3, 1 / 3, 1 / 3]
     assert np.isclose(circular_weighted_mean(angles, weights), 180)
 
+    # Test equally distributed, with equal weighting
+    angles = [45, 135, 225, 315]
+    with pytest.warns(UserWarning):
+        circular_weighted_mean(angles)
+
     # Test without weights specified
     angles = [0, 90, 180, 270]
-    assert isinstance(circular_weighted_mean(angles), float)
+    with pytest.warns(UserWarning):
+        assert isinstance(circular_weighted_mean(angles), float)
 
     # Test with different weights
     angles = [90, 180, 270]
@@ -261,12 +218,13 @@ def test_circular_weighted_mean():
     # Test about 0
     angles = [355, 5]
     weights = [0.5, 0.5]
-    assert np.isclose(circular_weighted_mean(angles, weights), 360)
+    assert np.isclose(circular_weighted_mean(angles, weights), 0)
 
     # Test opposing
     angles = [0, 180]
     weights = [0.5, 0.5]
-    assert isinstance(circular_weighted_mean(angles, weights), float)
+    with pytest.warns(UserWarning):
+        assert isinstance(circular_weighted_mean(angles, weights), float)
 
 
 def test_sanitise_string():
