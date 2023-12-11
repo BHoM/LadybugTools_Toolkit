@@ -1054,7 +1054,7 @@ def seasonality_from_temperature_timeseries(
     series = series.loc[~series.index.duplicated()]
 
     # check that series is long enough
-    if max(series.index) - min(series.index) < pd.Timedelta(hours=364):
+    if max(series.index) - min(series.index) < pd.Timedelta(hours=364*24):
         raise ValueError(
             "Input dataset must be at least 365 days long to determine seasonality."
         )
