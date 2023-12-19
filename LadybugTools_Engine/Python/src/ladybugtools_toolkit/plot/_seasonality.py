@@ -12,14 +12,14 @@ import pandas as pd
 from .utilities import contrasting_color
 
 
-def seasonality_comparison(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
+def seasonality_comparison(epw: EPW, ax: plt.Axes = None, **kwargs) -> plt.Axes:
     """_"""
 
     d = {
-        "Winter": "#8DB9CA",
-        "Summer": "#E6484D",
-        "Autumn": "#EE7837",
-        "Spring": "#AFc1A2",
+        "Winter": kwargs.pop("winter_color", "#8DB9CA"),
+        "Summer": kwargs.pop("summer_color", "#E6484D"),
+        "Autumn": kwargs.pop("autumn_color", "#EE7837"),
+        "Spring": kwargs.pop("spring_color", "#AFc1A2"),
     }
     ywidth = 0.9
 

@@ -100,14 +100,14 @@ def sunpath(
             ax.plot(_x, _y, zorder=1, lw=0.5, ls="-", c="#555555", alpha=0.5)
             t = ax.text(_x[1], _y[1], lab, ha="center", va="center", fontsize="medium")
             t.set_bbox(
-                {"facecolor": "white", "alpha": 1, "edgecolor": None, "linewidth": 0}
+                {"facecolor": "none", "alpha": 1, "edgecolor": None, "linewidth": 0}
             )
         for pt, lab in list(zip(*[compass.minor_azimuth_points, compass.MINOR_TEXT])):
             _x, _y = np.array([[0, 0]] + [pt.to_array()]).T
             ax.plot(_x, _y, zorder=1, lw=0.5, ls="-", c="#555555", alpha=0.5)
             t = ax.text(_x[1], _y[1], lab, ha="center", va="center", fontsize="small")
             t.set_bbox(
-                {"facecolor": "white", "alpha": 1, "edgecolor": None, "linewidth": 0}
+                {"facecolor": "none", "alpha": 1, "edgecolor": None, "linewidth": 0}
             )
 
     if data_collection is not None:

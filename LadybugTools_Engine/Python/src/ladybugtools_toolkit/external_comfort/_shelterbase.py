@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any
 from dataclasses import dataclass
 
+import pandas as pd
+
 # pylint: enable=E0401
 
 import honeybee.dictutil as hb_dict_util
@@ -14,7 +16,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from honeybee.model import Face, Model, Shade
 from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
-from ladybug.epw import EPW
+from ladybug.epw import EPW, AnalysisPeriod, Location
+from ladybug.sunpath import Sunpath
 from ladybug.viewsphere import ViewSphere
 from ladybug_geometry.geometry3d import (
     Face3D,
@@ -30,7 +33,7 @@ from mpl_toolkits import mplot3d
 
 from ..bhom.analytics import bhom_analytics
 from ..bhom.to_bhom import point3d_to_bhom
-from ..ladybug_extension.epw import sun_position_list
+from ..ladybug_extension.epw import sun_position_list, analysis_period_to_datetimes
 from ..helpers import convert_keys_to_snake_case
 
 SENSOR_LOCATION = Point3D(0, 0, 1.2)
@@ -545,6 +548,46 @@ class Shelter:
         if include_radiation_porosity:
             return 1 - ((n_intersections / len(rays)) * (1 - _radiation_porosity))
         return 1 - (n_intersections / len(rays))
+
+    def sun_exposure_analysisperiod(
+        self,
+        analysis_period: AnalysisPeriod,
+        location: Location,
+        include_radiation_porosity: bool = True,
+    ) -> pd.Series:
+        _radiation_porosity = np.array(self.radiation_porosity)
+
+        if all(_radiation_porosity == 1):
+            return np.ones(len(analysis_period))
+
+        sunpath = Sunpath.from_location(location)
+
+        dts = analysis_period_to_datetimes(analysis_period=analysis_period)
+        all_suns = [sunpath.calculate_sun_from_date_time(datetime=dt) for dt in dts]
+
+        # get aligned radiation porosity to more frequent timestep
+        idx = analysis_period_to_datetimes(AnalysisPeriod())
+        rads = pd.Series(self.radiation_porosity, index=idx)
+        rads.reindex(dts).ffill(inplace=True)
+
+        _sun_exposure = []
+        for radiation_porosity, sun in list(zip(*[rads, all_suns])):
+            if sun.altitude < 0:
+                _sun_exposure.append(np.nan)
+                continue
+            if radiation_porosity == 1:
+                _sun_exposure.append(1)
+                continue
+            ray = Ray3D(
+                SENSOR_LOCATION, (sun.position_3d() - SENSOR_LOCATION).normalize()
+            )
+            if self.face3d.intersect_line_ray(ray) is None:
+                _sun_exposure.append(1)
+            else:
+                _sun_exposure.append(
+                    radiation_porosity if include_radiation_porosity else 0
+                )
+        return pd.Series(_sun_exposure, index=idx)
 
     def annual_sun_exposure(
         self, epw: EPW, include_radiation_porosity: bool = True
