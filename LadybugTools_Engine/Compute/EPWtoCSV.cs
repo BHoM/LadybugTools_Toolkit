@@ -20,12 +20,11 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
  */
 
-using BH.Engine.Python;
 using BH.oM.Python;
 using BH.oM.Base.Attributes;
 
-using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
@@ -39,7 +38,7 @@ namespace BH.Engine.LadybugTools
         {
             if (epwFile == null)
             {
-                BH.Engine.Base.Compute.RecordError("epwFile input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
                 return null;
             }
 
@@ -48,28 +47,25 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
                 return null;
             }
-            
+
             PythonEnvironment env = InstallPythonEnv_LBT(true);
-            string additionalProperties = includeAdditional ? "True" : "False";
 
-            string pythonScript = string.Join("\n", new List<string>()
+            epwFile = System.IO.Path.GetFullPath(epwFile);
+            string csvFile = System.IO.Path.ChangeExtension(epwFile, ".csv");
+
+            string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "epw_to_csv.py");
+
+            // run the process
+            string command = $"{env.Executable} {script} -e \"{epwFile}\" -a \"{includeAdditional}\"";
+            string result = Python.Compute.RunCommandStdout(command: command, hideWindows: true);
+
+            if (!File.Exists(csvFile))
             {
-                "import traceback",
-                "from pathlib import Path",
-                "from ladybug.epw import EPW",
-                "",
-                $"epw_path = Path(r'{epwFile}')",
-                "csv_path = epw_path.with_suffix('.csv')",
-                "try:",
-                "    from ladybugtools_toolkit.ladybug_extension.epw import epw_to_dataframe",
-                $"    epw_to_dataframe(EPW(epw_path.as_posix()), include_additional={additionalProperties}).to_csv(csv_path.as_posix())",
-                "    print(csv_path)",
-                "except Exception as exc:",
-                "    print(traceback.format_exc())",
-            });
+                BH.Engine.Base.Compute.RecordError($"File conversion failed due to {result}");
+                return null;
+            }
 
-            return env.RunPythonString(pythonScript).Trim();
+            return csvFile;
         }
     }
 }
-

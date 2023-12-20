@@ -4,20 +4,20 @@
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
- *
- *
- * The BHoM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * The BHoM is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
+ *                                           
+ *                                                                              
+ * The BHoM is free software: you can redistribute it and/or modify         
+ * it under the terms of the GNU Lesser General Public License as published by  
+ * the Free Software Foundation, either version 3.0 of the License, or          
+ * (at your option) any later version.                                          
+ *                                                                              
+ * The BHoM is distributed in the hope that it will be useful,              
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of               
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                 
+ * GNU Lesser General Public License for more details.                          
+ *                                                                            
+ * You should have received a copy of the GNU Lesser General Public License     
+ * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
 using BH.oM.Base.Attributes;
@@ -30,65 +30,92 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Create
     {
-        [Description("Create a Typology object for external comfort simulations.")]
-        [Input("shelters", "A list of shelters modifying exposure to the elements.")]
-        [Input("name", "Optional name of this typology.")]
-        [Input("evaporativeCoolingEffect", "An amount of evaporative cooling to add to results calculated by this typology. Defaults to 0, corresponding to no additional water added to the air. A value of 0.1 might represent a nearby body of water, and a value of 0.3 might represent a nearby misting device.")]
-        [Input("windSpeedMultiplier", "A factor to multiply wind speed by. Defaults to 1. Can be used to account for wind speed reduction due to sheltering not accounted for by shelter objects, or to approximate effects of acceleration. Default = 1. Set to 0 for still air conditions.")]
-        [Input("radiantTemperatureAdjustment", "A change in MRT to be applied. Defaults to 0. A positive value will increase the MRT and a negative value will decrease it.")]
-        [Output("typology", "Typology object.")]
-        public static Typology Typology(List<Shelter> shelters = null, string name = "", double evaporativeCoolingEffect = 0, double windSpeedMultiplier = 1, double radiantTemperatureAdjustment = 0)
+        [Description("Create a Typology object.")]
+        [Input("identifier", "The identifier of the typology.")]
+        [Input("shelters", "The shelters of the typology.")]
+        [Input("evaporativeCoolingEffect", "A list of hourly-annual dimensionless values by which to adjust the additional of moisture into the air and modify the dry-bulb temperature and relative humidity values. A value 0 means no additional moisure added to air, wheras a value of 1 results in fully moisture saturated air at 100% relative humidity.")]
+        [Input("targetWindSpeed", "The hourly target wind speed of the typology, in m/s. This can also contain \"null\" values in which case the EPW file used alongside this object and the porosity of the shelters will be used to determine wind speed - otherwise, any value input here will overwrite those calculated wind speeds.")]
+        [Input("radiantTemperatureAdjustment", "A list of values in °C, one-per-hour to adjust the mean radiant temperature by.")]
+        [Output("typology", "A Typology object.")]
+        public static Typology Typology(
+            string identifier = null,
+            List<Shelter> shelters = null,
+            List<double> evaporativeCoolingEffect = null,
+            List<double?> targetWindSpeed = null,
+            List<double> radiantTemperatureAdjustment = null
+        )
         {
-            if (!evaporativeCoolingEffect.IsBetween(0, 1))
+            shelters = shelters ?? new List<Shelter>();
+
+            if ((evaporativeCoolingEffect.Count() == 0 && evaporativeCoolingEffect.Sum() == 0) || evaporativeCoolingEffect == null)
+                evaporativeCoolingEffect = Enumerable.Repeat(0.0, 8760).ToList();
+
+            if (evaporativeCoolingEffect.Count() != 8760)
             {
-                Base.Compute.RecordError($"{nameof(evaporativeCoolingEffect)} must be between 0 and 1, but is currently {evaporativeCoolingEffect}.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(evaporativeCoolingEffect)} must be a list of 8760 values.");
                 return null;
             }
 
-            if (windSpeedMultiplier < 0)
+            if (evaporativeCoolingEffect.Where(x => x < 0 || x > 1).Any())
             {
-                Base.Compute.RecordError($"{nameof(windSpeedMultiplier)} must be greater than or equal to 0, but is currently {windSpeedMultiplier}.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(evaporativeCoolingEffect)} must be between 0 and 1.");
                 return null;
             }
 
-            if (!radiantTemperatureAdjustment.IsBetween(-10, 10))
+            if ((targetWindSpeed.Count() == 0 && targetWindSpeed.Sum() == 0) || targetWindSpeed == null)
+                targetWindSpeed = Enumerable.Repeat<double?>(null, 8760).ToList();
+
+            if (targetWindSpeed.Count() != 8760)
             {
-                Base.Compute.RecordError($"{nameof(radiantTemperatureAdjustment)} must be between -10 and 10, but is currently {radiantTemperatureAdjustment}.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(targetWindSpeed)} must be a list of 8760 values.");
                 return null;
             }
 
-            if (shelters == null)
+            if (targetWindSpeed.Where(x => x != null && x.Value < 0).Any())
             {
-                shelters = new List<Shelter>();
+                BH.Engine.Base.Compute.RecordError($"{nameof(targetWindSpeed)} values must be greater than or equal to 0, or null if not relevant for that hour of the year.");
+                return null;
             }
 
-            string rtnName = name;
-            int shelterCount = shelters.Count(s => s != null);
-            if (rtnName == "" && shelterCount == 0)
+            if ((radiantTemperatureAdjustment.Count() == 0 && radiantTemperatureAdjustment.Sum() == 0) || radiantTemperatureAdjustment == null)
+                radiantTemperatureAdjustment = Enumerable.Repeat(0.0, 8760).ToList();
+
+            if (radiantTemperatureAdjustment.Count() != 8760)
             {
-                rtnName = $"ec{evaporativeCoolingEffect}_ws{windSpeedMultiplier}_mrt{radiantTemperatureAdjustment}";
-                Base.Compute.RecordNote($"This typology has been automatically named {rtnName}. This can be overriden with the 'name' parameter.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(radiantTemperatureAdjustment)} must be a list of 8760 values.");
+                return null;
             }
-            else if (rtnName == "")
+
+            if (identifier == null)
             {
-                rtnName = $"shelters{shelterCount}_ec{evaporativeCoolingEffect}_ws{windSpeedMultiplier}_mrt{radiantTemperatureAdjustment}";
-                Base.Compute.RecordNote($"This typology has been automatically named {rtnName}. This can be overriden with the 'name' parameter.");
+                dynamic targetWindSpeedAvg;
+                if (targetWindSpeed.Where(x => x.HasValue).Count() == 0)
+                {
+                    targetWindSpeedAvg = "EPW";
+                }
+                else
+                {
+                    targetWindSpeedAvg = targetWindSpeed.Where(x => x.HasValue).Average(x => x.Value);
+                }
+                if (shelters.Count() == 0)
+                {
+                    identifier = $"ec{evaporativeCoolingEffect.Average()}_ws{targetWindSpeedAvg}_mrt{radiantTemperatureAdjustment.Average()}";
+                }
+                else
+                {
+                    identifier = $"shelters{shelters.Count()}_ec{evaporativeCoolingEffect.Average()}_ws{targetWindSpeedAvg}_mrt{radiantTemperatureAdjustment.Average()}";
+                }
+                Base.Compute.RecordNote($"This typology has been automatically named \"{identifier}\".");
             }
 
             return new Typology()
             {
-                Name = rtnName,
-                Shelters = shelters.Where(s => s != null).ToList(),
-                EvaporativeCoolingEffect = Enumerable.Repeat(evaporativeCoolingEffect, 8760).ToList(),
-                WindSpeedMultiplier = Enumerable.Repeat(windSpeedMultiplier, 8760).ToList(),
-                RadiantTemperatureAdjustment = Enumerable.Repeat(radiantTemperatureAdjustment, 8760).ToList(),
+                Name = identifier,
+                Shelters = shelters,
+                EvaporativeCoolingEffect = evaporativeCoolingEffect,
+                TargetWindSpeed = targetWindSpeed,
+                RadiantTemperatureAdjustment = radiantTemperatureAdjustment
             };
-        }
-
-        private static bool IsBetween(this double val, double min, double max)
-        {
-            return (val >= min && val <= max);
         }
     }
 }
-

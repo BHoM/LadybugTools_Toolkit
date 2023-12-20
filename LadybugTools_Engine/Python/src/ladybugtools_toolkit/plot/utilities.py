@@ -1,9 +1,13 @@
+"""Color handling utilities"""
+# pylint: disable=E0401
 import base64
 import colorsys
 import copy
 import io
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any
+
+# pylint: enable=E0401
 
 import matplotlib.image as mimage
 import matplotlib.pyplot as plt
@@ -16,50 +20,65 @@ from matplotlib.colors import (
     colorConverter,
     is_color_like,
     rgb2hex,
+    to_hex,
     to_rgb,
     to_rgba_array,
 )
 from matplotlib.tri import Triangulation
 from PIL import Image
 
+from ..bhom.analytics import bhom_analytics
 
+
+@bhom_analytics()
 def animation(
-    image_files: List[Union[str, Path]],
-    output_gif: Union[str, Path],
+    images: list[str | Path | Image.Image],
+    output_gif: str | Path,
     ms_per_image: int = 333,
+    transparency_idx: int = 0,
 ) -> Path:
     """Create an animated gif from a set of images.
 
     Args:
-        image_files (List[Union[str, Path]]):
-            A list of image files.
-        output_gif (Union[str, Path]):
+        images (list[str | Path | Image.Image]):
+            A list of image files or PIL Image objects.
+        output_gif (str | Path):
             The output gif file to be created.
         ms_per_image (int, optional):
-            NUmber of milliseconds per image. Default is 333, for 3 images per second.
+            Number of milliseconds per image. Default is 333, for 3 images per second.
+        transparency_idx (int, optional):
+            The index of the color to be used as the transparent color. Default is 0.
 
     Returns:
         Path:
             The animated gif.
 
     """
-
-    image_files = [Path(i) for i in image_files]
-
-    images = [Image.open(i) for i in image_files]
+    _images = []
+    for i in images:
+        if isinstance(i, (str, Path)):
+            _images.append(Image.open(i))
+        elif isinstance(i, Image.Image):
+            _images.append(i)
+        else:
+            raise ValueError(
+                f"images must be a list of strings, Paths or PIL Image objects - {i} is not valid."
+            )
 
     # create white background
-    background = Image.new("RGBA", images[0].size, (255, 255, 255))
+    background = Image.new("RGBA", _images[0].size, (255, 255, 255))
 
-    images = [Image.alpha_composite(background, i) for i in images]
+    _images = [Image.alpha_composite(background, i) for i in _images]
 
-    images[0].save(
+    _images[0].save(
         output_gif,
         save_all=True,
-        append_images=images[1:],
+        append_images=_images[1:],
         optimize=False,
         duration=ms_per_image,
         loop=0,
+        disposal=2,
+        transparency=transparency_idx,
     )
 
     return output_gif
@@ -69,12 +88,13 @@ def relative_luminance(color: Any):
     """Calculate the relative luminance of a color according to W3C standards
 
     Args:
+        color (Any):
+            matplotlib color or sequence of matplotlib colors - Hex code,
+            rgb-tuple, or html color name.
 
-    color : matplotlib color or sequence of matplotlib colors - Hex code,
-    rgb-tuple, or html color name.
-    Returns
-    -------
-    luminance : float(s) between 0 and 1
+    Returns:
+        float:
+            Luminance value between 0 and 1.
     """
     rgb = colorConverter.to_rgba_array(color)[:, :3]
     rgb = np.where(rgb <= 0.03928, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
@@ -89,60 +109,64 @@ def contrasting_color(color: Any):
     """Calculate the contrasting color for a given color.
 
     Args:
-        color (Any): matplotlib color or sequence of matplotlib colors - Hex code,
-        rgb-tuple, or html color name.
+        color (Any):
+            matplotlib color or sequence of matplotlib colors - Hex code,
+            rgb-tuple, or html color name.
+
     Returns:
-        str: String code of the contrasting color.
+        str:
+            String code of the contrasting color.
     """
     return ".15" if relative_luminance(color) > 0.408 else "w"
 
 
 def colormap_sequential(
-    *colors: Union[str, float, int, Tuple]
+    *colors: str | float | int | tuple, N: int = 256
 ) -> LinearSegmentedColormap:
     """
     Create a sequential colormap from a list of input colors.
 
     Args:
-        colors (Union[str, float, int, Tuple]):
+        *colors (str | float | int | tuple):
             A list of colors according to their hex-code, string name, character code or
             RGBA values.
+        N (int, optional):
+            The number of colors in the colormap. Defaults to 256.
 
     Returns:
         LinearSegmentedColormap:
             A matplotlib colormap.
 
     Examples:
-    >> colormap_sequential("green", "#F034A3", (0.5, 0.2, 0.8), "y")
+    >> colormap_sequential(
+        (0.89411764705, 0.01176470588, 0.01176470588),
+        "darkorange",
+        "#FFED00",
+        "#008026",
+        (36/255, 64/255, 142/255),
+        "#732982"
+    )
     """
-    for color in colors:
-        if not isinstance(color, (str, float, int, tuple)):
-            raise KeyError(f"{color} not recognised as a valid color string.")
 
     if len(colors) < 2:
         raise KeyError("Not enough colors input to create a colormap.")
 
     fixed_colors = []
-    for c in colors:
-        if is_color_like(c):
-            try:
-                fixed_colors.append(rgb2hex(c))
-            except ValueError:
-                fixed_colors.append(c)
-        else:
-            raise KeyError(f"{c} not recognised as a valid color string.")
+    for color in colors:
+        fixed_colors.append(to_hex(color))
+
     return LinearSegmentedColormap.from_list(
-        f"{'_'.join(fixed_colors)}",
-        list(zip(np.linspace(0, 1, len(fixed_colors)), fixed_colors)),
-        N=256,
+        name=f"{'_'.join(fixed_colors)}",
+        colors=fixed_colors,
+        N=N,
     )
 
 
-def lb_colormap(name: Union[int, str] = "original") -> LinearSegmentedColormap:
+def lb_colormap(name: int | str = "original") -> LinearSegmentedColormap:
     """Create a Matplotlib from a colormap provided by Ladybug.
 
     Args:
-        name (Union[int, str], optional):
+        name (int | str, optional):
             The name of the colormap to create. Defaults to "original".
 
     Raises:
@@ -174,25 +198,25 @@ def lb_colormap(name: Union[int, str] = "original") -> LinearSegmentedColormap:
 
 def annotate_imshow(
     im: mimage.AxesImage,
-    data: List[float] = None,
+    data: list[float] = None,
     valfmt: str = "{x:.2f}",
-    textcolors: Tuple[str] = ("black", "white"),
+    textcolors: tuple[str] = ("black", "white"),
     threshold: float = None,
-    exclude_vals: List[float] = None,
+    exclude_vals: list[float] = None,
     **text_kw,
-) -> List[str]:
+) -> list[str]:
     """A function to annotate a heatmap.
 
     Args:
         im (AxesImage):
             The AxesImage to be labeled.
-        data (List[float], optional):
+        data (list[float], optional):
             Data used to annotate. If None, the image's data is used. Defaults to None.
         valfmt (_type_, optional):
             The format of the annotations inside the heatmap. This should either use the string
             format method, e.g. "$ {x:.2f}", or be a `matplotlib.ticker.Formatter`.
             Defaults to "{x:.2f}".
-        textcolors (Tuple[str], optional):
+        textcolors (tuple[str], optional):
             A pair of colors.  The first is used for values below a threshold, the second for
             those above.. Defaults to ("black", "white").
         threshold (float, optional):
@@ -204,7 +228,7 @@ def annotate_imshow(
             All other keyword arguments are passed on to the created `~matplotlib.text.Text`
 
     Returns:
-        List[str]:
+        list[str]:
             The texts added to the AxesImage.
     """
 
@@ -240,7 +264,7 @@ def annotate_imshow(
     return texts
 
 
-def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]:
+def lighten_color(color: str | tuple, amount: float = 0.5) -> tuple[float]:
     """
     Lightens the given color by multiplying (1-luminosity) by the given amount.
 
@@ -251,7 +275,7 @@ def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]
             The amount of lightening to apply.
 
     Returns:
-        Tuple[float]:
+        tuple[float]:
             An RGB value.
 
     Examples:
@@ -267,38 +291,7 @@ def lighten_color(color: Union[str, Tuple], amount: float = 0.5) -> Tuple[float]
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
 
 
-def add_bar_labels(ax: plt.Axes, orientation: str, threshold: float) -> None:
-    """Add labels to the end of each bar in a bar chart.
-
-    Arguments:
-        ax (matplotlib.axes.Axes):
-            The matplotlib object containing the axes of the plot to annotate.
-        orientation (str):
-            The orientation of the plot. Either "vertical" or "horizontal".
-        threshold (float):
-            The threshold value to use to determine whether to add a label.
-
-    """
-
-    for rect in ax.patches:
-        x = rect.get_x() + (rect.get_width() / 2)
-        y = rect.get_y() + (rect.get_height() / 2)
-        if orientation == "vertical":
-            value = rect.get_height()
-        elif orientation == "horizontal":
-            value = rect.get_width()
-        else:
-            raise ValueError("orientation must be either 'vertical' or 'horizontal'")
-        if value > threshold:
-            ax.annotate(
-                f"{value:.0%}",
-                (x, y),
-                ha="center",
-                va="center",
-                c=contrasting_color(rect.get_facecolor()),
-            )
-
-
+@bhom_analytics()
 def create_title(text: str, plot_type: str) -> str:
     """Create a title for a plot.
 
@@ -324,6 +317,7 @@ def create_title(text: str, plot_type: str) -> str:
     )
 
 
+@bhom_analytics()
 def average_color(colors: Any, keep_alpha: bool = False) -> str:
     """Return the average color from a list of colors.
 
@@ -353,6 +347,7 @@ def average_color(colors: Any, keep_alpha: bool = False) -> str:
     return rgb2hex(to_rgba_array(colors).mean(axis=0), keep_alpha=keep_alpha)
 
 
+@bhom_analytics()
 def base64_to_image(base64_string: str, image_path: Path) -> Path:
     """Convert a base64 encoded image into a file on disk.
 
@@ -377,6 +372,7 @@ def base64_to_image(base64_string: str, image_path: Path) -> Path:
     return image_path
 
 
+@bhom_analytics()
 def image_to_base64(image_path: Path, html: bool = False) -> str:
     """Load an image file from disk and convert to base64 string.
 
@@ -413,6 +409,7 @@ def image_to_base64(image_path: Path, html: bool = False) -> str:
     return base64_string
 
 
+@bhom_analytics()
 def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
     """Convert a matplotlib figure object into a base64 string.
 
@@ -440,6 +437,7 @@ def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
     return base64_string
 
 
+@bhom_analytics()
 def figure_to_image(fig: plt.Figure) -> Image:
     """Convert a matplotlib Figure object into a PIL Image.
 
@@ -464,13 +462,14 @@ def figure_to_image(fig: plt.Figure) -> Image:
     return Image.fromarray(buf)
 
 
+@bhom_analytics()
 def tile_images(
-    imgs: Union[List[Path], List[Image.Image]], rows: int, cols: int
+    imgs: list[Path] | list[Image.Image], rows: int, cols: int
 ) -> Image.Image:
     """Tile a set of images into a grid.
 
     Args:
-        imgs (Union[List[Path], List[Image.Image]]):
+        imgs (Union[list[Path], list[Image.Image]]):
             A list of images to tile.
         rows (int):
             The number of rows in the grid.
@@ -508,6 +507,7 @@ def tile_images(
     return grid
 
 
+@bhom_analytics()
 def triangulation_area(triang: Triangulation) -> float:
     """Calculate the area of a matplotlib Triangulation.
 
@@ -539,9 +539,10 @@ def triangulation_area(triang: Triangulation) -> float:
     return area
 
 
+@bhom_analytics()
 def create_triangulation(
-    x: List[float],
-    y: List[float],
+    x: list[float],
+    y: list[float],
     alpha: float = None,
     max_iterations: int = 250,
     increment: float = 0.01,
@@ -550,9 +551,9 @@ def create_triangulation(
         remove elements with edges larger than alpha.
 
     Args:
-        x (List[float]):
+        x (list[float]):
             A list of x coordinates.
-        y (List[float]):
+        y (list[float]):
             A list of y coordinates.
         alpha (float, optional):
             A value to start alpha at.
@@ -607,3 +608,44 @@ def create_triangulation(
     plt.close(fig)
     triang.set_mask(maxi > alpha)
     return triang
+
+
+@bhom_analytics()
+def format_polar_plot(ax: plt.Axes, yticklabels: bool = True) -> plt.Axes:
+    """Format a polar plot, to save on having to write this every time!"""
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+
+    # format plot area
+    ax.spines["polar"].set_visible(False)
+    ax.grid(True, which="both", ls="--", zorder=0, alpha=0.3)
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+    plt.setp(ax.get_yticklabels(), fontsize="small")
+    ax.set_xticks(np.radians((0, 90, 180, 270)), minor=False)
+    ax.set_xticklabels(("N", "E", "S", "W"), minor=False, **{"fontsize": "medium"})
+    ax.set_xticks(
+        np.radians(
+            (22.5, 45, 67.5, 112.5, 135, 157.5, 202.5, 225, 247.5, 292.5, 315, 337.5)
+        ),
+        minor=True,
+    )
+    ax.set_xticklabels(
+        (
+            "NNE",
+            "NE",
+            "ENE",
+            "ESE",
+            "SE",
+            "SSE",
+            "SSW",
+            "SW",
+            "WSW",
+            "WNW",
+            "NW",
+            "NNW",
+        ),
+        minor=True,
+        **{"fontsize": "x-small"},
+    )
+    if not yticklabels:
+        ax.set_yticklabels([])

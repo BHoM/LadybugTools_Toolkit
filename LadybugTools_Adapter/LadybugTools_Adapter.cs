@@ -28,17 +28,11 @@ namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
-        [Description("Produces an LadybugTools Adapter to allow interoperability with Ladybug and the BHoM.")]
+        [Description("Produces a LadybugTools Adapter that converts objects between Ladybug compatible json and BHoM objects.")]
         [Output("adapter", "Adapter to a LadybugTools object.")]
         public LadybugToolsAdapter()
         {
             m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
-
-            return;
         }
-
     }
 }
-
-
-

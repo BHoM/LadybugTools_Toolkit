@@ -34,23 +34,24 @@ namespace BH.Engine.LadybugTools
         [Input("groundMaterial", "A material object.")]
         [Input("shadeMaterial", "A material object.")]
         [Output("id", "A simulation ID.")]
-        public static string SimulationId(string epwFile, ILadybugToolsMaterial groundMaterial, ILadybugToolsMaterial shadeMaterial)
+        [PreviousVersion("7.0", "BH.Engine.LadybugTools.Compute.SimulationId(System.String, BH.oM.LadybugTools.ILadybugToolsMaterial, BH.oM.LadybugTools.ILadybugToolsMaterial)")]
+        public static string SimulationID(string epwFile, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial)
         {
             if (epwFile == null)
             {
-                BH.Engine.Base.Compute.RecordError("epwFile input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
                 return null;
             }
 
             if (groundMaterial == null)
             {
-                BH.Engine.Base.Compute.RecordError("groundMaterial input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(groundMaterial)} input cannot be null.");
                 return null;
             }
 
             if (shadeMaterial == null)
             {
-                BH.Engine.Base.Compute.RecordError("shadeMaterial input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(shadeMaterial)} input cannot be null.");
                 return null;
             }
 
@@ -61,8 +62,8 @@ namespace BH.Engine.LadybugTools
             }
 
             string epwId = Convert.SanitiseString(Path.GetFileNameWithoutExtension(epwFile));
-            string groundMaterialId = Convert.SanitiseString(groundMaterial.Identifier);
-            string shadeMaterialId = Convert.SanitiseString(shadeMaterial.Identifier);
+            string groundMaterialId = Convert.SanitiseString(groundMaterial.Name);
+            string shadeMaterialId = Convert.SanitiseString(shadeMaterial.Name);
             return $"{epwId}__{groundMaterialId}__{shadeMaterialId}";
         }
     }

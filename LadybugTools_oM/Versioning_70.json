@@ -1,0 +1,24 @@
+﻿{
+  "Type": {
+    "ToNew": {
+      "BH.oM.LadybugTools.OpaqueMaterial": "BH.oM.LadybugTools.EnergyMaterial",
+      "BH.oM.LadybugTools.OpaqueVegetationMaterial": "BH.oM.LadybugTools.EnergyMaterialVegetation",
+      "BH.oM.LadybugTools.ILadybugToolsMaterial": "BH.oM.LadybugTools.IEnergyMaterialOpaque"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.EnergyMaterial": "BH.oM.LadybugTools.OpaqueMaterial",
+      "BH.oM.LadybugTools.EnergyMaterialVegetation": "BH.oM.LadybugTools.OpaqueVegetationMaterial",
+      "BH.oM.LadybugTools.IEnergyMaterialOpaque": "BH.oM.LadybugTools.ILadybugToolsMaterial"
+    }
+  },
+  "Property": {
+    "ToNew": {
+      "BH.oM.LadybugTools.Typology.WindSpeedMultiplier": "BH.oM.LadybugTools.Typology.TargetWindSpeed",
+      "BH.oM.LadybugTools.SimulationResult.Identifier": "BH.oM.LadybugTools.SimulationResult.Name"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.Typology.TargetWindSpeed": "BH.oM.LadybugTools.Typology.WindSpeedMultiplier",
+      "BH.oM.LadybugTools.SimulationResult.Name": "BH.oM.LadybugTools.SimulationResult.Identifier"
+    }
+  }
+}

@@ -1,8 +1,12 @@
+"""Methods for plotting psychrometric charts."""
+# pylint: disable=E1101
+# pylint: disable=E0401
 import textwrap
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Union
 from warnings import warn
+
+# pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +19,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.colors import Colormap
 from matplotlib.patches import Polygon
 
-from ..ladybug_extension.analysis_period import (
+from ..bhom.analytics import bhom_analytics
+from ..ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
     describe_analysis_period,
 )
@@ -23,9 +28,13 @@ from ..ladybug_extension.epw import EPW, epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
 
 
+@bhom_analytics()
 def strategy_warning(polygon_name):
     """Give a warning about a polygon not fitting on the chart."""
-    msg = f'Polygon "{polygon_name}" could not fit on the chart.\nTry moving the comfort polygon(s) by changingits criteria.'
+    msg = (
+        f"Polygon '{polygon_name}' could not fit on the chart.\n"
+        "Try moving the comfort polygon(s) by changingits criteria."
+    )
     warn(msg)
 
 
@@ -99,7 +108,7 @@ class PsychrometricPolygons:
     """A collection of polygons for use in a psychrometric chart.
 
     Args:
-        strategies (List[PassiveStrategy], optional):
+        strategies (list[PassiveStrategy], optional):
             A list of passive strategies to include in the chart. Default is None.
         strategy_parameters (PassiveStrategyParameters, optional):
             A PassiveStrategyParameters object to use for the passive strategies.
@@ -118,7 +127,7 @@ class PsychrometricPolygons:
         PsychrometricPolygons: A collection of polygons for use in a psychrometric chart.
     """
 
-    strategies: List[PassiveStrategy] = field(init=True, default_factory=list)
+    strategies: list[PassiveStrategy] = field(init=True, default_factory=list)
     strategy_parameters: PassiveStrategyParameters = field(
         init=True, default=PassiveStrategyParameters()
     )
@@ -135,6 +144,7 @@ class PsychrometricPolygons:
             ), f"PassiveStrategy not of correct type. Use {PassiveStrategy}"
 
 
+@bhom_analytics()
 def psychrometric(
     epw: EPW,
     cmap: Colormap = "viridis",
@@ -164,11 +174,9 @@ def psychrometric(
     if analysis_period is None:
         analysis_period = AnalysisPeriod()
 
-    df = (
-        epw_to_dataframe(epw, include_additional=True)
-        .droplevel([0, 1], axis=1)
-        .loc[analysis_period_to_datetimes(analysis_period)]
-    )
+    df = epw_to_dataframe(epw, include_additional=True).loc[
+        analysis_period_to_datetimes(analysis_period)
+    ]
 
     # create mesh for rendering on chart
     psychart = PsychrometricChart(
@@ -182,7 +190,7 @@ def psychrometric(
     )
 
     def lb_mesh_to_patch_collection(
-        lb_mesh: Mesh2D, values: List[float] = None, cmap=cmap
+        lb_mesh: Mesh2D, values: list[float] = None, cmap=cmap
     ) -> PatchCollection:
         """Convert a Ladybug Mesh2D to a matplotlib PatchCollection."""
         patch_collection = PatchCollection(
@@ -269,7 +277,17 @@ def psychrometric(
 
     # Generate peak cooling summary
     clg_vals = df.loc[df.idxmax()["Dry Bulb Temperature (C)"]]
-    max_dbt_table = f'Peak cooling {clg_vals.name:%b %d %H:%M}\nWS:  {clg_vals["Wind Speed (m/s)"]:>6.1f} m/s\nWD:  {clg_vals["Wind Direction (degrees)"]:>6.1f} deg\nDBT: {clg_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\nWBT: {clg_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\nRH:  {clg_vals["Relative Humidity (%)"]:>6.1f} %\nDPT: {clg_vals["Dew Point Temperature (C)"]:>6.1f} °C\nh:   {clg_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\nHR:  {clg_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    max_dbt_table = (
+        f"Peak cooling {clg_vals.name:%b %d %H:%M}\n"
+        f'WS:  {clg_vals["Wind Speed (m/s)"]:>6.1f} m/s\n'
+        f'WD:  {clg_vals["Wind Direction (degrees)"]:>6.1f} deg\n'
+        f'DBT: {clg_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'WBT: {clg_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'RH:  {clg_vals["Relative Humidity (%)"]:>6.1f} %\n'
+        f'DPT: {clg_vals["Dew Point Temperature (C)"]:>6.1f} °C\n'
+        f'h:   {clg_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\n'
+        f'HR:  {clg_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    )
     ax.text(
         0,
         0.98,
@@ -285,7 +303,17 @@ def psychrometric(
 
     # Generate peak heating summary
     htg_vals = df.loc[df.idxmin()["Dry Bulb Temperature (C)"]]
-    min_dbt_table = f'Peak heating {htg_vals.name:%b %d %H:%M}\nWS:  {htg_vals["Wind Speed (m/s)"]:>6.1f} m/s\nWD:  {htg_vals["Wind Direction (degrees)"]:>6.1f} deg\nDBT: {htg_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\nWBT: {htg_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\nRH:  {htg_vals["Relative Humidity (%)"]:>6.1f} %\nDPT: {htg_vals["Dew Point Temperature (C)"]:>6.1f} °C\nh:   {htg_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\nHR:  {htg_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    min_dbt_table = (
+        f"Peak heating {htg_vals.name:%b %d %H:%M}\n"
+        f'WS:  {htg_vals["Wind Speed (m/s)"]:>6.1f} m/s\n'
+        f'WD:  {htg_vals["Wind Direction (degrees)"]:>6.1f} deg\n'
+        f'DBT: {htg_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'WBT: {htg_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'RH:  {htg_vals["Relative Humidity (%)"]:>6.1f} %\n'
+        f'DPT: {htg_vals["Dew Point Temperature (C)"]:>6.1f} °C\n'
+        f'h:   {htg_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\n'
+        f'HR:  {htg_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    )
     ax.text(
         0,
         0.8,
@@ -301,7 +329,17 @@ def psychrometric(
 
     # Generate max HumidityRatio summary
     hr_vals = df.loc[df.idxmin()["Humidity Ratio (fraction)"]]
-    max_hr_table = f'Peak humidity ratio {hr_vals.name:%b %d %H:%M}\nWS:  {hr_vals["Wind Speed (m/s)"]:>6.1f} m/s\nWD:  {hr_vals["Wind Direction (degrees)"]:>6.1f} deg\nDBT: {hr_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\nWBT: {hr_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\nRH:  {hr_vals["Relative Humidity (%)"]:>6.1f} %\nDPT: {hr_vals["Dew Point Temperature (C)"]:>6.1f} °C\nh:   {hr_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\nHR:  {hr_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    max_hr_table = (
+        f"Peak heating {hr_vals.name:%b %d %H:%M}\n"
+        f'WS:  {hr_vals["Wind Speed (m/s)"]:>6.1f} m/s\n'
+        f'WD:  {hr_vals["Wind Direction (degrees)"]:>6.1f} deg\n'
+        f'DBT: {hr_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'WBT: {hr_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'RH:  {hr_vals["Relative Humidity (%)"]:>6.1f} %\n'
+        f'DPT: {hr_vals["Dew Point Temperature (C)"]:>6.1f} °C\n'
+        f'h:   {hr_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\n'
+        f'HR:  {hr_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    )
     ax.text(
         0,
         0.62,
@@ -317,7 +355,17 @@ def psychrometric(
 
     # Generate max enthalpy summary
     enth_vals = df.loc[df.idxmin()["Enthalpy (kJ/kg)"]]
-    max_enthalpy_table = f'Peak enthalpy {enth_vals.name:%b %d %H:%M}\nWS:  {enth_vals["Wind Speed (m/s)"]:>6.1f} m/s\nWD:  {enth_vals["Wind Direction (degrees)"]:>6.1f} deg\nDBT: {enth_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\nWBT: {enth_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\nRH:  {enth_vals["Relative Humidity (%)"]:>6.1f} %\nDPT: {enth_vals["Dew Point Temperature (C)"]:>6.1f} °C\nh:   {enth_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\nHR:  {enth_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    max_enthalpy_table = (
+        f"Peak enthalpy {enth_vals.name:%b %d %H:%M}\n"
+        f'WS:  {enth_vals["Wind Speed (m/s)"]:>6.1f} m/s\n'
+        f'WD:  {enth_vals["Wind Direction (degrees)"]:>6.1f} deg\n'
+        f'DBT: {enth_vals["Dry Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'WBT: {enth_vals["Wet Bulb Temperature (C)"]:>6.1f} °C\n'
+        f'RH:  {enth_vals["Relative Humidity (%)"]:>6.1f} %\n'
+        f'DPT: {enth_vals["Dew Point Temperature (C)"]:>6.1f} °C\n'
+        f'h:   {enth_vals["Enthalpy (kJ/kg)"]:>6.1f} kJ/kg\n'
+        f'HR:  {enth_vals["Humidity Ratio (fraction)"]:<5.4f} kg/kg'
+    )
     ax.text(
         0,
         0.44,
@@ -332,7 +380,10 @@ def psychrometric(
     )
 
     # add legend
-    keys = "WS: Wind speed | WD: Wind direction | DBT: Dry-bulb temperature | WBT: Wet-bulb temperature\nRH: Relative humidity | DPT: Dew-point temperature | h: Enthalpy | HR: Humidity ratio"
+    keys = (
+        "WS: Wind speed | WD: Wind direction | DBT: Dry-bulb temperature | WBT: Wet-bulb temperature\n"
+        "RH: Relative humidity | DPT: Dew-point temperature | h: Enthalpy | HR: Humidity ratio"
+    )
     ax.text(
         1,
         -0.05,
@@ -356,8 +407,8 @@ def psychrometric(
         polygon_names = []
 
         def line_objs_to_vertices(
-            lines: List[Union[Polyline2D, LineSegment2D]]
-        ) -> List[List[float]]:
+            lines: list[Polyline2D | LineSegment2D],
+        ) -> list[list[float]]:
             # ensure input list is flat
             lines = [
                 v
@@ -399,12 +450,12 @@ def psychrometric(
 
             return polygon_name, strategy_poly, dat
 
-        def polygon_area(xs: List[float], ys: List[float]) -> List[float]:
+        def polygon_area(xs: list[float], ys: list[float]) -> list[float]:
             """https://en.wikipedia.org/wiki/Centroid#Of_a_polygon"""
             # https://stackoverflow.com/a/30408825/7128154
             return 0.5 * (np.dot(xs, np.roll(ys, 1)) - np.dot(ys, np.roll(xs, 1)))
 
-        def polygon_centroid(xs: List[float], ys: List[float]) -> List[float]:
+        def polygon_centroid(xs: list[float], ys: list[float]) -> list[float]:
             """https://en.wikipedia.org/wiki/Centroid#Of_a_polygon"""
             xy = np.array([xs, ys])
             c = np.dot(
@@ -600,7 +651,8 @@ def psychrometric(
 
         if PassiveStrategy.PASSIVE_SOLAR_HEATING in psychro_polygons.strategies:
             warn(
-                f"{PassiveStrategy.PASSIVE_SOLAR_HEATING} assumes radiation from skylights only, using global horizontal radiation."
+                f"{PassiveStrategy.PASSIVE_SOLAR_HEATING} assumes radiation from "
+                "skylights only, using global horizontal radiation."
             )
             bal_t = (
                 psychro_polygons.strategy_parameters.balance_temperature
@@ -668,10 +720,12 @@ def psychrometric(
         comfort_text = "\n".join(comfort_text)
         settings_text = "\n".join(
             [
+                # pylint: disable=C0301
                 f'MRT: {"DBT" if psychro_polygons.mean_radiant_temperature is None else psychro_polygons.mean_radiant_temperature}',
                 f" WS: {psychro_polygons.air_speed}m/s",
                 f"CLO: {psychro_polygons.clo_value}",
                 f"MET: {psychro_polygons.metabolic_rate}",
+                # pylint: enable=C0301
             ]
         )
         ax.text(

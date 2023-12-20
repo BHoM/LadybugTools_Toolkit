@@ -1,4 +1,4 @@
-from typing import List, Tuple
+"""Methods for comparing spatial comfort results."""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,15 +7,15 @@ from ladybug.analysisperiod import AnalysisPeriod
 from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ...bhomutil.analytics import CONSOLE_LOGGER
-from ...helpers import create_triangulation
-from ...ladybug_extension.analysis_period import describe_analysis_period
+from ...bhom import CONSOLE_LOGGER
+from ...ladybug_extension.analysisperiod import describe_analysis_period
+from ...plot.utilities import create_triangulation
 from .spatial_comfort import SpatialComfort, SpatialMetric
 
 
 def get_common_pt_indices(
     spatial_result_1: SpatialComfort, spatial_result_2: SpatialComfort
-) -> List[List[int]]:
+) -> list[list[int]]:
     """Get the indices of the points that are common between two spatial comfort cases.
 
     Args:
@@ -24,7 +24,7 @@ def get_common_pt_indices(
         spatial_result_2 (SpatialComfort):
             A SpatialComfort object.
 
-    Returns (List[List[int]]):
+    Returns (list[list[int]]):
         A list of two lists of indices that correspond to the points in the two.
 
     """
@@ -48,7 +48,8 @@ def get_triangulation(
         spatial_result_2 (SpatialComfort):
             A SpatialComfort object.
         alpha (float, optional):
-            A number between 0 and 2 that controls the distance between vertices of the triangulation, above which cells are removed. Default is 1.9.
+            A number between 0 and 2 that controls the distance between vertices of the triangulation,
+            above which cells are removed. Default is 1.9.
 
     Returns (Triangulation):
         A matplotlib Triangulation object.
@@ -95,7 +96,8 @@ def compare_utci(
         raise ValueError("This type of plot is not possible for the requested metric.")
 
     CONSOLE_LOGGER.info(
-        f"[SpatialComfort - Comparison] - Plotting UTCI difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        "[SpatialComfort - Comparison] - Plotting UTCI difference between "
+        f"{spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
     )
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
@@ -150,7 +152,10 @@ def compare_utci(
 
     # add title
     ax.set_title(
-        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
+        (
+            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+            f"average difference\n{spatial_result_1} > {spatial_result_2}"
+        ),
         ha="left",
         va="bottom",
         x=0,
@@ -167,7 +172,8 @@ def compare_mrt(
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
     alpha: float = 1.9,
 ) -> plt.Figure:
-    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory as it must load two sets of results to compare them.
+    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory
+    as it must load two sets of results to compare them.
 
     Args:
         spatial_result_1 (SpatialComfort):
@@ -185,7 +191,10 @@ def compare_mrt(
     """
 
     CONSOLE_LOGGER.info(
-        f"[SpatialComfort - Comparison] - Plotting MRT difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        (
+            f"[SpatialComfort - Comparison] - Plotting MRT difference between {spatial_result_1} and "
+            f"{spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        )
     )
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
@@ -246,7 +255,10 @@ def compare_mrt(
 
     # add title
     ax.set_title(
-        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
+        (
+            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+            f"average difference\n{spatial_result_1} > {spatial_result_2}"
+        ),
         ha="left",
         va="bottom",
         x=0,
@@ -263,7 +275,8 @@ def compare_sun_hours(
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
     alpha: float = 1.9,
 ) -> plt.Figure:
-    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory as it must load two sets of results to compare them.
+    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory
+    as it must load two sets of results to compare them.
 
     Args:
         spatial_result_1 (SpatialComfort):
@@ -281,7 +294,10 @@ def compare_sun_hours(
     """
 
     CONSOLE_LOGGER.info(
-        f"[SpatialComfort - Comparison] - Plotting Sun-Hours difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        (
+            f"[SpatialComfort - Comparison] - Plotting Sun-Hours difference between {spatial_result_1} and "
+            f"{spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        )
     )
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
@@ -331,7 +347,10 @@ def compare_sun_hours(
 
     # add title
     ax.set_title(
-        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
+        (
+            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+            f"average difference\n{spatial_result_1} > {spatial_result_2}"
+        ),
         ha="left",
         va="bottom",
         x=0,
@@ -349,7 +368,8 @@ def compare_ws(
     analysis_period: AnalysisPeriod = None,
     alpha: float = 1.9,
 ) -> plt.Figure:
-    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory as it must load two sets of results to compare them.
+    """Compare two spatial comfort cases. WARNING: This can use A LOT of memory
+    as it must load two sets of results to compare them.
 
     Args:
         spatial_result_1 (SpatialComfort):
@@ -377,7 +397,10 @@ def compare_ws(
         raise ValueError("This type of plot is not possible for the requested metric.")
 
     CONSOLE_LOGGER.info(
-        f"[SpatialComfort - Comparison] - Plotting WS difference between {spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        (
+            f"[SpatialComfort - Comparison] - Plotting WS difference between {spatial_result_1} "
+            f"and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
+        )
     )
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
@@ -436,7 +459,10 @@ def compare_ws(
 
     # add title
     ax.set_title(
-        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
+        (
+            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+            f"average difference\n{spatial_result_1} > {spatial_result_2}"
+        ),
         ha="left",
         va="bottom",
         x=0,
@@ -452,7 +478,7 @@ def compare_distance_to_comfortable(
     spatial_result_2: SpatialComfort,
     metric: SpatialMetric,
     analysis_period: AnalysisPeriod = None,
-    comfort_limits: Tuple[float] = (9, 26),
+    comfort_limits: tuple[float] = (9, 26),
     alpha: float = 1.9,
 ) -> plt.Figure:
     """For a given metric, plot the difference between two SpatialComfort objects.
@@ -549,7 +575,10 @@ def compare_distance_to_comfortable(
 
     # add title
     ax.set_title(
-        f"{describe_analysis_period(analysis_period)}\n{metric.description()} - average difference\n{spatial_result_1} > {spatial_result_2}",
+        (
+            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+            f"average difference\n{spatial_result_1} > {spatial_result_2}"
+        ),
         ha="left",
         va="bottom",
         x=0,

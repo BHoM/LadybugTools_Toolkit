@@ -1,0 +1,204 @@
+{
+    "ACER_PLATANOIDES": {
+        "average_height": 13.0,
+        "average_radius": 5.715,
+        "common_name": "Norway maple",
+        "drop_period": [
+            "2017-10-12 00:00:00",
+            "2017-11-05 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.9,
+        "porosity_leafed": 0.08654791885,
+        "regrowth_period": [
+            "2017-03-26 00:00:00",
+            "2017-04-28 00:00:00"
+        ]
+    },
+    "AESCULUS_HIPPOCASTANUM": {
+        "average_height": 19.0,
+        "average_radius": 6.8575,
+        "common_name": "European horse-chestnut",
+        "drop_period": [
+            "2017-10-11 00:00:00",
+            "2017-12-08 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.85,
+        "porosity_leafed": 0.10719667189999998,
+        "regrowth_period": [
+            "2017-03-26 00:00:00",
+            "2017-04-28 00:00:00"
+        ]
+    },
+    "BETULA_PENDULA": {
+        "average_height": 13.5,
+        "average_radius": 3.0475000000000003,
+        "common_name": "Silver birch",
+        "drop_period": [
+            "2017-10-12 00:00:00",
+            "2017-12-08 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.9,
+        "porosity_leafed": 0.08347785888,
+        "regrowth_period": [
+            "2017-03-26 00:00:00",
+            "2017-04-28 00:00:00"
+        ]
+    },
+    "CARPINUS_BETULUS": {
+        "average_height": 15.0,
+        "average_radius": 5.25,
+        "common_name": "European hornbeam",
+        "drop_period": [
+            "2017-10-11 00:00:00",
+            "2017-12-08 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.95,
+        "porosity_leafed": 0.07943651235,
+        "regrowth_period": [
+            "2017-02-26 00:00:00",
+            "2017-03-21 00:00:00"
+        ]
+    },
+    "FAGUS_SYLVATICA": {
+        "average_height": 19.0,
+        "average_radius": 7.5,
+        "common_name": "European beech",
+        "drop_period": [
+            "2017-12-05 00:00:00",
+            "2017-12-31 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.9,
+        "porosity_leafed": 0.14234635129999998,
+        "regrowth_period": [
+            "2017-05-15 00:00:00",
+            "2017-05-27 00:00:00"
+        ]
+    },
+    "FRAXINUS_AMERICANA": {
+        "average_height": 19.5,
+        "average_radius": 7.619999999999999,
+        "common_name": "White ash",
+        "drop_period": [
+            "2017-10-12 00:00:00",
+            "2017-11-05 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.95,
+        "porosity_leafed": 0.1688392104,
+        "regrowth_period": [
+            "2017-03-26 00:00:00",
+            "2017-04-28 00:00:00"
+        ]
+    },
+    "MAGNOLIA_KOBUS": {
+        "average_height": 10.5,
+        "average_radius": 4.5725,
+        "common_name": "Kobushi magnolia",
+        "drop_period": [
+            "2017-10-11 00:00:00",
+            "2017-12-08 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.95,
+        "porosity_leafed": 0.1522853718,
+        "regrowth_period": [
+            "2017-03-26 00:00:00",
+            "2017-04-28 00:00:00"
+        ]
+    },
+    "MALUS_FLORIBUNDA": {
+        "average_height": 6.8,
+        "average_radius": 3.0475000000000003,
+        "common_name": "Japanese flowering crabapple",
+        "drop_period": [
+            "2017-12-05 00:00:00",
+            "2017-12-31 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.9,
+        "porosity_leafed": 0.2644426818,
+        "regrowth_period": [
+            "2017-02-26 00:00:00",
+            "2017-03-31 00:00:00"
+        ]
+    },
+    "PHOENIX_DACTYLIFERA": {
+        "average_height": 12.5,
+        "average_radius": 3.0,
+        "common_name": "Date palm",
+        "drop_period": [],
+        "deciduous": false,
+        "porosity_bare": 0.5,
+        "porosity_leafed": 0.5,
+        "regrowth_period": []
+    },
+    "PRUNUS_CERASIFERA": {
+        "average_height": 5.25,
+        "average_radius": 3.0475000000000003,
+        "common_name": "Cherry plum",
+        "drop_period": [
+            "2017-12-05 00:00:00",
+            "2017-12-31 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.95,
+        "porosity_leafed": 0.1621928373,
+        "regrowth_period": [
+            "2017-02-26 00:00:00",
+            "2017-03-31 00:00:00"
+        ]
+    },
+    "PRUNUS_SERRULATA": {
+        "average_height": 8.5,
+        "average_radius": 3.0475000000000003,
+        "common_name": "East asian cherry",
+        "drop_period": [
+            "2017-10-11 00:00:00",
+            "2017-12-08 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.9,
+        "porosity_leafed": 0.31095862879999997,
+        "regrowth_period": [
+            "2017-03-26 00:00:00",
+            "2017-04-28 00:00:00"
+        ]
+    },
+    "QUERCUS_PALUSTRIS": {
+        "average_height": 20.5,
+        "average_radius": 5.715,
+        "common_name": "Spanish oak",
+        "drop_period": [
+            "2017-12-05 00:00:00",
+            "2017-12-31 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.85,
+        "porosity_leafed": 0.16041758990000002,
+        "regrowth_period": [
+            "2017-05-15 00:00:00",
+            "2017-05-27 00:00:00"
+        ]
+    },
+    "TILIA_X_EUCHLORA": {
+        "average_height": 13.5,
+        "average_radius": 3.81,
+        "common_name": "Caucasian lime",
+        "drop_period": [
+            "2017-10-12 00:00:00",
+            "2017-11-05 00:00:00"
+        ],
+        "deciduous": true,
+        "porosity_bare": 0.9,
+        "porosity_leafed": 0.052953939559999996,
+        "regrowth_period": [
+            "2017-03-26 00:00:00",
+            "2017-04-28 00:00:00"
+        ]
+    }
+}

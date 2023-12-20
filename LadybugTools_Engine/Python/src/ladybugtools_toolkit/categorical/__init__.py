@@ -1,1 +1,1 @@
-from .categorical import Categorical
+"""Root for the categorical subpackage."""

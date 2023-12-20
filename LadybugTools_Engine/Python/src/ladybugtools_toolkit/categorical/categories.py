@@ -1,31 +1,21 @@
-from enum import Enum
-
+"""Predetermined categories for categorical data."""
 import numpy as np
 
-from . import Categorical
+from .categorical import Categorical, CategoricalComfort, ComfortClass
 
-
-class ComfortClass(Enum):
-    """Thermal comfort categories."""
-
-    TOO_COLD = "Too cold"
-    COMFORTABLE = "Comfortable"
-    TOO_HOT = "Too hot"
-
-
-UTCI_SIMPLIFIED_CATEGORIES = Categorical(
+UTCI_SIMPLIFIED_CATEGORIES = CategoricalComfort(
     bins=(-np.inf, 9, 26, np.inf),
     bin_names=("Too cold", "Comfortable", "Too hot"),
     colors=("#3C65AF", "#2EB349", "#C31F25"),
     name="UTCI (simplified)",
+    comfort_classes=[
+        ComfortClass.TOO_COLD,
+        ComfortClass.COMFORTABLE,
+        ComfortClass.TOO_HOT,
+    ],
 )
-UTCI_SIMPLIFIED_CATEGORIES.comfort_classes = [
-    ComfortClass.TOO_COLD,
-    ComfortClass.COMFORTABLE,
-    ComfortClass.TOO_HOT,
-]
 
-UTCI_DEFAULT_CATEGORIES = Categorical(
+UTCI_DEFAULT_CATEGORIES = CategoricalComfort(
     bin_names=(
         "Extreme cold stress",
         "Very strong cold stress",
@@ -52,21 +42,21 @@ UTCI_DEFAULT_CATEGORIES = Categorical(
         "#580002",
     ),
     name="UTCI",
+    comfort_classes=[
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.COMFORTABLE,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+    ],
 )
-UTCI_DEFAULT_CATEGORIES.comfort_classes = [
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.COMFORTABLE,
-    ComfortClass.TOO_HOT,
-    ComfortClass.TOO_HOT,
-    ComfortClass.TOO_HOT,
-    ComfortClass.TOO_HOT,
-]
 
-UTCI_SLIGHTHEATSTRESS_CATEGORIES = Categorical(
+UTCI_SLIGHTHEATSTRESS_CATEGORIES = CategoricalComfort(
     bin_names=(
         "Extreme cold stress",
         "Very strong cold stress",
@@ -94,21 +84,21 @@ UTCI_SLIGHTHEATSTRESS_CATEGORIES = Categorical(
         "#7E1416",
         "#500003",
     ),
-    name="UTCI (inc. slight heat stress)",
+    name="UTCI inc. slight heat stress",
+    comfort_classes=[
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.COMFORTABLE,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+    ],
 )
-UTCI_SLIGHTHEATSTRESS_CATEGORIES.comfort_classes = [
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.TOO_COLD,
-    ComfortClass.COMFORTABLE,
-    ComfortClass.TOO_HOT,
-    ComfortClass.TOO_HOT,
-    ComfortClass.TOO_HOT,
-    ComfortClass.TOO_HOT,
-    ComfortClass.TOO_HOT,
-]
 
 BEAUFORT_CATEGORIES = Categorical(
     bin_names=(

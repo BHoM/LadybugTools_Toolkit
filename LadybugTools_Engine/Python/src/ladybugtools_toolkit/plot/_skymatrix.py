@@ -1,7 +1,10 @@
+"""Methods for plotting sky matrices."""
+# pylint: disable=E0401
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List
+
+# pylint: enable=E0401
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -12,12 +15,14 @@ from ladybug.viewsphere import ViewSphere
 from ladybug.wea import Wea
 from matplotlib.collections import PatchCollection
 
-from ..external_comfort import HBR_FOLDERS
-from ..ladybug_extension.analysis_period import describe_analysis_period
+from honeybee_radiance.config import folders as hbr_folders
+from ..bhom.analytics import bhom_analytics
+from ..ladybug_extension.analysisperiod import describe_analysis_period
 from ..ladybug_extension.epw import EPW
 from ..ladybug_extension.location import location_to_string
 
 
+@bhom_analytics()
 def skymatrix(
     epw: EPW,
     ax: plt.Axes = None,
@@ -65,7 +70,7 @@ def skymatrix(
     wea_file = wea.write(wea_path.as_posix())
 
     # run gendaymtx
-    gendaymtx_exe = (Path(HBR_FOLDERS.radbin_path) / "gendaymtx.exe").as_posix()
+    gendaymtx_exe = (Path(hbr_folders.radbin_path) / "gendaymtx.exe").as_posix()
     cmds = [gendaymtx_exe, "-m", str(density), "-d", "-O1", "-A", wea_file]
     with subprocess.Popen(cmds, stdout=subprocess.PIPE, shell=True) as process:
         stdout = process.communicate()
@@ -75,7 +80,7 @@ def skymatrix(
         stdout = process.communicate()
     diff_data_str = stdout[0].decode("ascii")
 
-    def _broadband_rad(data_str: str) -> List[float]:
+    def _broadband_rad(data_str: str) -> list[float]:
         _ = data_str.split("\r\n")[:8]
         data = np.array(
             [[float(j) for j in i.split()] for i in data_str.split("\r\n")[8:]][1:-1]

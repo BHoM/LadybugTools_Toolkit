@@ -1,4 +1,4 @@
-from typing import Union
+"""Methods for visualising sky-view at a given location."""
 
 from honeybee.model import Model
 from ladybug.datacollection import HourlyContinuousCollection
@@ -8,9 +8,10 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import BoundaryNorm, Colormap
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from ...helpers import figure_to_image
-from ...plot import skymatrix, sp
+from ...plot._skymatrix import skymatrix
+from ...plot._sunpath import sunpath as sp
 from ...plot.fisheye_sky import fisheye_sky
+from ...plot.utilities import figure_to_image
 
 
 def sky_view_pov(
@@ -18,7 +19,7 @@ def sky_view_pov(
     sensor: Point3D,
     epw: EPW,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
-    cmap: Union[Colormap, str] = "viridis",
+    cmap: Colormap | str = "viridis",
     norm: BoundaryNorm = None,
     data_collection: HourlyContinuousCollection = None,
     density: int = 1,
@@ -69,12 +70,11 @@ def sky_view_pov(
         sunpath_img = ImageOps.mirror(
             figure_to_image(
                 sp(
-                    epw=epw,
+                    location=epw.location,
                     analysis_period=analysis_period,
                     data_collection=data_collection,
                     cmap=cmap,
                     norm=norm,
-                    show_title=False,
                     show_grid=False,
                     show_legend=False,
                 )
@@ -120,7 +120,7 @@ def sky_view_pov(
                 (255, 255, 255),
                 font=font,
             )
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             draw.text(
                 (5, 5),
                 title,

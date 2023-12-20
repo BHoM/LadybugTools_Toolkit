@@ -1,6 +1,10 @@
+"""Methods for handling SpatialMetric results for spatial comfort assessments."""
+# pylint: disable=E0401
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+
+# pylint: enable=E0401
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,7 +52,7 @@ class SpatialMetric(Enum):
         """
         return simulation_directory / f"{self.name.lower()}.parquet"
 
-    def tricontourf_kwargs(self) -> Dict[str, Any]:
+    def tricontourf_kwargs(self) -> dict[str, Any]:
         """kwargs for tricontourf plot formatting of the given SpatialMetric."""
         cases = {
             SpatialMetric.DBT_EPW.value: {
@@ -109,7 +113,7 @@ class SpatialMetric(Enum):
         except KeyError as exc:
             raise KeyError(f"tricontourf_kwargs not defined for {self}.") from exc
 
-    def tricontour_kwargs(self) -> Dict[str, Any]:
+    def tricontour_kwargs(self) -> dict[str, Any]:
         """kwargs for tricontour plot formatting of the given SpatialMetric."""
         cases = {
             SpatialMetric.DBT_EPW.value: {

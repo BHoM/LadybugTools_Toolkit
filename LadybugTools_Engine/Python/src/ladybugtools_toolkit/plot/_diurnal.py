@@ -1,6 +1,10 @@
+"""Methods for plotting diurnal profiles from time-indexed data."""
+
+# pylint: disable=E0401
 import calendar
 import textwrap
-from typing import List
+
+# pylint: enable=E0401
 
 import matplotlib.collections as mcollections
 import matplotlib.lines as mlines
@@ -10,9 +14,11 @@ import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 
+from ..bhom.analytics import bhom_analytics
 from .utilities import create_title
 
 
+@bhom_analytics()
 def diurnal(
     series: pd.Series,
     ax: plt.Axes = None,
@@ -104,7 +110,7 @@ def diurnal(
             if i[1] == 0:
                 major_ticklabels.append(f"{calendar.month_abbr[i[0]]}")
             elif i[1] == 12:
-                major_ticklabels.append(f"")
+                major_ticklabels.append("")
     else:
         raise ValueError("period must be one of 'daily', 'weekly', or 'monthly'")
 
@@ -112,7 +118,7 @@ def diurnal(
     ax.set_title(
         create_title(
             kwargs.pop("title", None),
-            f"Average {period} diurnal profile (~{samples_per_timestep:0.0f} samples per timestep)",
+            f"Average {period} diurnal profile (≈{samples_per_timestep:0.0f} samples per timestep)",
         )
     )
 
@@ -206,7 +212,7 @@ def diurnal(
     )
     if show_legend:
         ax.legend(
-            bbox_to_anchor=(0.5, -0.15),
+            bbox_to_anchor=(0.5, -0.2),
             loc=8,
             ncol=6,
             borderaxespad=0,
@@ -217,19 +223,20 @@ def diurnal(
     return ax
 
 
+@bhom_analytics()
 def stacked_diurnals(
-    datasets: List[pd.Series], period: str = "monthly", **kwargs
+    datasets: list[pd.Series], period: str = "monthly", **kwargs
 ) -> plt.Figure:
     """Create a matplotlib figure with stacked diurnal profiles.
 
     Args:
-        datasets (List[pd.Series]):
+        datasets (list[pd.Series]):
             A list of time-indexed Pandas Series objects.
         period (str, optional):
             The period to aggregate over. Must be one of "dailyy", "weekly", or "monthly". Defaults to "monthly".
         **kwargs (Dict[str, Any], optional):
             Additional keyword arguments to pass to the matplotlib plotting function.
-            colors (List[str], optional):
+            colors (list[str], optional):
                 A list of colors to use for the plots. Defaults to None, which uses the default diurnal color.
 
     Returns:

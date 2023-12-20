@@ -20,13 +20,11 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.Engine.Python;
 using BH.oM.Python;
 using BH.oM.Base.Attributes;
 
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 
 namespace BH.Engine.LadybugTools
 {
@@ -39,7 +37,7 @@ namespace BH.Engine.LadybugTools
         {
             if (hbjson == null)
             {
-                BH.Engine.Base.Compute.RecordError("hbjson input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(hbjson)} input cannot be null.");
                 return null;
             }
 
@@ -51,26 +49,21 @@ namespace BH.Engine.LadybugTools
 
             PythonEnvironment env = InstallPythonEnv_LBT(true);
 
-            string hbjsonFile = System.IO.Path.GetFullPath(hbjson);
-            string outputDirectory = System.IO.Path.GetDirectoryName(hbjsonFile);
-            string fileName = System.IO.Path.GetFileNameWithoutExtension(hbjsonFile);
+            hbjson = System.IO.Path.GetFullPath(hbjson);
+            string gemFile = System.IO.Path.ChangeExtension(hbjson, ".gem");
+            
+            string script = Path.Combine(Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "hbjson_to_gem.py");
 
-            string pythonScript = String.Join("\n", new List<string>()
+            // run the process
+            string command = $"{env.Executable} {script} -j \"{hbjson}\"";
+            string result = Python.Compute.RunCommandStdout(command: command, hideWindows: true);
+
+            if (!File.Exists(gemFile))
             {
-                "import traceback",
-                "from honeybee.model import Model",
-                "from pathlib import Path",
-                "",
-                "try:",
-                $"    model = Model.from_hbjson(r\"{hbjsonFile}\")",
-                $"    gem_file = model.to_gem(r\"{outputDirectory}\", name=\"{fileName}\")",
-                "    print(gem_file)",
-                "except Exception as exc:",
-                "    print(traceback.format_exc())",
-            });
+                BH.Engine.Base.Compute.RecordError($"File conversion failed due to {result}");
+            }
 
-            return env.RunPythonString(pythonScript).Trim();
+            return gemFile;
         }
     }
 }
-
