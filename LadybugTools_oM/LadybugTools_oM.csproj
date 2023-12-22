@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyVersion>7.0.0.0</AssemblyVersion>
@@ -11,7 +10,6 @@
     <FileVersion>7.1.0.0</FileVersion>
     <OutputPath>..\Build\</OutputPath>
   </PropertyGroup>
-
   <ItemGroup>
     <Reference Include="Adapter_oM">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Adapter_oM.dll</HintPath>
@@ -39,9 +37,7 @@
       <SpecificVersion>False</SpecificVersion>
     </Reference>
   </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy $(TargetDir)$(TargetFileName) $(ProgramData)\BHoM\Assemblies /Y" />
   </Target>
-
 </Project>
