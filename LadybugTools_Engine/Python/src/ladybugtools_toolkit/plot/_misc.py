@@ -470,6 +470,8 @@ def solar_elevation_azimuth(location: Location, ax: plt.Axes = None) -> plt.Axes
         name="directions",
     )
 
+    
+
     if ax is None:
         ax = plt.gca()
 
