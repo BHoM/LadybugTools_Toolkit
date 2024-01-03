@@ -1,57 +1,42 @@
 """Methods for handling solar radiation."""
 
 # pylint: disable=E0401
-import itertools
-import textwrap
-from datetime import datetime
-import json
 import concurrent
-from dataclasses import dataclass, field
+import itertools
+import json
+import textwrap
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-from ladybugtools_toolkit.helpers import angle_from_north, Vector2D
 import matplotlib.ticker as mticker
-from matplotlib.colors import Normalize
-from matplotlib.tri import Triangulation
-from matplotlib.cm import ScalarMappable
-from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
-from ladybug.wea import EPW, AnalysisPeriod, Wea, Location
+from ladybug.sunpath import Sun, Sunpath
+from ladybug.wea import EPW, AnalysisPeriod, Location, Wea
+from ladybug_radiance.skymatrix import SkyMatrix
+from ladybug_radiance.visualize.radrose import RadiationRose
+# pylint: enable=E0401
+from ladybugtools_toolkit.helpers import Vector2D, angle_from_north
 from matplotlib import pyplot as plt
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
+from matplotlib.ticker import MultipleLocator
+from matplotlib.tri import Triangulation
 from tqdm import tqdm
 
-from ladybug_radiance.study.radiation import Radiation, RadiationStudy
-from ladybug_radiance.visualize.radrose import RadiationRose
-from ladybug_radiance.skymatrix import SkyMatrix
-
-from .helpers import (
-    OpenMeteoVariable,
-    angle_from_north,
-    angle_to_vector,
-    cardinality,
-    circular_weighted_mean,
-    rolling_window,
-    scrape_meteostat,
-    scrape_openmeteo,
-    wind_speed_at_height,
-    remove_leap_days,
-)
 from .bhom.analytics import bhom_analytics
 from .bhom.logging import CONSOLE_LOGGER
-from .ladybug_extension.analysisperiod import (
-    analysis_period_to_boolean,
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
-from .ladybug_extension.location import location_to_string
-from ladybug.sunpath import Sunpath, Sun
+from .helpers import (OpenMeteoVariable, angle_from_north, remove_leap_days,
+                      scrape_openmeteo)
+from .ladybug_extension.analysisperiod import (analysis_period_to_boolean,
+                                               analysis_period_to_datetimes,
+                                               describe_analysis_period)
 from .ladybug_extension.datacollection import header_to_string
-
+from .ladybug_extension.location import location_to_string
 from .plot.utilities import contrasting_color, format_polar_plot
 
 
@@ -1009,7 +994,7 @@ def radiation_rose(
     """
     if ax is None:
         _, ax = plt.subplots(subplot_kw={"projection": "polar"})
-    
+
     if ax.name != "polar":
         raise ValueError("ax must be a polar axis.")
 
@@ -1128,7 +1113,7 @@ def tilt_orientation_factor(
     directions: int = 36,
     tilts: int = 9,
     vmax: float = None,
-    quantiles: list[float] = [0.05, 0.25, 0.5, 0.75, 0.95],
+    quantiles: tuple[float] = (0.05, 0.25, 0.5, 0.75, 0.95),
 ) -> plt.Axes:
     """Create a tilt-orientation factor plot.
 
@@ -1156,7 +1141,7 @@ def tilt_orientation_factor(
         vmax (float, optional): 
             The maximum value to plot. 
             Defaults to None.
-        quantiles (list[float], optional):
+        quantiles (tuple[float], optional):
             The quantiles to plot. 
 
     Returns:
