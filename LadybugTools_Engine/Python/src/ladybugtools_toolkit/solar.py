@@ -12,14 +12,22 @@ from pathlib import Path
 from typing import Any
 
 # pylint: enable=E0401
-
+from ladybugtools_toolkit.helpers import angle_from_north, Vector2D
 import matplotlib.ticker as mticker
+from matplotlib.colors import Normalize
+from matplotlib.tri import Triangulation
+from matplotlib.cm import ScalarMappable
+from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
 from ladybug.wea import EPW, AnalysisPeriod, Wea, Location
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+
+from ladybug_radiance.study.radiation import Radiation, RadiationStudy
+from ladybug_radiance.visualize.radrose import RadiationRose
+from ladybug_radiance.skymatrix import SkyMatrix
 
 from .helpers import (
     OpenMeteoVariable,
@@ -952,3 +960,321 @@ class Solar:
         )
 
         return ax
+
+
+def radiation_rose(
+    epw_file: Path,
+    ax: plt.Axes = None,
+    rad_type: str = "total",
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
+    tilt_angle: float = 0,
+    cmap: str = "YlOrRd",
+    directions: int = 36,
+    label: bool = True,
+    bar_width: float = 1,
+) -> plt.Axes:
+    """Create a solar radiation rose
+
+    Args:
+        epw_file (Path): 
+            The EPW file representing the weather data/location to be visualised.
+        ax (plt.Axes, optional): 
+            A polar axis onto which the radiation rose will be plotted. 
+            Defaults to None.
+        rad_type (str, optional): 
+            The type of radiation to plot. 
+            Defaults to "total", with options of "total", "direct" and "diffuse".
+        analysis_period (AnalysisPeriod, optional): 
+            The analysis period over which radiation shall be summarised. 
+            Defaults to AnalysisPeriod().
+        tilt_angle (float, optional): 
+            The tilt (from 0 at horizon, to 90 facing the sky) to asses. 
+            Defaults to 0.
+        cmap (str, optional): 
+            The colormap to apply. 
+            Defaults to "YlOrRd".
+        directions (int, optional): 
+            The number of directions to bin data into. 
+            Defaults to 36.
+        label (bool, optional): 
+            Set to True to include labels on teh plot. 
+            Defaults to True.
+        bar_width (float, optional): 
+            Set the bar width for each of the bins. 
+            Defaults to 1.
+
+    Returns:
+        plt.Axes: 
+            The matplotlib axes.
+    """
+    if ax is None:
+        _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+    
+    if ax.name != "polar":
+        raise ValueError("ax must be a polar axis.")
+
+    # create sky conditions
+    smx = SkyMatrix.from_epw(
+        epw_file=epw_file, high_density=True, hoys=analysis_period.hoys
+    )
+    rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=tilt_angle)
+
+    # get properties to plot
+    angles = np.deg2rad(
+        [angle_from_north(j) for j in [Vector2D(*i[:2]) for i in rr.direction_vectors]]
+    )
+    values = getattr(rr, f"{rad_type}_values")
+    norm = Normalize(vmin=0, vmax=max(values))
+    cmap = plt.get_cmap(cmap)
+    colors = [cmap(i) for i in [norm(v) for v in values]]
+
+    # generate plot
+    rects = ax.bar(
+        x=angles,
+        height=values,
+        width=((np.pi / directions) * 2) * bar_width,
+        color=colors,
+    )
+    format_polar_plot(ax)
+
+    # add colormap
+    sm = ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(
+        sm,
+        ax=ax,
+        orientation="vertical",
+        label="Cumulative irradiance (W/m$^2$)",
+        fraction=0.046,
+        pad=0.04,
+    )
+    cbar.outline.set_visible(False)
+
+    # add labels
+    if label:
+        offset_distance = max(values) / 10
+        if directions > 36:
+            max_angle = angles[np.argmax(values)]
+            max_val = max(values)
+            ax.text(
+                max_angle,
+                max_val + offset_distance,
+                f"{max_val:0.0f}W/m$^2$\n{np.rad2deg(max_angle):0.0f}°",
+                fontsize="xx-small",
+                ha="center",
+                va="center",
+                rotation=0,
+                rotation_mode="anchor",
+                color="k",
+            )
+        else:
+            for rect, color in list(zip(*[rects, colors])):
+                theta = rect.get_x() + (rect.get_width() / 2)
+                theta_deg = np.rad2deg(theta)
+                val = rect.get_height()
+
+                if theta_deg < 180:
+                    if val < max(values) / 2:
+                        ha = "left"
+                        anchor = val + offset_distance
+                    else:
+                        ha = "right"
+                        anchor = val - offset_distance
+                    ax.text(
+                        theta,
+                        anchor,
+                        f"{val:0.0f}",
+                        fontsize="xx-small",
+                        ha=ha,
+                        va="center",
+                        rotation=90 - theta_deg,
+                        rotation_mode="anchor",
+                        color=contrasting_color(color),
+                    )
+                else:
+                    if val < max(values) / 2:
+                        ha = "right"
+                        anchor = val + offset_distance
+                    else:
+                        ha = "left"
+                        anchor = val - offset_distance
+                    ax.text(
+                        theta,
+                        anchor,
+                        f"{val:0.0f}",
+                        fontsize="xx-small",
+                        ha=ha,
+                        va="center",
+                        rotation=-theta_deg - 90,
+                        rotation_mode="anchor",
+                        color=contrasting_color(color),
+                    )
+
+    ax.set_title(
+        f"{epw_file.name}\n{rad_type.title()} irradiance ({tilt_angle}° altitude)\n{describe_analysis_period(analysis_period)}"
+    )
+
+    plt.tight_layout()
+
+    return ax
+
+
+def tilt_orientation_factor(
+    epw_file: Path,
+    ax: plt.Axes = None,
+    rad_type: str = "total",
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
+    cmap: str = "YlOrRd",
+    directions: int = 36,
+    tilts: int = 9,
+    vmax: float = None,
+    quantiles: list[float] = [0.05, 0.25, 0.5, 0.75, 0.95],
+) -> plt.Axes:
+    """Create a tilt-orientation factor plot.
+
+    Args:
+        epw_file (Path): 
+            The EPW file representing the weather data/location to be visualised.
+        ax (plt.Axes, optional): 
+            The axes to plot on. 
+            Defaults to None.
+        rad_type (str, optional): 
+            The type of radiation to plot. 
+            Defaults to "total", with options of "total", "direct" and "diffuse".
+        analysis_period (AnalysisPeriod, optional): 
+            The analysis period over which radiation shall be summarised. 
+            Defaults to AnalysisPeriod().
+        cmap (str, optional): 
+            The colormap to apply. 
+            Defaults to "YlOrRd".
+        directions (int, optional): 
+            The number of directions to bin data into. 
+            Defaults to 36.
+        tilts (int, optional): 
+            The number of tilts to calculate. 
+            Defaults to 9.
+        vmax (float, optional): 
+            The maximum value to plot. 
+            Defaults to None.
+        quantiles (list[float], optional):
+            The quantiles to plot. 
+
+    Returns:
+        plt.Axes: 
+            The matplotlib axes.
+    """
+
+    if ax is None:
+        ax = plt.gca()
+
+    cmap = plt.get_cmap(cmap)
+
+    # create sky matrix
+    smx = SkyMatrix.from_epw(
+        epw_file=epw_file, high_density=True, hoys=analysis_period.hoys
+    )
+
+    # create roses per tilt angle
+    _directions = np.linspace(0, 360, directions + 1)[:-1].tolist()
+    _tilts = np.linspace(0, 90, tilts)[:-1].tolist() + [89.999]
+    rrs = []
+    for ta in tqdm(_tilts):
+        rrs.append(
+            RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=ta)
+        )
+    _directions.append(360)
+
+    # create matrix of values from results
+    values = np.array([getattr(i, f"{rad_type}_values") for i in rrs])
+
+    # repeat first result at end to close the circle
+    values = values.T.tolist()
+    values.append(values[0])
+    values = np.array(values).T
+
+    # create x, y coordinates per result value
+    __directions, __tilts = np.meshgrid(_directions, _tilts)
+
+    # get location of max
+    _max = values.flatten().max()
+    if _max == 0:
+        raise ValueError(f"No solar radiation within {analysis_period}.")
+
+    _max_idx = values.flatten().argmax()
+    _max_alt = __tilts.flatten()[_max_idx]
+    _max_az = __directions.flatten()[_max_idx]
+
+    # create colormap
+    norm = Normalize(vmin=0, vmax=vmax if vmax else _max)
+
+    # create triangulation
+    tri = Triangulation(x=__directions.flatten(), y=__tilts.flatten())
+
+    # create quantile lines
+    quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
+    levels = [np.quantile(a=values.flatten(), q=i) for i in quantiles]
+    quant_colors = [cmap(i) for i in [norm(v) for v in levels]]
+    quant_colors_inv = [contrasting_color(i) for i in quant_colors]
+    max_color_inv = contrasting_color(cmap(norm(_max)))
+
+    # plot data
+    tcf = ax.tricontourf(tri, values.flatten(), levels=100, cmap=cmap, norm=norm)
+    tcl = ax.tricontour(
+        tri,
+        values.flatten(),
+        levels=levels,
+        colors=quant_colors_inv,
+        linestyles=":",
+        alpha=0.5,
+    )
+
+    # add contour labels
+    def cl_fmt(x):
+        return f"{x:,.0f}W/m$^2$"
+
+    _ = ax.clabel(tcl, fontsize="small", fmt=cl_fmt)
+
+    # add colorbar
+    cb = plt.colorbar(
+        tcf,
+        ax=ax,
+        orientation="vertical",
+        drawedges=False,
+        fraction=0.05,
+        aspect=25,
+        pad=0.02,
+        label="Cumulative irradiance (W/m$^2$)",
+    )
+    cb.outline.set_visible(False)
+    for quantile_val in levels:
+        cb.ax.plot([0, 1], [quantile_val] * 2, color="k", ls="-", alpha=0.5)
+
+    # add max-location
+    ax.scatter(_max_az, _max_alt, c=max_color_inv, s=10, marker="x")
+    alt_offset = (90 / 100) * 0.5 if _max_alt <= 45 else -(90 / 100) * 0.5
+    az_offset = (360 / 100) * 0.5 if _max_az <= 180 else -(360 / 100) * 0.5
+    ha = "left" if _max_az <= 180 else "right"
+    va = "bottom" if _max_alt <= 45 else "top"
+    ax.text(
+        _max_az + az_offset,
+        _max_alt + alt_offset,
+        f"{_max:,.0f}W/m$^2$\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
+        ha=ha,
+        va=va,
+        c=max_color_inv,
+        weight="bold",
+        size="small",
+    )
+
+    ax.set_xlim(0, 360)
+    ax.set_ylim(0, 90)
+    ax.xaxis.set_major_locator(MultipleLocator(base=30))
+    ax.yaxis.set_major_locator(MultipleLocator(base=10))
+    ax.set_xlabel("Panel orientation (clockwise from North at 0°)")
+    ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
+
+    ax.set_title(
+        f"{epw_file.name}\n{rad_type.title()} irradiance (cumulative)\n{describe_analysis_period(analysis_period)}"
+    )
+
+    return ax
