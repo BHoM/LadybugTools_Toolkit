@@ -38,7 +38,7 @@ def evaporative_cooling_potential(epw: EPW, ax: plt.Axes = None, **kwargs) -> pl
     ax.text(
         1,
         1,
-        "*value shown indicate cooling effect from saturating air with moisture (DBT - DPT)",
+        "*values shown indicate cooling effect from saturating air with moisture (DBT - DPT)",
         transform=ax.transAxes,
         ha="right",
         va="top",

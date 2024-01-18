@@ -2,6 +2,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=E0401
 import calendar
+from pathlib import Path
 import warnings
 
 # pylint: enable=E0401
@@ -28,6 +29,7 @@ def utci_shade_benefit(
     comfort_limits: tuple[float] = (9, 26),
     location: Location = None,
     color_config: dict[str, str] = None,
+    figsize: tuple[float] = (15, 5),
 ) -> plt.Figure:
     """Plot the shade benefit category.
 
@@ -85,7 +87,7 @@ def utci_shade_benefit(
     ]
     cmap = ListedColormap(colors)
 
-    fig = plt.figure(figsize=(15, 5), constrained_layout=True)
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
     spec = fig.add_gridspec(
         ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0
     )

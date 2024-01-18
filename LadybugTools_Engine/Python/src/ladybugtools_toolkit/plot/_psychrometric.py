@@ -151,6 +151,7 @@ def psychrometric(
     analysis_period: AnalysisPeriod = None,
     wet_bulb: bool = False,
     psychro_polygons: PsychrometricPolygons = None,
+    figsize: tuple[float, float] = (10, 7),
 ) -> plt.Figure:
     """Create a psychrometric chart using a LB backend.
 
@@ -165,6 +166,9 @@ def psychrometric(
             Plot wet-bulb temperature constant lines instead of enthalpy. Default is False.
         psychro_polygons (PsychrometricPolygons, optional):
             A PsychrometricPolygons object to use for plotting comfort polygons.
+            Default is None.
+        figsize (tuple[float, float], optional):
+            A tuple of floats for the figure size. Default is (10, 7).
 
     Returns:
         plt.Figure:
@@ -202,7 +206,7 @@ def psychrometric(
         return patch_collection
 
     p = lb_mesh_to_patch_collection(psychart.colored_mesh, psychart.hour_values)
-    fig, ax = plt.subplots(1, 1, figsize=(10, 7))
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
     collections = ax.add_collection(p)
 
     if wet_bulb:

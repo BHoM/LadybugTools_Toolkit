@@ -6,10 +6,12 @@ import itertools
 import json
 import textwrap
 from dataclasses import dataclass
+import pickle
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
+from honeybee.config import folders as hb_folders
 
 import matplotlib.ticker as mticker
 import numpy as np
@@ -957,6 +959,7 @@ def radiation_rose(
     directions: int = 36,
     label: bool = True,
     bar_width: float = 1,
+    lims: tuple[float, float] = None,
 ) -> plt.Axes:
     """Create a solar radiation rose
 
@@ -987,6 +990,9 @@ def radiation_rose(
         bar_width (float, optional): 
             Set the bar width for each of the bins. 
             Defaults to 1.
+        lims (tuple[float, float], optional):
+            Set the limits of the plot. 
+            Defaults to None.
 
     Returns:
         plt.Axes: 
@@ -1009,7 +1015,10 @@ def radiation_rose(
         [angle_from_north(j) for j in [Vector2D(*i[:2]) for i in rr.direction_vectors]]
     )
     values = getattr(rr, f"{rad_type}_values")
-    norm = Normalize(vmin=0, vmax=max(values))
+    if lims is None:
+        norm = Normalize(vmin=0, vmax=max(values))
+    else:
+        norm = Normalize(vmin=lims[0], vmax=lims[1])
     cmap = plt.get_cmap(cmap)
     colors = [cmap(i) for i in [norm(v) for v in values]]
 
@@ -1112,8 +1121,8 @@ def tilt_orientation_factor(
     cmap: str = "YlOrRd",
     directions: int = 36,
     tilts: int = 9,
-    vmax: float = None,
     quantiles: tuple[float] = (0.05, 0.25, 0.5, 0.75, 0.95),
+    lims: tuple[float, float] = None,
 ) -> plt.Axes:
     """Create a tilt-orientation factor plot.
 
@@ -1138,16 +1147,22 @@ def tilt_orientation_factor(
         tilts (int, optional): 
             The number of tilts to calculate. 
             Defaults to 9.
-        vmax (float, optional): 
-            The maximum value to plot. 
-            Defaults to None.
         quantiles (tuple[float], optional):
             The quantiles to plot. 
+            Defaults to (0.05, 0.25, 0.5, 0.75, 0.95).
+        lims (tuple[float, float], optional):
+            The limits of the plot. 
+            Defaults to None.
 
     Returns:
         plt.Axes: 
             The matplotlib axes.
     """
+
+    # create dir for cached results
+    _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
+    _dir.mkdir(exist_ok=True, parents=True)
+    ndir = directions
 
     if ax is None:
         ax = plt.gca()
@@ -1162,11 +1177,15 @@ def tilt_orientation_factor(
     # create roses per tilt angle
     _directions = np.linspace(0, 360, directions + 1)[:-1].tolist()
     _tilts = np.linspace(0, 90, tilts)[:-1].tolist() + [89.999]
-    rrs = []
+    rrs: list[RadiationRose] = []
     for ta in tqdm(_tilts):
-        rrs.append(
-            RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=ta)
-        )
+        sp = _dir / f"{epw_file.stem}_{ndir}_{ta:0.4f}.pickle"
+        if sp.exists():
+            rr = pickle.load(open(sp, "rb"))
+        else:
+            rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=ta)
+            pickle.dump(rr, open(sp, "wb"))
+        rrs.append(rr)
     _directions.append(360)
 
     # create matrix of values from results
@@ -1190,7 +1209,10 @@ def tilt_orientation_factor(
     _max_az = __directions.flatten()[_max_idx]
 
     # create colormap
-    norm = Normalize(vmin=0, vmax=vmax if vmax else _max)
+    if lims is None:
+        norm = Normalize(vmin=0, vmax=_max)
+    else:
+        norm = Normalize(vmin=lims[0], vmax=lims[1])
 
     # create triangulation
     tri = Triangulation(x=__directions.flatten(), y=__tilts.flatten())

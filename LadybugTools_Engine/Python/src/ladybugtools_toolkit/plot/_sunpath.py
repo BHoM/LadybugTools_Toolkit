@@ -164,7 +164,6 @@ def sunpath_masked(
     location: Location,
     ax: plt.Axes = None,
     analysis_period: AnalysisPeriod = AnalysisPeriod(),
-    mask: list[float],
     cmap: Colormap | str = "viridis",
     norm: BoundaryNorm = None,
     sun_size: float = 10,
