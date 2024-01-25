@@ -707,31 +707,31 @@ class OpenMeteoVariable(Enum):
     RELATIVEHUMIDITY_2M = auto()
     SURFACE_PRESSURE = auto()
     SHORTWAVE_RADIATION = auto()
-    DIRECT_RADIATION = auto()
+    # DIRECT_RADIATION = auto()
     DIFFUSE_RADIATION = auto()
     WINDDIRECTION_10M = auto()
     WINDSPEED_10M = auto()
     CLOUDCOVER = auto()
     PRECIPITATION = auto()
     RAIN = auto()
-    SNOWFALL = auto()
-    CLOUDCOVER_LOW = auto()
-    CLOUDCOVER_MID = auto()
-    CLOUDCOVER_HIGH = auto()
+    # SNOWFALL = auto()
+    # CLOUDCOVER_LOW = auto()
+    # CLOUDCOVER_MID = auto()
+    # CLOUDCOVER_HIGH = auto()
     DIRECT_NORMAL_IRRADIANCE = auto()
     WINDSPEED_100M = auto()
     WINDDIRECTION_100M = auto()
-    WINDGUSTS_10M = auto()
+    # WINDGUSTS_10M = auto()
     ET0_FAO_EVAPOTRANSPIRATION = auto()
-    VAPOR_PRESSURE_DEFICIT = auto()
+    # VAPOR_PRESSURE_DEFICIT = auto()
     SOIL_TEMPERATURE_0_TO_7CM = auto()
     SOIL_TEMPERATURE_7_TO_28CM = auto()
     SOIL_TEMPERATURE_28_TO_100CM = auto()
     SOIL_TEMPERATURE_100_TO_255CM = auto()
-    SOIL_MOISTURE_0_TO_7CM = auto()
-    SOIL_MOISTURE_7_TO_28CM = auto()
-    SOIL_MOISTURE_28_TO_100CM = auto()
-    SOIL_MOISTURE_100_TO_255CM = auto()
+    # SOIL_MOISTURE_0_TO_7CM = auto()
+    # SOIL_MOISTURE_7_TO_28CM = auto()
+    # SOIL_MOISTURE_28_TO_100CM = auto()
+    # SOIL_MOISTURE_100_TO_255CM = auto()
 
     @staticmethod
     def __properties__() -> dict[str, dict[str, str | float]]:
@@ -772,13 +772,13 @@ class OpenMeteoVariable(Enum):
                 "target_unit": "Wh/m2",
                 "target_multiplier": 1,
             },
-            OpenMeteoVariable.DIRECT_RADIATION.value: {
-                "openmeteo_name": "direct_radiation",
-                "openmeteo_unit": "W/m²",
-                "target_name": "Direct Horizontal Radiation",
-                "target_unit": "Wh/m2",
-                "target_multiplier": 1,
-            },
+            # OpenMeteoVariable.DIRECT_RADIATION.value: {
+            #     "openmeteo_name": "direct_radiation",
+            #     "openmeteo_unit": "W/m²",
+            #     "target_name": "Direct Horizontal Radiation",
+            #     "target_unit": "Wh/m2",
+            #     "target_multiplier": 1,
+            # },
             OpenMeteoVariable.DIFFUSE_RADIATION.value: {
                 "openmeteo_name": "diffuse_radiation",
                 "openmeteo_unit": "W/m²",
@@ -821,34 +821,34 @@ class OpenMeteoVariable(Enum):
                 "target_unit": "mm",
                 "target_multiplier": 1,
             },
-            OpenMeteoVariable.SNOWFALL.value: {
-                "openmeteo_name": "snowfall",
-                "openmeteo_unit": "cm",
-                "target_name": "Snow depth",
-                "target_unit": "cm",
-                "target_multiplier": 1,
-            },
-            OpenMeteoVariable.CLOUDCOVER_LOW.value: {
-                "openmeteo_name": "cloudcover_low",
-                "openmeteo_unit": "%",
-                "target_name": "Cloud Cover @<2km",
-                "target_unit": "tenths",
-                "target_multiplier": 0.1,
-            },
-            OpenMeteoVariable.CLOUDCOVER_MID.value: {
-                "openmeteo_name": "cloudcover_mid",
-                "openmeteo_unit": "%",
-                "target_name": "Cloud Cover @2-6km",
-                "target_unit": "tenths",
-                "target_multiplier": 0.1,
-            },
-            OpenMeteoVariable.CLOUDCOVER_HIGH.value: {
-                "openmeteo_name": "cloudcover_high",
-                "openmeteo_unit": "%",
-                "target_name": "Cloud Cover @>6km",
-                "target_unit": "tenths",
-                "target_multiplier": 0.1,
-            },
+            # OpenMeteoVariable.SNOWFALL.value: {
+            #     "openmeteo_name": "snowfall",
+            #     "openmeteo_unit": "cm",
+            #     "target_name": "Snow depth",
+            #     "target_unit": "cm",
+            #     "target_multiplier": 1,
+            # },
+            # OpenMeteoVariable.CLOUDCOVER_LOW.value: {
+            #     "openmeteo_name": "cloudcover_low",
+            #     "openmeteo_unit": "%",
+            #     "target_name": "Cloud Cover @<2km",
+            #     "target_unit": "tenths",
+            #     "target_multiplier": 0.1,
+            # },
+            # OpenMeteoVariable.CLOUDCOVER_MID.value: {
+            #     "openmeteo_name": "cloudcover_mid",
+            #     "openmeteo_unit": "%",
+            #     "target_name": "Cloud Cover @2-6km",
+            #     "target_unit": "tenths",
+            #     "target_multiplier": 0.1,
+            # },
+            # OpenMeteoVariable.CLOUDCOVER_HIGH.value: {
+            #     "openmeteo_name": "cloudcover_high",
+            #     "openmeteo_unit": "%",
+            #     "target_name": "Cloud Cover @>6km",
+            #     "target_unit": "tenths",
+            #     "target_multiplier": 0.1,
+            # },
             OpenMeteoVariable.DIRECT_NORMAL_IRRADIANCE.value: {
                 "openmeteo_name": "direct_normal_irradiance",
                 "openmeteo_unit": "W/m²",
@@ -870,13 +870,13 @@ class OpenMeteoVariable(Enum):
                 "target_unit": "degrees",
                 "target_multiplier": 1,
             },
-            OpenMeteoVariable.WINDGUSTS_10M.value: {
-                "openmeteo_name": "windgusts_10m",
-                "openmeteo_unit": "km/h",
-                "target_name": "Wind Gusts @10m",
-                "target_unit": "m/s",
-                "target_multiplier": 1 / 3.6,
-            },
+            # OpenMeteoVariable.WINDGUSTS_10M.value: {
+            #     "openmeteo_name": "windgusts_10m",
+            #     "openmeteo_unit": "km/h",
+            #     "target_name": "Wind Gusts @10m",
+            #     "target_unit": "m/s",
+            #     "target_multiplier": 1 / 3.6,
+            # },
             OpenMeteoVariable.ET0_FAO_EVAPOTRANSPIRATION.value: {
                 "openmeteo_name": "et0_fao_evapotranspiration",
                 "openmeteo_unit": "mm",
@@ -884,13 +884,13 @@ class OpenMeteoVariable(Enum):
                 "target_unit": "mm/inch",
                 "target_multiplier": 1,
             },
-            OpenMeteoVariable.VAPOR_PRESSURE_DEFICIT.value: {
-                "openmeteo_name": "vapor_pressure_deficit",
-                "openmeteo_unit": "kPa",
-                "target_name": "Vapor Pressure Deficit",
-                "target_unit": "Pa",
-                "target_multiplier": 0.001,
-            },
+            # OpenMeteoVariable.VAPOR_PRESSURE_DEFICIT.value: {
+            #     "openmeteo_name": "vapor_pressure_deficit",
+            #     "openmeteo_unit": "kPa",
+            #     "target_name": "Vapor Pressure Deficit",
+            #     "target_unit": "Pa",
+            #     "target_multiplier": 0.001,
+            # },
             OpenMeteoVariable.SOIL_TEMPERATURE_0_TO_7CM.value: {
                 "openmeteo_name": "soil_temperature_0_to_7cm",
                 "openmeteo_unit": "°C",
@@ -919,34 +919,34 @@ class OpenMeteoVariable(Enum):
                 "target_unit": "C",
                 "target_multiplier": 1,
             },
-            OpenMeteoVariable.SOIL_MOISTURE_0_TO_7CM.value: {
-                "openmeteo_name": "soil_moisture_0_to_7cm",
-                "openmeteo_unit": "m³/m³",
-                "target_name": "Soil Moisture @0-7cm",
-                "target_unit": "fraction",
-                "target_multiplier": 1,
-            },
-            OpenMeteoVariable.SOIL_MOISTURE_7_TO_28CM.value: {
-                "openmeteo_name": "soil_moisture_7_to_28cm",
-                "openmeteo_unit": "m³/m³",
-                "target_name": "Soil Moisture @7-28cm",
-                "target_unit": "fraction",
-                "target_multiplier": 1,
-            },
-            OpenMeteoVariable.SOIL_MOISTURE_28_TO_100CM.value: {
-                "openmeteo_name": "soil_moisture_28_to_100cm",
-                "openmeteo_unit": "m³/m³",
-                "target_name": "Soil Moisture @28-100cm",
-                "target_unit": "fraction",
-                "target_multiplier": 1,
-            },
-            OpenMeteoVariable.SOIL_MOISTURE_100_TO_255CM.value: {
-                "openmeteo_name": "soil_moisture_100_to_255cm",
-                "openmeteo_unit": "m³/m³",
-                "target_name": "Soil Moisture @100-255cm",
-                "target_unit": "fraction",
-                "target_multiplier": 1,
-            },
+            # OpenMeteoVariable.SOIL_MOISTURE_0_TO_7CM.value: {
+            #     "openmeteo_name": "soil_moisture_0_to_7cm",
+            #     "openmeteo_unit": "m³/m³",
+            #     "target_name": "Soil Moisture @0-7cm",
+            #     "target_unit": "fraction",
+            #     "target_multiplier": 1,
+            # },
+            # OpenMeteoVariable.SOIL_MOISTURE_7_TO_28CM.value: {
+            #     "openmeteo_name": "soil_moisture_7_to_28cm",
+            #     "openmeteo_unit": "m³/m³",
+            #     "target_name": "Soil Moisture @7-28cm",
+            #     "target_unit": "fraction",
+            #     "target_multiplier": 1,
+            # },
+            # OpenMeteoVariable.SOIL_MOISTURE_28_TO_100CM.value: {
+            #     "openmeteo_name": "soil_moisture_28_to_100cm",
+            #     "openmeteo_unit": "m³/m³",
+            #     "target_name": "Soil Moisture @28-100cm",
+            #     "target_unit": "fraction",
+            #     "target_multiplier": 1,
+            # },
+            # OpenMeteoVariable.SOIL_MOISTURE_100_TO_255CM.value: {
+            #     "openmeteo_name": "soil_moisture_100_to_255cm",
+            #     "openmeteo_unit": "m³/m³",
+            #     "target_name": "Soil Moisture @100-255cm",
+            #     "target_unit": "fraction",
+            #     "target_multiplier": 1,
+            # },
         }
 
     @classmethod
@@ -958,31 +958,31 @@ class OpenMeteoVariable(Enum):
             "relativehumidity_2m": cls.RELATIVEHUMIDITY_2M,
             "surface_pressure": cls.SURFACE_PRESSURE,
             "shortwave_radiation": cls.SHORTWAVE_RADIATION,
-            "direct_radiation": cls.DIRECT_RADIATION,
+            # "direct_radiation": cls.DIRECT_RADIATION,
             "diffuse_radiation": cls.DIFFUSE_RADIATION,
             "winddirection_10m": cls.WINDDIRECTION_10M,
             "windspeed_10m": cls.WINDSPEED_10M,
             "cloudcover": cls.CLOUDCOVER,
             "precipitation": cls.PRECIPITATION,
             "rain": cls.RAIN,
-            "snowfall": cls.SNOWFALL,
-            "cloudcover_low": cls.CLOUDCOVER_LOW,
-            "cloudcover_mid": cls.CLOUDCOVER_MID,
-            "cloudcover_high": cls.CLOUDCOVER_HIGH,
+            # "snowfall": cls.SNOWFALL,
+            # "cloudcover_low": cls.CLOUDCOVER_LOW,
+            # "cloudcover_mid": cls.CLOUDCOVER_MID,
+            # "cloudcover_high": cls.CLOUDCOVER_HIGH,
             "direct_normal_irradiance": cls.DIRECT_NORMAL_IRRADIANCE,
             "windspeed_100m": cls.WINDSPEED_100M,
             "winddirection_100m": cls.WINDDIRECTION_100M,
-            "windgusts_10m": cls.WINDGUSTS_10M,
+            # "windgusts_10m": cls.WINDGUSTS_10M,
             "et0_fao_evapotranspiration": cls.ET0_FAO_EVAPOTRANSPIRATION,
-            "vapor_pressure_deficit": cls.VAPOR_PRESSURE_DEFICIT,
+            # "vapor_pressure_deficit": cls.VAPOR_PRESSURE_DEFICIT,
             "soil_temperature_0_to_7cm": cls.SOIL_TEMPERATURE_0_TO_7CM,
             "soil_temperature_7_to_28cm": cls.SOIL_TEMPERATURE_7_TO_28CM,
             "soil_temperature_28_to_100cm": cls.SOIL_TEMPERATURE_28_TO_100CM,
             "soil_temperature_100_to_255cm": cls.SOIL_TEMPERATURE_100_TO_255CM,
-            "soil_moisture_0_to_7cm": cls.SOIL_MOISTURE_0_TO_7CM,
-            "soil_moisture_7_to_28cm": cls.SOIL_MOISTURE_7_TO_28CM,
-            "soil_moisture_28_to_100cm": cls.SOIL_MOISTURE_28_TO_100CM,
-            "soil_moisture_100_to_255cm": cls.SOIL_MOISTURE_100_TO_255CM,
+            # "soil_moisture_0_to_7cm": cls.SOIL_MOISTURE_0_TO_7CM,
+            # "soil_moisture_7_to_28cm": cls.SOIL_MOISTURE_7_TO_28CM,
+            # "soil_moisture_28_to_100cm": cls.SOIL_MOISTURE_28_TO_100CM,
+            # "soil_moisture_100_to_255cm": cls.SOIL_MOISTURE_100_TO_255CM,
         }
         try:
             return d[name]
@@ -1057,7 +1057,7 @@ def scrape_openmeteo(
 
     Note:
         This method saves the data to a local cache, and will return the cached data if it is less
-        than 28 days old. This is to avoid unnecessary API calls.
+        than 100 days old. This is to avoid unnecessary API calls.
 
     Returns:
         pd.DataFrame:
@@ -1085,11 +1085,12 @@ def scrape_openmeteo(
 
     if variables is None:
         variables = tuple(OpenMeteoVariable)
-    else:
-        if not all(isinstance(val, OpenMeteoVariable) for val in variables):
-            raise ValueError(
-                "All values in the variables tuple must be of type OpenMeteoVariable."
-            )
+    # else:
+        # TODO fix error that happens here
+    #     if not all(isinstance(val, OpenMeteoVariable) for val in variables):
+    #         raise ValueError(
+    #             "All values in the variables tuple must be of type OpenMeteoVariable."
+    #         )
 
     _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_openmeteo"
     _dir.mkdir(exist_ok=True, parents=True)
@@ -1104,56 +1105,55 @@ def scrape_openmeteo(
             / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
         )
         if sp.exists() and (
-            (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 60
+            (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 100
         ):
             CONSOLE_LOGGER.info(f"Reloading cached data for {var.name}")
             available_data.append(pd.read_csv(sp, index_col=0, parse_dates=True))
         else:
+            CONSOLE_LOGGER.info(f"Querying data for {var.name}")
             missing_variables.append(var)
 
-    # construct query string
-    var_strings = ",".join([var.openmeteo_name for var in missing_variables])
-    query_string = (
-        "https://archive-api.open-meteo.com/v1/era5?latitude="
-        f"{latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&"
-        f"end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
-    )
-
-    # request data
-    with urllib.request.urlopen(query_string) as url:
-        data = json.load(url)
-
-    # construct dataframe
-    df = pd.DataFrame(data["hourly"])
-    df.set_index("time", inplace=True, drop=True)
-    df.index.name = None
-    df.index = pd.to_datetime(df.index)
-    df = df.apply(pd.to_numeric, errors="coerce")
-
-    # write to cache
-    for col in df.columns:
-        sp = (
-            _dir
-            / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv"
+    if len(missing_variables) != 0:
+        # construct query string
+        var_strings = ",".join([var.openmeteo_name for var in missing_variables])
+        query_string = (
+            "https://archive-api.open-meteo.com/v1/era5?latitude="
+            f"{latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&"
+            f"end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
         )
-        df[col].to_csv(sp)
 
-    # append available_data
-    df = pd.concat(available_data + [df], axis=1)
+        # request data
+        with urllib.request.urlopen(query_string) as url:
+            data = json.load(url)
+
+        # construct dataframe
+        df = pd.DataFrame(data["hourly"])
+        df.set_index("time", inplace=True, drop=True)
+        df.index.name = None
+        df.index = pd.to_datetime(df.index)
+        df = df.apply(pd.to_numeric, errors="coerce")
+
+        # write to cache
+        for col in df.columns:
+            sp = (_dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv")
+            df[col].to_csv(sp)
+            available_data.append(df[col])
+
+    # combine data
+    df = pd.concat(available_data, axis=1)
 
     if not convert_units:
         return df
 
-    renamer = dict(
-        zip(
-            *[
-                [i.openmeteo_name for i in OpenMeteoVariable],
-                [i.target_table_name for i in OpenMeteoVariable],
-            ]
-        )
-    )
+    new_df = pd.DataFrame()
+    for i in OpenMeteoVariable:
+        try:
+            # print(i.target_table_name, i.openmeteo_table_name, i.target_multiplier)
+            new_df[i.target_table_name] = df[i.openmeteo_name] * i.target_multiplier
+        except Exception as e:
+            pass
 
-    return df.rename(columns=renamer)
+    return new_df
 
 
 def scrape_meteostat(
