@@ -247,6 +247,35 @@ namespace BH.Adapter.LadybugTools
         }
 
         /**************************************************/
+
+        private List<object> RunCommand(RunHeatPlotCommand command)
+        {
+            if (command.EpwFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EpwFile))
+            {
+                BH.Engine.Base.Compute.RecordError($"{command.EpwFile} doesn't appear to exist!");
+                return null;
+            }
+
+            PythonEnvironment env = Engine.LadybugTools.Compute.InstallPythonEnv_LBT(true);
+
+            string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "heatmap.py");
+
+            // run the process
+            string cmdCommand = $"{env.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EpwKey}\" -cmap \"{command.ColourMap}\" -p \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+
+            return new List<object>() { result };
+        }
+
+        /**************************************************/
         /* Private methods - Fallback                     */
         /**************************************************/
 
