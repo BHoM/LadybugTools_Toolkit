@@ -22,7 +22,7 @@
 
 using System.ComponentModel;
 using BH.oM.Base.Attributes;
-
+using BH.oM.Python;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -33,7 +33,11 @@ namespace BH.Adapter.LadybugTools
         public LadybugToolsAdapter()
         {
             m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
+
+            //get the base python environment first, as LBT is dependant on it.
+            BH.Engine.Python.Compute.BasePythonEnvironment(run: true);
+            m_environment = BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(run: true);
         }
+        private readonly PythonEnvironment m_environment;
     }
 }
-
