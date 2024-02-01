@@ -262,14 +262,12 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            PythonEnvironment env = Engine.LadybugTools.Compute.InstallPythonEnv_LBT(true);
-
             string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "heatmap.py");
 
             // run the process
-            string cmdCommand = $"{env.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EpwKey}\" -cmap \"{command.ColourMap}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EpwKey}\" -cmap \"{command.ColourMap}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             return new List<object>() { result };
