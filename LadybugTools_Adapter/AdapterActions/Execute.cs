@@ -299,6 +299,7 @@ namespace BH.Adapter.LadybugTools
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -m0 \"{command.StartMonth}\" -d0 \"{command.StartDay}\" -h0 \"{command.StartHour}\" -m1 \"{command.EndMonth}\" -d1 \"{command.EndDay}\" -h1 \"{command.EndHour}\" -cmap \"{command.ColourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
+            m_executeSuccess = true;
             return new List<object> { result };
         }
 
