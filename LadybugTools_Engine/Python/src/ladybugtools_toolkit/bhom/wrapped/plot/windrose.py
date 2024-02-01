@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 
 
-def main(epw_file: str, month_from:int = 1, day_from:int = 1, hour_from:int = 0, month_to:int = 12, day_to:int = 31, hour_to:int = 23, colour_map: str = "YlGnBu", bins:int = 36, save_path:str = None) -> None:
+def main(epw_file: str, analysis_period: str, colour_map: str = "YlGnBu", bins:int = 36, save_path:str = None) -> None:
     """Method to wrap for creating wind roses from epw files."""
     try:
         from ladybug.epw import EPW, AnalysisPeriod
@@ -14,9 +14,10 @@ def main(epw_file: str, month_from:int = 1, day_from:int = 1, hour_from:int = 0,
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
         from pathlib import Path
+        import json
 
         epw = EPW(epw_file)
-        analysis_period = AnalysisPeriod(month_from,day_from,hour_from,month_to,day_to,hour_to)
+        analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         w_epw = Wind.from_epw(epw_file)
 
         fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "polar"})
@@ -64,45 +65,10 @@ if __name__ == "__main__":
         )
 
     parser.add_argument(
-        "-m0",
-        "--month_from",
+        "-ap",
+        "--analysis_period",
         help="Analysis period",
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        "-d0",
-        "--day_from",
-        help="Analysis period",
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        "-h0",
-        "--hour_from",
-        help="Analysis period",
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        "-m1",
-        "--month_to",
-        help="Analysis period",
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        "-d1",
-        "--day_to",
-        help="Analysis period",
-        type=int,
-        required=False,
-    )
-    parser.add_argument(
-        "-h1",
-        "--hour_to",
-        help="Analysis period",
-        type=int,
+        type=str,
         required=False,
     )
     parser.add_argument(
@@ -114,4 +80,4 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    main(args.epw_file, args.month_from, args.day_from, args.hour_from, args.month_to, args.day_to, args.hour_to, args.colour_map, args.bins, args.save_path)
+    main(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.save_path)

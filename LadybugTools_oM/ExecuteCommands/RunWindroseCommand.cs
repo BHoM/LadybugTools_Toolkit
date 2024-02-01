@@ -12,23 +12,8 @@ namespace BH.oM.LadybugTools
         [Description("The path to an EPW file.")]
         public virtual string EpwFile { get; set; } = "";
 
-        [Description("The start month of the values to plot.")]
-        public virtual int StartMonth { get; set; } = 1;
-
-        [Description("The start day of the values to plot.")]
-        public virtual int StartDay { get; set; } = 1;
-
-        [Description("The start hour of the values to plot.")]
-        public virtual int StartHour { get; set; } = 0;
-
-        [Description("The end month of the values to plot.")]
-        public virtual int EndMonth { get; set; } = 12;
-
-        [Description("The end day of the values to plot.")]
-        public virtual int EndDay { get; set; } = 31;
-
-        [Description("The end hour of the values to plot.")]
-        public virtual int EndHour { get; set; } = 23;
+        [Description("The analysis period to use for plotting, default to whole non-leap year.")]
+        public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
 
         [Description("The number of directional bins to plot on the windrose.")]
         public virtual int NumberOfDirectionBins { get; set; } = 36;

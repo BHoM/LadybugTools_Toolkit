@@ -296,7 +296,7 @@ namespace BH.Adapter.LadybugTools
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -m0 \"{command.StartMonth}\" -d0 \"{command.StartDay}\" -h0 \"{command.StartHour}\" -m1 \"{command.EndMonth}\" -d1 \"{command.EndDay}\" -h1 \"{command.EndHour}\" -cmap \"{command.ColourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{command.ColourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;
