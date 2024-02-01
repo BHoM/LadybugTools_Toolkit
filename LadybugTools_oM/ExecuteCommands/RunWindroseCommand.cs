@@ -1,0 +1,42 @@
+﻿using BH.oM.Adapter;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Text;
+
+namespace BH.oM.LadybugTools
+{
+    [Description("Command that, when executed with the LadybugToolsAdapter, generates a windrose from the epw file using the given parameters.\nOutputs a string file path if the OutputLocation is given, or the base64 string representation of the image if no path is given.")]
+    public class RunWindroseCommand : IExecuteCommand
+    {
+        [Description("The path to an EPW file.")]
+        public virtual string EpwFile { get; set; } = "";
+
+        [Description("The start month of the values to plot.")]
+        public virtual int StartMonth { get; set; } = 1;
+
+        [Description("The start day of the values to plot.")]
+        public virtual int StartDay { get; set; } = 1;
+
+        [Description("The start hour of the values to plot.")]
+        public virtual int StartHour { get; set; } = 0;
+
+        [Description("The end month of the values to plot.")]
+        public virtual int EndMonth { get; set; } = 12;
+
+        [Description("The end day of the values to plot.")]
+        public virtual int EndDay { get; set; } = 31;
+
+        [Description("The end hour of the values to plot.")]
+        public virtual int EndHour { get; set; } = 23;
+
+        [Description("The number of directional bins to plot on the windrose.")]
+        public virtual int NumberOfDirectionBins { get; set; } = 36;
+
+        [Description("A Matplotlib colour map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'viridis'.")]
+        public virtual string ColourMap { get; set; } = "viridis";
+
+        [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]
+        public virtual string OutputLocation { get; set; } = "";
+    }
+}

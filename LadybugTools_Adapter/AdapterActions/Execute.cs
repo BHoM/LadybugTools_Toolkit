@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using BH.Engine.Base;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -272,6 +273,33 @@ namespace BH.Adapter.LadybugTools
 
             m_executeSuccess = true;
             return new List<object>() { result };
+        }
+
+        /**************************************************/
+
+        private List<object> RunCommand(RunWindroseCommand command)
+        {
+            if (command.EpwFile.IsNullOrEmpty())
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EpwFile))
+            {
+                BH.Engine.Base.Compute.RecordError($"{command.EpwFile} doesn't appear to exist!");
+                return null;
+            }
+
+            string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
+
+            // run the process
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -m0 \"{command.StartMonth}\" -d0 \"{command.StartDay}\" -h0 \"{command.StartHour}\" -m1 \"{command.EndMonth}\" -d1 \"{command.EndDay}\" -h1 \"{command.EndHour}\" -cmap \"{command.ColourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+
+            return new List<object> { result };
         }
 
         /**************************************************/
