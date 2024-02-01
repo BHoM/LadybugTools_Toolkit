@@ -13,6 +13,7 @@ def main(epw_file: str, data_type_key: str, colour_map: str, save_path:str = Non
         from ladybugtools_toolkit.plot._heatmap import heatmap
         from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
+        import matplotlib.pyplot as plt
 
         if colour_map not in plt.colormaps():
             colour_map = "YlGnBu"
