@@ -270,6 +270,7 @@ namespace BH.Adapter.LadybugTools
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EpwKey}\" -cmap \"{command.ColourMap}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
+            m_executeSuccess = true;
             return new List<object>() { result };
         }
 
