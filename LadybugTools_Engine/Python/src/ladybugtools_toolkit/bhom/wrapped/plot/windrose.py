@@ -16,6 +16,9 @@ def main(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_p
         from pathlib import Path
         import json
 
+        if colour_map not in plt.colormaps():
+            colour_map = "YlGnBu"
+
         epw = EPW(epw_file)
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         w_epw = Wind.from_epw(epw_file)
