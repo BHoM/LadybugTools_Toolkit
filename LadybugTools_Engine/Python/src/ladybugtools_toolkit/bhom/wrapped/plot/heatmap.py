@@ -14,6 +14,9 @@ def main(epw_file: str, data_type_key: str, colour_map: str, save_path:str = Non
         from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
 
+        if colour_map not in plt.colormaps():
+            colour_map = "YlGnBu"
+
         epw = EPW(epw_file)
         data_type_key = data_type_key.replace("_"," ")
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
@@ -56,7 +59,7 @@ if __name__ == "__main__":
         "--colour_map",
         help="Matplotlib colour map to use.",
         type=str,
-        required=False,
+        required=True,
         )
     parser.add_argument(
         "-p",
