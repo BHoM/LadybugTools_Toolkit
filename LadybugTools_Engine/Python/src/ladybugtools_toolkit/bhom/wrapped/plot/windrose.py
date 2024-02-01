@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 
 
-def main(epw_file: str, analysis_period: str, colour_map: str = "YlGnBu", bins:int = 36, save_path:str = None) -> None:
+def main(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> None:
     """Method to wrap for creating wind roses from epw files."""
     try:
         from ladybug.epw import EPW, AnalysisPeriod
@@ -50,12 +50,26 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
+        "-ap",
+        "--analysis_period",
+        help="Analysis period",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
         "-cmap",
         "--colour_map",
         help="Matplotlib colour map to use.",
         type=str,
-        required=False,
+        required=True,
         )
+    parser.add_argument(
+        "-bins",
+        "--bins",
+        help="Number of bins",
+        type=int,
+        required=True,
+    )
     parser.add_argument(
         "-p",
         "--save_path",
@@ -63,21 +77,6 @@ if __name__ == "__main__":
         type=str,
         required=False,
         )
-
-    parser.add_argument(
-        "-ap",
-        "--analysis_period",
-        help="Analysis period",
-        type=str,
-        required=False,
-    )
-    parser.add_argument(
-        "-bins",
-        "--bins",
-        help="Number of bins",
-        type=int,
-        required=False,
-    )
 
     args = parser.parse_args()
     main(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.save_path)
