@@ -74,7 +74,6 @@ namespace BH.Adapter.LadybugTools
 
         private List<object> RunCommand(GetMaterialCommand command)
         {
-            PythonEnvironment env = Engine.LadybugTools.Compute.InstallPythonEnv_LBT(true);
             LadybugConfig config = new LadybugConfig()
             {
                 JsonFile = new FileSettings()
@@ -88,7 +87,7 @@ namespace BH.Adapter.LadybugTools
             {
                 string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_material.py");
 
-                string cmdCommand = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
+                string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
 
                 Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
             }
@@ -103,7 +102,6 @@ namespace BH.Adapter.LadybugTools
 
         private List<object> RunCommand(GetTypologyCommand command)
         {
-            PythonEnvironment env = Engine.LadybugTools.Compute.InstallPythonEnv_LBT(true);
             LadybugConfig config = new LadybugConfig()
             {
                 JsonFile = new FileSettings()
@@ -117,7 +115,7 @@ namespace BH.Adapter.LadybugTools
             {
                 string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_typology.py");
 
-                string cmdCommand = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
+                string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
 
                 Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
             }
@@ -179,12 +177,11 @@ namespace BH.Adapter.LadybugTools
             // push object to json file
             Push(new List<SimulationResult>() { simulationResult }, actionConfig: config);
 
-            // locate the Python executable and file containing the simulation code
-            PythonEnvironment env = Engine.LadybugTools.Compute.InstallPythonEnv_LBT(true);
+            // locate the Python file containing the simulation code
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "simulation_result.py");
 
             // run the simulation
-            string cmdCommand = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
             Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             // reload from Python results
@@ -232,12 +229,11 @@ namespace BH.Adapter.LadybugTools
             // push objects to json file
             Push(new List<ExternalComfort>() { externalComfort }, actionConfig: config);
 
-            // locate the Python executable and file containing the simulation code
-            PythonEnvironment env = Engine.LadybugTools.Compute.InstallPythonEnv_LBT(true);
+            // locate the Python file containing the simulation code
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "external_comfort.py");
 
             // run the calculation
-            string cmdCommand = $"{env.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
             Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             // reload from Python results
