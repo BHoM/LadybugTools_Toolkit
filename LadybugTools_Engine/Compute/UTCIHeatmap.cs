@@ -40,8 +40,8 @@ namespace BH.Engine.LadybugTools
             EnergyMaterial groundMaterial, 
             EnergyMaterial shadeMaterial,
             Typology typology, 
-            double evaporativeCooling = -1, 
-            double windSpeedMultiplier = -1, 
+            double evaporativeCooling = 0, 
+            double windSpeedMultiplier = 1, 
             List<System.Drawing.Color> binColours = null, 
             string savePath = null
             )
@@ -51,11 +51,16 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"{nameof(epwFile)} input cannot be null.");
                 return null;
             }
-            
 
             if (!System.IO.File.Exists(epwFile))
             {
                 BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
+                return null;
+            }
+
+            if (binColours != null &&  binColours.Count != 10)
+            {
+                BH.Engine.Base.Compute.RecordError($"Exactly 10 colours must be provided to override bin colours, but {binColours.Count} colours were provided instead.");
                 return null;
             }
 
