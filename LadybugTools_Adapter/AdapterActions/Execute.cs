@@ -304,6 +304,39 @@ namespace BH.Adapter.LadybugTools
         }
 
         /**************************************************/
+
+        private List<object> RunCommand(RunUTCIHeatPlotCommand command)
+        {
+            if (command.EpwFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EpwFile))
+            {
+                BH.Engine.Base.Compute.RecordError($"{command.EpwFile} doesn't appear to exist!");
+                return null;
+            }
+
+            if (command.BinColours != null && command.BinColours.Count != 10)
+            {
+                BH.Engine.Base.Compute.RecordError($"Exactly 10 colours must be provided to override bin colours, but {command.BinColours.Count} colours were provided instead.");
+                return null;
+            }
+
+            string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
+
+            // run the process
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -gm \"{command.GroundMaterial}\" -sm \"{command.ShadeMaterial}\" -t \"{command.Typology}\" -ec \"{command.EvaporativeCooling}\" -ws \"{command.WindSpeedMultiplier}\" -bc \"{command.BinColours}\" -sp \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+
+            return new List<object> { result };
+        }
+
+        /**************************************************/
         /* Private methods - Fallback                     */
         /**************************************************/
 
