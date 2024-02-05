@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
+using BH.oM.Adapter;
 
 namespace BH.oM.LadybugTools
 {
-    public class RunUTCIHeatPlotCommand
+    public class RunUTCIHeatPlotCommand : IExecuteCommand
     {
         public virtual string EpwFile { get; set; } = "";
         public virtual EnergyMaterial GroundMaterial { get; set; } = null;

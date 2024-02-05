@@ -35,6 +35,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using BH.Engine.Base;
+using System.Drawing;
+using BH.Engine.Serialiser;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -325,15 +327,46 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            List<string> colourStrings = new List<string>();
+
+            foreach (Color colour in command.BinColours)
+                colourStrings.Add(string.Format("\"#{0:X2}{1:X2}{2:X2}\"", colour.R, colour.G, colour.B));
+
+            string hexColours = $"[{string.Join(",", colourStrings)}]";
+
+            Dictionary<string, string> inputObjects = new Dictionary<string, string>()
+            {
+                { "ground_material",  command.GroundMaterial.FromBHoM() },
+                { "shade_material", command.ShadeMaterial.FromBHoM() },
+                { "typology", command.Typology.FromBHoM() },
+                { "bin_colours", hexColours }
+            };
+
+            string argFile = Path.GetTempFileName();
+            File.WriteAllText(argFile, inputObjects.ToJson());
+
             string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -gm \"{command.GroundMaterial}\" -sm \"{command.ShadeMaterial}\" -t \"{command.Typology}\" -ec \"{command.EvaporativeCooling}\" -ws \"{command.WindSpeedMultiplier}\" -bc \"{command.BinColours}\" -sp \"{command.OutputLocation}\"";
-            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -ec \"{command.EvaporativeCooling}\" -ws \"{command.WindSpeedMultiplier}\" -sp \"{command.OutputLocation}\"";
+            string result = "";
 
-            return new List<object> { result };
+            try
+            {
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while running some python.");
+            }
+            finally
+            {
+                File.Delete(argFile);
+            }
+
+            return new List<object> { result.Split('\n').Last() };
         }
 
         /**************************************************/
