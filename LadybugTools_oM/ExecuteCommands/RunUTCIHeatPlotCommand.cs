@@ -9,8 +9,8 @@ namespace BH.oM.LadybugTools
     public class RunUTCIHeatPlotCommand : IExecuteCommand
     {
         public virtual string EpwFile { get; set; } = "";
-        public virtual EnergyMaterial GroundMaterial { get; set; } = null;
-        public virtual EnergyMaterial ShadeMaterial { get; set; } = null;
+        public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = null;
+        public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; } = null;
         public virtual Typology Typology { get; set; } = null;
         public virtual double EvaporativeCooling { get; set; } = 0;
         public virtual double WindSpeedMultiplier { get; set; } = 1;
