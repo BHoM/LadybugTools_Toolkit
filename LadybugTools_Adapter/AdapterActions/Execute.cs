@@ -321,18 +321,13 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (command.BinColours != null && command.BinColours.Count != 10)
+            if (!(command.BinColours.Count == 10 || command.BinColours.Count == 0))
             {
-                BH.Engine.Base.Compute.RecordError($"Exactly 10 colours must be provided to override bin colours, but {command.BinColours.Count} colours were provided instead.");
+                BH.Engine.Base.Compute.RecordError($"When overriding bin colours 10 colours must be provided, but {command.BinColours.Count} colours were provided instead.");
                 return null;
             }
 
-            List<string> colourStrings = new List<string>();
-
-            foreach (Color colour in command.BinColours)
-                colourStrings.Add(string.Format("\"#{0:X2}{1:X2}{2:X2}\"", colour.R, colour.G, colour.B));
-
-            string hexColours = $"[{string.Join(",", colourStrings)}]";
+            string hexColours = $"[{string.Join(",", command.BinColours)}]";
 
             Dictionary<string, string> inputObjects = new Dictionary<string, string>()
             {
@@ -350,7 +345,7 @@ namespace BH.Adapter.LadybugTools
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -ec \"{command.EvaporativeCooling}\" -ws \"{command.WindSpeedMultiplier}\" -sp \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -sp \"{command.OutputLocation}\"";
             string result = "";
 
             try

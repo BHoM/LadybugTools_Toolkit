@@ -6,10 +6,8 @@ from pathlib import Path
 from unittest.util import _MIN_COMMON_LEN
 
 
-def main(epw_file:str, 
-            json_file:str, 
-            evaporative_cooling = 0, 
-            wind_speed_multiplier:float = None,
+def main(epw_file:str,
+            json_file:str,
             save_path = None) -> None:
     from ladybugtools_toolkit.external_comfort.material import Materials
     from ladybugtools_toolkit.external_comfort.typology import Typologies
@@ -32,8 +30,6 @@ def main(epw_file:str,
     shade_material = dict_to_material(json.loads(argsDict["shade_material"]))
 
     sr = SimulationResult(epw_file, ground_material, shade_material)
-    typology.evaporative_cooling = [evaporative_cooling]*8760
-    typology.wind_speed_multiplier = wind_speed_multiplier
     ec = ExternalComfort(sr, typology)
 
     custom_bins = UTCI_DEFAULT_CATEGORIES
@@ -78,20 +74,6 @@ if __name__ == "__main__":
         help="helptext",
         type=str,
         required=True,
-    )
-    parser.add_argument(
-        "-ec",
-        "--evaporative_cooling",
-        help="helptext",
-        type=str,
-        required=False,
-    )
-    parser.add_argument(
-        "-ws",
-        "--wind_speed_multiplier",
-        help="helptext",
-        type=str,
-        required=False,
     )
     parser.add_argument(
         "-sp",
