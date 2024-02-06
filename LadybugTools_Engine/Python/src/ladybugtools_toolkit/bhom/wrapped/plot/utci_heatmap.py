@@ -8,6 +8,7 @@ from unittest.util import _MIN_COMMON_LEN
 
 def main(epw_file:str,
             json_file:str,
+            wind_speed_multiplier:float = 1,
             save_path = None) -> None:
     from ladybugtools_toolkit.external_comfort.material import Materials
     from ladybugtools_toolkit.external_comfort.typology import Typologies
@@ -17,6 +18,7 @@ def main(epw_file:str,
     from ladybugtools_toolkit.plot.utilities import figure_to_base64
     from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
     from honeybee_energy.dictutil import dict_to_material
+    from ladybug.epw import EPW
     import matplotlib.pyplot as plt
     from pathlib import Path
     import numpy as np
@@ -30,6 +32,8 @@ def main(epw_file:str,
     shade_material = dict_to_material(json.loads(argsDict["shade_material"]))
 
     sr = SimulationResult(epw_file, ground_material, shade_material)
+    epw = EPW(epw_file)
+    typology.target_wind_speed = epw.wind_speed * wind_speed_multiplier
     ec = ExternalComfort(sr, typology)
 
     custom_bins = UTCI_DEFAULT_CATEGORIES
@@ -76,6 +80,13 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
+        "-ws",
+        "--wind_speed_multiplier",
+        help="helptext",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
         "-sp",
         "--save_path",
         help="helptext",
@@ -85,4 +96,4 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-    main(args.epw_path, args.json_args, args.evaporative_cooling, args.wind_speed_multiplier, args.save_path)
+    main(args.epw_path, args.json_args, args.wind_speed_multiplier, args.save_path)
