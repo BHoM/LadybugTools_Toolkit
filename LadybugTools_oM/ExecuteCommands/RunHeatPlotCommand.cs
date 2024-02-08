@@ -15,7 +15,7 @@ namespace BH.oM.LadybugTools
         [Description("Key representing an hourly continuous collection in the EPW file to plot.")]
         public virtual EpwKey EpwKey { get; set; } = EpwKey.Undefined;
 
-        [Description("A Matplotlib colout map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'viridis'.")]
+        [Description("A Matplotlib colour map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'viridis'.")]
         public virtual string ColourMap { get; set; } = "viridis";
 
         [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]
