@@ -13,7 +13,7 @@ namespace BH.oM.LadybugTools
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
         [Description("Key representing an hourly continuous collection in the EPW file to plot.")]
-        public virtual EpwKey EpwKey { get; set; } = EpwKey.Undefined;
+        public virtual EPWKey EPWKey { get; set; } = EPWKey.Undefined;
 
         [Description("A Matplotlib colour map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'viridis'.")]
         public virtual string ColourMap { get; set; } = "viridis";

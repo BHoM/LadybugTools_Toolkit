@@ -7,7 +7,7 @@
  *                     
  *                                      
  * The BHoM is free software: you can redistribute it and/or modify     
- * it under the terms of the GNU Lesser General Public License as published by_
+ * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3.0 of the License, or    
  * (at your option) any later version.                    
  *                                      
@@ -17,43 +17,69 @@
  * GNU Lesser General Public License for more details.            
  *                                      
  * You should have received a copy of the GNU Lesser General Public License   
- * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.  _
+ * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.  
  */
 
+using BH.oM.Base.Attributes;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
     [Description("An enum for keys that frequently appear in epw files.")]
-    public enum EpwKey
+    public enum EPWKey
     {
         Undefined,
-        Aerosol_Optical_Depth,
-        Atmospheric_Station_Pressure,
-        Ceiling_Height,
-        Days_Since_Last_Snowfall,
-        Dew_Point_Temperature,
-        Diffuse_Horizontal_Illuminance,
-        Diffuse_Horizontal_Radiation,
-        Direct_Normal_Illuminance,
-        Direct_Normal_Radiation,
-        Dry_Bulb_Temperature,
-        Extraterrestrial_Direct_Normal_Radiation,
-        Extraterrestrial_Horizontal_Radiation,
-        Global_Horizontal_Illuminance,
-        Global_Horizontal_Radiation,
-        Horizontal_Infrared_Radiation_Intensity,
-        Opaque_Sky_Cover,
-        Precipitable_Water,
-        Present_Weather_Codes,
-        Present_Weather_Observation,
-        Relative_Humidity,
-        Snow_Depth,
-        Total_Sky_Cover,
+        [DisplayText("Aerosol Optical Depth")]
+        AerosolOpticalDepth,
+        [DisplayText("Atmospheric Station Pressure")]
+        AtmosphericStationPressure,
+        [DisplayText("Ceiling Height")]
+        CeilingHeight,
+        [DisplayText("Days Since Last Snowfall")]
+        DaysSinceLastSnowfall,
+        [DisplayText("Dew Point Temperature")]
+        DewPointTemperature,
+        [DisplayText("Diffuse Horizontal Illuminance")]
+        DiffuseHorizontalIlluminance,
+        [DisplayText("Diffuse Horizontal Radiation")]
+        DiffuseHorizontalRadiation,
+        [DisplayText("Direct Normal Illuminance")]
+        DirectNormalIlluminance,
+        [DisplayText("Direct Normal Radiation")]
+        DirectNormalRadiation,
+        [DisplayText("Dry Bulb Temperature")]
+        DryBulbTemperature,
+        [DisplayText("Extraterrestrial Direct Normal Radiation")]
+        ExtraterrestrialDirectNormalRadiation,
+        [DisplayText("Extraterrestrial Horizontal Radiation")]
+        ExtraterrestrialHorizontalRadiation,
+        [DisplayText("Global Horizontal Illuminance")]
+        GlobalHorizontalIlluminance,
+        [DisplayText("Global Horizontal Radiation")]
+        GlobalHorizontalRadiation,
+        [DisplayText("Horizontal Infrared Radiation Intensity")]
+        HorizontalInfraredRadiationIntensity,
+        [DisplayText("Opaque Sky Cover")]
+        OpaqueSkyCover,
+        [DisplayText("Precipitable Water")]
+        PrecipitableWater,
+        [DisplayText("Present Weather Codes")]
+        PresentWeatherCodes,
+        [DisplayText("Present Weather Observation")]
+        PresentWeatherObservation,
+        [DisplayText("Relative Humidity")]
+        RelativeHumidity,
+        [DisplayText("Snow Depth")]
+        SnowDepth,
+        [DisplayText("Total Sky Cover")]
+        TotalSkyCover,
         Visibility,
-        Wind_Direction,
-        Wind_Speed,
-        Zenith_Luminance
+        [DisplayText("Wind Direction")]
+        WindDirection,
+        [DisplayText("Wind speed")]
+        WindSpeed,
+        [DisplayText("Zenith Illuminance")]
+        ZenithLuminance
   };
 }
 
