@@ -31,10 +31,10 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that when executed with the LadybugTools Adapter, runs a simulation and return a SimulationResult containing hourly data.")]
-    public class RunSimulationCommand : IExecuteCommand, IObject
+    public class RunSimulationCommand : ISimulation, IObject
     {
         [Description("FileSettings for an EPW file to run the simulation with.")]
-        public virtual FileSettings EpwFile { get; set; } = new FileSettings();
+        public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
         [Description("The ground material for the simulation to use.")]
         public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = null;

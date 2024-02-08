@@ -7,10 +7,10 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that, when executed with the LadybugToolsAdapter, produces a heatmap from data in an epw file.\nOutput is a string of either the path to the image (if OutputLocation is not set) or the base 64 string representation of it.")]
-    public class RunHeatPlotCommand : IExecuteCommand
+    public class HeatPlotCommand : ISimulation
     {
         [Description("The path to an EPW file.")]
-        public virtual string EpwFile { get; set; } = "";
+        public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
         [Description("Key representing an hourly continuous collection in the EPW file to plot.")]
         public virtual EpwKey EpwKey { get; set; } = EpwKey.Undefined;

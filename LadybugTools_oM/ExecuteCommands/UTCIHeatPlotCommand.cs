@@ -8,10 +8,10 @@ using System.ComponentModel;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that, when executed with the LadybugToolsAdapter, simulates UTCI values and outputs a heatmap.\nOutput is a string of either the path to the image (if OutputLocation is not set) or the base 64 string representation of it.")]
-    public class RunUTCIHeatPlotCommand : IExecuteCommand
+    public class UTCIHeatPlotCommand : ISimulation
     {
         [Description("The path to an EPW file.")]
-        public virtual string EpwFile { get; set; } = "";
+        public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
         [Description("An opaque energy material to use as the ground material in the simulation.")]
         public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = null;

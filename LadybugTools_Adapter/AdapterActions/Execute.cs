@@ -134,15 +134,15 @@ namespace BH.Adapter.LadybugTools
         private List<object> RunCommand(RunSimulationCommand command)
         {
             // validation prior to passing to Python
-            if (command.EpwFile == null)
+            if (command.EPWFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
                 return null;
             }
 
-            if (!File.Exists(command.EpwFile.GetFullFileName()))
+            if (!File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EpwFile.GetFullFileName()} does not exist.");
+                BH.Engine.Base.Compute.RecordError($"{command.EPWFile.GetFullFileName()} does not exist.");
                 return null;
             }
 
@@ -171,10 +171,10 @@ namespace BH.Adapter.LadybugTools
             // construct the base object and file to be passed to Python for simulation
             SimulationResult simulationResult = new SimulationResult()
             {
-                EpwFile = Path.GetFullPath(command.EpwFile.GetFullFileName()).Replace(@"\", "/"),
+                EpwFile = Path.GetFullPath(command.EPWFile.GetFullFileName()).Replace(@"\", "/"),
                 GroundMaterial = command.GroundMaterial,
                 ShadeMaterial = command.ShadeMaterial,
-                Name = Engine.LadybugTools.Compute.SimulationID(command.EpwFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
+                Name = Engine.LadybugTools.Compute.SimulationID(command.EPWFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
             };
 
             // push object to json file
@@ -251,21 +251,21 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(RunHeatPlotCommand command)
+        private List<object> RunCommand(HeatPlotCommand command)
         {
-            if (command.EpwFile == null)
+            if (command.EPWFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
                 return null;
             }
 
-            if (!System.IO.File.Exists(command.EpwFile))
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EpwFile} doesn't appear to exist!");
+                BH.Engine.Base.Compute.RecordError($"{command.EPWFile} doesn't appear to exist!");
                 return null;
             }
 
-            string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "heatmap.py");
 
@@ -279,21 +279,21 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(RunWindroseCommand command)
+        private List<object> RunCommand(WindroseCommand command)
         {
-            if (command.EpwFile.IsNullOrEmpty())
+            if (command.EPWFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
                 return null;
             }
 
-            if (!System.IO.File.Exists(command.EpwFile))
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EpwFile} doesn't appear to exist!");
+                BH.Engine.Base.Compute.RecordError($"{command.EPWFile.GetFullFileName()} doesn't appear to exist!");
                 return null;
             }
 
-            string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
 
@@ -307,17 +307,17 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(RunUTCIHeatPlotCommand command)
+        private List<object> RunCommand(UTCIHeatPlotCommand command)
         {
-            if (command.EpwFile == null)
+            if (command.EPWFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
                 return null;
             }
 
-            if (!System.IO.File.Exists(command.EpwFile))
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EpwFile} doesn't appear to exist!");
+                BH.Engine.Base.Compute.RecordError($"{command.EPWFile.GetFullFileName()} doesn't appear to exist!");
                 return null;
             }
 
@@ -340,7 +340,7 @@ namespace BH.Adapter.LadybugTools
             string argFile = Path.GetTempFileName();
             File.WriteAllText(argFile, inputObjects.ToJson());
 
-            string epwFile = System.IO.Path.GetFullPath(command.EpwFile);
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
 
