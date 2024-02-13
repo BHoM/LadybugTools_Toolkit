@@ -84,7 +84,7 @@ if __name__ == "__main__":
         "--wind_speed_multiplier",
         help="helptext",
         type=str,
-        required=True,
+        required=False,
     )
     parser.add_argument(
         "-sp",

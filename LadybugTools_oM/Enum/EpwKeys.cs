@@ -80,6 +80,6 @@ namespace BH.oM.LadybugTools
         WindSpeed,
         [DisplayText("Zenith Illuminance")]
         ZenithLuminance
-  };
+    };
 }
 
