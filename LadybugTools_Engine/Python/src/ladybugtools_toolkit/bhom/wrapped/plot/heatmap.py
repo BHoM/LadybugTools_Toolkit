@@ -19,7 +19,6 @@ def main(epw_file: str, data_type_key: str, colour_map: str, save_path:str = Non
             colour_map = "YlGnBu"
 
         epw = EPW(epw_file)
-        data_type_key = data_type_key.replace("_"," ")
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         fig = heatmap(collection_to_series(coll), cmap=colour_map).get_figure()
         if save_path == None:
