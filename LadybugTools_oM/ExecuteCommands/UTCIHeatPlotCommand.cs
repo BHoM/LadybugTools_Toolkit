@@ -26,7 +26,7 @@ namespace BH.oM.LadybugTools
         public virtual double WindSpeedMultiplier { get; set; } = 1;
 
         [Description("A list of 10 colours to use for each UTCI category, leave empty to use the default UTCI colours.")]
-        public virtual List<string> BinColours { get; set; } = new List<string>();
+        public virtual List<Color> BinColours { get; set; } = new List<Color>();
 
         [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]
         public virtual string OutputLocation { get; set; } = "";

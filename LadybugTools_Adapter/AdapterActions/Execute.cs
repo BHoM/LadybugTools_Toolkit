@@ -37,6 +37,7 @@ using System.Text;
 using BH.Engine.Base;
 using System.Drawing;
 using BH.Engine.Serialiser;
+using BH.Engine.LadyBugTools;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -327,7 +328,7 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            string hexColours = $"[{string.Join(",", "'" + command.BinColours + "'")}]";
+            string hexColours = $"[{string.Join(",", "'" + command.BinColours.Select(x => x.ToHexCode()) + "'")}]";
 
             Dictionary<string, string> inputObjects = new Dictionary<string, string>()
             {
