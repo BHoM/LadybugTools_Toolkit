@@ -327,7 +327,7 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            string hexColours = $"[{string.Join(",", command.BinColours)}]";
+            string hexColours = $"[{string.Join(",", "'" + command.BinColours + "'")}]";
 
             Dictionary<string, string> inputObjects = new Dictionary<string, string>()
             {
