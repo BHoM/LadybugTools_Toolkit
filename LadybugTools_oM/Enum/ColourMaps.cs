@@ -29,94 +29,104 @@ namespace BH.oM.LadybugTools
     public enum ColourMap
     {
         Undefined,
-        Viridis,
-        Plasma,
-        Inferno,
-        Magma,
-        Cividis,
-        Greys,
-        Purples,
-        Blues,
-        Greens,
-        Oranges,
-        Reds,
-        [DisplayText("Yellow, Orange, Brown")]
-        YellowOrangeBrown,
-        [DisplayText("Yellow, Orange, Red")]
-        YellowOrangeRed,
-        [DisplayText("Orange, Red")]
-        OrangeRed,
-        [DisplayText("Purple, Red")]
-        PurpleRed,
-        [DisplayText("Red, Purple")]
-        RedPurple,
-        [DisplayText("Blue, Purple")]
-        BluePurple,
-        [DisplayText("Green, Blue")]
-        GreenBlue,
-        [DisplayText("Purple, Blue")]
-        PurpleBlue,
-        [DisplayText("Yellow, Green, Blue")]
-        YellowGreenBlue,
-        [DisplayText("Purple, Blue, Green")]
-        PurpleBlueGreen,
-        [DisplayText("Blue, Green")]
-        BlueGreen,
-        [DisplayText("Yellow, Green")]
-        YellowGreen,
-        Binary,
-        [DisplayText("Gist Yarg")]
-        GistYarg,
-        Grey,
-        Bone,
-        Pink,
-        Spring,
-        Summer,
-        Autumn,
-        Winter,
-        Cool,
-        Wistia,
-        Hot,
+        Accent,
         [DisplayText("AFM Hot")]
         AFMHot,
-        [DisplayText("Gist Heat")]
-        GistHeat,
-        [DisplayText("Copper")]
-        Copper,
-        [DisplayText("Pink, Yellow, Green")]
-        PinkYellowGreen,
-        [DisplayText("Pink, Red, Green")]
-        PinkRedGreen,
+        [DisplayText("Alternate Pastel")]
+        AlternatePastel,
+        [DisplayText("Alternate GNU Plot")]
+        AlternateGNUPlot,
+        Autumn,
+        Binary,
+        [DisplayText("Blue, Green")]
+        BlueGreen,
+        [DisplayText("Blue, Purple")]
+        BluePurple,
+        [DisplayText("Blue, Red, Green")]
+        BlueRedGreen,
+        Blues,
+        Bone,
         [DisplayText("Brown, Blue, Green")]
         BrownBlueGreen,
+        BWR,
+        Cividis,
+        [DisplayText("CMR Map")]
+        CMRmap,
+        Cool,
+        [DisplayText("Cool, warm")]
+        CoolWarm,
+        Copper,
+        [DisplayText("Cube Helix")]
+        CubeHelix,
+        Dark,
+        Flag,
+        [DisplayText("Gist Rainbow")]
+        GistRainbow,
+        [DisplayText("Gist Yarg")]
+        GistYarg,
+        [DisplayText("Gist Heat")]
+        GistHeat,
+        [DisplayText("Gist Stern")]
+        GistStern,
+        [DisplayText("Gist Earth")]
+        GistEarth,
+        [DisplayText("Gist Ncar")]
+        GistNcar,
+        [DisplayText("GNU Plot")]
+        GNUPlot,
+        [DisplayText("Green, Blue")]
+        GreenBlue,
+        Greens,
+        Grey,
+        Greys,
+        Hot,
+        HSV,
+        Inferno,
+        Jet,
+        Magma,
+        [DisplayText("Nipy Spectral")]
+        NipySpectral,
+        Ocean,
+        [DisplayText("Orange, Red")]
+        OrangeRed,
+        Oranges,
+        Paired,
+        Pastel,
+        Pink,
+        [DisplayText("Pink, Red, Green")]
+        PinkRedGreen,
+        [DisplayText("Pink, Yellow, Green")]
+        PinkYellowGreen,
+        Plasma,
+        Prism,
+        [DisplayText("Purple, Blue")]
+        PurpleBlue,
+        [DisplayText("Purple, Blue, Green")]
+        PurpleBlueGreen,
         [DisplayText("Purple, Orange")]
         PurpleOrange,
-        [DisplayText("Red, Grey")]
-        RedGrey,
+        [DisplayText("Purple, Red")]
+        PurpleRed,
+        Purples,
+        Rainbow,
         [DisplayText("Red, Blue")]
         RedBlue,
+        [DisplayText("Red, Grey")]
+        RedGrey,
+        [DisplayText("Red, Purple")]
+        RedPurple,
+        Reds,
         [DisplayText("Red, Yellow, Blue")]
         RedYellowBlue,
         [DisplayText("Red, Yellow, Green")]
         RedYellowGreen,
-        Spectral,
-        [DisplayText("Cool, warm")]
-        CoolWarm,
-        BWR,
         Seismic,
-        Twilight,
-        [DisplayText("Shifted Twilight")]
-        TwilightShifted,
-        HSV,
-        Pastel,
-        [DisplayText("Alternate Pastel")]
-        AlternatePastel,
-        Paired,
-        Accent,
-        Dark,
         Set1,
         Set2,
         Set3,
+        Spring,
+        Spectral,
+        Summer,
         [DisplayText("Tab 10")]
         Tab10,
         [DisplayText("Tab 20a")]
@@ -125,33 +135,22 @@ namespace BH.oM.LadybugTools
         Tab20b,
         [DisplayText("Tab 20c")]
         Tab20c,
-        Flag,
-        Prism,
-        Ocean,
-        [DisplayText("Gist Earth")]
-        GistEarth,
         Terrain,
-        [DisplayText("Gist Stern")]
-        GistStern,
-        [DisplayText("GNU Plot")]
-        GNUPlot,
-        [DisplayText("Alternate GNU Plot")]
-        AlternateGNUPlot,
-        [DisplayText("CMR Map")]
-        CMRmap,
-        [DisplayText("Cube Helix")]
-        CubeHelix,
-        [DisplayText("Blue, Red, Green")]
-        BlueRedGreen,
-        [DisplayText("Gist Rainbow")]
-        GistRainbow,
-        Rainbow,
-        Jet,
         Turbo,
-        [DisplayText("Nipy Spectral")]
-        NipySpectral,
-        [DisplayText("Gist Ncar")]
-        GistNcar,
-    };
+        Twilight,
+        [DisplayText("Shifted Twilight")]
+        TwilightShifted,
+        Viridis,
+        Winter,
+        Wistia,
+        [DisplayText("Yellow, Green")]
+        YellowGreen,
+        [DisplayText("Yellow, Green, Blue")]
+        YellowGreenBlue,
+        [DisplayText("Yellow, Orange, Brown")]
+        YellowOrangeBrown,
+        [DisplayText("Yellow, Orange, Red")]
+        YellowOrangeRed,
+    }
 }
 
