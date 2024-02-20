@@ -1,0 +1,10 @@
+{
+  "Property": {
+    "ToNew": {
+      "BH.oM.LadybugTools.RunSimulationCommand.EpwFile": "EPWFile"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.RunSimulationCommand.EPWFile": "EpwFile"
+    }
+  }
+}
