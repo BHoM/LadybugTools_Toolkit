@@ -271,10 +271,12 @@ namespace BH.Adapter.LadybugTools
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "heatmap.py");
 
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
-            Adapter.LadybugTools.Query.ColourMapValidity(command.ColourMap);
+            string colourMap = command.ColourMap;
+            if (colourMap.ColourMapValidity())
+                colourMap = colourMap.ToColourMap().ToValidString();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{command.ColourMap}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{colourMap}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;
@@ -302,10 +304,12 @@ namespace BH.Adapter.LadybugTools
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
 
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
-            Adapter.LadybugTools.Query.ColourMapValidity(command.ColourMap);
+            string colourMap = command.ColourMap;
+            if (colourMap.ColourMapValidity())
+                colourMap = colourMap.ToColourMap().ToValidString();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{command.ColourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;

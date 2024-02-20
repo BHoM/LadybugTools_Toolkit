@@ -28,16 +28,12 @@ namespace BH.oM.LadybugTools
     [Description("Matplotlib standard colourmaps. This is not an exhaustive list of possible maps.")]
     public enum ColourMap
     {
-        [DisplayText("Viridis")]
-        viridis,
-        [DisplayText("Plasma")]
-        plasma,
-        [DisplayText("Inferno")]
-        inferno,
-        [DisplayText("Magma")]
-        magma,
-        [DisplayText("Cividis")]
-        cividis,
+        Undefined,
+        Viridis,
+        Plasma,
+        Inferno,
+        Magma,
+        Cividis,
         Greys,
         Purples,
         Blues,
@@ -45,138 +41,117 @@ namespace BH.oM.LadybugTools
         Oranges,
         Reds,
         [DisplayText("Yellow, Orange, Brown")]
-        YlOrBr,
+        YellowOrangeBrown,
         [DisplayText("Yellow, Orange, Red")]
-        YlOrRd,
+        YellowOrangeRed,
         [DisplayText("Orange, Red")]
-        OrRd,
+        OrangeRed,
         [DisplayText("Purple, Red")]
-        PuRd,
+        PurpleRed,
         [DisplayText("Red, Purple")]
-        RdPu,
+        RedPurple,
         [DisplayText("Blue, Purple")]
-        BuPu,
+        BluePurple,
         [DisplayText("Green, Blue")]
-        GnBu,
-        [DisplayText("Purplse, Blue")]
-        PuBu,
+        GreenBlue,
+        [DisplayText("Purple, Blue")]
+        PurpleBlue,
         [DisplayText("Yellow, Green, Blue")]
-        YlGnBu,
+        YellowGreenBlue,
         [DisplayText("Purple, Blue, Green")]
-        PuBuGn,
+        PurpleBlueGreen,
         [DisplayText("Blue, Green")]
-        BuGn,
+        BlueGreen,
         [DisplayText("Yellow, Green")]
-        YlGn,
-        [DisplayText("Binary")]
-        binary,
+        YellowGreen,
+        Binary,
         [DisplayText("Gist Yarg")]
-        gist_yarg,
-        [DisplayText("Grey")]
-        gray,
-        [DisplayText("Bone")]
-        bone,
-        [DisplayText("Pink")]
-        pink,
-        [DisplayText("Spring")]
-        spring,
-        [DisplayText("Summer")]
-        summer,
-        [DisplayText("Autumn")]
-        autumn,
-        [DisplayText("Winter")]
-        winter,
-        [DisplayText("Cool")]
-        cool,
+        GistYarg,
+        Grey,
+        Bone,
+        Pink,
+        Spring,
+        Summer,
+        Autumn,
+        Winter,
+        Cool,
         Wistia,
-        [DisplayText("Hot")]
-        hot,
+        Hot,
         [DisplayText("AFM Hot")]
-        afmhot,
+        AFMHot,
         [DisplayText("Gist Heat")]
-        gist_heat,
+        GistHeat,
         [DisplayText("Copper")]
-        copper,
+        Copper,
         [DisplayText("Pink, Yellow, Green")]
-        PiYG,
+        PinkYellowGreen,
         [DisplayText("Pink, Red, Green")]
-        PRGn,
+        PinkRedGreen,
         [DisplayText("Brown, Blue, Green")]
-        BrBG,
+        BrownBlueGreen,
         [DisplayText("Purple, Orange")]
-        PuOr,
+        PurpleOrange,
         [DisplayText("Red, Grey")]
-        RdGy,
+        RedGrey,
         [DisplayText("Red, Blue")]
-        RdBu,
+        RedBlue,
         [DisplayText("Red, Yellow, Blue")]
-        RdYlBu,
+        RedYellowBlue,
         [DisplayText("Red, Yellow, Green")]
-        RdYlGn,
+        RedYellowGreen,
         Spectral,
         [DisplayText("Cool, warm")]
-        coolwarm,
-        bwr,
-        [DisplayText("Seismic")]
-        seismic,
-        [DisplayText("Twilight")]
-        twilight,
+        CoolWarm,
+        BWR,
+        Seismic,
+        Twilight,
         [DisplayText("Shifted Twilight")]
-        twilight_shifted,
-        hsv,
-        [DisplayText("Pastel")]
-        Pastel1,
+        TwilightShifted,
+        HSV,
+        Pastel,
         [DisplayText("Alternate Pastel")]
-        Pastel2,
+        AlternatePastel,
         Paired,
         Accent,
-        [DisplayText("Dark")]
-        Dark2,
+        Dark,
         Set1,
         Set2,
         Set3,
         [DisplayText("Tab 10")]
-        tab10,
+        Tab10,
         [DisplayText("Tab 20a")]
-        tab20,
+        Tab20,
         [DisplayText("Tab 20b")]
-        tab20b,
+        Tab20b,
         [DisplayText("Tab 20c")]
-        tab20c,
-        [DisplayText("Flag")]
-        flag,
-        [DisplayText("Prism")]
-        prism,
-        [DisplayText("Ocean")]
-        ocean,
+        Tab20c,
+        Flag,
+        Prism,
+        Ocean,
         [DisplayText("Gist Earth")]
-        gist_earth,
-        [DisplayText("Terrain")]
-        terrain,
+        GistEarth,
+        Terrain,
         [DisplayText("Gist Stern")]
-        gist_stern,
+        GistStern,
         [DisplayText("GNU Plot")]
-        gnuplot,
+        GNUPlot,
         [DisplayText("Alternate GNU Plot")]
-        gnuplot2,
+        AlternateGNUPlot,
         [DisplayText("CMR Map")]
         CMRmap,
         [DisplayText("Cube Helix")]
-        cubehelix,
+        CubeHelix,
         [DisplayText("Blue, Red, Green")]
-        brg,
+        BlueRedGreen,
         [DisplayText("Gist Rainbow")]
-        gist_rainbow,
-        [DisplayText("Rainbow")]
-        rainbow,
-        [DisplayText("Jet")]
-        jet,
-        [DisplayText("Turbo")]
-        turbo,
+        GistRainbow,
+        Rainbow,
+        Jet,
+        Turbo,
         [DisplayText("Nipy Spectral")]
-        nipy_spectral,
+        NipySpectral,
         [DisplayText("Gist Ncar")]
-        gist_ncar,
+        GistNcar,
     };
 }
 
