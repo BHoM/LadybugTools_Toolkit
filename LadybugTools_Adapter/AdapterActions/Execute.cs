@@ -38,6 +38,7 @@ using BH.Engine.Base;
 using System.Drawing;
 using BH.Engine.Serialiser;
 using BH.Engine.LadyBugTools;
+using System.Reflection;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -332,13 +333,33 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            if (command.GroundMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid ground material to run this command.");
+                return null;
+            }
+
+            if (command.ShadeMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid shade material to run this command.");
+                return null;
+            }
+
+            if (command.Typology == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid Typology to run this command.");
+            }
+
             if (!(command.BinColours.Count == 10 || command.BinColours.Count == 0))
             {
                 BH.Engine.Base.Compute.RecordError($"When overriding bin colours 10 colours must be provided, but {command.BinColours.Count} colours were provided instead.");
                 return null;
             }
+            List<string> colours = command.BinColours.Select(x => x.ToHexCode()).ToList();
 
-            string hexColours = $"[{string.Join(",", "'" + command.BinColours.Select(x => x.ToHexCode()) + "'")}]";
+            string hexColours = $"[\"{string.Join("\",\"", colours)}\"]";
+            if (hexColours == "[\"\"]")
+                hexColours = "[]";
 
             Dictionary<string, string> inputObjects = new Dictionary<string, string>()
             {
