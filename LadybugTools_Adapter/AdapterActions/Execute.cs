@@ -300,6 +300,12 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            if (command.AnalysisPeriod == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid analysis period to run this command.");
+                return null;
+            }
+
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
