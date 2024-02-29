@@ -62,7 +62,7 @@ namespace BH.Engine.LadyBugTools
 
             if (hex.Length != 6)
             {
-                BH.Engine.Base.Compute.RecordError($"The input string: {hex}, is invalid to create a colour from. Hex codes must be 6 characters long, and only contain numbers (0-9) and the characters a to f.");
+                BH.Engine.Base.Compute.RecordError($"The input string: {hex}, is invalid to create a colour from. Hex codes must be 6 characters long in Hexadecimal format.");
                 return null;
             }
 

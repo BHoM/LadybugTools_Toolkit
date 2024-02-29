@@ -206,6 +206,7 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError("Cannot convert null string to a colourmap");
                 return ColourMap.Undefined;
             }
+            
             foreach (ColourMap item in Enum.GetValues(typeof(ColourMap)))
             {
                 List<string> possibleValues = new List<string>();
@@ -213,9 +214,8 @@ namespace BH.Adapter.LadybugTools
                 FieldInfo field = item.GetType().GetField(item.ToString());
                 DisplayTextAttribute[] array = field.GetCustomAttributes(typeof(DisplayTextAttribute), inherit:false) as DisplayTextAttribute[];
                 if (array != null && array.Length > 0)
-                {
                     possibleValues.Add(array.First().Text.ToLower());
-                }
+
                 if (possibleValues.Any(x => x == colourMap.ToLower()))
                     return item;
             }

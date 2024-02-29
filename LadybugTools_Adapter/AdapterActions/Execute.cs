@@ -144,7 +144,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EPWFile.GetFullFileName()} does not exist.");
+                BH.Engine.Base.Compute.RecordError($"FIle '{command.EPWFile.GetFullFileName()}' does not exist.");
                 return null;
             }
 
@@ -263,7 +263,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EPWFile} doesn't appear to exist!");
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile}' does not exist.");
                 return null;
             }
 
@@ -296,7 +296,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EPWFile.GetFullFileName()} doesn't appear to exist!");
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
                 return null;
             }
 
@@ -335,7 +335,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EPWFile.GetFullFileName()} doesn't appear to exist!");
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
                 return null;
             }
 
