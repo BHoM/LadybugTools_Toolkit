@@ -28,7 +28,7 @@ using System.Text;
 
 namespace BH.oM.LadybugTools
 {
-    public interface ISimulation : IExecuteCommand, IObject
+    public interface ISimulationCommand : IExecuteCommand, IObject
     {
         FileSettings EPWFile { get; set; }
     }

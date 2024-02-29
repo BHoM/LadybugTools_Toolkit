@@ -31,7 +31,7 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that when executed with the LadybugTools Adapter, runs a simulation and return a SimulationResult containing hourly data.")]
-    public class RunSimulationCommand : ISimulation, IObject
+    public class RunSimulationCommand : ISimulationCommand, IObject
     {
         [Description("FileSettings for an EPW file to run the simulation with.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();

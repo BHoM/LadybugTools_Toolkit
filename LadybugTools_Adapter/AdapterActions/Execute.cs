@@ -274,7 +274,7 @@ namespace BH.Adapter.LadybugTools
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
             string colourMap = command.ColourMap;
             if (colourMap.ColourMapValidity())
-                colourMap = colourMap.ToColourMap().ToValidString();
+                colourMap = colourMap.ToColourMap().FromColourMap();
 
             // run the process
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{colourMap}\" -p \"{command.OutputLocation}\"";
@@ -313,7 +313,7 @@ namespace BH.Adapter.LadybugTools
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
             string colourMap = command.ColourMap;
             if (colourMap.ColourMapValidity())
-                colourMap = colourMap.ToColourMap().ToValidString();
+                colourMap = colourMap.ToColourMap().FromColourMap();
 
             // run the process
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";

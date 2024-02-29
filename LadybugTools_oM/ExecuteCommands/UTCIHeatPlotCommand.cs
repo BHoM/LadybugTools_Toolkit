@@ -30,7 +30,7 @@ using System.ComponentModel;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that, when executed with the LadybugToolsAdapter, simulates UTCI values and outputs a heatmap.\nOutput is a string of either the path to the image (if OutputLocation is not set) or the base 64 string representation of it.")]
-    public class UTCIHeatPlotCommand : ISimulation
+    public class UTCIHeatPlotCommand : ISimulationCommand
     {
         [Description("The path to an EPW file.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();

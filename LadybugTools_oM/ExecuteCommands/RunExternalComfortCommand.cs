@@ -30,7 +30,7 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that when executed with the LadybugTools Adapter, runs an External Comfort simulation and returns an ExternalComfort object containing results.")]
-    public class RunExternalComfortCommand : ISimulation, IObject
+    public class RunExternalComfortCommand : ISimulationCommand, IObject
     {
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 

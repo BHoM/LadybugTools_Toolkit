@@ -29,7 +29,7 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that, when executed with the LadybugToolsAdapter, produces a heatmap from data in an epw file.\nOutput is a string of either the path to the image (if OutputLocation is not set) or the base 64 string representation of it.")]
-    public class HeatPlotCommand : ISimulation
+    public class HeatPlotCommand : ISimulationCommand
     {
         [Description("The path to an EPW file.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();

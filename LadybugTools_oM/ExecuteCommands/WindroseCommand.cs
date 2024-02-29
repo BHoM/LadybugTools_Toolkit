@@ -29,7 +29,7 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that, when executed with the LadybugToolsAdapter, generates a windrose from the epw file using the given parameters.\nOutputs a string file path if the OutputLocation is given, or the base64 string representation of the image if no path is given.")]
-    public class WindroseCommand : ISimulation
+    public class WindroseCommand : ISimulationCommand
     {
         [Description("The path to an EPW file.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
