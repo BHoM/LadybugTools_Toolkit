@@ -42,6 +42,8 @@ namespace BH.Engine.LadyBugTools
             return $"#{colour.R.ToString("X2")}{colour.G.ToString("X2")}{colour.B.ToString("X2")}";
         }
 
+        /**************************************************/
+
         [Description("Converts a string that is in the RGB hexadecimal format into a colour. (eg. #ffffff => white).")]
         [Input("hex", "The hexadecimal representation of a colour.")]
         [Output("colour", "The corresponding colour.")]
@@ -53,8 +55,10 @@ namespace BH.Engine.LadyBugTools
                 return null;
             }
 
+            //Convert to lower case, as both capital and lowercase a-f is also valid for hexadecimal.
             hex = hex.ToLower();
 
+            //Allow # to be at the start of a hex string, as it is common and valid, but not necessary for getting the value.
             if (hex[0] == '#')
             {
                 hex = hex.Substring(1);
