@@ -32,7 +32,9 @@ namespace BH.Adapter.LadybugTools
     {
         public static bool ColourMapValidity(this string toValidate)
         {
+            BH.Engine.Base.Compute.StartSuppressRecordingEvents(suppressErrors: true);
             ColourMap colourMap = toValidate.ToColourMap();
+            BH.Engine.Base.Compute.StopSuppressRecordingEvents();
             if (colourMap == ColourMap.Undefined)
             {
                 BH.Engine.Base.Compute.RecordWarning($"The input colourmap: {toValidate}, could not be converted into a known colour map. If matplotlib cannot find a colourmap with this name, it will default to 'YlGnBl'.");
