@@ -34,6 +34,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using BH.Engine.Base;
+using System.Drawing;
+using BH.Engine.Serialiser;
+using BH.Engine.LadyBugTools;
+using System.Reflection;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -131,15 +136,15 @@ namespace BH.Adapter.LadybugTools
         private List<object> RunCommand(RunSimulationCommand command)
         {
             // validation prior to passing to Python
-            if (command.EpwFile == null)
+            if (command.EPWFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(command.EpwFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
                 return null;
             }
 
-            if (!File.Exists(command.EpwFile.GetFullFileName()))
+            if (!File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"{command.EpwFile.GetFullFileName()} does not exist.");
+                BH.Engine.Base.Compute.RecordError($"FIle '{command.EPWFile.GetFullFileName()}' does not exist.");
                 return null;
             }
 
@@ -168,10 +173,10 @@ namespace BH.Adapter.LadybugTools
             // construct the base object and file to be passed to Python for simulation
             SimulationResult simulationResult = new SimulationResult()
             {
-                EpwFile = Path.GetFullPath(command.EpwFile.GetFullFileName()).Replace(@"\", "/"),
+                EpwFile = Path.GetFullPath(command.EPWFile.GetFullFileName()).Replace(@"\", "/"),
                 GroundMaterial = command.GroundMaterial,
                 ShadeMaterial = command.ShadeMaterial,
-                Name = Engine.LadybugTools.Compute.SimulationID(command.EpwFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
+                Name = Engine.LadybugTools.Compute.SimulationID(command.EPWFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
             };
 
             // push object to json file
@@ -244,6 +249,157 @@ namespace BH.Adapter.LadybugTools
 
             m_executeSuccess = true;
             return externalComfortPopulated;
+        }
+
+        /**************************************************/
+
+        private List<object> RunCommand(HeatPlotCommand command)
+        {
+            if (command.EPWFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile}' does not exist.");
+                return null;
+            }
+
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "heatmap.py");
+
+            //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
+            string colourMap = command.ColourMap;
+            if (colourMap.ColourMapValidity())
+                colourMap = colourMap.ToColourMap().FromColourMap();
+
+            // run the process
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{colourMap}\" -p \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+
+            m_executeSuccess = true;
+            return new List<object>() { result };
+        }
+
+        /**************************************************/
+
+        private List<object> RunCommand(WindroseCommand command)
+        {
+            if (command.EPWFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
+                return null;
+            }
+
+            if (command.AnalysisPeriod == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid analysis period to run this command.");
+                return null;
+            }
+
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
+
+            //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
+            string colourMap = command.ColourMap;
+            if (colourMap.ColourMapValidity())
+                colourMap = colourMap.ToColourMap().FromColourMap();
+
+            // run the process
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+
+            m_executeSuccess = true;
+            return new List<object> { result };
+        }
+
+        /**************************************************/
+
+        private List<object> RunCommand(UTCIHeatPlotCommand command)
+        {
+            if (command.EPWFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
+                return null;
+            }
+
+            if (command.GroundMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid ground material to run this command.");
+                return null;
+            }
+
+            if (command.ShadeMaterial == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid shade material to run this command.");
+                return null;
+            }
+
+            if (command.Typology == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please input a valid Typology to run this command.");
+            }
+
+            if (!(command.BinColours.Count == 10 || command.BinColours.Count == 0))
+            {
+                BH.Engine.Base.Compute.RecordError($"When overriding bin colours 10 colours must be provided, but {command.BinColours.Count} colours were provided instead.");
+                return null;
+            }
+            List<string> colours = command.BinColours.Select(x => x.ToHexCode()).ToList();
+
+            string hexColours = $"[\"{string.Join("\",\"", colours)}\"]";
+            if (hexColours == "[\"\"]")
+                hexColours = "[]";
+
+            Dictionary<string, string> inputObjects = new Dictionary<string, string>()
+            {
+                { "ground_material",  command.GroundMaterial.FromBHoM() },
+                { "shade_material", command.ShadeMaterial.FromBHoM() },
+                { "typology", command.Typology.FromBHoM() },
+                { "bin_colours", hexColours }
+            };
+
+            string argFile = Path.GetTempFileName();
+            File.WriteAllText(argFile, inputObjects.ToJson());
+
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
+
+            // run the process
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -ws \"{command.WindSpeedMultiplier}\" -sp \"{command.OutputLocation}\"";
+            string result = "";
+
+            try
+            {
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while running some python.");
+            }
+            finally
+            {
+                File.Delete(argFile);
+            }
+
+            return new List<object> { result.Split('\n').Last() };
         }
 
         /**************************************************/

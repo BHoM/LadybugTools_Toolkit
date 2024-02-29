@@ -1,0 +1,85 @@
+/*
+ * This file is part of the Buildings and Habitats object Model (BHoM)
+ * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ *
+ * Each contributor holds copyright over their respective contributions.
+ * The project versioning (Git) records all such contribution source information.
+ *                     
+ *                                      
+ * The BHoM is free software: you can redistribute it and/or modify     
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3.0 of the License, or    
+ * (at your option) any later version.                    
+ *                                      
+ * The BHoM is distributed in the hope that it will be useful,      
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of       
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the         
+ * GNU Lesser General Public License for more details.            
+ *                                      
+ * You should have received a copy of the GNU Lesser General Public License   
+ * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.  
+ */
+
+using BH.oM.Base.Attributes;
+using System.ComponentModel;
+
+namespace BH.oM.LadybugTools
+{
+    [Description("An enum for keys that frequently appear in epw files.")]
+    public enum EPWKey
+    {
+        Undefined,
+        [DisplayText("Aerosol Optical Depth")]
+        AerosolOpticalDepth,
+        [DisplayText("Atmospheric Station Pressure")]
+        AtmosphericStationPressure,
+        [DisplayText("Ceiling Height")]
+        CeilingHeight,
+        [DisplayText("Days Since Last Snowfall")]
+        DaysSinceLastSnowfall,
+        [DisplayText("Dew Point Temperature")]
+        DewPointTemperature,
+        [DisplayText("Diffuse Horizontal Illuminance")]
+        DiffuseHorizontalIlluminance,
+        [DisplayText("Diffuse Horizontal Radiation")]
+        DiffuseHorizontalRadiation,
+        [DisplayText("Direct Normal Illuminance")]
+        DirectNormalIlluminance,
+        [DisplayText("Direct Normal Radiation")]
+        DirectNormalRadiation,
+        [DisplayText("Dry Bulb Temperature")]
+        DryBulbTemperature,
+        [DisplayText("Extraterrestrial Direct Normal Radiation")]
+        ExtraterrestrialDirectNormalRadiation,
+        [DisplayText("Extraterrestrial Horizontal Radiation")]
+        ExtraterrestrialHorizontalRadiation,
+        [DisplayText("Global Horizontal Illuminance")]
+        GlobalHorizontalIlluminance,
+        [DisplayText("Global Horizontal Radiation")]
+        GlobalHorizontalRadiation,
+        [DisplayText("Horizontal Infrared Radiation Intensity")]
+        HorizontalInfraredRadiationIntensity,
+        [DisplayText("Opaque Sky Cover")]
+        OpaqueSkyCover,
+        [DisplayText("Precipitable Water")]
+        PrecipitableWater,
+        [DisplayText("Present Weather Codes")]
+        PresentWeatherCodes,
+        [DisplayText("Present Weather Observation")]
+        PresentWeatherObservation,
+        [DisplayText("Relative Humidity")]
+        RelativeHumidity,
+        [DisplayText("Snow Depth")]
+        SnowDepth,
+        [DisplayText("Total Sky Cover")]
+        TotalSkyCover,
+        Visibility,
+        [DisplayText("Wind Direction")]
+        WindDirection,
+        [DisplayText("Wind speed")]
+        WindSpeed,
+        [DisplayText("Zenith Illuminance")]
+        ZenithLuminance
+    };
+}
+
