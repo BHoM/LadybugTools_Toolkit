@@ -21,7 +21,7 @@ def main(epw_file: str, data_type_key: str, colour_map: str, save_path:str = Non
         epw = EPW(epw_file)
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         fig = heatmap(collection_to_series(coll), cmap=colour_map).get_figure()
-        if save_path == None:
+        if save_path == None or save_path == "":
             base64 = figure_to_base64(fig,html=False)
             print(base64)
         else:
