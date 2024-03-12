@@ -251,14 +251,6 @@ namespace BH.Engine.LadybugTools
             return Create.Typology(name, shelters, evaporativeCooling, windSpeed, radiantTemperature);
         }
 
-        /// <summary>
-        /// Changes the height of a panel
-        /// </summary>
-        /// <param name="panel"></param>
-        /// <param name="height"></param>
-        /// <returns>
-        /// The panel with an updated height
-        /// </returns>
         private static Panel ChangeHeight(this Panel panel, double height)
         {
             Polyline pLine = panel.Polyline();
