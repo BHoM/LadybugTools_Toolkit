@@ -50,8 +50,8 @@ def test_sunrise_sunset():
 def test_openmeteo_variable():
     """_"""
     assert (
-        OpenMeteoVariable.from_string("windgusts_10m")
-        == OpenMeteoVariable.WINDGUSTS_10M
+        OpenMeteoVariable.from_string("winddirection_100m")
+        == OpenMeteoVariable.WINDDIRECTION_100M
     )
     assert OpenMeteoVariable.TEMPERATURE_2M.openmeteo_unit == "°C"
     assert OpenMeteoVariable.TEMPERATURE_2M.target_name == "Dry Bulb Temperature"
