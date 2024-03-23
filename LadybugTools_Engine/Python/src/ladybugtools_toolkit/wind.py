@@ -1408,12 +1408,33 @@ class Wind:
 
         return df.fillna(0)
 
-    def wind_matrix(self) -> pd.DataFrame:
+    def wind_matrix(self, other_data: pd.Series = None) -> pd.DataFrame:
         """Calculate average wind speed and direction for each month and hour of day in a pandas DataFrame.
+
+        Args:
+            other_data (pd.Series, optional):
+                The other data to calculate the matrix for.
+
         Returns:
             pd.DataFrame:
-                A DataFrame containing average wind speed and direction for each month and hour of day.
+                A DataFrame containing average other/wind speed and direction for each month and hour of day.
         """
+
+        if other_data is None:
+            other_data = self.ws
+
+        if not isinstance(other_data, pd.Series):
+            raise ValueError("other_data must be a time indexed pandas Series.")
+        
+        if len(other_data) != len(self.wd):
+            raise ValueError(
+                f"other_data must be the same length as this {type(self)} object."
+            )
+        
+        if not all(other_data.index == self.wd.index):
+            raise ValueError(
+                "other_data must have the same index as this Wind object."
+            )
 
         wind_directions = (
             (
@@ -1430,16 +1451,16 @@ class Wind:
         wind_directions.columns = [
             calendar.month_abbr[i] for i in wind_directions.columns
         ]
-        wind_speeds = (
-            self.ws.groupby([self.ws.index.month, self.ws.index.hour], axis=0)
+        _other_data = (
+            other_data.groupby([other_data.index.month, other_data.index.hour], axis=0)
             .mean()
             .unstack()
             .T
         )
-        wind_speeds.columns = [calendar.month_abbr[i] for i in wind_speeds.columns]
+        _other_data.columns = [calendar.month_abbr[i] for i in _other_data.columns]
 
         df = pd.concat(
-            [wind_directions, wind_speeds], axis=1, keys=["direction", "speed"]
+            [wind_directions, _other_data], axis=1, keys=["direction", "other"]
         )
         df.index.name = "hour"
 
@@ -1587,6 +1608,7 @@ class Wind:
         self,
         ax: plt.Axes = None,
         show_values: bool = False,
+        other_data: pd.Series = None,
         **kwargs,
     ) -> plt.Axes:
         """Create a plot showing the annual wind speed and direction bins
@@ -1597,6 +1619,8 @@ class Wind:
                 The axes to plot on. If None, the current axes will be used.
             show_values (bool, optional):
                 Whether to show values in the cells. Defaults to False.
+            other_data: (pd.Series, optional):
+                The other data to align with the wind direction and speed. Defaults to None.
             **kwargs:
                 Additional keyword arguments to pass to the pcolor function.
 
@@ -1606,22 +1630,20 @@ class Wind:
 
         """
 
-        if ax is None:
-            ax = plt.gca()
+        if other_data is None:
+            other_data = self.ws
 
-        ax.set_title(textwrap.fill(f"{self.source}", 75))
-
-        df = self.wind_matrix()
-        _wind_speeds = df["speed"]
+        df = self.wind_matrix(other_data=other_data)
+        _other_data = df["other"]
         _wind_directions = df["direction"]
 
         if any(
             [
-                _wind_speeds.shape != (24, 12),
+                _other_data.shape != (24, 12),
                 _wind_directions.shape != (24, 12),
-                _wind_directions.shape != _wind_speeds.shape,
-                not np.array_equal(_wind_directions.index, _wind_speeds.index),
-                not np.array_equal(_wind_directions.columns, _wind_speeds.columns),
+                _wind_directions.shape != _other_data.shape,
+                not np.array_equal(_wind_directions.index, _other_data.index),
+                not np.array_equal(_wind_directions.columns, _other_data.columns),
             ]
         ):
             raise ValueError(
@@ -1629,22 +1651,27 @@ class Wind:
                 "year, and all hours of the day, and align with each other."
             )
 
+        if ax is None:
+            ax = plt.gca()
+
+        ax.set_title(textwrap.fill(f"{self.source}", 75))
+
         cmap = kwargs.pop("cmap", "YlGnBu")
-        vmin = kwargs.pop("vmin", _wind_speeds.values.min())
-        vmax = kwargs.pop("vmax", _wind_speeds.values.max())
-        cbar_title = kwargs.pop("cbar_title", "m/s")
+        vmin = kwargs.pop("vmin", _other_data.values.min())
+        vmax = kwargs.pop("vmax", _other_data.values.max())
+        cbar_title = kwargs.pop("cbar_title", "m/s" if "speed" in other_data.name.lower() else other_data.name)
         norm = kwargs.pop("norm", Normalize(vmin=vmin, vmax=vmax, clip=True))
         mapper = kwargs.pop("mapper", ScalarMappable(norm=norm, cmap=cmap))
 
-        pc = ax.pcolor(_wind_speeds, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+        pc = ax.pcolor(_other_data, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
         _x = -np.sin(np.deg2rad(_wind_directions.values))
         _y = -np.cos(np.deg2rad(_wind_directions.values))
         direction_matrix = angle_from_north([_x, _y])
         ax.quiver(
             np.arange(1, 13, 1) - 0.5,
             np.arange(0, 24, 1) + 0.5,
-            _x * _wind_speeds.values / 2,
-            _y * _wind_speeds.values / 2,
+            _x * _other_data.values / 2,
+            _y * _other_data.values / 2,
             pivot="mid",
             fc="white",
             ec="black",
@@ -1655,7 +1682,7 @@ class Wind:
         if show_values:
             for _xx, col in enumerate(_wind_directions.values.T):
                 for _yy, _ in enumerate(col.T):
-                    local_value = _wind_speeds.values[_yy, _xx]
+                    local_value = _other_data.values[_yy, _xx]
                     cell_color = mapper.to_rgba(local_value)
                     text_color = contrasting_color(cell_color)
                     # direction text
@@ -1672,7 +1699,7 @@ class Wind:
                     ax.text(
                         _xx + 1,
                         _yy + 1,
-                        f"{_wind_speeds.values[_yy][_xx]:0.1f}m/s",
+                        f"{_other_data.values[_yy][_xx]:0.1f}",
                         color=text_color,
                         ha="right",
                         va="top",

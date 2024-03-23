@@ -84,9 +84,10 @@ def bhom_analytics() -> Callable:
                 exec_metadata["Errors"].extend(sys.exc_info())
                 raise exc
             finally:
-                ANALYTICS_LOGGER.info(
-                    json.dumps(exec_metadata, default=str, indent=None)
-                )
+                pass
+                # ANALYTICS_LOGGER.info(
+                #     json.dumps(exec_metadata, default=str, indent=None)
+                # )
 
             return result
 

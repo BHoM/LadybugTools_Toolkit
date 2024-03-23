@@ -434,6 +434,7 @@ class SimulationResult:
                 )
 
         # add some accessors for collections as series
+        # TODO - replace with @property matehods for each attribute to save on overwritten valeus being carried throught downstream operaitons
         for attr in _ATTRIBUTES:
             setattr(self, f"{attr}_series", collection_to_series(getattr(self, attr)))
 
