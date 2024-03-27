@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2023, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -35,7 +35,7 @@ namespace BH.Engine.LadybugTools
         [Input("shelters", "The shelters of the typology.")]
         [Input("evaporativeCoolingEffect", "A list of hourly-annual dimensionless values by which to adjust the additional of moisture into the air and modify the dry-bulb temperature and relative humidity values. A value 0 means no additional moisure added to air, wheras a value of 1 results in fully moisture saturated air at 100% relative humidity.")]
         [Input("targetWindSpeed", "The hourly target wind speed of the typology, in m/s. This can also contain \"null\" values in which case the EPW file used alongside this object and the porosity of the shelters will be used to determine wind speed - otherwise, any value input here will overwrite those calculated wind speeds.")]
-        [Input("radiantTemperatureAdjustment", "A list of values in °C, one-per-hour to adjust the mean radiant temperature by.")]
+        [Input("radiantTemperatureAdjustment", "A list of values in ï¿½C, one-per-hour to adjust the mean radiant temperature by.")]
         [Output("typology", "A Typology object.")]
         public static Typology Typology(
             string identifier = null,
@@ -119,3 +119,4 @@ namespace BH.Engine.LadybugTools
         }
     }
 }
+

@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2023, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -31,10 +31,10 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that when executed with the LadybugTools Adapter, runs a simulation and return a SimulationResult containing hourly data.")]
-    public class RunSimulationCommand : IExecuteCommand, IObject
+    public class RunSimulationCommand : ISimulationCommand, IObject
     {
         [Description("FileSettings for an EPW file to run the simulation with.")]
-        public virtual FileSettings EpwFile { get; set; } = new FileSettings();
+        public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
         [Description("The ground material for the simulation to use.")]
         public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = null;
