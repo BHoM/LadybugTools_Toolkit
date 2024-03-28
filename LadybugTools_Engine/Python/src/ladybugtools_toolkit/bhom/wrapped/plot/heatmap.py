@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 
 
-def main(epw_file: str, data_type_key: str, colour_map: str, save_path:str = None) -> None:
+def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = None) -> None:
     """Create a CSV file version of an EPW."""
     try:
         from ladybug.epw import EPW
@@ -70,4 +70,4 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    main(args.epw_file, args.data_type_key, args.colour_map, args.save_path)
+    heatmap(args.epw_file, args.data_type_key, args.colour_map, args.save_path)
