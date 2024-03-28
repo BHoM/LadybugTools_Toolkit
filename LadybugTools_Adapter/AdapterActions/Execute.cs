@@ -402,6 +402,33 @@ namespace BH.Adapter.LadybugTools
             return new List<object> { result.Split('\n').Last() };
         }
 
+        private List<object> RunCommand(DiurnalPlotCommand command)
+        {
+            if (command.EPWFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile}' does not exist.");
+                return null;
+            }
+
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "diurnal.py");
+
+            // run the process
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -c \"{command.Colour.ToHexCode()}\" -t \"{command.Title}\" -ap \"{command.Period}\" -p \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+
+            m_executeSuccess = true;
+            return new List<object>() { result };
+        }
+
+
         /**************************************************/
         /* Private methods - Fallback                     */
         /**************************************************/
