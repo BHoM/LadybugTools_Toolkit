@@ -410,7 +410,7 @@ def image_to_base64(image_path: Path, html: bool = False) -> str:
 
 
 @bhom_analytics()
-def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
+def figure_to_base64(figure: plt.Figure, html: bool = False, transparent: bool = True) -> str:
     """Convert a matplotlib figure object into a base64 string.
 
     Arguments:
@@ -425,7 +425,7 @@ def figure_to_base64(figure: plt.Figure, html: bool = False) -> str:
     """
 
     buffer = io.BytesIO()
-    figure.savefig(buffer)
+    figure.savefig(buffer, transparent=transparent)
     buffer.seek(0)
     base64_string = base64.b64encode(buffer.read()).decode("utf-8")
 

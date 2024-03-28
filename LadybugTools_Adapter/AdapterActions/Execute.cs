@@ -83,10 +83,14 @@ namespace BH.Adapter.LadybugTools
             {
                 JsonFile = new FileSettings()
                 {
-                    FileName = $"LBTBHoM_Materials_{DateTime.Now:yyyyMMdd}.json",
+                    FileName = $"LBTBHoM_Materials.json",
                     Directory = Path.GetTempPath()
                 }
             };
+
+            TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
+            if (timeSinceLastUpdate.Days > 14)
+                File.Delete(config.JsonFile.GetFullFileName());
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
@@ -111,10 +115,14 @@ namespace BH.Adapter.LadybugTools
             {
                 JsonFile = new FileSettings()
                 {
-                    FileName = $"LBTBHoM_Typologies_{DateTime.Now:yyyyMMdd}.json",
+                    FileName = $"LBTBHoM_Typologies.json",
                     Directory = Path.GetTempPath()
                 }
             };
+
+            TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
+            if (timeSinceLastUpdate.Days > 14)
+                File.Delete(config.JsonFile.GetFullFileName());
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
