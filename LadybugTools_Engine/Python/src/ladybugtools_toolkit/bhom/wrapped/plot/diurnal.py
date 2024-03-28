@@ -76,4 +76,4 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    main(args.epw_file, args.data_type_key, args.colour, args.title, args.period, args.save_path)
+    diurnal(args.epw_file, args.data_type_key, args.colour, args.title, args.period, args.save_path)
