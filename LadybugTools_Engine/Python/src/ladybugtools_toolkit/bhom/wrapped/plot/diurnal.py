@@ -18,7 +18,7 @@ def diurnal(epw_file, data_type_key="Dry Bulb Temperature", color="#000000", tit
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         fig = diurnal(collection_to_series(coll),title=title, period=period, color=color).get_figure()
         if save_path == None or save_path == "":
-            base64 = figure_to_base64(fig,html=False)
+            base64 = figure_to_base64(fig, html=False)
             print(base64)
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
