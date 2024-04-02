@@ -436,6 +436,35 @@ namespace BH.Adapter.LadybugTools
             return new List<object>() { result };
         }
 
+        private List<object> RunCommand(SunPathPlotCommand command)
+        {
+            if (command.EPWFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                return null;
+            }
+            
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
+                return null;
+            }
+
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
+            string colourMap = command.ColourMap;
+            if (colourMap.ColourMapValidity())
+                colourMap = colourMap.ToColourMap().FromColourMap();
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "sunpath.py");
+
+            //run the process
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -c \"{colourMap}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
+
+            m_executeSuccess = true;
+            return new List<object>() { result };
+        }
 
         /**************************************************/
         /* Private methods - Fallback                     */
