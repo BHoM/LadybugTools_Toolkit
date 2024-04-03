@@ -4,9 +4,9 @@ import argparse
 import traceback
 from pathlib import Path
 
-def sun_path(epw_file, analysis_period, cmap, save_path):
+def sun_path(epw_file, analysis_period, size, save_path):
     try:
-        from ladybugtools_toolkit._sunpath import sunpath
+        from ladybugtools_toolkit.plot._sunpath import sunpath
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
@@ -20,9 +20,9 @@ def sun_path(epw_file, analysis_period, cmap, save_path):
         fig = sunpath(
             location=epw.location, 
             analysis_period=analysis_period, 
-            cmap=cmap,
-            sun_size=1, 
-        )
+            sun_size=size, 
+        ).get_figure()
+
         if save_path is None or save_path == "":
             base64 = figure_to_base64(fig, html=False)
             print(base64)
@@ -46,10 +46,10 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "-c",
-        "--cmap",
-        help="Colour map of the sun path",
-        type=str,
+        "-s",
+        "--size",
+        help="Size of the sun",
+        type=float,
         required=True,
         )
     parser.add_argument(
@@ -68,4 +68,4 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    sun_path(args.epw_file, args.analysis_period, args.cmap, args.save_path)
+    sun_path(args.epw_file, args.analysis_period, args.size, args.save_path)

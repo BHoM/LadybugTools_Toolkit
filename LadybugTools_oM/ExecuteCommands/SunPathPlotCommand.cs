@@ -11,7 +11,7 @@ namespace BH.oM.LadybugTools
 
         public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
 
-        public virtual string ColourMap { get; set; } = "viridis";
+        public virtual double SunSize { get; set; } = 10;
 
         public virtual string OutputLocation { get; set; } = "";
     }
