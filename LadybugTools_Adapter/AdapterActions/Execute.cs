@@ -89,7 +89,7 @@ namespace BH.Adapter.LadybugTools
             };
 
             TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
-            if (timeSinceLastUpdate.Days > 14)
+            if (timeSinceLastUpdate.Days > 30)
                 File.Delete(config.JsonFile.GetFullFileName());
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
@@ -121,7 +121,7 @@ namespace BH.Adapter.LadybugTools
             };
 
             TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
-            if (timeSinceLastUpdate.Days > 14)
+            if (timeSinceLastUpdate.Days > 30)
                 File.Delete(config.JsonFile.GetFullFileName());
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
@@ -424,6 +424,20 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            if (command.Period == DiurnalPeriod.Undefined)
+            {
+                BH.Engine.Base.Compute.RecordError("Please provide a valid diurnal period.");
+                return null;
+            }
+
+            if (command.EPWKey == EPWKey.Undefined)
+            {
+                BH.Engine.Base.Compute.RecordError("Please provide a valid EPW key.");
+                return null;
+            }
+
+            command.Title = command.Title.SanitiseString();
+
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "diurnal.py");
@@ -450,12 +464,79 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            if (command.AnalysisPeriod == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                return null;
+            }
+
+            if (command.SunSize < 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"Sun size must be more than or equal to 1.");
+                return null;
+            }
+
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "sunpath.py");
 
             //run the process
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -s {command.SunSize} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
+
+            m_executeSuccess = true;
+            return new List<object>() { result };
+        }
+
+        private List<object> RunCommand(SolarTiltOrientationCommand command)
+        {
+            if (command.EPWFile == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                return null;
+            }
+
+            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
+                return null;
+            }
+
+            if (command.Azimuths < 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"Azimuths must be more than or equal to 1.");
+                return null;
+            }
+
+            if (command.Altitudes < 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"Altitudes must be more than or equal to 1");
+                return null;
+            }
+
+            if (command.GroundReflectance < 0 || command.GroundReflectance > 1)
+            {
+                BH.Engine.Base.Compute.RecordError($"Ground reflectance must be between 0 and 1");
+                return null;
+            }
+
+            if (command.IrradianceType == IrradianceType.Undefined)
+            {
+                BH.Engine.Base.Compute.RecordError($"Please provide a valid Irradiance Type.");
+                return null;
+            }
+
+            if (command.AnalysisPeriod == null)
+            {
+                BH.Engine.Base.Compute.RecordError($"{nameof(AnalysisPeriod)} input cannot be null.");
+                return null;
+            }
+
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
+            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
+
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} -iso {command.Isotropic} -t {command.Title} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;
