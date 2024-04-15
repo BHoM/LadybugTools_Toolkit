@@ -85,7 +85,8 @@ if __name__ == "__main__":
         "--isotropic",
         help="Whether the method should calculate isotropic diffuse irradiance",
         type=bool,
-        required=True,
+        default=False,
+        action="store_true",
     )
     parser.add_argument(
         "-ap",
