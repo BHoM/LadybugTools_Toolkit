@@ -21,7 +21,7 @@ def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectanc
             irradiance_type = IrradianceType.DIFFUSE
         elif irradiance_type == "Direct":
             irradiance_type = IrradianceType.DIRECT
-        elif irradiance_type == "reflected":
+        elif irradiance_type == "Reflected":
             irradiance_type = IrradianceType.REFLECTED
 
         epw = EPW(epw_file)
@@ -36,7 +36,7 @@ def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectanc
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
             print(save_path)
-    except Exception ex:
+    except Exception as ex:
         print(ex)
 
 if __name__ == "__main__":
@@ -84,7 +84,6 @@ if __name__ == "__main__":
         "-iso",
         "--isotropic",
         help="Whether the method should calculate isotropic diffuse irradiance",
-        type=bool,
         default=False,
         action="store_true",
     )

@@ -447,7 +447,7 @@ namespace BH.Adapter.LadybugTools
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;
-            return new List<object>() { result };
+            return new List<object>() { result.Split('\n').Last() };
         }
 
         private List<object> RunCommand(SunPathPlotCommand command)
@@ -485,7 +485,7 @@ namespace BH.Adapter.LadybugTools
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;
-            return new List<object>() { result };
+            return new List<object>() { result.Split('\n').Last() };
         }
 
         private List<object> RunCommand(SolarTiltOrientationCommand command)
@@ -540,7 +540,7 @@ namespace BH.Adapter.LadybugTools
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;
-            return new List<object>() { result };
+            return new List<object>() { result.Split('\n').Last() };
         }
 
         /**************************************************/
