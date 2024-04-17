@@ -176,24 +176,28 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError("The sky shelter height must be greater than or equal to 0.");
                 return null;
             }
+
             if (hasNorthShelter && northShelterHeight < 0)
             {
                 BH.Engine.Base.Compute.RecordError("The north shelter height must be greater than or equal to 0.");
                 return null;
             }
+
             if (hasEastShelter && eastShelterHeight < 0)
             {
                 BH.Engine.Base.Compute.RecordError("The east shelter height must be greater than or equal to 0.");
                 return null;
             }
+
             if (hasSouthShelter && southShelterHeight < 0)
             {
                 BH.Engine.Base.Compute.RecordError("The south shelter height must be greater than or equal to 0.");
                 return null;
             }
+
             if (hasWestShelter && westShelterHeight < 0)
             {
-                BH.Engine.Base.Compute.RecordError("The west shelter height must be more than or equal to 0.");
+                BH.Engine.Base.Compute.RecordError("The west shelter height must be greater than or equal to 0.");
                 return null;
             }
 
@@ -202,19 +206,22 @@ namespace BH.Engine.LadybugTools
                 BH.Engine.Base.Compute.RecordError("The shelter wind porosity must be between 0 and 1 inclusive.");
                 return null;
             }
+
             if (shelterRadiationPorosity < 0 || shelterRadiationPorosity > 1)
             {
                 BH.Engine.Base.Compute.RecordError("The shelter radiation porosity must be between 0 and 1 inclusive.");
                 return null;
             }
+
             if (evaporativeCoolingEffect < 0 || evaporativeCoolingEffect > 1)
             {
                 BH.Engine.Base.Compute.RecordError("The evaporative cooling effect must be between 0 and 1 inclusive.");
                 return null;
             }
+
             if (targetWindSpeed != null && targetWindSpeed < 0)
             {
-                BH.Engine.Base.Compute.RecordError("The target wind speed must be more than or equal to 0, or be null.");
+                BH.Engine.Base.Compute.RecordError("The target wind speed must be greater than or equal to 0, or be null.");
                 return null;
             }
 

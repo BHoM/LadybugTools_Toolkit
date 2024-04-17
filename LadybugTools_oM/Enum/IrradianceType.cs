@@ -29,9 +29,9 @@ namespace BH.oM.LadybugTools
     public enum IrradianceType
     {
         Undefined,
-        Total,
         Diffuse,
         Direct,
         Reflected,
+        Total,
     }
 }

@@ -511,13 +511,13 @@ namespace BH.Adapter.LadybugTools
 
             if (command.Azimuths < 3)
             {
-                BH.Engine.Base.Compute.RecordError($"Azimuths must be more than or equal to 1.");
+                BH.Engine.Base.Compute.RecordError($"Azimuths must be greater than or equal to 1.");
                 return null;
             }
 
             if (command.Altitudes < 3)
             {
-                BH.Engine.Base.Compute.RecordError($"Altitudes must be more than or equal to 1");
+                BH.Engine.Base.Compute.RecordError($"Altitudes must be greater than or equal to 1");
                 return null;
             }
 
