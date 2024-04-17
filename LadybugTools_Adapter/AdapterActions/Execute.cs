@@ -411,6 +411,8 @@ namespace BH.Adapter.LadybugTools
             return new List<object> { result.Split('\n').Last() };
         }
 
+        /**************************************************/
+
         private List<object> RunCommand(DiurnalPlotCommand command)
         {
             if (command.EPWFile == null)
@@ -451,6 +453,8 @@ namespace BH.Adapter.LadybugTools
             return new List<object>() { result.Split('\n').Last() };
         }
 
+        /**************************************************/
+
         private List<object> RunCommand(SunPathPlotCommand command)
         {
             if (command.EPWFile == null)
@@ -489,7 +493,9 @@ namespace BH.Adapter.LadybugTools
             return new List<object>() { result.Split('\n').Last() };
         }
 
-        private List<object> RunCommand(SolarTiltOrientationCommand command)
+        /**************************************************/
+
+        private List<object> RunCommand(SolarPanelTiltOptimisationCommand command)
         {
             if (command.EPWFile == null)
             {
@@ -503,13 +509,13 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (command.Azimuths < 1)
+            if (command.Azimuths < 3)
             {
                 BH.Engine.Base.Compute.RecordError($"Azimuths must be more than or equal to 1.");
                 return null;
             }
 
-            if (command.Altitudes < 1)
+            if (command.Altitudes < 3)
             {
                 BH.Engine.Base.Compute.RecordError($"Altitudes must be more than or equal to 1");
                 return null;
