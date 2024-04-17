@@ -532,7 +532,7 @@ class Solar:
         idx = analysis_period_to_datetimes(cols[0].header.analysis_period)
 
         results = []
-        pbar = tqdm(total=len(midpoints), desc="Calculating irradiance")
+        pbar = tqdm(total=len(midpoints), desc="Calculating irradiance", )
         with concurrent.futures.ProcessPoolExecutor() as executor:
             futures = []
             for _az in midpoints:

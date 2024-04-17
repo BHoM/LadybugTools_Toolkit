@@ -407,6 +407,7 @@ namespace BH.Adapter.LadybugTools
                 File.Delete(argFile);
             }
 
+            m_executeSuccess = true;
             return new List<object> { result.Split('\n').Last() };
         }
 
@@ -536,7 +537,7 @@ namespace BH.Adapter.LadybugTools
 
             string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
 
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} {(command.Isotropic ? "-iso" : "")} -t {command.Title} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} {(command.Isotropic ? "-iso" : "")} -t \"{command.Title}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;
