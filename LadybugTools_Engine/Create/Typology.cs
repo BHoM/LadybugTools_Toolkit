@@ -167,28 +167,28 @@ namespace BH.Engine.LadybugTools
         {
             if (hasSkyShelter && skyShelterRadius < 0)
             {
-                BH.Engine.Base.Compute.RecordError("The sky shelter radius must be more than or equal to 0.");
+                BH.Engine.Base.Compute.RecordError("The sky shelter radius must be greater than or equal to 0.");
                 return null;
             }
 
             if (hasSkyShelter && skyShelterHeight < 0)
             {
-                BH.Engine.Base.Compute.RecordError("The sky shelter height must be more than or equal to 0.");
+                BH.Engine.Base.Compute.RecordError("The sky shelter height must be greater than or equal to 0.");
                 return null;
             }
             if (hasNorthShelter && northShelterHeight < 0)
             {
-                BH.Engine.Base.Compute.RecordError("The north shelter height must be more than or equal to 0.");
+                BH.Engine.Base.Compute.RecordError("The north shelter height must be greater than or equal to 0.");
                 return null;
             }
             if (hasEastShelter && eastShelterHeight < 0)
             {
-                BH.Engine.Base.Compute.RecordError("The east shelter height must be more than or equal to 0.");
+                BH.Engine.Base.Compute.RecordError("The east shelter height must be greater than or equal to 0.");
                 return null;
             }
             if (hasSouthShelter && southShelterHeight < 0)
             {
-                BH.Engine.Base.Compute.RecordError("The south shelter height must be more than or equal to 0.");
+                BH.Engine.Base.Compute.RecordError("The south shelter height must be greater than or equal to 0.");
                 return null;
             }
             if (hasWestShelter && westShelterHeight < 0)

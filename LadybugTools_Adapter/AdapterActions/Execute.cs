@@ -477,7 +477,7 @@ namespace BH.Adapter.LadybugTools
 
             if (command.SunSize < 1)
             {
-                BH.Engine.Base.Compute.RecordError($"Sun size must be more than or equal to 1.");
+                BH.Engine.Base.Compute.RecordError($"Sun size must be greater than or equal to 1.");
                 return null;
             }
 
@@ -523,7 +523,7 @@ namespace BH.Adapter.LadybugTools
 
             if (command.GroundReflectance < 0 || command.GroundReflectance > 1)
             {
-                BH.Engine.Base.Compute.RecordError($"Ground reflectance must be between 0 and 1");
+                BH.Engine.Base.Compute.RecordError($"Ground reflectance must be between 0 and 1 inclusive.");
                 return null;
             }
 
