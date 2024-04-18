@@ -81,7 +81,7 @@ namespace BH.Adapter.LadybugTools
         {
             LadybugConfig config;
 
-            if (actionConfig.GetType() == typeof(LadybugConfig))
+            if (actionConfig?.GetType() == typeof(LadybugConfig))
             {
                 config = (LadybugConfig)actionConfig;
                 config.JsonFile = new FileSettings()
@@ -127,12 +127,12 @@ namespace BH.Adapter.LadybugTools
         {
             LadybugConfig config;
 
-            if (actionConfig.GetType() == typeof(LadybugConfig))
+            if (actionConfig?.GetType() == typeof(LadybugConfig))
             {
                 config = (LadybugConfig)actionConfig;
                 config.JsonFile = new FileSettings()
                 {
-                    FileName = $"LBTBHoM_Materials.json",
+                    FileName = $"LBTBHoM_Typologies.json",
                     Directory = Path.GetTempPath()
                 };
             }
@@ -142,7 +142,7 @@ namespace BH.Adapter.LadybugTools
                 {
                     JsonFile = new FileSettings()
                     {
-                        FileName = $"LBTBHoM_Materials.json",
+                        FileName = $"LBTBHoM_Typologies.json",
                         Directory = Path.GetTempPath()
                     }
                 };
