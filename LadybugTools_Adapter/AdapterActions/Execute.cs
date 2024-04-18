@@ -50,7 +50,7 @@ namespace BH.Adapter.LadybugTools
             m_executeSuccess = false;
             Output<List<object>, bool> output = new Output<List<object>, bool>() { Item1 = new List<object>(), Item2 = false };
 
-            List<object> temp = IRunCommand(command);
+            List<object> temp = IRunCommand(command, actionConfig);
 
             output.Item1 = temp;
             output.Item2 = m_executeSuccess;
@@ -62,7 +62,7 @@ namespace BH.Adapter.LadybugTools
         /* Public methods - Interface                     */
         /**************************************************/
 
-        public List<object> IRunCommand(IExecuteCommand command)
+        public List<object> IRunCommand(IExecuteCommand command, ActionConfig actionConfig)
         {
             if (command == null)
             {
@@ -70,26 +70,40 @@ namespace BH.Adapter.LadybugTools
                 return new List<object>();
             }
 
-            return RunCommand(command as dynamic);
+            return RunCommand(command as dynamic, actionConfig);
         }
 
         /**************************************************/
         /* Private methods - Run Ladybug Command          */
         /**************************************************/
 
-        private List<object> RunCommand(GetMaterialCommand command)
+        private List<object> RunCommand(GetMaterialCommand command, ActionConfig actionConfig)
         {
-            LadybugConfig config = new LadybugConfig()
+            LadybugConfig config;
+
+            if (actionConfig.GetType() == typeof(LadybugConfig))
             {
-                JsonFile = new FileSettings()
+                config = (LadybugConfig)actionConfig;
+                config.JsonFile = new FileSettings()
                 {
                     FileName = $"LBTBHoM_Materials.json",
                     Directory = Path.GetTempPath()
-                }
-            };
+                };
+            }
+            else
+            {
+                config = new LadybugConfig()
+                {
+                    JsonFile = new FileSettings()
+                    {
+                        FileName = $"LBTBHoM_Materials.json",
+                        Directory = Path.GetTempPath()
+                    }
+                };
+            }
 
             TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
-            if (timeSinceLastUpdate.Days > 30)
+            if (timeSinceLastUpdate.Days > config.CacheFileMaximumAge)
                 File.Delete(config.JsonFile.GetFullFileName());
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
@@ -109,16 +123,30 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(GetTypologyCommand command)
+        private List<object> RunCommand(GetTypologyCommand command, ActionConfig actionConfig)
         {
-            LadybugConfig config = new LadybugConfig()
+            LadybugConfig config;
+
+            if (actionConfig.GetType() == typeof(LadybugConfig))
             {
-                JsonFile = new FileSettings()
+                config = (LadybugConfig)actionConfig;
+                config.JsonFile = new FileSettings()
                 {
-                    FileName = $"LBTBHoM_Typologies.json",
+                    FileName = $"LBTBHoM_Materials.json",
                     Directory = Path.GetTempPath()
-                }
-            };
+                };
+            }
+            else
+            {
+                config = new LadybugConfig()
+                {
+                    JsonFile = new FileSettings()
+                    {
+                        FileName = $"LBTBHoM_Materials.json",
+                        Directory = Path.GetTempPath()
+                    }
+                };
+            }
 
             TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
             if (timeSinceLastUpdate.Days > 30)
@@ -141,7 +169,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(RunSimulationCommand command)
+        private List<object> RunCommand(RunSimulationCommand command, ActionConfig actionConfig)
         {
             // validation prior to passing to Python
             if (command.EPWFile == null)
@@ -209,7 +237,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(RunExternalComfortCommand command)
+        private List<object> RunCommand(RunExternalComfortCommand command, ActionConfig actionConfig)
         {
             if (command.SimulationResult == null)
             {
@@ -261,7 +289,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(HeatPlotCommand command)
+        private List<object> RunCommand(HeatPlotCommand command, ActionConfig actionConfig)
         {
             if (command.EPWFile == null)
             {
@@ -294,7 +322,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(WindroseCommand command)
+        private List<object> RunCommand(WindroseCommand command, ActionConfig actionConfig)
         {
             if (command.EPWFile == null)
             {
@@ -333,7 +361,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(UTCIHeatPlotCommand command)
+        private List<object> RunCommand(UTCIHeatPlotCommand command, ActionConfig actionConfig)
         {
             if (command.EPWFile == null)
             {
@@ -413,7 +441,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(DiurnalPlotCommand command)
+        private List<object> RunCommand(DiurnalPlotCommand command, ActionConfig actionConfig)
         {
             if (command.EPWFile == null)
             {
@@ -455,7 +483,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(SunPathPlotCommand command)
+        private List<object> RunCommand(SunPathPlotCommand command, ActionConfig actionConfig)
         {
             if (command.EPWFile == null)
             {
@@ -495,7 +523,7 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(SolarPanelTiltOptimisationCommand command)
+        private List<object> RunCommand(SolarPanelTiltOptimisationCommand command, ActionConfig actionConfig)
         {
             if (command.EPWFile == null)
             {
@@ -554,7 +582,7 @@ namespace BH.Adapter.LadybugTools
         /* Private methods - Fallback                     */
         /**************************************************/
 
-        private List<object> RunCommand(IExecuteCommand command)
+        private List<object> RunCommand(IExecuteCommand command, ActionConfig actionConfig)
         {
             BH.Engine.Base.Compute.RecordError($"The command {command.GetType().FullName} is not valid for the LadybugTools Adapter. Please use a LadybugCommand, or use the correct adapter for the input command.");
             return new List<object>();
