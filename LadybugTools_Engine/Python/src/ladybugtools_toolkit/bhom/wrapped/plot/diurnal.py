@@ -24,7 +24,7 @@ def diurnal(epw_file, data_type_key="Dry Bulb Temperature", color="#000000", tit
             fig.savefig(save_path, dpi=150, transparent=True)
             print(save_path)
     except Exception as e:
-        print(e)
+        print(traceback.format_exc())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
