@@ -30,7 +30,7 @@ namespace BH.oM.LadybugTools
     {
         Undefined,
         Daily,
-        Monthly,
         Weekly,
+        Monthly,
     }
 }

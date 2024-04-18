@@ -149,7 +149,7 @@ namespace BH.Adapter.LadybugTools
             }
 
             TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
-            if (timeSinceLastUpdate.Days > 30)
+            if (timeSinceLastUpdate.Days > config.CacheFileMaximumAge)
                 File.Delete(config.JsonFile.GetFullFileName());
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
