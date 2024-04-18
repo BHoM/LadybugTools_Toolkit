@@ -20,21 +20,17 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Adapter;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Text;
 
 namespace BH.oM.LadybugTools
 {
-    [Description("The action config for the LadybugTools Adapter.")]
-    public class LadybugConfig : ActionConfig
+    public enum DiurnalPeriod
     {
-        [Description("File settings for the json file to pull/push to.")]
-        public virtual FileSettings JsonFile { get; set; } = null;
-
-        [Description("The amount of time (in days) any files that have been created by the adapter for caching purposes should exist before being removed/recreated. \n Files are only deleted/updated . \n Set to 0 to force a recompute of a simulation that has a stored cache.")]
-        public virtual int CacheFileMaximumAge { get; set; } = 30;
+        Undefined,
+        Daily,
+        Weekly,
+        Monthly,
     }
 }

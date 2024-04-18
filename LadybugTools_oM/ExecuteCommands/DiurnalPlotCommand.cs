@@ -21,20 +21,35 @@
  */
 
 using BH.oM.Adapter;
+using BH.oM.Base;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
+using System.Reflection;
 using System.Text;
 
 namespace BH.oM.LadybugTools
 {
-    [Description("The action config for the LadybugTools Adapter.")]
-    public class LadybugConfig : ActionConfig
+    [Description("Use in conjunction with the LadybugToolsAdapter to run a diurnal analysis on a specific key of an epw file, and output a plot.")]
+    public class DiurnalPlotCommand : ISimulationCommand
     {
-        [Description("File settings for the json file to pull/push to.")]
-        public virtual FileSettings JsonFile { get; set; } = null;
+        [Description("The EPW file to analyse.")]
+        public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
-        [Description("The amount of time (in days) any files that have been created by the adapter for caching purposes should exist before being removed/recreated. \n Files are only deleted/updated . \n Set to 0 to force a recompute of a simulation that has a stored cache.")]
-        public virtual int CacheFileMaximumAge { get; set; } = 30;
+        [Description("The key in the EPW file to analyse.")]
+        public virtual EPWKey EPWKey { get; set; } = EPWKey.Undefined;
+
+        [Description("The colour of the average line on the plot.")]
+        public virtual Color Colour { get; set; }
+
+        [Description("The directory to output the file. Leave empty to return a base64 string representation of that image.")]
+        public virtual string OutputLocation { get; set; } = "";
+
+        [Description("Title of the plot, will appear above any information on the top of the plot.")]
+        public virtual string Title { get; set; } = "";
+
+        [Description("The diurnal period to analyse. Daily for 365 samples/timestep, weekly for 52, monthly for 30.")]
+        public virtual DiurnalPeriod Period { get; set; } = DiurnalPeriod.Undefined;
     }
 }

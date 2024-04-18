@@ -76,9 +76,9 @@ namespace BH.oM.LadybugTools
         Visibility,
         [DisplayText("Wind Direction")]
         WindDirection,
-        [DisplayText("Wind speed")]
+        [DisplayText("Wind Speed")]
         WindSpeed,
-        [DisplayText("Zenith Illuminance")]
+        [DisplayText("Zenith Luminance")]
         ZenithLuminance
     };
 }
