@@ -67,7 +67,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
     header.metadata["source"] = "From custom pd.Series"
 
     freq = pd.infer_freq(series.index)
-    if freq in ["H"]:
+    if freq in ["H", "h"]:
         if series.index.is_leap_year.any():
             if len(series.index) != 8784:
                 raise ValueError(
