@@ -50,7 +50,7 @@ namespace BH.oM.LadybugTools
         [Description("A list of 10 colours to use for each UTCI category, leave empty to use the default UTCI colours.")]
         public virtual List<Color> BinColours { get; set; } = new List<Color>();
 
-        [Description("Tells the plotter to convert all values in the plot to imperial units.")]
+        [Description("Tells the plotter to convert all values in the plot to imperial units. Note: all inputs must be in SI units, use the Localisation_Toolkit to convert units (or your own conversion method).")]
         public virtual bool UseImperial { get; set; } = false;
 
         [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]

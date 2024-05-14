@@ -43,13 +43,16 @@ namespace BH.oM.LadybugTools
         [Description("The colour of the average line on the plot.")]
         public virtual Color Colour { get; set; }
 
-        [Description("The directory to output the file. Leave empty to return a base64 string representation of that image.")]
-        public virtual string OutputLocation { get; set; } = "";
-
         [Description("Title of the plot, will appear above any information on the top of the plot.")]
         public virtual string Title { get; set; } = "";
 
         [Description("The diurnal period to analyse. Daily for 365 samples/timestep, weekly for 52, monthly for 30.")]
         public virtual DiurnalPeriod Period { get; set; } = DiurnalPeriod.Undefined;
+
+        [Description("Tells the plotter to convert all values in the plot to imperial units.")]
+        public virtual bool UseImperial { get; set; } = false;
+
+        [Description("The directory to output the file. Leave empty to return a base64 string representation of that image.")]
+        public virtual string OutputLocation { get; set; } = "";
     }
 }
