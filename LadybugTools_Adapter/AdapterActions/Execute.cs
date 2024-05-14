@@ -313,7 +313,7 @@ namespace BH.Adapter.LadybugTools
                 colourMap = colourMap.ToColourMap().FromColourMap();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{colourMap}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{colourMap}\"{(command.UseImperial? " -ip" : "")} -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;

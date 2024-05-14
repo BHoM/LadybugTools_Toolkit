@@ -21,8 +21,8 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, use_ip: bool, sa
         epw = EPW(epw_file)
 
         if use_ip:
-            epw = epw.convert_to_ip()
-
+            epw.convert_to_ip()
+        
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         fig = heatmap(collection_to_series(coll), cmap=colour_map).get_figure()
         if save_path == None or save_path == "":
@@ -81,4 +81,4 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    heatmap(args.epw_file, args.data_type_key, args.colour_map, args.save_path)
+    heatmap(args.epw_file, args.data_type_key, args.colour_map, args.convert_imperial, args.save_path)
