@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 
 
-def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = None) -> None:
+def heatmap(epw_file: str, data_type_key: str, colour_map: str, use_ip: bool, save_path:str = None) -> None:
     """Create a CSV file version of an EPW."""
     try:
         from ladybug.epw import EPW
@@ -19,6 +19,10 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = 
             colour_map = "YlGnBu"
 
         epw = EPW(epw_file)
+
+        if use_ip:
+            epw = epw.convert_to_ip()
+
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         fig = heatmap(collection_to_series(coll), cmap=colour_map).get_figure()
         if save_path == None or save_path == "":
@@ -60,6 +64,13 @@ if __name__ == "__main__":
         help="Matplotlib colour map to use.",
         type=str,
         required=True,
+        )
+    parser.add_argument(
+        "-ip",
+        "--convert_imperial",
+        help="Whether the resultant plot should be in imperial units.",
+        default=False,
+        action="store_true",
         )
     parser.add_argument(
         "-p",
