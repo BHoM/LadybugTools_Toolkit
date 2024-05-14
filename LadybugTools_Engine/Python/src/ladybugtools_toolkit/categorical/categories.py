@@ -15,6 +15,47 @@ UTCI_SIMPLIFIED_CATEGORIES = CategoricalComfort(
     ],
 )
 
+UTCI_DEFAULT_IMPERIAL_CATEGORIES = CategoricalComfort(
+    bin_names=(
+        "Extreme cold stress",
+        "Very strong cold stress",
+        "Strong cold stress",
+        "Moderate cold stress",
+        "Slight cold stress",
+        "No thermal stress",
+        "Moderate heat stress",
+        "Strong heat stress",
+        "Very strong heat stress",
+        "Extreme heat stress",
+    ),
+    bins=(-np.inf, -40, -16.6, 8.6, 32, 48.2, 78.8, 89.6, 100.4, 114.8, np.inf),
+    colors=(
+        "#0D104B",
+        "#262972",
+        "#3452A4",
+        "#3C65AF",
+        "#37BCED",
+        "#2EB349",
+        "#F38322",
+        "#C31F25",
+        "#7F1416",
+        "#580002",
+    ),
+    name="UTCI",
+    comfort_classes=[
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.TOO_COLD,
+        ComfortClass.COMFORTABLE,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+        ComfortClass.TOO_HOT,
+    ],
+    )
+
 UTCI_DEFAULT_CATEGORIES = CategoricalComfort(
     bin_names=(
         "Extreme cold stress",

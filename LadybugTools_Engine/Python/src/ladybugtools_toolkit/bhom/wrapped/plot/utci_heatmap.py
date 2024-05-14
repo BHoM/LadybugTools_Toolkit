@@ -9,6 +9,7 @@ from unittest.util import _MIN_COMMON_LEN
 def utci_heatmap(epw_file:str,
             json_file:str,
             wind_speed_multiplier:float = 1,
+            use_ip: bool = False,
             save_path = None) -> None:
     from ladybugtools_toolkit.external_comfort.material import Materials
     from ladybugtools_toolkit.external_comfort.typology import Typologies
@@ -16,7 +17,7 @@ def utci_heatmap(epw_file:str,
     from ladybugtools_toolkit.external_comfort.simulate import SimulationResult
     from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
     from ladybugtools_toolkit.plot.utilities import figure_to_base64
-    from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
+    from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES, UTCI_DEFAULT_IMPERIAL_CATEGORIES
     from honeybee_energy.dictutil import dict_to_material
     from ladybug.epw import EPW
     import matplotlib.pyplot as plt
@@ -35,15 +36,21 @@ def utci_heatmap(epw_file:str,
     epw = EPW(epw_file)
     typology.target_wind_speed = epw.wind_speed * wind_speed_multiplier
     ec = ExternalComfort(sr, typology)
-
+    
+    bins = (-np.inf, -40, -27, -13, 0, 9, 26, 32, 38, 46, np.inf)
     custom_bins = UTCI_DEFAULT_CATEGORIES
+
+    if use_ip:
+        ec.universal_thermal_climate_index.convert_to_ip()
+        bins = (-np.inf, -40, -16.6, 8.6, 32, 48.2, 78.8, 89.6, 100.4, 114.8, np.inf)
+        custom_bins = UTCI_DEFAULT_IMPERIAL_CATEGORIES
 
     bin_colours = json.loads(argsDict["bin_colours"])
     [print(a) for a in bin_colours]
 
     if len(bin_colours) == 10:
         custom_bins = Categorical(
-            bins=(-np.inf, -40, -27, -13, 0, 9, 26, 32, 38, 46, np.inf),
+            bins=bins,
             colors=(bin_colours),
             name="UTCI")
 
@@ -87,6 +94,12 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
+        "-ip",
+        "--use_imperial",
+        default=False,
+        action="store_true"
+        )
+    parser.add_argument(
         "-sp",
         "--save_path",
         help="helptext",
@@ -96,4 +109,4 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-    utci_heatmap(args.epw_path, args.json_args, args.wind_speed_multiplier, args.save_path)
+    utci_heatmap(args.epw_path, args.json_args, args.wind_speed_multiplier, args.use_imperial, args.save_path)
