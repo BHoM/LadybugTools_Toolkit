@@ -44,6 +44,10 @@ from .ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
     describe_analysis_period,
 )
+from ladybug.datacollection import (
+    BaseCollection,
+    HourlyContinuousCollection,
+)
 from .plot._timeseries import timeseries
 from .plot.utilities import contrasting_color, format_polar_plot
 
@@ -65,9 +69,8 @@ class Wind:
                 A source string to describe where the input data comes from. Defaults to None.
     """
 
-    wind_speeds: list[float]
-    wind_directions: list[float]
-    datetimes: list[datetime] | pd.DatetimeIndex
+    wind_speeds: HourlyContinuousCollection
+    wind_directions: HourlyContinuousCollection
     height_above_ground: float
     source: str = None
 
@@ -75,38 +78,28 @@ class Wind:
         if self.height_above_ground < 0.1:
             raise ValueError("Height above ground must be >= 0.1m.")
 
-        if not (
-            len(self.wind_speeds) == len(self.wind_directions) == len(self.datetimes)
-        ):
+        if not(are_collections_aligned(self.wind_speeds, self.wind_directions)):
             raise ValueError(
                 "wind_speeds, wind_directions and datetimes must be the same length."
             )
 
-        if len(self.wind_speeds) <= 1:
+        if len(self.wind_speeds.values) <= 1:
             raise ValueError(
                 "wind_speeds, wind_directions and datetimes must be at least 2 items long."
             )
 
-        if len(set(self.datetimes)) != len(self.datetimes):
-            raise ValueError("datetimes contains duplicates.")
-
-        # convert to lists
-        self.wind_speeds = np.array(self.wind_speeds)
-        self.wind_directions = np.array(self.wind_directions)
-        self.datetimes = pd.DatetimeIndex(self.datetimes)
-
         # validate wind speeds and directions
-        if np.any(np.isnan(self.wind_speeds)):
+        if np.any(np.isnan(self.wind_speeds.values)):
             raise ValueError("wind_speeds contains null values.")
 
-        if np.any(np.isnan(self.wind_directions)):
+        if np.any(np.isnan(self.wind_directions.values)):
             raise ValueError("wind_directions contains null values.")
 
-        if np.any(self.wind_speeds < 0):
+        if np.any(self.wind_speeds.values < 0):
             raise ValueError("wind_speeds must be >= 0")
-        if np.any(self.wind_directions < 0) or np.any(self.wind_directions > 360):
+
+        if np.any(self.wind_directions.values < 0) or np.any(self.wind_directions.values > 360):
             raise ValueError("wind_directions must be within 0-360")
-        self.wind_directions = self.wind_directions % 360
 
     def __len__(self) -> int:
         return len(self.datetimes)
@@ -130,13 +123,17 @@ class Wind:
     # CLASS METHODS #
     #################
 
+    # TODO: convert to_dict and from_dict to just use HourlyContinuousCollections, and get rid of datetimes. (as BHoM can now make use of an HourlyContinuousCollection when converting objects)
+
     def to_dict(self) -> dict:
-        """Return the object as a dictionary."""
+        """Return the object as a dictionary in SI, including the datetimes."""
+
+        self.convert_to_si() #convert to SI units in case the units are IP
 
         return {
             "_t": "BH.oM.LadybugTools.Wind",
-            "wind_speeds": [float(i) for i in self.wind_speeds],
-            "wind_directions": [float(i) for i in self.wind_directions],
+            "wind_speeds": [float(i) for i in self.wind_speeds.values],
+            "wind_directions": [float(i) for i in self.wind_directions.values],
             "datetimes": [i.isoformat() for i in self.datetimes],
             "height_above_ground": self.height_above_ground,
             "source": self.source,
@@ -144,12 +141,15 @@ class Wind:
 
     @classmethod
     def from_dict(cls, d: dict) -> "Wind":
-        """Create this object from a dictionary."""
+        """Create this object from a dictionary in SI."""
+
+        datetimes = pd.to_datetime(d["datetimes"])
+        start_date = datetimes.min()
+        end_date = datetimes.max()
 
         return cls(
-            wind_speeds=d["wind_speeds"],
-            wind_directions=d["wind_directions"],
-            datetimes=pd.to_datetime(d["datetimes"]),
+            wind_speeds = HourlyContinuousCollection(Header(WindSpeed(), "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), d["wind_speeds"]),
+            wind_directions = HourlyContinuousCollection(Header(WindDirection(), "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), d["wind_speeds"]),
             height_above_ground=d["height_above_ground"],
             source=d["source"],
         )
@@ -228,16 +228,23 @@ class Wind:
                 f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}"
             )
 
-        # remove NaN values
-        df.dropna(axis=0, how="any", inplace=True)
-
         # remove duplicates in input dataframe
         df = df.loc[~df.index.duplicated()]
 
+        if df.isna().any():
+            raise ValueError(
+                f"The input DataFrame contains one or more null values."
+            )
+
+        start_date = df.index.min()
+        end_date = df.index.max()
+
+        wind_speeds = HourlyContinuousCollection(Header(WindSpeed, "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), df[wind_speed_column].to_list())
+        wind_directions = HourlyContinuousCollection(Header(WindDirection, "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), df[wind_direction_column].tolist())
+
         return cls(
-            wind_speeds=df[wind_speed_column].tolist(),
-            wind_directions=df[wind_direction_column].tolist(),
-            datetimes=df.index.tolist(),
+            wind_speeds=wind_speeds,
+            wind_directions=wind_directions,
             height_above_ground=height_above_ground,
             source=source,
         )
@@ -291,9 +298,9 @@ class Wind:
             source = Path(epw.file_path).name
 
         return cls(
-            wind_speeds=epw.wind_speed.values,
-            wind_directions=epw.wind_direction.values,
-            datetimes=analysis_period_to_datetimes(AnalysisPeriod()),
+            wind_speeds=epw.wind_speed,
+            wind_directions=epw.wind_direction,
+            datetimes=epw.wind_speed.datetimes,
             height_above_ground=10,
             source=source,
         )
@@ -338,12 +345,13 @@ class Wind:
             raise ValueError(
                 "OpenMeteo did not return any data for the given latitude, longitude and start/end dates."
             )
-        datetimes = df.index.tolist()
+
+        wind_speeds = HourlyContinuousCollection(Header(WindSpeed, "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), wind_speeds)
+        wind_directions = HourlyContinuousCollection(Header(WindDirection, "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), wind_speeds)
 
         return cls(
             wind_speeds=wind_speeds,
             wind_directions=wind_directions,
-            datetimes=datetimes,
             height_above_ground=10,
             source="OpenMeteo",
         )
@@ -421,11 +429,16 @@ class Wind:
         ws_avg = np.average(df_ws, axis=1, weights=weights)
         dts = df_ws.index
 
+        start_date = dts.min()
+        end_date = dts.max()
+
+        wind_speeds = HourlyContinuousCollection(Header(WindSpeed, "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), ws_avg.tolist())
+        wind_directions = HourlyContinuousCollection(Header(WindDirection, "m/s", AnalysisPeriod.from_start_end_datetime(start_date, end_date)), wd_avg.tolist())
+
         # return the new averaged object
         return cls(
-            wind_speeds=ws_avg.tolist(),
-            wind_directions=wd_avg.tolist(),
-            datetimes=dts,
+            wind_speeds=wind_speeds,
+            wind_directions=wind_directions,
             height_above_ground=np.average(
                 [i.height_above_ground for i in wind_objects], weights=weights
             ),
@@ -469,11 +482,13 @@ class Wind:
             warnings.warn(
                 "Some input vectors have velocity of 0. This is not bad, but can mean directions may be misreported."
             )
+            
+        wind_speeds = HourlyContinuousCollection(Header(WindSpeed, "m/s", AnalysisPeriod.from_start_end_datetime(datetimes.min(), datetimes.max())), wind_speed.tolist())
+        wind_directions = HourlyContinuousCollection(Header(WindDirection, "m/s", AnalysisPeriod.from_start_end_datetime(datetimes.min(), datetimes.max())), wind_direction.tolist())
 
         return cls(
-            wind_speeds=wind_speed.tolist(),
-            wind_directions=wind_direction.tolist(),
-            datetimes=datetimes,
+            wind_speeds=wind_speeds,
+            wind_directions=wind_directions,
             height_above_ground=height_above_ground,
             source=source,
         )
@@ -481,6 +496,11 @@ class Wind:
     # ##############
     # # PROPERTIES #
     # ##############
+
+    @property
+    def datetimes(self) -> list[datetime]:
+        """Return the datetimes associated with this object. Note that only need to get the datetimes of wind_speeds as it is aligned with the wind_directions."""
+        return self.wind_speeds.datetimes
 
     @property
     def freq(self) -> str:
@@ -498,16 +518,12 @@ class Wind:
     @property
     def ws(self) -> pd.Series:
         """Convenience accessor for wind speeds as a time-indexed pd.Series object."""
-        return pd.Series(
-            self.wind_speeds, index=self.index, name="Wind Speed (m/s)"
-        ).sort_index(ascending=True, inplace=False)
+        return collection_to_series(self.wind_speeds).sort_index(ascending=True, inplace=False)
 
     @property
     def wd(self) -> pd.Series:
         """Convenience accessor for wind directions as a time-indexed pd.Series object."""
-        return pd.Series(
-            self.wind_directions, index=self.index, name="Wind Direction (degrees)"
-        ).sort_index(ascending=True, inplace=False)
+        return collection_to_series(self.wind_directions).sort_index(ascending=True, inplace=False)
 
     @property
     def df(self) -> pd.DataFrame:
@@ -516,29 +532,40 @@ class Wind:
 
     @property
     def calm_datetimes(self) -> list[datetime]:
-        """Return the datetimes where wind speed is < 0.1.
+        """Return the datetimes where wind speed (in SI) is < 0.1.
 
         Returns:
             list[datetime]:
                 "Calm" wind datetimes.
         """
-        return self.ws[self.ws <= 0.1].index.tolist()  # pylint: disable=E1136
+
+        ws = collection_to_series(self.wind_speeds.convert_to_si()).sort_index(ascending=True, inplace=False)
+
+        return ws[ws <= 0.1].index.tolist()  # pylint: disable=E1136
 
     @property
     def uv(self) -> pd.DataFrame:
-        """Return the U and V wind components in m/s."""
+        """Return the U and V wind components in the unit of the wind_speeds."""
         u, v = angle_to_vector(self.wd)
         return pd.concat([u * self.ws, v * self.ws], axis=1, keys=["u", "v"])
 
     @property
     def mean_uv(self) -> list[float, float]:
-        """Calculate the average U and V wind components in m/s.
+        """Calculate the average U and V wind components in the unit of the wind_speeds.
 
         Returns:
             list[float, float]:
                 A tuple containing the average U and V wind components.
         """
         return self.uv.mean().tolist()
+
+    def convert_to_ip(self) -> None:
+        """Convert all wind speeds in this object into imperial units"""
+        self.wind_speeds.convert_to_ip()
+
+    def convert_to_si(self) -> None:
+        """Convert all wind speeds in this object to SI units"""
+        self.wind_speeds.convert_to_si()
 
     def mean_speed(self, remove_calm: bool = False) -> float:
         """Return the mean wind speed for this object.
@@ -614,6 +641,8 @@ class Wind:
                 A wind data collection object!
         """
 
+
+        """
         warnings.warn(
             (
                 "Resampling wind speeds and direction is generally not advisable. "
@@ -633,12 +662,14 @@ class Wind:
         resampled_directions = self.wd.resample(rule).apply(circular_weighted_mean)
 
         return Wind(
-            wind_speeds=resampled_speeds.tolist(),
-            wind_directions=resampled_directions.tolist(),
+            wind_speeds=collection_from_series(resampled_speeds),
+            wind_directions=collection_from_series(resampled_directions),
             datetimes=resampled_datetimes,
             height_above_ground=self.height_above_ground,
             source=self.source,
         )
+        """
+        raise NotImplementedError
 
     def to_height(
         self,
@@ -667,10 +698,13 @@ class Wind:
             terrain_roughness_length=terrain_roughness_length,
             log_function=log_function,
         )
+        
+        wind_speeds = HourlyContinuousCollection(Header(WindSpeed, "m/s", AnalysisPeriod.from_start_end_datetime(self.datetimes.min(), self.datetimes.max())), ws.tolist())
+        wind_directions = HourlyContinuousCollection(Header(WindDirection, "m/s", AnalysisPeriod.from_start_end_datetime(self.datetimes.min(), self.datetimes.max())), self.wd.tolist())
+
         return Wind(
-            wind_speeds=ws.tolist(),
-            wind_directions=self.wd.tolist(),
-            datetimes=self.datetimes,
+            wind_speeds=wind_speeds,
+            wind_directions=wind_directions,
             height_above_ground=target_height,
             source=f"{self.source} translated to {target_height}m",
         )
@@ -717,10 +751,12 @@ class Wind:
             directional_factor_lookup[i] for i in direction_binned.iloc[:, 0]
         ]
 
+        wind_speeds = HourlyContinuousCollection(Header(WindSpeed, "m/s", AnalysisPeriod.from_start_end_datetime(self.datetimes.min(), self.datetimes.max())), adjusted_wind_speed.tolist())
+        wind_directions = HourlyContinuousCollection(Header(WindDirection, "m/s", AnalysisPeriod.from_start_end_datetime(self.datetimes.min(), self.datetimes.max())), self.wd.tolist())
+
         return Wind(
-            wind_speeds=adjusted_wind_speed.tolist(),
-            wind_directions=self.wd.tolist(),
-            datetimes=self.datetimes,
+            wind_speeds=wind_speeds,
+            wind_directions=wind_directions,
             height_above_ground=self.height_above_ground,
             source=f"{self.source} adjusted by factors {factors}",
         )
@@ -779,6 +815,8 @@ class Wind:
                 A dataset describing historic wind speed and direction relationship.
         """
 
+        ### WILL HAVE TO CHANGE TO DISCONTINUOUS COLLECTION
+
         if len(mask) != len(self.ws):
             raise ValueError(
                 "The length of the boolean mask must match the length of the current object."
@@ -793,7 +831,6 @@ class Wind:
         return Wind(
             wind_speeds=self.ws.values[mask].tolist(),
             wind_directions=self.wd.values[mask].tolist(),
-            datetimes=self.datetimes[mask],
             height_above_ground=self.height_above_ground,
             source=f"{self.source} (filtered)",
         )
@@ -818,6 +855,8 @@ class Wind:
             Wind:
                 A dataset describing historic wind speed and direction relationship.
         """
+
+        ### SAME AS PREVIOUS METHOD
 
         mask = np.all(
             [
@@ -846,7 +885,6 @@ class Wind:
         return Wind(
             wind_speeds=self.ws.values[mask].tolist(),
             wind_directions=self.wd.values[mask].tolist(),
-            datetimes=self.datetimes[mask],
             height_above_ground=self.height_above_ground,
             source=f"{self.source} (filtered {filtered_by})",
         )
@@ -868,6 +906,8 @@ class Wind:
             Wind:
                 A Wind object!
         """
+
+        ### SAME AS PREVIOUS METHOD
 
         if left_angle < 0 or right_angle > 360:
             raise ValueError("Angle limits must be between 0 and 360 degrees.")
@@ -895,7 +935,6 @@ class Wind:
         return Wind(
             wind_speeds=self.ws.values[mask].tolist(),
             wind_directions=self.wd.values[mask].tolist(),
-            datetimes=self.datetimes[mask],
             height_above_ground=self.height_above_ground,
             source=f"{self.source} filtered by direction ({left_angle}-{right_angle})",
         )
@@ -918,6 +957,8 @@ class Wind:
                 A Wind object!
         """
 
+        ### SAME AS PREVIOUS METHOD
+
         if min_speed < 0:
             raise ValueError("min_speed cannot be negative.")
 
@@ -938,7 +979,6 @@ class Wind:
         return Wind(
             wind_speeds=self.ws.values[mask].tolist(),
             wind_directions=self.wd.values[mask].tolist(),
-            datetimes=self.datetimes[mask],
             height_above_ground=self.height_above_ground,
             source=f"{self.source} filtered by speed ({min_speed}-{max_speed})",
         )
