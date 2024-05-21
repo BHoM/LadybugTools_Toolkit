@@ -20,33 +20,24 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using System.ComponentModel;
-using BH.Engine.Python;
+using System;
+using System.Collections.Generic;
 using System.IO;
-using BH.oM.Base.Attributes;
-using BH.oM.Python;
+using System.Reflection;
+using System.Text;
 
-namespace BH.Adapter.LadybugTools
+namespace BH.Engine.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public static partial class Query
     {
-        [Description("Produces a LadybugTools Adapter that converts objects between Ladybug compatible json and BHoM objects.")]
-        [Output("adapter", "Adapter to a LadybugTools object.")]
-        public LadybugToolsAdapter()
+        public static string PythonCodeDirectory()
         {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
+            string directory = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "PythonCode");
 
-            //get the base python environment first, as LBT is dependant on it.
-            BH.Engine.Python.Compute.BasePythonEnvironment(run: true);
-            m_environment = BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(run: true);
+            if (!Directory.Exists(directory))
+                return Engine.Python.Query.DirectoryCode();
+
+            return directory;
         }
-
-        public LadybugToolsAdapter(PythonEnvironment environment)
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
-            m_environment = environment;
-        }
-
-        private readonly PythonEnvironment m_environment;
     }
 }
