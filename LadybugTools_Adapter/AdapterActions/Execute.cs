@@ -108,7 +108,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
-                string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_material.py");
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_material.py");
 
                 string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
 
@@ -154,7 +154,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
-                string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_typology.py");
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_typology.py");
 
                 string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
 
@@ -219,7 +219,7 @@ namespace BH.Adapter.LadybugTools
             Push(new List<SimulationResult>() { simulationResult }, actionConfig: config);
 
             // locate the Python file containing the simulation code
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "simulation_result.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "simulation_result.py");
 
             // run the simulation
             string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
@@ -271,7 +271,7 @@ namespace BH.Adapter.LadybugTools
             Push(new List<ExternalComfort>() { externalComfort }, actionConfig: config);
 
             // locate the Python file containing the simulation code
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "external_comfort.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "external_comfort.py");
 
             // run the calculation
             string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
@@ -305,7 +305,7 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "heatmap.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "heatmap.py");
 
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
             string colourMap = command.ColourMap;
@@ -344,7 +344,7 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
 
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
             string colourMap = command.ColourMap;
@@ -416,7 +416,7 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
 
             // run the process
             string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -ws \"{command.WindSpeedMultiplier}\" -sp \"{command.OutputLocation}\"";
@@ -471,7 +471,7 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "diurnal.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "diurnal.py");
 
             // run the process
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -c \"{command.Colour.ToHexCode()}\" -t \"{command.Title}\" -ap \"{command.Period.ToString().ToLower()}\" -p \"{command.OutputLocation}\"";
@@ -511,7 +511,7 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "sunpath.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "sunpath.py");
 
             //run the process
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -s {command.SunSize} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
@@ -569,7 +569,7 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.Python.Query.DirectoryCode(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
 
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} {(command.Isotropic ? "-iso" : "")} -t \"{command.Title}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);

@@ -21,6 +21,8 @@
  */
 
 using System.ComponentModel;
+using BH.Engine.Python;
+using System.IO;
 using BH.oM.Base.Attributes;
 using BH.oM.Python;
 
@@ -38,6 +40,13 @@ namespace BH.Adapter.LadybugTools
             BH.Engine.Python.Compute.BasePythonEnvironment(run: true);
             m_environment = BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(run: true);
         }
+
+        public LadybugToolsAdapter(PythonEnvironment environment)
+        {
+            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
+            m_environment = environment;
+        }
+
         private readonly PythonEnvironment m_environment;
     }
 }
