@@ -20,8 +20,8 @@
       </group>
     </dependencies>
 	<contentFiles>
-	  <files include="any\any\PythonCode\**\*.*" buildAction="Content" copyToOutput="true" flatten="false"/>
-	  <files include="any\any\PythonEnvironment\**\*" buildAction="Content" copyToOutput="true" flatten="false"/>
+	  <files include="Python\310\PythonCode\**\*.*" buildAction="Content" copyToOutput="true" flatten="false"/>
+	  <files include="Python\310\PythonEnvironment\**\*" buildAction="Content" copyToOutput="true" flatten="false"/>
 	</contentFiles>
   </metadata>
   <files>
@@ -30,7 +30,7 @@
     <file src="docs/readme.md" target="" />
     <!--lib\**\* is a workaround for contentfiles not including dll files-->
     <file src="lib\**\*" target="lib" />
-	<file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\any\any\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped"/>
-	<file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\any\any\PythonEnvironment\Lib\site-packages" />
+	<file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\Python\310\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped"/>
+	<file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\Python\310\PythonEnvironment\Lib\site-packages" />
   </files>
 </package>
