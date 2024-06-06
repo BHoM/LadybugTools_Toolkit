@@ -51,6 +51,39 @@ from .header import header_to_string
 from .location import average_location, location_to_string
 
 
+EPW_PROPERTIES = [
+    "aerosol_optical_depth",
+    "albedo",
+    "atmospheric_station_pressure",
+    "ceiling_height",
+    "days_since_last_snowfall",
+    "dew_point_temperature",
+    "diffuse_horizontal_illuminance",
+    "diffuse_horizontal_radiation",
+    "direct_normal_illuminance",
+    "direct_normal_radiation",
+    "dry_bulb_temperature",
+    "extraterrestrial_direct_normal_radiation",
+    "extraterrestrial_horizontal_radiation",
+    "global_horizontal_illuminance",
+    "global_horizontal_radiation",
+    "horizontal_infrared_radiation_intensity",
+    "liquid_precipitation_depth",
+    "liquid_precipitation_quantity",
+    "opaque_sky_cover",
+    "precipitable_water",
+    "present_weather_codes",
+    "present_weather_observation",
+    "relative_humidity",
+    "snow_depth",
+    "total_sky_cover",
+    "visibility",
+    "wind_direction",
+    "wind_speed",
+    "years",
+    "zenith_luminance",
+    ]
+
 @bhom_analytics()
 def epw_to_dataframe(
     epw: EPW, include_additional: bool = False, **kwargs
@@ -72,38 +105,7 @@ def epw_to_dataframe(
             A Pandas DataFrame containing the source EPW data.
     """
 
-    properties = [
-        "aerosol_optical_depth",
-        "albedo",
-        "atmospheric_station_pressure",
-        "ceiling_height",
-        "days_since_last_snowfall",
-        "dew_point_temperature",
-        "diffuse_horizontal_illuminance",
-        "diffuse_horizontal_radiation",
-        "direct_normal_illuminance",
-        "direct_normal_radiation",
-        "dry_bulb_temperature",
-        "extraterrestrial_direct_normal_radiation",
-        "extraterrestrial_horizontal_radiation",
-        "global_horizontal_illuminance",
-        "global_horizontal_radiation",
-        "horizontal_infrared_radiation_intensity",
-        "liquid_precipitation_depth",
-        "liquid_precipitation_quantity",
-        "opaque_sky_cover",
-        "precipitable_water",
-        "present_weather_codes",
-        "present_weather_observation",
-        "relative_humidity",
-        "snow_depth",
-        "total_sky_cover",
-        "visibility",
-        "wind_direction",
-        "wind_speed",
-        "years",
-        "zenith_luminance",
-    ]
+    properties = EPW_PROPERTIES
 
     all_series = []
     for prop in properties:
@@ -239,38 +241,7 @@ def epw_from_dataframe(
         epw_obj.comments_2 = comments_2
 
     # Assign data to the EPW
-    properties = [
-        "aerosol_optical_depth",
-        "albedo",
-        "atmospheric_station_pressure",
-        "ceiling_height",
-        "days_since_last_snowfall",
-        "dew_point_temperature",
-        "diffuse_horizontal_illuminance",
-        "diffuse_horizontal_radiation",
-        "direct_normal_illuminance",
-        "direct_normal_radiation",
-        "dry_bulb_temperature",
-        "extraterrestrial_direct_normal_radiation",
-        "extraterrestrial_horizontal_radiation",
-        "global_horizontal_illuminance",
-        "global_horizontal_radiation",
-        "horizontal_infrared_radiation_intensity",
-        "liquid_precipitation_depth",
-        "liquid_precipitation_quantity",
-        "opaque_sky_cover",
-        "precipitable_water",
-        "present_weather_codes",
-        "present_weather_observation",
-        "relative_humidity",
-        "snow_depth",
-        "total_sky_cover",
-        "visibility",
-        "wind_direction",
-        "wind_speed",
-        "years",
-        "zenith_luminance",
-    ]
+    properties = EPW_PROPERTIES
 
     for prop in properties:
         try:
