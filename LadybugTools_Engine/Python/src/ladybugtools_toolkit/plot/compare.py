@@ -28,6 +28,9 @@ def compare_epw_key_hist(
             a matplotlib Axes object that contains the plotted histogram.
     """
 
+    # done so that keys like "Dry Bulb Temperature" are valid
+    key = key.lower().replace(" ", "_")
+
     if key not in EPW_PROPERTIES:
         raise ValueError(f"The key: {key}, is not a valid epw key. Please select one from the list in: ladybugtools_toolkit.ladybug_extension.epw EPW_PROPERTIES")
 
@@ -63,6 +66,9 @@ def compare_epw_key_line(
         plt.Axes:
             a matplotlib Axes object that contains the plotted line chart.
     """
+    
+    # done so that keys like "Dry Bulb Temperature" are valid
+    key = key.lower().replace(" ", "_")
 
     if key not in EPW_PROPERTIES:
         raise ValueError(f"The key: {key}, is not a valid epw key. Please select one from the list in: ladybugtools_toolkit.ladybug_extension.epw EPW_PROPERTIES")
