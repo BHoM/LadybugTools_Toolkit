@@ -12,6 +12,21 @@ def compare_epw_key_hist(
     key: str,
     bins: list[float] = None,
     ) -> plt.Axes:
+    """Compare two or more EPW files against each other based upon a single key, to create a histogram plot.
+    
+    Args:
+        epws (list[EPW]):
+            list of epw objects to compare
+        key (str):
+            epw property to use for comparison
+        bins (list[float]):
+            list of bins to use for the histogram
+            defaults to None, which causes the plot to create its own bins using np.linspace between the min and max values.
+
+    Returns:
+        plt.Axes:
+            a matplotlib Axes object that contains the plotted histogram.
+    """
 
     if key not in EPW_PROPERTIES:
         raise ValueError(f"The key: {key}, is not a valid epw key. Please select one from the list in: ladybugtools_toolkit.ladybug_extension.epw EPW_PROPERTIES")
@@ -36,6 +51,18 @@ def compare_epw_key_line(
     epws: list[EPW],
     key: str,
     ):
+    """Compare two or more EPW files against each other based upon a single key, to create a line plot.
+    
+    Args:
+        epws (list[EPW]):
+            list of epw objects to compare
+        key (str):
+            epw property to use for comparison
+
+    Returns:
+        plt.Axes:
+            a matplotlib Axes object that contains the plotted line chart.
+    """
 
     if key not in EPW_PROPERTIES:
         raise ValueError(f"The key: {key}, is not a valid epw key. Please select one from the list in: ladybugtools_toolkit.ladybug_extension.epw EPW_PROPERTIES")
