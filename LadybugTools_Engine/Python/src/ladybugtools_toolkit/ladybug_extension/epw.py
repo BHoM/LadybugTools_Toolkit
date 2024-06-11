@@ -1074,12 +1074,12 @@ def seasonality_from_temperature_timeseries(
         dbt.drop((2, 29), axis=0, inplace=True)
     except KeyError:
         pass
-    dbt.index = pd.date_range("2017-01-01 00:00:00", freq="60T", periods=8760)
+    dbt.index = pd.date_range("2017-01-01 00:00:00", freq="60min", periods=8760)
     dbt.name = "dbt"
 
     # prepare a 3-year dataset using the aggregate year from the input data and drop leap days if included
     dbt_3year = pd.Series(
-        index=pd.date_range("2016-01-01 00:00:00", freq="60T", periods=len(dbt) * 3),
+        index=pd.date_range("2016-01-01 00:00:00", freq="60min", periods=len(dbt) * 3),
         data=np.array([[i] * 3 for i in dbt.values]).T.flatten(),
     )
 
@@ -1709,7 +1709,7 @@ def longest_day(epw: EPW) -> datetime:
     The longest day in the year associated with this epw object."""
 
     sunpath = Sunpath.from_location(epw.location)
-    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1T")
+    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1min")
     suns = [sunpath.calculate_sun_from_date_time(i) for i in idx][:-1]
 
     s = pd.Series([i.altitude for i in suns], index=idx[:-1])
@@ -1722,7 +1722,7 @@ def shortest_day(epw: EPW) -> datetime:
     The shortest day in the year associated with this epw object."""
 
     sunpath = Sunpath.from_location(epw.location)
-    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1T")
+    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1min")
     suns = [sunpath.calculate_sun_from_date_time(i) for i in idx][:-1]
 
     s = pd.Series([i.altitude for i in suns], index=idx[:-1])
