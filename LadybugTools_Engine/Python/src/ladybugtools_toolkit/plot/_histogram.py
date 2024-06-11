@@ -15,9 +15,9 @@ def histogram(
     fig, ax = plt.subplots(1, 1, figsize=(12, 5))
     ax.hist(series.values, bins=bins, label = series.name, density=False)
 
-    legend = kwargs.pop("legend")
+    show_legend = kwargs.pop("show_legend", True)
 
-    if legend:
+    if show_legend:
         ax.legend()
 
     return ax

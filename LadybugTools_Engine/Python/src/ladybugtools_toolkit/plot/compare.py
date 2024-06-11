@@ -12,6 +12,8 @@ def compare_epw_key_hist(
     epws: list[EPW],
     key: str,
     bins: list[float] = None,
+    colours: list[str] = None,
+    **kwargs
     ) -> plt.Axes:
     """Compare two or more EPW files against each other based upon a single key, to create a histogram plot.
     
@@ -37,7 +39,7 @@ def compare_epw_key_hist(
 
     serieses = [collection_to_series(getattr(i, key)) for i in epws]
     
-    ax = compare_histogram(serieses, bins, names=[Path(epw.file_path).stem for epw in epws])
+    ax = compare_histogram(serieses, bins, names=[Path(epw.file_path).stem for epw in epws], colours=colours, **kwargs)
 
     ax.legend()
     ax.set_ylabel("Number of hours (/8760)")
