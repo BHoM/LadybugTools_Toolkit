@@ -71,7 +71,7 @@ def diurnal(
 
     # resample to hourly to ensuure hour alignment
     # TODO - for now we only resample to hourly, but this could be made more flexible by allowing any subset of period
-    series = series.resample("H").mean()
+    series = series.resample("h").mean()
 
     # remove nan/inf
     series = series.replace([-np.inf, np.inf], np.nan).dropna()

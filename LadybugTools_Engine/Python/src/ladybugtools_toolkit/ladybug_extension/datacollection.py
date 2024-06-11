@@ -440,7 +440,7 @@ def to_hourly(
 
     series = collection_to_series(collection)
     annual_hourly_index = pd.date_range(
-        f"{series.index[0].year}-01-01", periods=8760, freq="H"
+        f"{series.index[0].year}-01-01", periods=8760, freq="h"
     )
     series_annual = series.reindex(annual_hourly_index)
     series_annual[series_annual.index[-1]] = series_annual[series_annual.index[0]]

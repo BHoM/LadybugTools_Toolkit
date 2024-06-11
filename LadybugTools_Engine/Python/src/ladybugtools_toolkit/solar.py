@@ -453,7 +453,7 @@ class Solar:
         df = remove_leap_days(self.df)
 
         grouped = df.groupby([df.index.month, df.index.day, df.index.hour]).mean()
-        index = pd.date_range("2017-01-01", periods=8760, freq="60T")
+        index = pd.date_range("2017-01-01", periods=8760, freq="60min")
         grouped.set_index(index, inplace=True)
 
         return Wea.from_annual_values(

@@ -50,7 +50,7 @@ class TreeShelter(Enum):
         ) as fp:
             tree_config = json.load(fp)[self.name]
 
-        idx = pd.date_range("2017-01-01", periods=8760, freq="60T")
+        idx = pd.date_range("2017-01-01", periods=8760, freq="60min")
         if tree_config["deciduous"]:
             vals = np.stack(
                 [

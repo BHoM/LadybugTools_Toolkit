@@ -11,7 +11,7 @@ from .. import EPW_OBJ
 SERIES_GOOD = pd.Series(
     data=EPW_OBJ.dry_bulb_temperature.values,
     name="Dry Bulb Temperature (C)",
-    index=pd.date_range("2007-01-01 00:30:00", freq="60T", periods=8760),
+    index=pd.date_range("2007-01-01 00:30:00", freq="60min", periods=8760),
 )
 
 
