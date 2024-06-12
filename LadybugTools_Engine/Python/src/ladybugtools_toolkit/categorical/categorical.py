@@ -23,9 +23,10 @@ from matplotlib.legend import Legend
 import matplotlib.ticker as mticker
 
 from ..bhom.analytics import bhom_analytics
-from ..helpers import rolling_window, validate_timeseries
+from ..helpers import rolling_window, validate_timeseries, timeseries_summary_monthly
 from ..plot.utilities import contrasting_color
 from ..plot.base._heatmap import heatmap
+from ..plot.base._monthly_proportional_histogram import monthly_proportional_histogram
 
 
 @dataclass(init=True, repr=True)
@@ -389,20 +390,7 @@ class Categorical:
                 A table summary of the categories over each month
         """
 
-        if not isinstance(series, pd.Series):
-            raise ValueError("The series must be a pandas series.")
-
-        if not isinstance(series.index, pd.DatetimeIndex):
-            raise ValueError("The series must have a time series.")
-
-        counts = (
-            self.categorise(series).groupby(series.index.month).value_counts().unstack()
-        ).sort_index(axis=0)
-        counts.columns.name = None
-        counts.index.name = "Month"
-        if density:
-            return counts.div(counts.sum(axis=1), axis=0)
-        return counts
+        return timeseries_summary_monthly(series, self.bins, self.bin_names_detailed, density)
 
     @bhom_analytics()
     def summarise(
@@ -495,56 +483,7 @@ class Categorical:
                 The populated plt.Axes object.
         """
 
-        validate_timeseries(series)
-
-        if ax is None:
-            ax = plt.gca()
-
-        t = self.timeseries_summary_monthly(series, density=True)
-        t.plot(
-            ax=ax,
-            kind="bar",
-            stacked=True,
-            color=self.colors,
-            width=kwargs.pop("width", 1),
-            legend=False,
-            **kwargs,
-        )
-        ax.set_xlim(-0.5, len(t) - 0.5)
-        ax.set_ylim(0, 1)
-        ax.set_xticklabels(
-            [calendar.month_abbr[int(i._text)] for i in ax.get_xticklabels()],
-            ha="center",
-            rotation=0,
-        )
-        for spine in ["top", "right", "left", "bottom"]:
-            ax.spines[spine].set_visible(False)
-        ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
-
-        if show_legend:
-            ax.legend(
-                bbox_to_anchor=(1, 1),
-                loc="upper left",
-                borderaxespad=0.0,
-                frameon=False,
-                title=self.name,
-            )
-
-        if show_labels:
-            for i, c in enumerate(ax.containers):
-                label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
-                labels = [
-                    f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c
-                ]
-                ax.bar_label(
-                    c,
-                    labels=labels,
-                    label_type="center",
-                    color=label_colors[i],
-                    fontsize="x-small",
-                )
-
-        return ax
+        return monthly_proportional_histogram(series, self.bins, ax, self.bin_names_detailed, show_labels=show_labels, show_legend=show_legend, color=self.colors, **kwargs)
 
     @bhom_analytics()
     def annual_heatmap(

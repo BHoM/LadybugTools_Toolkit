@@ -1966,3 +1966,25 @@ def safe_filename(filename: str) -> str:
     return "".join(
         [c for c in filename if c.isalpha() or c.isdigit() or c == " "]
     ).strip()
+
+@bhom_analytics()
+def timeseries_summary_monthly(series: pd.Series, bins: list[float], bin_names: list[str] = None, density: bool = False):
+    if not isinstance(series, pd.Series):
+        raise ValueError("The series must be a pandas series.")
+
+    if not isinstance(series.index, pd.DatetimeIndex):
+        raise ValueError("The series must have a time series.")
+
+    df = pd.cut(series, bins=bins, labels=bin_names, include_lowest=True)
+
+    if df.isna().any():
+        raise ValueError(
+            f"The input value/s are outside the range of the given bins ({bins[0]} <= x <= {bins[-1]})."
+        )
+    
+    counts = df.groupby(series.index.month).value_counts().unstack().sort_index(axis=0)
+    counts.columns.name = None
+    counts.index.name = "Month"
+    if density:
+        return counts.div(counts.sum(axis=1), axis=0)
+    return counts
