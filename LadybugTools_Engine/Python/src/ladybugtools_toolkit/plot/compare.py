@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from ladybugtools_toolkit.ladybug_extension.epw import collection_to_series, EPW_PROPERTIES
 from ladybugtools_toolkit.bhom.analytics import bhom_analytics
-from ._compare import compare_histogram, compare_line
+from .base._compare import compare_histogram, compare_line
 
 @bhom_analytics()
 def compare_epw_key_hist(

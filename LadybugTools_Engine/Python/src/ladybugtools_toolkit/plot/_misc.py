@@ -14,7 +14,7 @@ from ladybug.sunpath import Sunpath
 
 from ..ladybug_extension.datacollection import collection_to_series
 from ..helpers import sunrise_sunset
-from ._heatmap import heatmap
+from .base._heatmap import heatmap
 from ..categorical.categories import Categorical
 
 

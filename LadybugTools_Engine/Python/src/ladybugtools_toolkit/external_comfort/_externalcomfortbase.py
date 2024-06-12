@@ -19,7 +19,7 @@ from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case
 from ..ladybug_extension.analysisperiod import describe_analysis_period
 from ..ladybug_extension.datacollection import collection_to_series
-from ..plot._heatmap import heatmap
+from ..plot.base._heatmap import heatmap
 from ..plot._utci import utci_day_comfort_metrics, utci_heatmap_histogram
 from ..plot.colormaps import (
     DBT_COLORMAP,

@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from ..bhom.analytics import bhom_analytics
-from ..helpers import validate_timeseries
+from ...bhom.analytics import bhom_analytics
+from ...helpers import validate_timeseries
 
 
 @bhom_analytics()
