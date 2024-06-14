@@ -483,7 +483,21 @@ class Categorical:
                 The populated plt.Axes object.
         """
 
-        return monthly_proportional_histogram(series, self.bins, ax, self.bin_names_detailed, show_labels=show_labels, show_legend=show_legend, color=self.colors, **kwargs)
+        if ax is None:
+            ax = plt.gca()
+
+        monthly_proportional_histogram(
+            series,
+            self.bins,
+            ax=ax,
+            labels=self.bin_names_detailed,
+            show_labels=show_labels,
+            show_legend=show_legend,
+            color=self.colors,
+            **kwargs,
+        )
+
+        return ax
 
     @bhom_analytics()
     def annual_heatmap(
@@ -503,8 +517,6 @@ class Categorical:
             plt.Axes:
                 A matplotlib Axes object.
         """
-
-        validate_timeseries(series)
 
         if ax is None:
             ax = plt.gca()
