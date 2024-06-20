@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 
 
-def main(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> None:
+def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> None:
     """Method to wrap for creating wind roses from epw files."""
     try:
         from ladybug.epw import EPW, AnalysisPeriod
@@ -82,4 +82,4 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    main(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.save_path)
+    windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.save_path)

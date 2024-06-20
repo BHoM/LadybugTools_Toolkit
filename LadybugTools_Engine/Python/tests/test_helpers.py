@@ -525,7 +525,7 @@ def test_remove_leap_days():
 def test_month_hour_binned_series():
     """_"""
     s = pd.Series(
-        index=pd.date_range(start="2017-01-01 00:00:00", freq="60T", periods=8760),
+        index=pd.date_range(start="2017-01-01 00:00:00", freq="60min", periods=8760),
         data=range(8760),
     )
 
@@ -545,7 +545,7 @@ def test_month_hour_binned_series():
         month_hour_binned_series(
             pd.Series(
                 index=pd.date_range(
-                    start="2017-01-01 00:00:00", freq="60T", periods=5000
+                    start="2017-01-01 00:00:00", freq="60min", periods=5000
                 ),
                 data=range(5000),
             )
@@ -556,7 +556,7 @@ def test_month_hour_binned_series():
         month_hour_binned_series(
             pd.Series(
                 index=pd.date_range(
-                    start="2017-01-01 00:00:00", freq="120T", periods=8760 * 3
+                    start="2017-01-01 00:00:00", freq="120min", periods=8760 * 3
                 ),
                 data=range(8760),
             )

@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.util import _MIN_COMMON_LEN
 
 
-def main(epw_file:str,
+def utci_heatmap(epw_file:str,
             json_file:str,
             wind_speed_multiplier:float = 1,
             save_path = None) -> None:
@@ -96,4 +96,4 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-    main(args.epw_path, args.json_args, args.wind_speed_multiplier, args.save_path)
+    utci_heatmap(args.epw_path, args.json_args, args.wind_speed_multiplier, args.save_path)

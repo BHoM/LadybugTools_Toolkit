@@ -474,7 +474,7 @@ def solar_elevation_azimuth(location: Location, ax: plt.Axes = None) -> plt.Axes
         ax = plt.gca()
 
     sp = Sunpath.from_location(location)
-    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="10T")
+    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="10min")
     suns = [sp.calculate_sun_from_date_time(i) for i in idx]
     a = pd.DataFrame(index=idx)
     a["altitude"] = [i.altitude for i in suns]

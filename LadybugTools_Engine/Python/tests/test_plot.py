@@ -250,7 +250,7 @@ def test_heatmap():
         heatmap(
             pd.Series(
                 np.random.random(21000),
-                index=pd.date_range("2000-01-01", periods=21000, freq="H"),
+                index=pd.date_range("2000-01-01", periods=21000, freq="h"),
             )
         ),
         plt.Axes,

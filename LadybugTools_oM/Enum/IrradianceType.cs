@@ -20,33 +20,18 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using System.ComponentModel;
-using BH.Engine.Python;
-using System.IO;
-using BH.oM.Base.Attributes;
-using BH.oM.Python;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace BH.Adapter.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public enum IrradianceType
     {
-        [Description("Produces a LadybugTools Adapter that converts objects between Ladybug compatible json and BHoM objects.")]
-        [Output("adapter", "Adapter to a LadybugTools object.")]
-        public LadybugToolsAdapter()
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
-
-            //get the base python environment first, as LBT is dependant on it.
-            BH.Engine.Python.Compute.BasePythonEnvironment(run: true);
-            m_environment = BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(run: true);
-        }
-
-        public LadybugToolsAdapter(PythonEnvironment environment)
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
-            m_environment = environment;
-        }
-
-        private readonly PythonEnvironment m_environment;
+        Undefined,
+        Diffuse,
+        Direct,
+        Reflected,
+        Total,
     }
 }

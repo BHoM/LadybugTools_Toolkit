@@ -13,7 +13,7 @@ from honeybee_radiance.writer import _filter_by_pattern
 from honeybee_radiance_command.options.rfluxmtx import RfluxmtxOptions
 from honeybee_radiance_command.options.rpict import RpictOptions
 from honeybee_radiance_command.options.rtrace import RtraceOptions
-from honeybee_radiance_postprocess.results import _filter_grids_by_pattern
+from honeybee_radiance_postprocess.util import _filter_grids_by_pattern
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.wea import Wea
 from ladybug_geometry.geometry3d import Plane, Point3D

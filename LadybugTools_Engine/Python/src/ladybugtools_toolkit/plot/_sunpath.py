@@ -69,7 +69,7 @@ def sunpath(
     day_suns = []
     for month in [6, 9, 12]:
         date = pd.to_datetime(f"2017-{month:02d}-21")
-        day_idx = pd.date_range(date, date + pd.Timedelta(hours=24), freq="1T")
+        day_idx = pd.date_range(date, date + pd.Timedelta(hours=24), freq="1min")
         _ = []
         for idx in day_idx:
             s = sunpath_obj.calculate_sun_from_date_time(idx)

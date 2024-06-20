@@ -20,33 +20,36 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Adapter;
+using BH.oM.Base;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using BH.Engine.Python;
-using System.IO;
-using BH.oM.Base.Attributes;
-using BH.oM.Python;
+using System.Drawing;
+using System.Reflection;
+using System.Text;
 
-namespace BH.Adapter.LadybugTools
+namespace BH.oM.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    [Description("Use in conjunction with the LadybugToolsAdapter to run a diurnal analysis on a specific key of an epw file, and output a plot.")]
+    public class DiurnalPlotCommand : ISimulationCommand
     {
-        [Description("Produces a LadybugTools Adapter that converts objects between Ladybug compatible json and BHoM objects.")]
-        [Output("adapter", "Adapter to a LadybugTools object.")]
-        public LadybugToolsAdapter()
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
+        [Description("The EPW file to analyse.")]
+        public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
-            //get the base python environment first, as LBT is dependant on it.
-            BH.Engine.Python.Compute.BasePythonEnvironment(run: true);
-            m_environment = BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(run: true);
-        }
+        [Description("The key in the EPW file to analyse.")]
+        public virtual EPWKey EPWKey { get; set; } = EPWKey.Undefined;
 
-        public LadybugToolsAdapter(PythonEnvironment environment)
-        {
-            m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
-            m_environment = environment;
-        }
+        [Description("The colour of the average line on the plot.")]
+        public virtual Color Colour { get; set; }
 
-        private readonly PythonEnvironment m_environment;
+        [Description("The directory to output the file. Leave empty to return a base64 string representation of that image.")]
+        public virtual string OutputLocation { get; set; } = "";
+
+        [Description("Title of the plot, will appear above any information on the top of the plot.")]
+        public virtual string Title { get; set; } = "";
+
+        [Description("The diurnal period to analyse. Daily for 365 samples/timestep, weekly for 52, monthly for 30.")]
+        public virtual DiurnalPeriod Period { get; set; } = DiurnalPeriod.Undefined;
     }
 }

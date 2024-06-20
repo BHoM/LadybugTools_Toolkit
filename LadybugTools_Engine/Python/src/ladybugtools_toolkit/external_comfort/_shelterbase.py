@@ -52,6 +52,7 @@ class Shelter:
             raise ValueError("wind_porosity must be 8760 items long.")
         if any(not isinstance(i, (float, int)) for i in self.wind_porosity):
             raise ValueError("wind_porosity must be a list of floats.")
+        self.wind_porosity = [float(i) for i in self.wind_porosity]
         if any(i < 0 for i in self.wind_porosity):
             raise ValueError("wind_porosity values must be >= 0.")
         if any(i > 1 for i in self.wind_porosity):
@@ -61,6 +62,7 @@ class Shelter:
             raise ValueError("radiation_porosity must be 8760 items long.")
         if any(not isinstance(i, (float, int)) for i in self.radiation_porosity):
             raise ValueError("radiation_porosity must be a list of floats.")
+        self.radiation_porosity = [float(i) for i in self.radiation_porosity]
         if any(i < 0 for i in self.radiation_porosity):
             raise ValueError("radiation_porosity values must be >= 0.")
         if any(i > 1 for i in self.radiation_porosity):

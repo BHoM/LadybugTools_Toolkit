@@ -4,6 +4,7 @@
 from honeybee.boundarycondition import boundary_conditions
 from honeybee.facetype import face_types
 from honeybee.model import Face, Model, Room, Shade
+from honeybee_energy.internalmass import InternalMass
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.shade import ShadeConstruction
 from honeybee_energy.material.opaque import (
@@ -110,7 +111,15 @@ def _ground_zone(
     )
 
     # apply ground construction
-    ground_zone.properties.energy.make_ground(construction)  # pylint: disable=no-member
+    ground_zone.properties.energy.make_ground(construction)
+
+    internal_mass = InternalMass(
+        identifier=f"{ground_zone.identifier}_internal_mass",
+        area=ground_zone.exposed_area,
+        construction=ground_zone.properties.energy.construction_set.wall_set.exterior_construction,
+    )
+
+    ground_zone.properties.energy.add_internal_mass(internal_mass)
 
     for face in ground_zone.faces:
         face: Face
