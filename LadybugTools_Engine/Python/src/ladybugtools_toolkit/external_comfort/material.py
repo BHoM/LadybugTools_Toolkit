@@ -182,8 +182,9 @@ def get_material(material_identifier: str) -> _EnergyMaterialOpaqueBase:
 def get_identifier(material_identifier: str) -> str:
     keep_characters = r"[^A-Za-z0-9_]"
 
+    # prepend `Thickness_` to identifiers which start with a number as the number references the thickness
     if any([material_identifier.startswith(str(num)) for num in range(10)]):
-        material_identifier = f"_{material_identifier}"
+        material_identifier = f"Thickness_{material_identifier}"
 
     return re.sub(keep_characters, "_", material_identifier).replace("__", "_").rstrip()
 
