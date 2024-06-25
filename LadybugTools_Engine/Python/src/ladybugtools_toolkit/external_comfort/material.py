@@ -180,13 +180,23 @@ def get_material(material_identifier: str) -> _EnergyMaterialOpaqueBase:
             ) from exc
 
 def get_identifier(material_identifier: str) -> str:
+    """Get the enum-valid identifier for a given material identifier.
+
+    Args:
+        material_identifier (str): The identifier to sanitise.
+
+    Returns:
+        str: The sanitised material identifier.
+    """
     keep_characters = r"[^A-Za-z0-9_]"
 
+    material_identifier = re.sub(keep_characters, "_", material_identifier).replace("__", "_").rstrip()
+    
     # prepend `Material_` to identifiers which start with a number
-    if any([material_identifier.startswith(str(num)) for num in range(10)]):
+    if re.match("^\d", material_identifier):
         material_identifier = f"Material_{material_identifier}"
 
-    return re.sub(keep_characters, "_", material_identifier).replace("__", "_").rstrip()
+    return material_identifier
 
 Materials = Enum(
     "Materials",
