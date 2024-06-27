@@ -1037,6 +1037,7 @@ def scrape_openmeteo(
     end_date: datetime | str,
     variables: tuple[OpenMeteoVariable] = None,
     convert_units: bool = False,
+    remove_leapyears: bool = False,
 ) -> pd.DataFrame:
     """Obtain historic hourly data from Open-Meteo.
     https://open-meteo.com/en/docs/historical-weather-api
@@ -1054,6 +1055,8 @@ def scrape_openmeteo(
             A list of variables to query. If None, then all variables will be queried.
         convert_units (bool, optional):
             Convert units output into more common units, and rename headers accordingly.
+        remove_leapyears (bool, optional):
+            Whether or not to remove occurences of February 29th from the scraped data.
 
     Note:
         This method saves the data to a local cache, and will return the cached data if it is less
@@ -1141,6 +1144,9 @@ def scrape_openmeteo(
 
     # combine data
     df = pd.concat(available_data, axis=1)
+
+    if remove_leapyears:
+        df = df[~((df.index.month == 2) & (df.index.day == 29))]
 
     if not convert_units:
         return df

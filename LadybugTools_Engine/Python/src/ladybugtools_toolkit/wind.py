@@ -1587,6 +1587,7 @@ class Wind:
         self,
         ax: plt.Axes = None,
         show_values: bool = False,
+        show_arrows: bool = True,
         **kwargs,
     ) -> plt.Axes:
         """Create a plot showing the annual wind speed and direction bins
@@ -1597,6 +1598,8 @@ class Wind:
                 The axes to plot on. If None, the current axes will be used.
             show_values (bool, optional):
                 Whether to show values in the cells. Defaults to False.
+            show_arrows (bool, optional):
+                Whether to show the directional arrows on each patch.
             **kwargs:
                 Additional keyword arguments to pass to the pcolor function.
 
@@ -1640,17 +1643,18 @@ class Wind:
         _x = -np.sin(np.deg2rad(_wind_directions.values))
         _y = -np.cos(np.deg2rad(_wind_directions.values))
         direction_matrix = angle_from_north([_x, _y])
-        ax.quiver(
-            np.arange(1, 13, 1) - 0.5,
-            np.arange(0, 24, 1) + 0.5,
-            _x * _wind_speeds.values / 2,
-            _y * _wind_speeds.values / 2,
-            pivot="mid",
-            fc="white",
-            ec="black",
-            lw=0.5,
-            alpha=0.5,
-        )
+        if (show_arrows):
+            ax.quiver(
+                np.arange(1, 13, 1) - 0.5,
+                np.arange(0, 24, 1) + 0.5,
+                _x * _wind_speeds.values / 2,
+                _y * _wind_speeds.values / 2,
+                pivot="mid",
+                fc="white",
+                ec="black",
+                lw=0.5,
+                alpha=0.5,
+            )
 
         if show_values:
             for _xx, col in enumerate(_wind_directions.values.T):
@@ -1766,6 +1770,7 @@ class Wind:
         other_data: list[float] = None,
         other_bins: list[float] = None,
         colors: list[str | tuple[float] | Colormap] = None,
+        title: str = None,
         legend: bool = True,
         ylim: tuple[float] = None,
         label: bool = False,
@@ -1785,6 +1790,8 @@ class Wind:
             colors: (str | tuple[float] | Colormap, optional):
                 A list of colors to use for the other bins. May also be a colormap. Defaults to the colors used for
                 Beaufort wind comfort categories.
+            title (str, optional):
+                title to display above the plot. Defaults to the source of this wind object.
             legend (bool, optional):
                 Set to False to remove the legend. Defaults to True.
             ylim (tuple[float], optional):
@@ -1837,7 +1844,10 @@ class Wind:
         hist_ax.bar(np.array([1]), np.array([1]))
         # HACK end
 
-        ax.set_title(textwrap.fill(f"{self.source}", 75))
+        if title is None or title == "":
+            ax.set_title(textwrap.fill(f"{self.source}", 75))
+        else:
+            ax.set_title(title)
 
         theta_width = np.deg2rad(360 / directions)
         patches = []
