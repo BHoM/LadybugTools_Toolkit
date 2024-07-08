@@ -16,7 +16,6 @@ def sun_path(epw_file, analysis_period, size, save_path):
 
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         epw = EPW(epw_file)
-        collection = epw.global_horizontal_radiation
         fig = sunpath(
             location=epw.location, 
             analysis_period=analysis_period, 

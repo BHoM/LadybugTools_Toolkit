@@ -1506,6 +1506,27 @@ class Wind:
         )
         return return_strings
         # pylint: enable=line-too-long
+    
+    def wind_metadata(self) -> dict:
+
+        prevailing_direction = self.prevailing()[0]
+        
+        _, bins = self.process_direction_data()
+
+        direction_bin = [d_bin for d_bin in bins if d_bin[0] <= prevailing_direction and d_bin[1] < prevailing_direction][0]
+
+        prevailing_wind_speeds = self.ws.loc[self.bin_data()["Wind Direction (degrees)"] == direction_bin]
+
+        wind_dict = {
+            "95percentile": self.percentile(0.95),
+            "50percentile": self.percentile(0.50),
+            "calm_percent": self.calm(),
+            "prevailing_direction": self.prevailing()[0],
+            "prevailing_95percentile": prevailing_wind_speeds.quantile(0.95),
+            "prevailing_50percentile": prevailing_wind_speeds.quantile(0.5)
+        }
+        return wind_dict
+
 
     def weibull_pdf(self) -> tuple[float]:
         """Calculate the parameters of an exponentiated Weibull continuous random variable.

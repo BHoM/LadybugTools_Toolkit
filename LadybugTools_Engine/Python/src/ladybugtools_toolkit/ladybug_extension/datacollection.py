@@ -1,6 +1,7 @@
 """Methods for manipulating Ladybug data collections."""
 
 # pylint: disable=E0401
+from gc import collect
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -351,6 +352,11 @@ def summarise_collection(
         )
     # pylint: enable=C0301
     return descriptions
+
+
+def collection_metadata(collection: BaseCollection) -> dict:
+    series = collection_to_series(collection)
+    series.min()
 
 
 @bhom_analytics()

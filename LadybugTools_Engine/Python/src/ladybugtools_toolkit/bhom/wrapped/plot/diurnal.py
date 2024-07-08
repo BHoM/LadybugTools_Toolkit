@@ -12,7 +12,7 @@ def diurnal(epw_file, data_type_key="Dry Bulb Temperature", color="#000000", tit
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
-    
+        
         epw = EPW(epw_file)
         data_type_key = data_type_key.replace("_"," ")
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])

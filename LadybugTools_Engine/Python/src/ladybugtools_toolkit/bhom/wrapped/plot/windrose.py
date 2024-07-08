@@ -24,15 +24,23 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, sa
         w_epw = Wind.from_epw(epw_file)
 
         fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "polar"})
+        
+        wind_filtered = w_epw.filter_by_analysis_period(analysis_period=analysis_period)
+
         w_epw.filter_by_analysis_period(analysis_period=analysis_period).plot_windrose(ax=ax, directions=bins, ylim=(0, 3.6/bins), colors=colour_map)
+
+        description = wind_filtered.summarise()
+        
+        output_dict = {"figure": "", "description": description}
 
         plt.tight_layout()
         if save_path == None or save_path == "":
-            base64 = figure_to_base64(fig,html=False)
-            print(base64)
+            output_dict["figure"] = figure_to_base64(fig,html=False)
+            print(json.dumps(output_dict))
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
-            print(save_path)
+            output_dict["figure"] = save_path
+            print(output_dict)
             
     except Exception as e:
         print(e)

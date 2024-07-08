@@ -355,6 +355,27 @@ namespace BH.Adapter.LadybugTools
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
+            CustomObject data = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
+
+            object image = "";
+
+            if (!data.CustomData.TryGetValue("figure", out image))
+            {
+                BH.Engine.Base.Compute.RecordError("An error occurred during generation of the plot.");
+                return new List<object>();
+            }
+
+            PlotInformation info = new PlotInformation()
+            {
+                Image = (string)image,
+                OtherData = new WindroseData()
+                {
+                    Description = (data.CustomData["description"] as List<object>).Select(x => x.ToString()).ToList(),
+                    MaxSpeed = 
+                }
+            };
+
+
             m_executeSuccess = true;
             return new List<object> { result };
         }
