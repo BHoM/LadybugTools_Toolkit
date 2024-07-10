@@ -1,13 +1,13 @@
 ﻿{
+  "Namespace": {
+    "ToNew": {
+      "BH.Engine.LadyBugTools": "BH.Engine.LadybugTools"
+    }
+  },
   "Method": {
     "ToNew": {
       "BH.Engine.LadyBugTools.ToHexCode(System.Drawing.Color)": "BH.Engine.LadybugTools.ToHexCode(System.Drawing.Color)",
-      "BH.Engine.LadyBugTools.FromHexCode(System.String)":  "BH.Engine.LadybugTools.FromHexCode(System.String)"
-    },
-    "ToOld": {
-      "BH.Engine.LadybugTools.ToHexCode(System.Drawing.Color)": "BH.Engine.LadyBugTools.ToHexCode(System.Drawing.Color)",
-      "BH.Engine.LadybugTools.FromHexCode(System.String)": "BH.Engine.LadyBugTools.FromHexCode(System.String)"
+      "BH.Engine.LadyBugTools.FromHexCode(System.String)": "BH.Engine.LadybugTools.FromHexCode(System.String)"
     }
-
   }
 }
