@@ -30,7 +30,7 @@ using System.Globalization;
 using System.ComponentModel;
 using BH.oM.Base.Attributes;
 
-namespace BH.Engine.LadyBugTools
+namespace BH.Engine.LadybugTools
 {
     public static partial class Convert
     {
