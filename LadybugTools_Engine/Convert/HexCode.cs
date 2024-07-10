@@ -48,7 +48,7 @@ namespace BH.Engine.LadybugTools
         [Description("Converts a string that is in the RGB hexadecimal format into a colour. (eg. #ffffff => white).")]
         [Input("hex", "The hexadecimal representation of a colour.")]
         [Output("colour", "The corresponding colour.")]
-        [PreviousVersion("7.3", "BH.Engine.LadybugTools.FromHexCode(System.String)")]
+        [PreviousVersion("7.3", "BH.Engine.LadybugTools.Convert.FromHexCode(System.String)")]
         public static Color? FromHexCode(this string hex)
         {
             if (hex.IsNullOrEmpty())
