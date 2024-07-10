@@ -21,12 +21,14 @@
  */
 
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace BH.oM.LadybugTools
 {
+    [NoAutoConstructor]
     public class PlotInformation : BHoMObject
     {
         public virtual string Image { get; set; } = "";
