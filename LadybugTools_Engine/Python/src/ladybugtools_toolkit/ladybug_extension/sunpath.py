@@ -1,10 +1,12 @@
 ﻿from ladybug.sunpath import Sunpath
 from ladybug.location import Location
+from ..bhom.analytics import bhom_analytics
 
 import pandas as pd
 from datetime import datetime
 
-def sunpath_metadata(location: Location) -> dict:
+@bhom_analytics()
+def sunpath_metadata(sunpath: Sunpath) -> dict:
     """Return a dictionary containing equinox and solstice altitudes at sunrise, noon and sunset for the given location
 
     Args:
@@ -22,8 +24,6 @@ def sunpath_metadata(location: Location) -> dict:
                 'september_equinox': {...}
             }
     """
-    sunpath = Sunpath.from_location(location)
-    
     december_solstice_times = sunpath.calculate_sunrise_sunset_from_datetime(datetime(2023, 12, 22))
     march_equinox_times = sunpath.calculate_sunrise_sunset_from_datetime(datetime(2023, 3, 20))
     june_solstice_times = sunpath.calculate_sunrise_sunset_from_datetime(datetime(2023, 6, 21))

@@ -354,6 +354,7 @@ def summarise_collection(
     return descriptions
 
 
+@bhom_analytics()
 def collection_metadata(collection: BaseCollection) -> dict:
     """Returns a dictionary containing useful metadata about the series.
     

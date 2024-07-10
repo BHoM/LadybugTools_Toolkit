@@ -708,6 +708,7 @@ def _utci_ndarray(
     return utci_approx
 
 
+@bhom_analytics()
 def utci_metadata(utci_collection: HourlyContinuousCollection, comfort_lower: float = 9, comfort_higher: float = 26, use_start_hour: int=7, use_end_hour: int=23) -> dict:
     """Returns a dictionary of useful metadata for the given collection dependant on the given comfortable range.
     

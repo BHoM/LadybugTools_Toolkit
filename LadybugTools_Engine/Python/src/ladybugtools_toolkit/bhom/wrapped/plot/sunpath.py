@@ -9,6 +9,7 @@ def sun_path(epw_file, analysis_period, size, return_file: str, save_path):
         from ladybugtools_toolkit.plot._sunpath import sunpath
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybug.datacollection import HourlyContinuousCollection
+        from ladybug.sunpath import Sunpath
         from ladybugtools_toolkit.ladybug_extension.sunpath import sunpath_metadata
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
@@ -23,7 +24,7 @@ def sun_path(epw_file, analysis_period, size, return_file: str, save_path):
             sun_size=size, 
         ).get_figure()
 
-        return_dict = {"data": sunpath_metadata(epw.location)}
+        return_dict = {"data": sunpath_metadata(Sunpath.from_location(epw.location))}
 
         if save_path is None or save_path == "":
             base64 = figure_to_base64(fig, html=False)
