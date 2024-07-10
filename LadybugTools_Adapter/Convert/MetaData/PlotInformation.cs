@@ -109,13 +109,25 @@ namespace BH.Adapter.LadybugTools
 
         private static WindroseData ToSimulationData(this Dictionary<string, object> oldData, WindroseData toUpdate)
         {
-            if (!double.TryParse(oldData["prevailing_direction"].ToString(), out double result))
-                result = double.NaN;
-            toUpdate.PrevailingDirection = result;
-
-            if (!double.TryParse(oldData["prevailing_95percentile"].ToString(), out result))
+            if (!double.TryParse(oldData["prevailing_95percentile"].ToString(), out double result))
                 result = double.NaN;
             toUpdate.PrevailingPercentile95 = result;
+
+            try
+            {
+                List<object> tuple = oldData["prevailing_direction"] as List<object>;
+                int index = 0;
+
+                foreach (object value in tuple)
+                {
+                    if (!double.TryParse(value.ToString(), out result))
+                        result = double.NaN;
+
+                    toUpdate.PrevailingDirection[index] = result;
+                    index++;
+                }
+            }
+            catch { }
 
             if (!double.TryParse(oldData["prevailing_50percentile"].ToString(), out result))
                 result = double.NaN;
@@ -297,7 +309,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!double.TryParse(oldData["cold_ratio"].ToString(), out result))
                 result = double.NaN;
-            toUpdate.HotRatio = result;
+            toUpdate.ColdRatio = result;
 
             if (!double.TryParse(oldData["daytime_comfortable"].ToString(), out result))
                 result = double.NaN;

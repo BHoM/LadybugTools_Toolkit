@@ -321,6 +321,7 @@ namespace BH.Adapter.LadybugTools
             if (!File.Exists(result))
             {
                 BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                File.Delete(returnFile);
                 return new List<object>();
             }
 
@@ -363,12 +364,25 @@ namespace BH.Adapter.LadybugTools
             if (colourMap.ColourMapValidity())
                 colourMap = colourMap.ToColourMap().FromColourMap();
 
+            string returnFile = Path.GetTempFileName();
+
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
+            if (!File.Exists(result))
+            {
+                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                File.Delete(returnFile);
+                return new List<object>();
+            }
+
+            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
+            File.Delete(returnFile);
+            PlotInformation info = Convert.ToPlotInformation(obj, new WindroseData());
+
             m_executeSuccess = true;
-            return new List<object> { result };
+            return new List<object> { info };
         }
 
         /**************************************************/
@@ -430,25 +444,29 @@ namespace BH.Adapter.LadybugTools
 
             string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
 
-            // run the process
-            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -ws \"{command.WindSpeedMultiplier}\" -sp \"{command.OutputLocation}\"";
-            string result = "";
+            string returnFile = Path.GetTempFileName();
 
-            try
+            // run the process
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -ws \"{command.WindSpeedMultiplier}\" -r \"{returnFile.Replace('\\', '/')}\" -sp \"{command.OutputLocation}\"";
+            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+
+            string resultFile = result.Split('\n').Last();
+
+            if (!File.Exists(resultFile))
             {
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
-            }
-            catch (Exception ex)
-            {
-                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while running some python.");
-            }
-            finally
-            {
+                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                File.Delete(returnFile);
                 File.Delete(argFile);
+                return new List<object>();
             }
+
+            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
+            File.Delete(returnFile);
+            File.Delete(argFile);
+            PlotInformation info = Convert.ToPlotInformation(obj, new UTCIData());
 
             m_executeSuccess = true;
-            return new List<object> { result.Split('\n').Last() };
+            return new List<object> { info };
         }
 
         /**************************************************/

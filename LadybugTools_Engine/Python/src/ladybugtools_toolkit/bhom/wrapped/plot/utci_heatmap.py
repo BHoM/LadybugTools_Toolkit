@@ -8,6 +8,7 @@ from unittest.util import _MIN_COMMON_LEN
 
 def utci_heatmap(epw_file:str,
             json_file:str,
+            return_file: str,
             wind_speed_multiplier:float = 1,
             save_path = None) -> None:
     from ladybugtools_toolkit.external_comfort.material import Materials
@@ -15,6 +16,7 @@ def utci_heatmap(epw_file:str,
     from ladybugtools_toolkit.external_comfort._typologybase import Typology
     from ladybugtools_toolkit.external_comfort.simulate import SimulationResult
     from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
+    from ladybugtools_toolkit.external_comfort.utci import utci_metadata
     from ladybugtools_toolkit.plot.utilities import figure_to_base64
     from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
     from honeybee_energy.dictutil import dict_to_material
@@ -50,14 +52,24 @@ def utci_heatmap(epw_file:str,
     fig, ax = plt.subplots(1, 1, figsize=(10, 4))
     ec.plot_utci_heatmap(utci_categories = custom_bins)
 
+    utci_collection = ec.universal_thermal_climate_index
+
+    return_dict = {"data": utci_metadata(utci_collection)}
+
     plt.tight_layout()
+    
     if save_path == None or save_path == "":
         base64 = figure_to_base64(fig,html=False)
-        print(base64)
+        return_dict["figure"] = base64
     else:
         fig.savefig(save_path, dpi=150, transparent=True)
-        print(save_path)
-    plt.close(fig)
+        return_dict["figure"] = base64
+    
+    with open(return_file, "w") as rtn:
+        rtn.write(json.dumps(return_dict, default=str))
+    
+    print(return_file)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -87,6 +99,13 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
+        "-r",
+        "--return_file",
+        help="json file to write return data to.",
+        type=str,
+        required=True,
+        )
+    parser.add_argument(
         "-sp",
         "--save_path",
         help="helptext",
@@ -96,4 +115,4 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-    utci_heatmap(args.epw_path, args.json_args, args.wind_speed_multiplier, args.save_path)
+    utci_heatmap(args.epw_path, args.json_args, args.return_file, args.wind_speed_multiplier, args.save_path)

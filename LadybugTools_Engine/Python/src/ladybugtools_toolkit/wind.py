@@ -1201,6 +1201,8 @@ class Wind:
         directions: int = 36,
         n: int = 1,
         as_cardinal: bool = False,
+        ignore_calm: bool = True,
+        threshold: float = 1e-10,
     ) -> list[float] | list[str]:
         """Calculate the prevailing wind direction/s for this object.
 
@@ -1218,6 +1220,10 @@ class Wind:
         """
 
         binned = self.bin_data(directions=directions)
+        
+        if ignore_calm:
+            binned = binned.loc[self.ws > threshold]
+
         prevailing_angles = binned.iloc[:, 0].value_counts().index[:n]
 
         if as_cardinal:
@@ -1507,25 +1513,29 @@ class Wind:
         return return_strings
         # pylint: enable=line-too-long
     
-    def wind_metadata(self) -> dict:
-
-        prevailing_direction = self.prevailing()[0]
+    def wind_metadata(self, directions: int=36, ignore_calm: bool=True, threshold: float = 1e-10) -> dict:
+        prevailing_direction = self.prevailing(directions=directions, ignore_calm=ignore_calm, threshold=threshold)[0]
         
-        _, bins = self.process_direction_data()
+        _, bins = self.process_direction_data(directions=directions)
 
-        direction_bin = [d_bin for d_bin in bins if d_bin[0] <= prevailing_direction and d_bin[1] < prevailing_direction][0]
+        direction_bin = [d_bin for d_bin in bins if d_bin == prevailing_direction][0]
 
-        prevailing_wind_speeds = self.ws.loc[self.bin_data()["Wind Direction (degrees)"] == direction_bin]
+        prevailing_wind_speeds = self.ws.loc[self.bin_data(directions=directions)["Wind Direction (degrees)"] == direction_bin]
 
-        wind_dict = {
-            "95percentile": self.percentile(0.95),
-            "50percentile": self.percentile(0.50),
+        ws = self.ws
+
+        if ignore_calm:
+            prevailing_wind_speeds = prevailing_wind_speeds.loc[prevailing_wind_speeds > threshold]
+            ws = self.ws.loc[self.ws > threshold]
+        
+        return {
+            "95percentile": ws.quantile(0.95),
+            "50percentile": ws.quantile(0.50),
             "calm_percent": self.calm(),
-            "prevailing_direction": self.prevailing()[0],
+            "prevailing_direction": prevailing_direction,
             "prevailing_95percentile": prevailing_wind_speeds.quantile(0.95),
             "prevailing_50percentile": prevailing_wind_speeds.quantile(0.5)
         }
-        return wind_dict
 
 
     def weibull_pdf(self) -> tuple[float]:
