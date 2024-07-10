@@ -37,7 +37,6 @@ using System.Text;
 using BH.Engine.Base;
 using System.Drawing;
 using BH.Engine.Serialiser;
-using BH.Engine.LadyBugTools;
 using System.Reflection;
 
 namespace BH.Adapter.LadybugTools
@@ -503,12 +502,27 @@ namespace BH.Adapter.LadybugTools
 
             string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "diurnal.py");
 
+            string returnFile = Path.GetTempFileName();
+
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -c \"{command.Colour.ToHexCode()}\" -t \"{command.Title}\" -ap \"{command.Period.ToString().ToLower()}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -c \"{command.Colour.ToHexCode()}\" -t \"{command.Title}\" -ap \"{command.Period.ToString().ToLower()}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
+            string resultFile = result.Split('\n').Last();
+
+            if (!File.Exists(resultFile))
+            {
+                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                File.Delete(returnFile);
+                return new List<object>();
+            }
+
+            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
+            File.Delete(returnFile);
+            PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
+
             m_executeSuccess = true;
-            return new List<object>() { result.Split('\n').Last() };
+            return new List<object>() { info };
         }
 
         /**************************************************/
@@ -543,12 +557,27 @@ namespace BH.Adapter.LadybugTools
 
             string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "sunpath.py");
 
+            string returnFile = Path.GetTempFileName();
+
             //run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -s {command.SunSize} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -s {command.SunSize} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
+            string resultFile = result.Split('\n').Last();
+
+            if (!File.Exists(resultFile))
+            {
+                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                File.Delete(returnFile);
+                return new List<object>();
+            }
+
+            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
+            File.Delete(returnFile);
+            PlotInformation info = Convert.ToPlotInformation(obj, new SunPathData());
+
             m_executeSuccess = true;
-            return new List<object>() { result.Split('\n').Last() };
+            return new List<object>() { info };
         }
 
         /**************************************************/
