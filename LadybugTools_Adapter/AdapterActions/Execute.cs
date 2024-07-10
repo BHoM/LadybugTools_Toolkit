@@ -312,12 +312,24 @@ namespace BH.Adapter.LadybugTools
             if (colourMap.ColourMapValidity())
                 colourMap = colourMap.ToColourMap().FromColourMap();
 
+            string returnFile = Path.GetTempFileName();
+
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{colourMap}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -cmap \"{colourMap}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
+            if (!File.Exists(result))
+            {
+                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                return new List<object>();
+            }
+
+            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
+            File.Delete(returnFile);
+            PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
+
             m_executeSuccess = true;
-            return new List<object>() { result };
+            return new List<object>() { info };
         }
 
         /**************************************************/
@@ -354,27 +366,6 @@ namespace BH.Adapter.LadybugTools
             // run the process
             string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
-
-            CustomObject data = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-
-            object image = "";
-
-            if (!data.CustomData.TryGetValue("figure", out image))
-            {
-                BH.Engine.Base.Compute.RecordError("An error occurred during generation of the plot.");
-                return new List<object>();
-            }
-
-            PlotInformation info = new PlotInformation()
-            {
-                Image = (string)image,
-                OtherData = new WindroseData()
-                {
-                    Description = (data.CustomData["description"] as List<object>).Select(x => x.ToString()).ToList(),
-                    MaxSpeed = 
-                }
-            };
-
 
             m_executeSuccess = true;
             return new List<object> { result };

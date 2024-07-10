@@ -3,83 +3,134 @@ using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 
 namespace BH.Adapter.LadybugTools
 {
     public static partial class Convert
     {
-        public static ISimulationData IToSimulationData(this CustomObject oldObject, ISimulationData toUpdate)
+
+        public static PlotInformation ToPlotInformation(this CustomObject oldObject, ISimulationData toUpdate)
         {
-            return ToSimulationData(oldObject.CustomData, toUpdate as dynamic);
+            PlotInformation plotInformation = new PlotInformation();
+
+            plotInformation.Image = oldObject.CustomData["figure"].ToString();
+
+            plotInformation.OtherData = IToSimulationData((oldObject.CustomData["data"] as CustomObject).CustomData, toUpdate);
+
+            return plotInformation;
+ 
+        }
+
+        private static ISimulationData IToSimulationData(Dictionary<string, object> oldObject, ISimulationData toUpdate)
+        {
+            return ToSimulationData(oldObject, toUpdate as dynamic);
         }
 
         private static CollectionData ToSimulationData(this Dictionary<string, object> oldData, CollectionData toUpdate)
         {
+
+            if (!double.TryParse(oldData["highest"].ToString(), out double result))
+                result = double.NaN;
+
+            toUpdate.HighestValue = result;
+
+            if (!double.TryParse(oldData["lowest"].ToString(), out result))
+                result = double.NaN;
+
+            toUpdate.LowestValue = result;
+
+            if (!DateTime.TryParse(oldData["highest_index"].ToString(), out DateTime date))
+                date = DateTime.MinValue;
+
+            toUpdate.HighestIndex = date;
+
+            if (!DateTime.TryParse(oldData["lowest_index"].ToString(), out date))
+                date = DateTime.MinValue;
+
+            toUpdate.LowestIndex = date;
+
+            if (!double.TryParse(oldData["median"].ToString(), out result))
+                result = double.NaN;
+
+            toUpdate.MedianValue = result;
+
+            if (!double.TryParse(oldData["mean"].ToString(), out result))
+                result = double.NaN;
+
+            toUpdate.MeanValue = result;
+
             try
             {
-                toUpdate.Description = (oldData["description"] as List<object>).Select(x => x.ToString()).ToList();
+                List<object> means = oldData["month_means"] as List<object>;
+
+                int monthIndex = 0;
+
+                foreach (object mean in means)
+                {
+                    if (!double.TryParse(mean.ToString(), out double value))
+                        value = double.NaN;
+
+                    toUpdate.MonthlyMeans[monthIndex] = value;
+                    monthIndex++;
+                }
             }
             catch { }
 
-            double.TryParse(oldData["highest_value"].ToString(), out double result);
-            toUpdate.HighestValue = result;
+            try
+            {
+                List<List<object>> ranges = oldData["month_diurnal_ranges"] as List<List<object>>;
+                List<List<double>> monthlyRanges = new List<List<double>>();
 
-            double.TryParse(oldData["lowest_value"].ToString(), out result);
-            toUpdate.LowestValue = result;
+                int monthIndex = 0;
 
-            DateTime.TryParse(oldData["highest_time"].ToString(), out DateTime date);
-            toUpdate.HighestTime = date;
+                foreach (List<object> range in ranges)
+                {
+                    List<double> values = new List<double>();
 
-            DateTime.TryParse(oldData["lowest_time"].ToString(), out date);
-            toUpdate.LowestTime = date;
+                    foreach (object value in range)
+                    {
+                        if (!double.TryParse(value.ToString(), out result))
+                            result = double.NaN;
 
-            double.TryParse(oldData["highest_average_month_value"].ToString(), out result);
-            toUpdate.HighestAverageMonthValue = result;
+                        values.Add(result);
+                    }
 
-            int.TryParse(oldData["highest_average_month"].ToString(), out int month);
-            toUpdate.HighestAverageMonth = month;
+                    toUpdate.MonthlyDiurnalRanges[monthIndex] = values;
+                    monthIndex++;
+                }
+            }
+            catch { }
 
-            double.TryParse(oldData["lowest_average_month_value"].ToString(), out result);
-            toUpdate.LowestAverageMonthValue = result;
-
-            int.TryParse(oldData["lowest_average_month"].ToString(), out month);
-            toUpdate.LowestAverageMonth = month;
 
             return toUpdate;
         }
 
         private static WindroseData ToSimulationData(this Dictionary<string, object> oldData, WindroseData toUpdate)
         {
-            try
-            {
-                toUpdate.Description = (oldData["description"] as List<object>).Select(x => x.ToString()).ToList();
-            }
-            catch { }
-
-            double.TryParse(oldData["prevailing_direction"].ToString(), out double result);
+            if (!double.TryParse(oldData["prevailing_direction"].ToString(), out double result))
+                result = double.NaN;
             toUpdate.PrevailingDirection = result;
 
-            double.TryParse(oldData["prevailing_speed"].ToString(), out result);
-            toUpdate.PrevailingSpeed = result;
+            if (!double.TryParse(oldData["prevailing_95percentile"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.PrevailingPercentile95 = result;
 
+            if (!double.TryParse(oldData["prevailing_50percentile"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.PrevailingPercentile50 = result;
 
-            DateTime.TryParse(oldData["prevailing_time"].ToString(), out DateTime date);
-            toUpdate.PrevailingTime = date;
+            if (!double.TryParse(oldData["95percentile"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.Percentile95 = result;
 
-            double.TryParse(oldData["max_speed"].ToString(), out result);
-            toUpdate.MaxSpeed = result;
+            if (!double.TryParse(oldData["50percentile"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.Percentile50 = result;
 
-            double.TryParse(oldData["max_speed_direction"].ToString(), out result);
-            toUpdate.MaxSpeedDirection = result;
-
-            DateTime.TryParse(oldData["max_speed_time"].ToString(), out date);
-            toUpdate.MaxSpeedTime = date;
-
-            double.TryParse(oldData["calm_count"].ToString(), out result);
-            toUpdate.NumberOfCalmHours = result;
-
-            double.TryParse(oldData["calm_percent"].ToString(), out result);
+            if (!double.TryParse(oldData["calm_percent"].ToString(), out result))
+                result = double.NaN;
             toUpdate.PercentageOfCalmHours = result;
 
             return toUpdate;
@@ -87,6 +138,179 @@ namespace BH.Adapter.LadybugTools
 
         private static SunPathData ToSimulationData(this Dictionary<string, object> oldData, SunPathData toUpdate)
         {
+            try
+            {
+                Dictionary<string, object> december_object = (oldData["december_solstice"] as CustomObject).CustomData;
+
+                Dictionary<string, object> sunset = (december_object["sunset"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
+                    result = double.NaN;
+                toUpdate.DecemberSolstice.SunsetAzimuth = result;
+
+                if (!DateTime.TryParse(sunset["time"].ToString(), out DateTime date))
+                    date = DateTime.MinValue;
+                toUpdate.DecemberSolstice.SunsetTime = date;
+
+                Dictionary<string, object> sunrise = (december_object["sunrise"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.DecemberSolstice.SunriseAzimuth = result;
+
+                if (!DateTime.TryParse(sunrise["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.DecemberSolstice.SunriseTime = date;
+
+                Dictionary<string, object> noon = (december_object["noon"] as CustomObject).CustomData;
+
+                if (!double.TryParse(noon["altitude"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.DecemberSolstice.NoonAltitude = result;
+
+                if (!DateTime.TryParse(noon["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.DecemberSolstice.NoonTime = date;
+            }
+            catch { }
+
+            try
+            {
+                Dictionary<string, object> march_object = (oldData["march_equinox"] as CustomObject).CustomData;
+
+                Dictionary<string, object> sunset = (march_object["sunset"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
+                    result = double.NaN;
+                toUpdate.MarchEquinox.SunsetAzimuth = result;
+
+                if (!DateTime.TryParse(sunset["time"].ToString(), out DateTime date))
+                    date = DateTime.MinValue;
+                toUpdate.MarchEquinox.SunsetTime = date;
+
+                Dictionary<string, object> sunrise = (march_object["sunrise"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.MarchEquinox.SunriseAzimuth = result;
+
+                if (!DateTime.TryParse(sunrise["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.MarchEquinox.SunriseTime = date;
+
+                Dictionary<string, object> noon = (march_object["noon"] as CustomObject).CustomData;
+
+                if (!double.TryParse(noon["altitude"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.MarchEquinox.NoonAltitude = result;
+
+                if (!DateTime.TryParse(noon["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.MarchEquinox.NoonTime = date;
+            }
+            catch { }
+
+            try
+            {
+                Dictionary<string, object> june_object = (oldData["june_solstice"] as CustomObject).CustomData;
+
+                Dictionary<string, object> sunset = (june_object["sunset"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
+                    result = double.NaN;
+                toUpdate.JuneSolstice.SunsetAzimuth = result;
+
+                if (!DateTime.TryParse(sunset["time"].ToString(), out DateTime date))
+                    date = DateTime.MinValue;
+                toUpdate.JuneSolstice.SunsetTime = date;
+
+                Dictionary<string, object> sunrise = (june_object["sunrise"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.JuneSolstice.SunriseAzimuth = result;
+
+                if (!DateTime.TryParse(sunrise["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.JuneSolstice.SunriseTime = date;
+
+                Dictionary<string, object> noon = (june_object["noon"] as CustomObject).CustomData;
+
+                if (!double.TryParse(noon["altitude"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.JuneSolstice.NoonAltitude = result;
+
+                if (!DateTime.TryParse(noon["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.JuneSolstice.NoonTime = date;
+            }
+            catch { }
+
+            try
+            {
+                Dictionary<string, object> september_object = (oldData["september_equinox"] as CustomObject).CustomData;
+
+                Dictionary<string, object> sunset = (september_object["sunset"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
+                    result = double.NaN;
+                toUpdate.SeptemberEquinox.SunsetAzimuth = result;
+
+                if (!DateTime.TryParse(sunset["time"].ToString(), out DateTime date))
+                    date = DateTime.MinValue;
+                toUpdate.SeptemberEquinox.SunsetTime = date;
+
+                Dictionary<string, object> sunrise = (september_object["sunrise"] as CustomObject).CustomData;
+
+                if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.SeptemberEquinox.SunriseAzimuth = result;
+
+                if (!DateTime.TryParse(sunrise["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.SeptemberEquinox.SunriseTime = date;
+
+                Dictionary<string, object> noon = (september_object["noon"] as CustomObject).CustomData;
+
+                if (!double.TryParse(noon["altitude"].ToString(), out result))
+                    result = double.NaN;
+                toUpdate.SeptemberEquinox.NoonAltitude = result;
+
+                if (!DateTime.TryParse(noon["time"].ToString(), out date))
+                    date = DateTime.MinValue;
+                toUpdate.SeptemberEquinox.NoonTime = date;
+            }
+            catch { }
+
+            return toUpdate;
+        }
+
+        private static UTCIData ToSimulationData(this Dictionary<string, object> oldData, UTCIData toUpdate)
+        {
+            if (!double.TryParse(oldData["comfortable_ratio"].ToString(), out double result))
+                result = double.NaN;
+            toUpdate.ComfortableRatio = result;
+
+            if (!double.TryParse(oldData["hot_ratio"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.HotRatio = result;
+
+            if (!double.TryParse(oldData["cold_ratio"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.HotRatio = result;
+
+            if (!double.TryParse(oldData["daytime_comfortable"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.DaytimeComfortableRatio = result;
+
+            if (!double.TryParse(oldData["daytime_hot"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.DaytimeHotRatio = result;
+
+            if (!double.TryParse(oldData["daytime_cold"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.DaytimeColdRatio = result;
+
             return toUpdate;
         }
     }

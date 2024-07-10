@@ -395,10 +395,10 @@ def collection_metadata(collection: BaseCollection) -> dict:
     
     month_means = []
     month_ranges = []
-    for month in range(1, 13):
-        month_series = series[series.index.month == month]
+    for month in range(12):
+        month_series = series[series.index.month == month + 1]
         month_means.append(month_series.mean())
-        month_ranges.add((series_diurnal_min.iloc[month], series_diurnal_max.iloc[month]))
+        month_ranges.append((series_diurnal_min.iloc[month], series_diurnal_max.iloc[month]))
     
     return {
         "lowest": lowest,
