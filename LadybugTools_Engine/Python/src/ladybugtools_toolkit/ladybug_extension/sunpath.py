@@ -7,18 +7,18 @@ from datetime import datetime
 
 @bhom_analytics()
 def sunpath_metadata(sunpath: Sunpath) -> dict:
-    """Return a dictionary containing equinox and solstice altitudes at sunrise, noon and sunset for the given location
+    """Return a dictionary containing equinox and solstice altitudes at sunrise, noon and sunset for the given sunpath.
 
     Args:
-        location (Location):
-            A Ladybug location object.
+        sunpath (Sunpath):
+            A Ladybug sunpath object.
 
     Returns:
         dict:
-            A dictionary containing the altitudes in the following structure:
+            A dictionary containing the azimuths and altitudes in the following structure:
             
             {
-                'december_solstice': {'sunrise': , 'noon': altitude, 'sunset': altitude},
+                'december_solstice': {'sunrise': azimuth, 'noon': altitude, 'sunset': azimuth},
                 'march_equinox': {...},
                 'june_solstice': {...},
                 'september_equinox': {...}
