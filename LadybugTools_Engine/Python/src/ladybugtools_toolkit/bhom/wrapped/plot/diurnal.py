@@ -8,16 +8,17 @@ from pathlib import Path
 def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", color="#000000", title=None, period="monthly", save_path = None):
     try:
         from ladybug.epw import EPW, AnalysisPeriod
-        from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series, collection_metadata
+        from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
         from ladybugtools_toolkit.plot._diurnal import diurnal
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
+        from ladybugtools_toolkit.bhom.wrapped.collection import collection_metadata
         import matplotlib.pyplot as plt
         
         epw = EPW(epw_file)
         data_type_key = data_type_key.replace("_"," ")
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
-        fig = diurnal(collection_to_series(coll),title=title, period=period, color=color).get_figure()
+        fig = diurnal(collection_to_series(coll), title=title, period=period, color=color).get_figure()
         
         
         return_dict = {"data": collection_metadata(coll)}
