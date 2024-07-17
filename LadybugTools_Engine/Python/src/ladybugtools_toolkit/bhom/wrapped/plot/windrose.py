@@ -11,6 +11,7 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.wind import Wind
+        from ladybugtools_toolkit.bhom.wrapped.wind_metadata import wind_metadata
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
         from pathlib import Path
@@ -29,9 +30,7 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
 
         w_epw.filter_by_analysis_period(analysis_period=analysis_period).plot_windrose(ax=ax, directions=bins, ylim=(0, 3.6/bins), colors=colour_map)
 
-        description = wind_filtered.wind_metadata(bins)
-        
-        output_dict = {"data": description}
+        output_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
 
         plt.tight_layout()
         if save_path == None or save_path == "":

@@ -1513,52 +1513,32 @@ class Wind:
         return return_strings
         # pylint: enable=line-too-long
     
-    def wind_metadata(self, directions: int=36, ignore_calm: bool=True, threshold: float = 1e-10) -> dict:
-        """Provides a dictionary containing metadata of this wind object.
-
+    def prevailing_wind_speeds(self, n: int=1, directions: int=36, ignore_calm: bool=True, threshold: float=1e-10) -> tuple[list[pd.Series], list[tuple[float, float]]]:
+        """Gets the wind speeds for the prevailing directions
+        
         Args:
-            directions (int, optional):
-                The number of directions to use. Defaults to 36.
-            ignore_calm (bool, optional):
-                Whether or not to ignore wind speed values before the threshold, allowing a more accurate prevailing direction and quantile wind speeds. Defaults to True
-            threshold (float, optional):
-                The threshold to use for calm wind speeds. Defaults to 1e-10.
-
-        Returns:
-            dict:
-                The resultant metadata dictionary, which has the following structure:
-                {
-                    "95percentile": 95 percentile wind speed,
-                    "50percentile": 50 percentile wind speed,
-                    "calm_percent": the proportion of calm hours (not affected by ignore_calm bool),
-                    "prevailing_direction": direction of prevailing wind,
-                    "prevailing_95percentile": prevailing 95 percentile wind speed,
-                    "prevailing_50percentile": prevailing 50 percentile wind speed
-                }
+            n (int):
+                Number of prevailing directions to return. Defaults to 1
+            
+            directions (int):
+                Number of direction bins to use when calculating the prevailing directions. Defaults to 36
+            
+            ignore_calm (bool):
+                Whether to ignore calm hours when getting the prevailing directions. Defaults to True
                 
+            threshold (float):
+                The threshold for calm hours. Defaults to 1e-10
+        
+        Returns:
+            (list[pandas.Series], list[(float, float)]):
+                Tuple containing a list of time-indexed series containing wind speed data for each prevailing direction, from most to least prevailing,
+                and a list of wind directions corresponding to the serieses.
         """
-        prevailing_direction = self.prevailing(directions=directions, ignore_calm=ignore_calm, threshold=threshold)[0]
-        
-        _, bins = self.process_direction_data(directions=directions)
+        prevailing_directions = self.prevailing(n=n, directions=directions, ignore_calm=ignore_calm, threshold=threshold)
 
-        direction_bin = [d_bin for d_bin in bins if d_bin == prevailing_direction][0]
+        prevailing_wind_speeds = [self.ws.loc[self.bin_data(directions=directions)["Wind Direction (degrees)"] == direction] for direction in prevailing_directions]
 
-        prevailing_wind_speeds = self.ws.loc[self.bin_data(directions=directions)["Wind Direction (degrees)"] == direction_bin]
-
-        ws = self.ws
-
-        if ignore_calm:
-            prevailing_wind_speeds = prevailing_wind_speeds.loc[prevailing_wind_speeds > threshold]
-            ws = self.ws.loc[self.ws > threshold]
-        
-        return {
-            "95percentile": ws.quantile(0.95),
-            "50percentile": ws.quantile(0.50),
-            "calm_percent": self.calm(),
-            "prevailing_direction": prevailing_direction,
-            "prevailing_95percentile": prevailing_wind_speeds.quantile(0.95),
-            "prevailing_50percentile": prevailing_wind_speeds.quantile(0.5)
-        }
+        return (prevailing_wind_speeds, prevailing_directions)
 
 
     def weibull_pdf(self) -> tuple[float]:
