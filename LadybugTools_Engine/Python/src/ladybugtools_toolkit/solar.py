@@ -10,16 +10,25 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
+import pickle
 
 # pylint: enable=E0401
 
 import matplotlib.ticker as mticker
+from matplotlib.colors import Normalize
+from matplotlib.tri import Triangulation
+from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
 from ladybug.wea import EPW, AnalysisPeriod, Wea, Location
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+
+from ladybug_radiance.study.radiation import Radiation, RadiationStudy
+from ladybug_radiance.visualize.radrose import RadiationRose
+from ladybug_radiance.skymatrix import SkyMatrix
+from ladybugtools_toolkit.ladybug_extension.datacollection import collection_from_series
 
 from .helpers import (
     OpenMeteoVariable,
@@ -395,7 +404,7 @@ class Solar:
         return pd.Series(
             self.global_horizontal_irradiance,
             index=self.datetimes,
-            name="Global Horizontal Irradiance (Wh/m2)",
+            name="Global Horizontal Irradiance (W/m2)",
         )
 
     @property
@@ -404,7 +413,7 @@ class Solar:
         return pd.Series(
             self.direct_normal_irradiance,
             index=self.datetimes,
-            name="Direct Normal Irradiance (Wh/m2)",
+            name="Direct Normal Irradiance (W/m2)",
         )
 
     @property
@@ -413,7 +422,7 @@ class Solar:
         return pd.Series(
             self.diffuse_horizontal_irradiance,
             index=self.datetimes,
-            name="Diffuse Horizontal Irradiance (Wh/m2)",
+            name="Diffuse Horizontal Irradiance (W/m2)",
         )
 
     def suns(self, location: Location) -> list[Sun]:
@@ -459,10 +468,10 @@ class Solar:
         return Wea.from_annual_values(
             location=location,
             direct_normal_irradiance=grouped[
-                "Direct Normal Irradiance (Wh/m2)"
+                "Direct Normal Irradiance (W/m2)"
             ].tolist(),
             diffuse_horizontal_irradiance=grouped[
-                "Diffuse Horizontal Irradiance (Wh/m2)"
+                "Diffuse Horizontal Irradiance (W/m2)"
             ].tolist(),
         )
 
@@ -663,112 +672,134 @@ class Solar:
         self,
         location: Location,
         ax: plt.Axes = None,
-        altitudes: int = 3,
-        azimuths: int = 3,
+        azimuths: int = 36,
+        altitudes: int = 9,
         ground_reflectance: float = 0.2,
-        isotropic: bool = True,
         irradiance_type: IrradianceType = IrradianceType.TOTAL,
         analysis_period: AnalysisPeriod = AnalysisPeriod(),
-        agg: str = "sum",
+        cmap: str = "YlOrRd",
+        quantiles: tuple[float] = (0.05, 0.25, 0.5, 0.75, 0.95),
+        lims: tuple[float, float] = None,
         **kwargs,
     ) -> plt.Axes:
-        """Plot a tilt-orientation factor.
+        """Create a tilt-orientation factor plot.
 
         Args:
-            location (Location):
-                The location of the site.
-            ax (plt.Axes, optional):
-                The axes to plot on. Defaults to None.
-            altitudes (int, optional):
-                The number of altitudes to calculate. Defaults to 3.
-            azimuths (int, optional):
-                The number of azimuths to calculate. Defaults to 3.
+            location (Location): 
+                The location that this solar object represents.
+            ax (plt.Axes, optional): 
+                The axes to plot on. 
+                Defaults to None.
+            azimuths (int, optional): 
+                The number of directions to bin data into. 
+                Defaults to 36.
+            altitudes (int, optional): 
+                The number of tilts to calculate. 
+                Defaults to 9.
             ground_reflectance (float, optional):
-                The ground reflectance. Defaults to 0.2.
-            isotropic (bool, optional):
-                Calculate isotropic diffuse irradiance. Defaults to True.
-            irradiance_type (IrradianceType, optional):
-                The irradiance type to plot. Defaults to IrradianceType.TOTAL.
-            analysis_period (AnalysisPeriod, optional):
-                The analysis period. Defaults to AnalysisPeriod().
-            agg (str, optional):
-                The aggregation method. Defaults to "sum".
-            **kwargs:
-                Keyword arguments to pass to tricontourf.
+                The ground reflectance.
+                Defaults to 0.2.
+            irradiance_type (IrradianceType, optional): 
+                The type of radiation to plot. 
+                Defaults to IrradianceType.TOTAL, with options of TOTAL, DIRECT and DIFFUSE.
+            analysis_period (AnalysisPeriod, optional): 
+                The analysis period over which radiation shall be summarised. 
+                Defaults to AnalysisPeriod().
+            cmap (str, optional): 
+                The colormap to apply. 
+                Defaults to "YlOrRd".
+            quantiles (tuple[float], optional):
+                The quantiles to plot. 
+                Defaults to (0.05, 0.25, 0.5, 0.75, 0.95).
+            lims (tuple[float, float], optional):
+                The limits of the plot. 
+                Defaults to None.
+
+        Returns:
+            plt.Axes: 
+                The matplotlib axes.
         """
+
+        # create dir for cached results
+        _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
+        _dir.mkdir(exist_ok=True, parents=True)
+        ndir = azimuths
+
         if ax is None:
             ax = plt.gca()
 
-        mtx = (
-            self.detailed_irradiance_matrix(
-                location=location,
-                azimuths=azimuths,
-                altitudes=altitudes,
-                ground_reflectance=ground_reflectance,
-                isotropic=isotropic,
-            )
-            .filter(regex=irradiance_type.to_string())
-            .iloc[analysis_period_to_boolean(analysis_period)]
-        ).agg(agg, axis=0) / (1000 if agg == "sum" else 1)
+        cmap = plt.get_cmap(cmap)
 
-        _max = mtx.max()
-        _max_alt, _max_az, _, unit = mtx.idxmax()
-        if agg == "sum":
-            unit = unit.replace("(W/m2)", "kWh/m$^2$").replace("Irradiance ", "")
-        else:
-            unit = unit.replace("(W/m2)", "Wh/m$^2$").replace("Irradiance ", "")
+        # create sky matrix
+        smx = SkyMatrix.from_components(location, collection_from_series(self.dni), collection_from_series(self.dhi), hoys=analysis_period.hoys, high_density=True, ground_reflectance=ground_reflectance)
 
+        # create roses per tilt angle
+        _directions = np.linspace(0, 360, azimuths + 1)[:-1].tolist()
+        _tilts = np.linspace(0, 90, altitudes)[:-1].tolist() + [89.999]
+        rrs: list[RadiationRose] = []
+        for tilt_angle in tqdm(_tilts):
+            save_path = _dir / f"{location_to_string(location)}_{ground_reflectance}_{ndir}_{tilt_angle:0.4f}.pickle"
+            if save_path.exists():
+                radiation_rose = pickle.load(open(save_path, "rb"))
+            else:
+                radiation_rose = RadiationRose(sky_matrix=smx, direction_count=azimuths, tilt_angle=tilt_angle)
+                pickle.dump(radiation_rose, open(save_path, "wb"))
+            rrs.append(radiation_rose)
+        _directions.append(360)
+
+        # create matrix of values from results
+        values = np.array([getattr(i, f"{irradiance_type.to_string().lower()}_values") for i in rrs])
+
+        # repeat first result at end to close the circle
+        values = values.T.tolist()
+        values.append(values[0])
+        values = np.array(values).T
+
+        # create x, y coordinates per result value
+        __directions, __tilts = np.meshgrid(_directions, _tilts)
+
+        # get location of max
+        _max = values.flatten().max()
         if _max == 0:
             raise ValueError(f"No solar radiation within {analysis_period}.")
 
-        tcf = ax.tricontourf(
-            mtx.index.get_level_values("Azimuth"),
-            mtx.index.get_level_values("Altitude"),
-            mtx.values,
-            extend="max",
-            cmap=kwargs.pop("cmap", "YlOrRd"),
-            levels=kwargs.pop("levels", 51),
-            **kwargs,
-        )
+        _max_idx = values.flatten().argmax()
+        _max_alt = __tilts.flatten()[_max_idx]
+        _max_az = __directions.flatten()[_max_idx]
 
-        quantiles = [0.25, 0.5, 0.75, 0.95]
-        quantile_values = mtx.quantile(quantiles).values
+        # create colormap
+        if lims is None:
+            norm = Normalize(vmin=0, vmax=_max)
+        else:
+            norm = Normalize(vmin=lims[0], vmax=lims[1])
+
+        # create triangulation
+        tri = Triangulation(x=__directions.flatten(), y=__tilts.flatten())
+
+        # create quantile lines
+        levels = [np.quantile(a=values.flatten(), q=i) for i in quantiles]
+        quant_colors = [cmap(i) for i in [norm(v) for v in levels]]
+        quant_colors_inv = [contrasting_color(i) for i in quant_colors]
+        max_color_inv = contrasting_color(cmap(norm(_max)))
+
+        # plot data
+        tcf = ax.tricontourf(tri, values.flatten(), levels=100, cmap=cmap, norm=norm)
         tcl = ax.tricontour(
-            mtx.index.get_level_values("Azimuth"),
-            mtx.index.get_level_values("Altitude"),
-            mtx.values,
-            levels=quantile_values,
-            colors="k",
-            linestyles="--",
+            tri,
+            values.flatten(),
+            levels=levels,
+            colors=quant_colors_inv,
+            linestyles=":",
             alpha=0.5,
         )
 
+        # add contour labels
         def cl_fmt(x):
-            return f"{x:,.0f}{unit}"
+            return f"{x:,.0f}W/m$^2$"
 
         _ = ax.clabel(tcl, fontsize="small", fmt=cl_fmt)
-        ax.scatter(_max_az, _max_alt, c="k", s=10, marker="x")
-        alt_offset = (90 / 100) * 0.5 if _max_alt <= 45 else -(90 / 100) * 0.5
-        az_offset = (360 / 100) * 0.5 if _max_az <= 180 else -(360 / 100) * 0.5
-        ha = "left" if _max_az <= 180 else "right"
-        va = "bottom" if _max_alt <= 45 else "top"
-        ax.text(
-            _max_az + az_offset,
-            _max_alt + alt_offset,
-            f"{_max:,.0f}{unit}\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
-            ha=ha,
-            va=va,
-            c="k",
-            weight="bold",
-            size="small",
-        )
 
-        # format plot
-        for spine in ["top", "right"]:
-            ax.spines[spine].set_visible(False)
-        ax.xaxis.set_major_locator(mticker.MultipleLocator(base=30))
-        ax.yaxis.set_major_locator(mticker.MultipleLocator(base=10))
-
+        # add colorbar
         cb = plt.colorbar(
             tcf,
             ax=ax,
@@ -777,20 +808,40 @@ class Solar:
             fraction=0.05,
             aspect=25,
             pad=0.02,
-            label=unit,
+            label="Cumulative irradiance (W/m$^2$)",
         )
         cb.outline.set_visible(False)
-        for quantile_val in quantile_values:
-            cb.ax.plot([0, 1], [quantile_val] * 2, "k", ls="--", alpha=0.5)
+        for i, quantile_val in enumerate(levels):
+            cb.ax.plot([0, 1], [quantile_val] * 2, color=quant_colors_inv[i], ls="-", alpha=0.5)
 
-        ax.set_title(
-            (
-                f"{location_to_string(location)}, from {self.source}\n{irradiance_type.to_string()} "
-                f"Irradiance ({agg.upper()})\n{describe_analysis_period(analysis_period)}"
-            )
+        # add max-location
+        ax.scatter(_max_az, _max_alt, c=max_color_inv, s=10, marker="x")
+        alt_offset = (90 / 100) * 0.5 if _max_alt <= 45 else -(90 / 100) * 0.5
+        az_offset = (360 / 100) * 0.5 if _max_az <= 180 else -(360 / 100) * 0.5
+        ha = "left" if _max_az <= 180 else "right"
+        va = "bottom" if _max_alt <= 45 else "top"
+        ax.text(
+            _max_az + az_offset,
+            _max_alt + alt_offset,
+            f"{_max:,.0f}W/m$^2$\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
+            ha=ha,
+            va=va,
+            c=max_color_inv,
+            weight="bold",
+            size="small",
         )
+
+        ax.set_xlim(0, 360)
+        ax.set_ylim(0, 90)
+        ax.xaxis.set_major_locator(MultipleLocator(base=30))
+        ax.yaxis.set_major_locator(MultipleLocator(base=10))
         ax.set_xlabel("Panel orientation (clockwise from North at 0°)")
         ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
+
+        ax.set_title(
+            f"{location_to_string(location)}\n{irradiance_type.to_string().title()} irradiance (cumulative)\n{describe_analysis_period(analysis_period)}"
+        )
+
         return ax
 
     def plot_directional_irradiance(

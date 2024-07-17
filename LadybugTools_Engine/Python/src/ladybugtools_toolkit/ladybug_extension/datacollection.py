@@ -14,6 +14,7 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datacollection import (
     BaseCollection,
     HourlyContinuousCollection,
+    HourlyDisContinuousCollection,
     MonthlyCollection,
 )
 from ladybug.datatype.angle import Angle
@@ -75,7 +76,12 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
                 )
         else:
             if len(series.index) != 8760:
-                raise ValueError("The series must have 8760 rows for non-leap years.")
+                return HourlyDisContinuousCollection(
+                    header=header,
+                    values=series.values,
+                    datetimes=series.index
+                    )
+                #raise ValueError("The series must have 8760 rows for non-leap years.")
 
         return HourlyContinuousCollection(
             header=header,
