@@ -5,43 +5,33 @@ from ..bhom.analytics import bhom_analytics
 import pandas as pd
 from datetime import datetime
 
-@bhom_analytics()
-def sunpath_metadata(sunpath: Sunpath) -> dict:
-    """Return a dictionary containing equinox and solstice altitudes at sunrise, noon and sunset for the given sunpath.
-
+@bhom_analytics
+def sunrise_sunset_azimuths(sunpath: Sunpath, year: int, month: int, day: int) -> dict:
+    """Return a dictionary containing azimuths at sunrise and sunset, and altitude at solar noon
+    
     Args:
         sunpath (Sunpath):
-            A Ladybug sunpath object.
-
+            a ladybug sunpath object
+        
+        month (int):
+            month as an int, starting at 1 and ending at 12
+        
+        day (int):
+            day as an int, starting at 1, and ending at 28 through 31 depending on the month
+    
     Returns:
         dict:
-            A dictionary containing the azimuths and altitudes in the following structure:
-            
+            A dictionary containing the azimuths and altitude in the following structure:
             {
-                'december_solstice': {'sunrise': azimuth, 'noon': altitude, 'sunset': azimuth},
-                'march_equinox': {...},
-                'june_solstice': {...},
-                'september_equinox': {...}
+                "sunrise": {"time": sunrise time, "azimuth": azimuth at sunrise },
+                "noon": {"time": noon time, "altitude" altitude at noon },
+                "sunset": {"time": sunset time, "azimuth": azimuth at sunset },
             }
+    
     """
-    december_solstice_times = sunpath.calculate_sunrise_sunset_from_datetime(datetime(2023, 12, 22))
-    march_equinox_times = sunpath.calculate_sunrise_sunset_from_datetime(datetime(2023, 3, 20))
-    june_solstice_times = sunpath.calculate_sunrise_sunset_from_datetime(datetime(2023, 6, 21))
-    september_equinox_times = sunpath.calculate_sunrise_sunset_from_datetime(datetime(2023, 9, 22))
     
-    december_solstice = {k:{"time": v, "azimuth": sunpath.calculate_sun_from_date_time(v).azimuth} if k in ["sunrise", "sunset"] else {"time": v, "altitude": sunpath.calculate_sun_from_date_time(v).altitude} for k, v in december_solstice_times.items() }
+    sunrise_sunset = sunpath.calculate_sunrise_sunset_from_datetime(datetime(year=year, month=month, day=day))
     
-    march_equinox = {k:{"time": v, "azimuth": sunpath.calculate_sun_from_date_time(v).azimuth} if k in ["sunrise", "sunset"] else {"time": v, "altitude": sunpath.calculate_sun_from_date_time(v).altitude} for k, v in march_equinox_times.items() }
+    azimuths_altitude =  {k:{"time": v, "azimuth": sunpath.calculate_sun_from_date_time(v).azimuth} if k in ["sunrise", "sunset"] else {"time": v, "altitude": sunpath.calculate_sun_from_date_time(v).altitude} for k, v in sunrise_sunset.items() }
     
-    june_solstice = {k:{"time": v, "azimuth": sunpath.calculate_sun_from_date_time(v).azimuth} if k in ["sunrise", "sunset"] else {"time": v, "altitude": sunpath.calculate_sun_from_date_time(v).altitude} for k, v in june_solstice_times.items() }
-    
-    september_equinox = {k:{"time": v, "azimuth": sunpath.calculate_sun_from_date_time(v).azimuth} if k in ["sunrise", "sunset"] else {"time": v, "altitude": sunpath.calculate_sun_from_date_time(v).altitude} for k, v in september_equinox_times.items() }
-    
-    return {
-        "december_solstice": december_solstice,
-        "march_equinox": march_equinox,
-        "june_solstice": june_solstice,
-        "september_equinox": september_equinox
-        }
-
-
+    return azimuths_altitude

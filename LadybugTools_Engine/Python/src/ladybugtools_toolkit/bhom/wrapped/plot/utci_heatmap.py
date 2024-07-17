@@ -16,7 +16,7 @@ def utci_heatmap(epw_file:str,
     from ladybugtools_toolkit.external_comfort._typologybase import Typology
     from ladybugtools_toolkit.external_comfort.simulate import SimulationResult
     from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
-    from ladybugtools_toolkit.external_comfort.utci import utci_metadata
+    from ladybugtools_toolkit.bhom.wrapped.utci_metadata import utci_metadata
     from ladybugtools_toolkit.plot.utilities import figure_to_base64
     from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
     from honeybee_energy.dictutil import dict_to_material

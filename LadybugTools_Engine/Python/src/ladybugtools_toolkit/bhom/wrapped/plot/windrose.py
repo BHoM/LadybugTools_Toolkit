@@ -48,7 +48,6 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
         print(e)
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
