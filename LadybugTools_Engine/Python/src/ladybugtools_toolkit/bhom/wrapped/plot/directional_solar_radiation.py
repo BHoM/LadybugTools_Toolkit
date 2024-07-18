@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 import os
 
-def directional_solar_radiation(epw_file: str, azimuths: int, altitudes: int, ground_reflectance: float, irradiance_type: str, analysis_period: str, cmap: str = "inferno", save_path: str = None):
+def directional_solar_radiation(epw_file: str, azimuths: int, altitudes: int, ground_reflectance: float, irradiance_type: str, analysis_period: str, cmap: str = "inferno", title: str = "", save_path: str = None):
     try:
         from ladybugtools_toolkit.solar import Solar, IrradianceType
         from ladybug.wea import EPW, AnalysisPeriod
@@ -33,6 +33,9 @@ def directional_solar_radiation(epw_file: str, azimuths: int, altitudes: int, gr
         fig, ax = plt.subplots(1, 1, figsize=(22.8/2, 7.6/2))
         solar.plot_tilt_orientation_factor(location=epw.location, ax=ax, azimuths=azimuths, altitudes=altitudes, irradiance_type=irradiance_type, analysis_period=analysis_period, ground_reflectance=ground_reflectance, cmap=cmap).get_figure()
 
+        if title != "":
+            title = title + "\n" + ax.get_title(loc="left")
+            ax.set_title(title)
 
         if save_path is None or save_path == "":
             base64 = figure_to_base64(fig, html=False)
@@ -99,6 +102,13 @@ if __name__ == "__main__":
         required=True
         )
     parser.add_argument(
+        "-t",
+        "--title",
+        help="The title to be placed above the information of the plot.",
+        type=str,
+        required=False,
+        )
+    parser.add_argument(
         "-p",
         "--save_path",
         help="Path where to save the output image.",
@@ -108,6 +118,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    title = args.title
+    if title is None:
+        title = ""
+
     os.environ["TQDM_DISABLE"] = "1" # set an environment variable so that progress bars are disabled for the simulation process
-    directional_solar_radiation(args.epw_file, args.azimuths, args.altitudes, args.ground_reflectance, args.irradiance_type, args.analysis_period, args.cmap, args.save_path)
+    directional_solar_radiation(args.epw_file, args.azimuths, args.altitudes, args.ground_reflectance, args.irradiance_type, args.analysis_period, args.cmap, title, args.save_path)
     del os.environ["TQDM_DISABLE"] # unset the env variable

@@ -795,7 +795,7 @@ class Solar:
 
         # add contour labels
         def cl_fmt(x):
-            return f"{x:,.0f}W/m$^2$"
+            return f"{x:,.0f}kWh/m$^2$"
 
         _ = ax.clabel(tcl, fontsize="small", fmt=cl_fmt)
 
@@ -808,7 +808,7 @@ class Solar:
             fraction=0.05,
             aspect=25,
             pad=0.02,
-            label="Cumulative irradiance (W/m$^2$)",
+            label="Cumulative irradiance (kWh/m$^2$)",
         )
         cb.outline.set_visible(False)
         for i, quantile_val in enumerate(levels):
@@ -823,7 +823,7 @@ class Solar:
         ax.text(
             _max_az + az_offset,
             _max_alt + alt_offset,
-            f"{_max:,.0f}W/m$^2$\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
+            f"{_max:,.0f}kWh/m$^2$\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
             ha=ha,
             va=va,
             c=max_color_inv,
