@@ -5,7 +5,7 @@ import traceback
 from pathlib import Path
 import os
 
-def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectance, irradiance_type, isotropic, analysis_period, title, save_path):
+def directional_solar_radiation(epw_file: str, azimuths: int, altitudes: int, ground_reflectance: float, irradiance_type: str, analysis_period: str, cmap: str = "inferno", save_path: str = None):
     try:
         from ladybugtools_toolkit.solar import Solar, IrradianceType
         from ladybug.wea import EPW, AnalysisPeriod
@@ -25,11 +25,13 @@ def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectanc
         elif irradiance_type == "Reflected":
             irradiance_type = IrradianceType.REFLECTED
 
+        if cmap not in plt.colormaps():
+            cmap = "inferno"
+
         epw = EPW(epw_file)
         solar = Solar.from_epw(epw)
         fig, ax = plt.subplots(1, 1, figsize=(22.8/2, 7.6/2))
-        solar.plot_tilt_orientation_factor(location=epw.location, ax=ax, azimuths=azimuths, altitudes=altitudes, isotropic=isotropic, irradiance_type=irradiance_type, analysis_period=analysis_period, ground_reflectance=ground_reflectance).get_figure()
-        ax.set_title(title)
+        solar.plot_tilt_orientation_factor(location=epw.location, ax=ax, azimuths=azimuths, altitudes=altitudes, irradiance_type=irradiance_type, analysis_period=analysis_period, ground_reflectance=ground_reflectance, cmap=cmap).get_figure()
 
 
         if save_path is None or save_path == "":
@@ -83,13 +85,6 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "-iso",
-        "--isotropic",
-        help="Whether the method should calculate isotropic diffuse irradiance",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
         "-ap",
         "--analysis_period",
         help="Analysis period",
@@ -97,12 +92,12 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "-t",
-        "--title",
-        help="The title displayed on the plot",
+        "-c",
+        "--cmap",
+        help="The colour map to use",
         type=str,
-        required=True,
-    )
+        required=True
+        )
     parser.add_argument(
         "-p",
         "--save_path",
@@ -114,5 +109,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["TQDM_DISABLE"] = "1" # set an environment variable so that progress bars are disabled for the simulation process
-    directional_solar_radiation(args.epw_file, args.azimuths, args.altitudes, args.ground_reflectance, args.irradiance_type, args.isotropic, args.analysis_period, args.title, args.save_path)
+    directional_solar_radiation(args.epw_file, args.azimuths, args.altitudes, args.ground_reflectance, args.irradiance_type, args.analysis_period, args.cmap, args.save_path)
     del os.environ["TQDM_DISABLE"] # unset the env variable

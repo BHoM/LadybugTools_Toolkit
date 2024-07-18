@@ -37,7 +37,7 @@ namespace BH.Adapter.LadybugTools
             BH.Engine.Base.Compute.StopSuppressRecordingEvents();
             if (colourMap == ColourMap.Undefined)
             {
-                BH.Engine.Base.Compute.RecordWarning($"The input colourmap: {toValidate}, could not be converted into a known colour map. If matplotlib cannot find a colourmap with this name, it will default to 'YlGnBl'.");
+                BH.Engine.Base.Compute.RecordWarning($"The input colourmap: {toValidate}, could not be converted into a known colour map. If matplotlib cannot find a colourmap with this name, it will default.");
                 return false;
             }
             return true;

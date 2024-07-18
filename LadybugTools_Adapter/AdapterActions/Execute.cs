@@ -567,11 +567,15 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            string colourMap = command.ColourMap;
+            if (colourMap.ColourMapValidity())
+                colourMap = colourMap.ToColourMap().FromColourMap();
+
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
 
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} {(command.Isotropic ? "-iso" : "")} -t \"{command.Title}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} -c {colourMap} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
             m_executeSuccess = true;

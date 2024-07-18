@@ -738,7 +738,7 @@ class Solar:
         _tilts = np.linspace(0, 90, altitudes)[:-1].tolist() + [89.999]
         rrs: list[RadiationRose] = []
         for tilt_angle in tqdm(_tilts):
-            save_path = _dir / f"{location_to_string(location)}_{ground_reflectance}_{ndir}_{tilt_angle:0.4f}.pickle"
+            save_path = _dir / f"{location_to_string(location)}_{describe_analysis_period(analysis_period, save_path=True)}_{ground_reflectance}_{ndir}_{tilt_angle:0.4f}.pickle"
             if save_path.exists():
                 radiation_rose = pickle.load(open(save_path, "rb"))
             else:
