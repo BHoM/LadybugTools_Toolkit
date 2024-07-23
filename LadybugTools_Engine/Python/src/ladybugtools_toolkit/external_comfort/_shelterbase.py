@@ -289,7 +289,7 @@ class Shelter:
     def from_adjacent_wall(
         cls,
         distance_from_wall: float = 1,
-        wall_height: float = 2,
+        wall_height: float = 3.5,
         wall_length: float = 2,
         wind_porosity: list[float] = (0,) * 8760,
         radiation_porosity: list[float] = (0,) * 8760,
