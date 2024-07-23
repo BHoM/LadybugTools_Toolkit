@@ -22,7 +22,7 @@ class Typologies(Enum):
             Shelter.from_adjacent_wall(angle=90),
             Shelter.from_adjacent_wall(angle=180),
             Shelter.from_adjacent_wall(angle=270),
-            Shelter.from_overhead_circle(height_above_ground=2),
+            Shelter.from_overhead_circle(),
         ],
     )
     ENCLOSED_POROUS = Typology(
@@ -32,7 +32,7 @@ class Typologies(Enum):
             Shelter.from_adjacent_wall(angle=90).set_porosity(0.5),
             Shelter.from_adjacent_wall(angle=180).set_porosity(0.5),
             Shelter.from_adjacent_wall(angle=270).set_porosity(0.5),
-            Shelter.from_overhead_circle(height_above_ground=2).set_porosity(0.5),
+            Shelter.from_overhead_circle().set_porosity(0.5),
         ],
     )
     SKY_SHELTER = Typology(
