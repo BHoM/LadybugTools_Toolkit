@@ -720,6 +720,9 @@ class Solar:
                 The matplotlib axes.
         """
 
+        if "isotropic" in kwargs:
+            CONSOLE_LOGGER.warn("'isotropic' input was deprecated in BHoM 7.3, and has no effect on solar tilt orientation output plots. This input will have no replacement.")
+
         # create dir for cached results
         _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
         _dir.mkdir(exist_ok=True, parents=True)
