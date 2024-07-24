@@ -41,8 +41,8 @@ namespace BH.oM.LadybugTools
         [Description("The proportion of evaporative cooling to add to this Typology.")]
         public virtual List<double> EvaporativeCoolingEffect { get; set; } = Enumerable.Repeat<double>(0.0, 8760).ToList();
         
-        [Description("A multiplier to apply to the wind speed component of this Typology.")]
-        public virtual List<double?> TargetWindSpeed { get; set; } = Enumerable.Repeat<double?>(null, 8760).ToList();
+        [Description("An override to apply to the wind speed. This value overrides shelter effects when calculating external comfort (so fully enclosed typologies would experience a wind effect).")]
+        public virtual List<double?> WindSpeedOverride { get; set; } = Enumerable.Repeat<double?>(null, 8760).ToList();
         
         [Description("A reduction or increase in MRT to be applied to results generated using this Typology.")]
         public virtual List<double> RadiantTemperatureAdjustment { get; set; } = Enumerable.Repeat<double>(0.0, 8760).ToList();

@@ -35,7 +35,8 @@ def utci_heatmap(epw_file:str,
 
     sr = SimulationResult(epw_file, ground_material, shade_material)
     epw = EPW(epw_file)
-    typology.target_wind_speed = epw.wind_speed * wind_speed_multiplier
+    epw._data[21] *= wind_speed_multiplier
+    #typology.wind_speed_override = epw.wind_speed * wind_speed_multiplier
     ec = ExternalComfort(sr, typology)
 
     custom_bins = UTCI_DEFAULT_CATEGORIES

@@ -18,7 +18,7 @@ from ._typologybase import Typology
 def modify_external_comfort(
     external_comfort: ExternalComfort,
     additional_shelters: tuple[Shelter] = (),
-    target_wind_speed: tuple[float] = (np.nan * np.empty(8760)).tolist(),
+    wind_speed_override: tuple[float] = (np.nan * np.empty(8760)).tolist(),
     evaporative_cooling_effect: tuple[float] = (np.nan * np.empty(8760)).tolist(),
     radiant_temperature_adjustment: tuple[float] = (np.nan * np.empty(8760)).tolist(),
     existing_shelters_wind_porosity: tuple[float] = (np.nan * np.empty(8760)).tolist(),
@@ -34,7 +34,7 @@ def modify_external_comfort(
             An ExternalComfort object to modify.
         additional_shelters (tuple[Shelter], optional):
             Add more shelters to the existing External Comfort case.
-        target_wind_speed (tuple[float], optional):
+        wind_speed_override (tuple[float], optional):
             Override the target wind speed of the current typology.
         evaporative_cooling_effect (tuple[float], optional):
             Override the effectivess of the current evaporative cooling.
@@ -54,7 +54,7 @@ def modify_external_comfort(
     if all(
         [
             not additional_shelters,
-            all(np.isnan(target_wind_speed)),
+            all(np.isnan(wind_speed_override)),
             all(np.isnan(evaporative_cooling_effect)),
             all(np.isnan(radiant_temperature_adjustment)),
             all(np.isnan(existing_shelters_wind_porosity)),
@@ -90,10 +90,10 @@ def modify_external_comfort(
     modified_typology = Typology(
         identifier=modified_name,
         shelters=modified_shelters,
-        target_wind_speed=np.where(
-            ~np.isnan(target_wind_speed),
-            target_wind_speed,
-            external_comfort.typology.target_wind_speed,
+        wind_speed_override=np.where(
+            ~np.isnan(wind_speed_override),
+            wind_speed_override,
+            external_comfort.typology.wind_speed_override,
         ).tolist(),
         evaporative_cooling_effect=np.where(
             ~np.isnan(evaporative_cooling_effect),

@@ -36,7 +36,7 @@ class Typology:
     identifier: str
     shelters: tuple[Shelter] = ()
     evaporative_cooling_effect: tuple[float] = (0,) * 8760
-    target_wind_speed: tuple[float] = (None,) * 8760
+    wind_speed_override: tuple[float] = (None,) * 8760
     radiant_temperature_adjustment: tuple[float] = (0,) * 8760
 
     def __post_init__(self):
@@ -58,18 +58,18 @@ class Typology:
         if any(i > 1 for i in self.evaporative_cooling_effect):
             raise ValueError("evaporative_cooling_effect must be <= 1.")
 
-        if len(self.target_wind_speed) != 8760:
-            raise ValueError("target_wind_speed must be 8760 items long.")
-        for tws in self.target_wind_speed:
+        if len(self.wind_speed_override) != 8760:
+            raise ValueError("wind_speed_override must be 8760 items long.")
+        for tws in self.wind_speed_override:
             if not isinstance(tws, (float, int, type(None))):
                 raise ValueError(
-                    "target_wind_speed must be a list of numbers, which can include None values."
+                    "wind_speed_override must be a list of numbers, which can include None values."
                 )
             if tws is None:
                 continue
             if tws < 0:
                 raise ValueError(
-                    "target_wind_speed must be >= 0, or None (representing no change to in-situ wind speed)."
+                    "wind_speed_override must be >= 0, or None (representing no change to in-situ wind speed)."
                 )
 
         if len(self.radiant_temperature_adjustment) != 8760:
@@ -93,7 +93,7 @@ class Typology:
             "identifier": self.identifier,
             "shelters": shelter_dicts,
             "evaporative_cooling_effect": self.evaporative_cooling_effect,
-            "target_wind_speed": self.target_wind_speed,
+            "wind_speed_override": self.wind_speed_override,
             "radiant_temperature_adjustment": self.radiant_temperature_adjustment,
         }
         return d
@@ -111,7 +111,7 @@ class Typology:
             identifier=d["identifier"],
             shelters=d["shelters"],
             evaporative_cooling_effect=d["evaporative_cooling_effect"],
-            target_wind_speed=d["target_wind_speed"],
+            wind_speed_override=d["wind_speed_override"],
             radiant_temperature_adjustment=d["radiant_temperature_adjustment"],
         )
 
@@ -151,9 +151,9 @@ class Typology:
         return np.mean(self.radiant_temperature_adjustment)
 
     @property
-    def average_target_wind_speed(self) -> float:
+    def average_wind_speed_override(self) -> float:
         """_"""
-        return np.mean([i for i in self.target_wind_speed if i is not None])
+        return np.mean([i for i in self.wind_speed_override if i is not None])
 
     @bhom_analytics()
     def sky_exposure(self) -> list[float]:
@@ -171,7 +171,7 @@ class Typology:
         shelter_wind_speed = annual_wind_speed(self.shelters, epw)
 
         ws = []
-        for sh_ws, tgt_ws in list(zip(shelter_wind_speed, self.target_wind_speed)):
+        for sh_ws, tgt_ws in list(zip(shelter_wind_speed, self.wind_speed_override)):
             if tgt_ws is None or np.isnan(tgt_ws):
                 ws.append(sh_ws)
             else:

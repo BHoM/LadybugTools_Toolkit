@@ -84,7 +84,7 @@ class Typologies(Enum):
 def combine_typologies(
     typologies: list[Typology],
     evaporative_cooling_effect_weights: list[float] = None,
-    target_wind_speed_weights: list[float] = None,
+    wind_speed_override_weights: list[float] = None,
     radiant_temperature_adjustment_weights: list[float] = None,
 ) -> Typology:
     """Combine multiple typologies into a single typology.
@@ -95,7 +95,7 @@ def combine_typologies(
         evaporative_cooling_effect_weights (list[float], optional):
             A list of weights to apply to the evaporative cooling effect
             of each typology. Defaults to None.
-        target_wind_speed_weights (list[float], optional):
+        wind_speed_override_weights (list[float], optional):
             A list of weights to apply to the wind speed multiplier
             of each typology. Defaults to None.
         radiant_temperature_adjustment_weights (list[float], optional):
@@ -113,19 +113,19 @@ def combine_typologies(
     for typ in typologies:
         all_shelters.extend(typ.shelters)
 
-    target_wind_speed_avg = np.stack(
-        [i.target_wind_speed for i in typologies],
+    wind_speed_override_avg = np.stack(
+        [i.wind_speed_override for i in typologies],
         axis=0,
     ).T
-    target_wind_speed_avg[target_wind_speed_avg is None] = np.nan
-    target_wind_speed_avg = target_wind_speed_avg.astype(float)
-    masked_arr = np.ma.masked_invalid(target_wind_speed_avg)
-    target_wind_speed_avg = (
-        np.ma.average(masked_arr, axis=1, weights=target_wind_speed_weights)
+    wind_speed_override_avg[wind_speed_override_avg is None] = np.nan
+    wind_speed_override_avg = wind_speed_override_avg.astype(float)
+    masked_arr = np.ma.masked_invalid(wind_speed_override_avg)
+    wind_speed_override_avg = (
+        np.ma.average(masked_arr, axis=1, weights=wind_speed_override_weights)
         .filled(np.nan)
         .tolist()
     )
-    target_wind_speed_avg = [None if np.isnan(i) else i for i in target_wind_speed_avg]
+    wind_speed_override_avg = [None if np.isnan(i) else i for i in wind_speed_override_avg]
 
     radiant_temperature_adjustment_avg = np.average(
         [i.radiant_temperature_adjustment for i in typologies],
@@ -143,6 +143,6 @@ def combine_typologies(
         identifier=" + ".join([i.identifier for i in typologies]),
         shelters=all_shelters,
         evaporative_cooling_effect=evaporative_cooling_effect_avg,
-        target_wind_speed=target_wind_speed_avg,
+        wind_speed_override=wind_speed_override_avg,
         radiant_temperature_adjustment=radiant_temperature_adjustment_avg,
     )
