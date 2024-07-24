@@ -37,7 +37,7 @@ namespace BH.Adapter.LadybugTools
             string identifier = "";
             List<Shelter> shelters = new List<Shelter>();
             List<double> evaporativeCoolingEffect = Enumerable.Repeat(0.0, 8760).ToList();
-            List<double?> targetWindSpeed = Enumerable.Repeat<double?>(null, 8760).ToList();
+            List<double?> windSpeedOverride = Enumerable.Repeat<double?>(null, 8760).ToList();
             List<double> radiantTemperatureAdjustment = Enumerable.Repeat(0.0, 8760).ToList();
 
             try
@@ -78,7 +78,7 @@ namespace BH.Adapter.LadybugTools
             try
             {
                 List<double?> values = new List<double?>();
-                foreach (object value in oldObject["target_wind_speed"] as List<object>)
+                foreach (object value in oldObject["wind_speed_override"] as List<object>)
                 {
                     if (value == null)
                         values.Add(null);
@@ -88,7 +88,7 @@ namespace BH.Adapter.LadybugTools
                         values.Add(null);
                 }
 
-                targetWindSpeed = values;
+                windSpeedOverride = values;
             }
             catch (Exception ex)
             {
@@ -113,7 +113,7 @@ namespace BH.Adapter.LadybugTools
                 Name = identifier,
                 Shelters = shelters,
                 EvaporativeCoolingEffect = evaporativeCoolingEffect,
-                TargetWindSpeed = targetWindSpeed,
+                WindSpeedOverride = windSpeedOverride,
                 RadiantTemperatureAdjustment = radiantTemperatureAdjustment
             };
         }
@@ -123,7 +123,7 @@ namespace BH.Adapter.LadybugTools
             string identifier = typology.Name;
             string shelters = "[" + string.Join(", ", typology.Shelters.Select(s => FromShelter(s)).ToList()) + "]";
             string evaporativeCoolingEffect = "[" + string.Join(", ", typology.EvaporativeCoolingEffect) + "]";
-            string targetWindSpeed = "[" + string.Join(", ", typology.TargetWindSpeed.Select(x => x.ToString()).Select(x => x == "" ? x = "null": x)) + "]";
+            string targetWindSpeed = "[" + string.Join(", ", typology.WindSpeedOverride.Select(x => x.ToString()).Select(x => x == "" ? x = "null": x)) + "]";
             string radiantTemperatureAdjustment = "[" + string.Join(", ", typology.RadiantTemperatureAdjustment) + "]";
             return @"{""type"": ""Typology"", " + 
                 $@"""identifier"": ""{identifier}"", " + 

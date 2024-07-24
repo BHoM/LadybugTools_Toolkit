@@ -119,7 +119,7 @@ namespace BH.Engine.LadybugTools
                 Name = identifier,
                 Shelters = shelters,
                 EvaporativeCoolingEffect = evaporativeCoolingEffect,
-                TargetWindSpeed = targetWindSpeed,
+                WindSpeedOverride = targetWindSpeed,
                 RadiantTemperatureAdjustment = radiantTemperatureAdjustment
             };
         }
