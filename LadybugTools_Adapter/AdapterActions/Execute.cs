@@ -568,29 +568,16 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            var events = BH.Engine.Base.Query.CurrentEvents();
-
             string colourMap = command.ColourMap;
             if (colourMap.ColourMapValidity())
                 colourMap = colourMap.ToColourMap().FromColourMap();
 
-            events = BH.Engine.Base.Query.CurrentEvents();
-
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
-
-            events = BH.Engine.Base.Query.CurrentEvents();
-
             string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
 
-            events = BH.Engine.Base.Query.CurrentEvents();
-
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} -c {colourMap} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" {(string.IsNullOrEmpty(command.Title) ? "" : $"-t \"{command.Title}\"")} -p \"{command.OutputLocation}\"";
-
-            events = BH.Engine.Base.Query.CurrentEvents();
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} -c \"{colourMap}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" {(string.IsNullOrEmpty(command.Title) ? "" : $"-t \"{command.Title}\"")} -p \"{command.OutputLocation}\"";
 
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
-
-            events = BH.Engine.Base.Query.CurrentEvents();
 
             m_executeSuccess = true;
             return new List<object>() { result.Split('\n').Last() };
