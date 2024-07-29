@@ -350,7 +350,7 @@ def scrape_weather(
         df.interpolate(limit=4, inplace=True)
 
     if resample:
-        df = df.resample("30T").mean()
+        df = df.resample("30min").mean()
 
     return df
 

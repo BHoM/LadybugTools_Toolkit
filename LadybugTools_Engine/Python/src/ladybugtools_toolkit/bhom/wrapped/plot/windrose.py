@@ -11,7 +11,7 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.wind import Wind
-        from ladybugtools_toolkit.bhom.wrapped.wind_metadata import wind_metadata
+        from ladybugtools_toolkit.bhom.wrapped.metadata.wind_metadata import wind_metadata
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
         from pathlib import Path

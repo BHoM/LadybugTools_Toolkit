@@ -422,6 +422,7 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"When overriding bin colours 10 colours must be provided, but {command.BinColours.Count} colours were provided instead.");
                 return null;
             }
+
             List<string> colours = command.BinColours.Select(x => x.ToHexCode()).ToList();
 
             string hexColours = $"[\"{string.Join("\",\"", colours)}\"]";
@@ -453,7 +454,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(resultFile))
             {
-                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
                 File.Delete(returnFile);
                 File.Delete(argFile);
                 return new List<object>();

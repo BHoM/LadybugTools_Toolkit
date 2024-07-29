@@ -13,7 +13,7 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.plot._heatmap import heatmap
         from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-        from ladybugtools_toolkit.bhom.wrapped.collection import collection_metadata
+        from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
 
