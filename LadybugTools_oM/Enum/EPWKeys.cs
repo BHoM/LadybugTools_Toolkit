@@ -74,6 +74,8 @@ namespace BH.oM.LadybugTools
         [DisplayText("Total Sky Cover")]
         TotalSkyCover,
         Visibility,
+        [DisplayText("Wet Bulb Temperature")]
+        WetBulbTemperature,
         [DisplayText("Wind Direction")]
         WindDirection,
         [DisplayText("Wind Speed")]
