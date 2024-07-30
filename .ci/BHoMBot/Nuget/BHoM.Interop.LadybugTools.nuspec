@@ -28,9 +28,7 @@
     <file src="licence/licence.txt" target="" />
     <file src="images/icon.png" target="" />
     <file src="docs/readme.md" target="" />
-    <!--lib\**\* is a workaround for contentfiles not including dll files-->
-    <file src="lib\**\*" target="lib" />
-	<file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\any\any\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped"/>
-	<file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\any\any\PythonEnvironment\Lib\site-packages" />
+    <file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\any\any\PythonCode\LadybugTools_Toolkit\src\ladybugtools_toolkit\bhom\wrapped"/>
+    <file src="C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\**\*.*" exclude="**\__pycache__\*;**\docs\**\*" target="contentFiles\any\any\PythonEnvironment\Lib\site-packages" />
   </files>
 </package>
