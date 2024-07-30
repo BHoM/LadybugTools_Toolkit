@@ -319,7 +319,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(result))
             {
-                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
                 File.Delete(returnFile);
                 return new List<object>();
             }
@@ -371,7 +371,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(result))
             {
-                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
                 File.Delete(returnFile);
                 return new List<object>();
             }
@@ -513,7 +513,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(resultFile))
             {
-                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
                 File.Delete(returnFile);
                 return new List<object>();
             }
@@ -568,7 +568,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(resultFile))
             {
-                BH.Engine.Base.Compute.RecordError("An error occurred while running the command.");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
                 File.Delete(returnFile);
                 return new List<object>();
             }
