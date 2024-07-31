@@ -33,22 +33,25 @@ namespace BH.Adapter.LadybugTools
     public static partial class Convert
     {
 
+        /**************************************************/
+        /**** Public Methods: Interface               ****/
+        /**************************************************/
+
         public static PlotInformation ToPlotInformation(this CustomObject oldObject, ISimulationData toUpdate)
         {
             PlotInformation plotInformation = new PlotInformation();
 
             plotInformation.Image = oldObject.CustomData["figure"].ToString();
 
-            plotInformation.OtherData = IToSimulationData((oldObject.CustomData["data"] as CustomObject).CustomData, toUpdate);
+            plotInformation.OtherData = ToSimulationData((oldObject.CustomData["data"] as CustomObject).CustomData, toUpdate as dynamic);
 
             return plotInformation;
  
         }
 
-        private static ISimulationData IToSimulationData(Dictionary<string, object> oldObject, ISimulationData toUpdate)
-        {
-            return ToSimulationData(oldObject, toUpdate as dynamic);
-        }
+        /**************************************************/
+        /**** Private Methods: Deserialise             ****/
+        /**************************************************/
 
         private static CollectionData ToSimulationData(this Dictionary<string, object> oldData, CollectionData toUpdate)
         {
@@ -129,6 +132,8 @@ namespace BH.Adapter.LadybugTools
             return toUpdate;
         }
 
+        /**************************************************/
+
         private static WindroseData ToSimulationData(this Dictionary<string, object> oldData, WindroseData toUpdate)
         {
             if (!double.TryParse(oldData["prevailing_95percentile"].ToString(), out double result))
@@ -169,6 +174,8 @@ namespace BH.Adapter.LadybugTools
 
             return toUpdate;
         }
+
+        /**************************************************/
 
         private static SunPathData ToSimulationData(this Dictionary<string, object> oldData, SunPathData toUpdate)
         {
@@ -319,6 +326,8 @@ namespace BH.Adapter.LadybugTools
             return toUpdate;
         }
 
+        /**************************************************/
+
         private static UTCIData ToSimulationData(this Dictionary<string, object> oldData, UTCIData toUpdate)
         {
             if (!double.TryParse(oldData["comfortable_ratio"].ToString(), out double result))
@@ -346,6 +355,16 @@ namespace BH.Adapter.LadybugTools
             toUpdate.DaytimeColdRatio = result;
 
             return toUpdate;
+        }
+
+        /**************************************************/
+        /**** Private Methods: Fallback                ****/
+        /**************************************************/
+
+        private static ISimulationData ToSimulationData(Dictionary<string, object> oldObject, ISimulationData toUpdate)
+        {
+            BH.Engine.Base.Compute.RecordError($"The simulation data type {toUpdate.GetType().FullName} is not supported with the LadybugToolsAdapter. No simulation data has been returned with this action.");
+            return null;
         }
     }
 }
