@@ -19,7 +19,6 @@ def collection_metadata(collection: BaseCollection) -> dict:
                 "median": median,
                 "mean": mean,
                 "month_means": [month_means],
-                "month_diurnal_ranges": [month_diurnal_ranges],
             }
             where month_means is a list of means indexed by month, and month_ranges is a list of diurnal month ranges as tuples: (min, max).
     """
@@ -31,21 +30,11 @@ def collection_metadata(collection: BaseCollection) -> dict:
     highest_index = series.idxmax()
     median = series.quantile(0.5)
     mean = series.mean()
-
-    series_diurnal_mean = series.groupby([series.index.month, series.index.hour]).mean()
-    series_diurnal_max = series_diurnal_mean.groupby(
-        series_diurnal_mean.index.get_level_values(0)
-    ).max()
-    series_diurnal_min = series_diurnal_mean.groupby(
-        series_diurnal_mean.index.get_level_values(0)
-    ).min()
     
     month_means = []
-    month_ranges = []
     for month in range(12):
         month_series = series[series.index.month == month + 1]
         month_means.append(month_series.mean())
-        month_ranges.append((series_diurnal_min.iloc[month], series_diurnal_max.iloc[month]))
     
     return {
         "lowest": lowest,
@@ -55,5 +44,4 @@ def collection_metadata(collection: BaseCollection) -> dict:
         "median": median,
         "mean": mean,
         "month_means": month_means,
-        "month_diurnal_ranges": month_ranges,
         }

@@ -52,8 +52,5 @@ namespace BH.oM.LadybugTools
 
         [Description("The mean values for each month.")]
         public virtual List<double> MonthlyMeans { get; set; } = Enumerable.Repeat<double>(double.NaN, 12).ToList();
-
-        [Description("The diurnal ranges for each month as a list of tuples: (lowest, highest).")]
-        public virtual List<List<double>> MonthlyDiurnalRanges { get; set; } = Enumerable.Repeat<List<double>>(new List<double> { double.NaN, double.NaN }, 12).ToList();
     }
 }

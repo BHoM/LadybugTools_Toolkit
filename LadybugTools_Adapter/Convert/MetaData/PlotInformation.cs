@@ -103,32 +103,6 @@ namespace BH.Adapter.LadybugTools
             }
             catch { }
 
-            try
-            {
-                List<List<object>> ranges = oldData["month_diurnal_ranges"] as List<List<object>>;
-                List<List<double>> monthlyRanges = new List<List<double>>();
-
-                int monthIndex = 0;
-
-                foreach (List<object> range in ranges)
-                {
-                    List<double> values = new List<double>();
-
-                    foreach (object value in range)
-                    {
-                        if (!double.TryParse(value.ToString(), out result))
-                            result = double.NaN;
-
-                        values.Add(result);
-                    }
-
-                    toUpdate.MonthlyDiurnalRanges[monthIndex] = values;
-                    monthIndex++;
-                }
-            }
-            catch { }
-
-
             return toUpdate;
         }
 

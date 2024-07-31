@@ -5,7 +5,7 @@ from ..bhom.analytics import bhom_analytics
 import pandas as pd
 from datetime import datetime
 
-@bhom_analytics
+@bhom_analytics()
 def sunrise_sunset_azimuths(sunpath: Sunpath, year: int, month: int, day: int) -> dict:
     """Return a dictionary containing azimuths at sunrise and sunset, and altitude at solar noon
     
@@ -32,6 +32,6 @@ def sunrise_sunset_azimuths(sunpath: Sunpath, year: int, month: int, day: int) -
     
     sunrise_sunset = sunpath.calculate_sunrise_sunset_from_datetime(datetime(year=year, month=month, day=day))
     
-    azimuths_altitude =  {k:{"time": v, "azimuth": sunpath.calculate_sun_from_date_time(v).azimuth} if k in ["sunrise", "sunset"] else {"time": v, "altitude": sunpath.calculate_sun_from_date_time(v).altitude} for k, v in sunrise_sunset.items() }
+    azimuths_altitude =  {k:{"time": datetime(year, v.month, v.day, v.hour, v.minute), "azimuth": sunpath.calculate_sun_from_date_time(v).azimuth} if k in ["sunrise", "sunset"] else {"time": datetime(year, v.month, v.day, v.hour, v.minute), "altitude": sunpath.calculate_sun_from_date_time(v).altitude} for k, v in sunrise_sunset.items() }
     
     return azimuths_altitude
