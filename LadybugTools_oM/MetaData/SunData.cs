@@ -23,6 +23,7 @@
 using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace BH.oM.LadybugTools
@@ -30,16 +31,22 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class SunData
     {
+        [Description("The azimuth angle at sunrise.")]
         public virtual double SunriseAzimuth { get; set; } = double.NaN;
 
+        [Description("The time that sunrise happens.")]
         public virtual DateTime SunriseTime { get; set; } = DateTime.MinValue;
 
+        [Description("The altitude angle at solar noon (when the sun is at its highest point).")]
         public virtual double NoonAltitude { get; set; } = double.NaN;
 
+        [Description("The time that the altitude is highest.")]
         public virtual DateTime NoonTime { get; set; } = DateTime.MinValue;
 
+        [Description("The azimuth angle at sunset.")]
         public virtual double SunsetAzimuth { get; set; } = double.NaN;
 
+        [Description("The time that sunset happens.")]
         public virtual DateTime SunsetTime { get; set; } = DateTime.MinValue;
     }
 }

@@ -24,6 +24,7 @@ using BH.oM.Base;
 using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace BH.oM.LadybugTools
@@ -31,8 +32,10 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class PlotInformation : BHoMObject
     {
+        [Description("The image produced.")]
         public virtual string Image { get; set; } = "";
 
+        [Description("Metadata about the data used to produce the image.")]
         public virtual ISimulationData OtherData { get; set; }
     }
 }

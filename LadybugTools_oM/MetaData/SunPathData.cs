@@ -23,6 +23,7 @@
 using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace BH.oM.LadybugTools
@@ -30,12 +31,16 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class SunPathData : ISimulationData
     {
+        [Description("Data for the december (winter) solstice.")]
         public virtual SunData DecemberSolstice { get; set; } = new SunData();
 
+        [Description("Data for the march (spring) equinox.")]
         public virtual SunData MarchEquinox { get; set; } = new SunData();
 
+        [Description("Data for the june (summer) solstice.")]
         public virtual SunData JuneSolstice { get; set; } = new SunData();
 
+        [Description("Data for the september (autumn) equinox.")]
         public virtual SunData SeptemberEquinox { get; set; } = new SunData();
     }
 }

@@ -23,6 +23,7 @@
 using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 
@@ -31,20 +32,28 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class CollectionData : ISimulationData
     {
+        [Description("The maximum value in the collection.")]
         public virtual double HighestValue { get; set; } = double.NaN;
 
+        [Description("The minimum value in the collection")]
         public virtual double LowestValue { get; set; } = double.NaN;
 
+        [Description("The date and time for when the maximum value occurs.")]
         public virtual DateTime HighestIndex { get; set; } = DateTime.MinValue;
 
+        [Description("The date and time for when the minimum value occurs.")]
         public virtual DateTime LowestIndex { get; set; } = DateTime.MinValue;
 
+        [Description("The median (50 percentile) value in the collection.")]
         public virtual double MedianValue { get; set; } = double.NaN;
 
+        [Description("The mean value of the collection.")]
         public virtual double MeanValue { get; set; } = double.NaN;
 
+        [Description("The mean values for each month.")]
         public virtual List<double> MonthlyMeans { get; set; } = Enumerable.Repeat<double>(double.NaN, 12).ToList();
 
+        [Description("The diurnal ranges for each month as a list of tuples: (lowest, highest).")]
         public virtual List<List<double>> MonthlyDiurnalRanges { get; set; } = Enumerable.Repeat<List<double>>(new List<double> { double.NaN, double.NaN }, 12).ToList();
     }
 }

@@ -23,6 +23,7 @@
 using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace BH.oM.LadybugTools
@@ -30,16 +31,22 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class UTCIData : ISimulationData
     {
+        [Description("The ratio of comfortable hours / total hours.")]
         public virtual double ComfortableRatio { get; set; } = double.NaN;
 
+        [Description("The ratio of heat stress hours / total hours.")]
         public virtual double HotRatio { get; set; } = double.NaN;
 
+        [Description("The ratio of cold stress hours / total hours.")]
         public virtual double ColdRatio { get; set; } = double.NaN;
 
+        [Description("The ratio of daytime active comfortable hours / daytime active hours.")]
         public virtual double DaytimeComfortableRatio { get; set; } = double.NaN;
 
+        [Description("The ratio of daytime active heat stress hours / daytime active hours.")]
         public virtual double DaytimeHotRatio { get; set; } = double.NaN;
 
+        [Description("The ratio of daytime active cold stress hours / daytime active hours.")]
         public virtual double DaytimeColdRatio { get; set; } = double.NaN;
     }
 }

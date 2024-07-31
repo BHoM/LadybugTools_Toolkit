@@ -23,6 +23,7 @@
 using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 
@@ -31,16 +32,22 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class WindroseData : ISimulationData
     {
+        [Description("The direction that the prevailing wind is coming from between two angles as a tuple, where 0 degrees is north.")]
         public virtual List<double> PrevailingDirection { get; set; } = Enumerable.Repeat<double>(double.NaN, 2).ToList();
 
+        [Description("The 95 percentile wind speed value in the prevailing direction.")]
         public virtual double PrevailingPercentile95 { get; set; } = double.NaN;
 
+        [Description("The median (50 percentile) wind speed value in the prevailing direction.")]
         public virtual double PrevailingPercentile50 { get; set; } = double.NaN;
 
-        public virtual double Percentile95 { get; set; } = double.NaN; 
+        [Description("The 95 percentile wind speed value.")]
+        public virtual double Percentile95 { get; set; } = double.NaN;
 
+        [Description("The median (50 percentile) wind speed value.")]
         public virtual double Percentile50 { get; set; } = double.NaN;
 
+        [Description("The percentage of calm hours / total hours.")]
         public virtual double PercentageOfCalmHours { get; set; } = double.NaN;
     }
 }
