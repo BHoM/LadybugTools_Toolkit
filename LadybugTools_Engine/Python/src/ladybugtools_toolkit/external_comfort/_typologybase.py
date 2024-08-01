@@ -283,10 +283,12 @@ class Typology:
         for sun_exp, sky_exp, shaded, unshaded in list(
             zip(*[_sun_exposure, _sky_exposure, shaded_mrt.values, unshaded_mrt.values])
         ):
-            if sun_exp:
-                mrts.append(np.interp(sun_exp, [0, 1], [shaded, unshaded]))
-            else:
+            if pd.isna(sun_exp):
+                # The sun isn't above the horizon (sun_exp is null), therefore it's night so use the sky view.
                 mrts.append(np.interp(sky_exp, [0, 1], [shaded, unshaded]))
+            else:
+                # The sun is above the horizon and is fully or partially visible.
+                mrts.append(np.interp(sun_exp, [0, 1], [shaded, unshaded]))
 
         # Fill any gaps where sun-visible/sun-occluded values are missing
         mrt_series = pd.Series(
