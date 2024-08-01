@@ -2,7 +2,6 @@
 # pylint: disable=C0302
 
 # pylint: disable=E0401
-from datetime import datetime
 import warnings
 from calendar import month_abbr
 from concurrent.futures import ProcessPoolExecutor

@@ -35,13 +35,13 @@ namespace BH.oM.LadybugTools
         [Description("The maximum value in the collection.")]
         public virtual double HighestValue { get; set; } = double.NaN;
 
-        [Description("The minimum value in the collection")]
+        [Description("The minimum value in the collection.")]
         public virtual double LowestValue { get; set; } = double.NaN;
 
-        [Description("The date and time for when the maximum value occurs.")]
+        [Description("The date and time at which the maximum value occurs.")]
         public virtual DateTime HighestIndex { get; set; } = DateTime.MinValue;
 
-        [Description("The date and time for when the minimum value occurs.")]
+        [Description("The date and time at which the minimum value occurs.")]
         public virtual DateTime LowestIndex { get; set; } = DateTime.MinValue;
 
         [Description("The median (50 percentile) value in the collection.")]

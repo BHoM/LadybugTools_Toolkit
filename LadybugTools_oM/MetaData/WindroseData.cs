@@ -32,22 +32,22 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class WindroseData : ISimulationData
     {
-        [Description("The direction that the prevailing wind is coming from between two angles as a tuple, where 0 degrees is north.")]
+        [Description("The direction bin of the prevailing wind, defined as two values (in degrees) for the lower and upper values for the bin, where 0 degrees is north.")]
         public virtual List<double> PrevailingDirection { get; set; } = Enumerable.Repeat<double>(double.NaN, 2).ToList();
 
-        [Description("The 95 percentile wind speed value in the prevailing direction.")]
+        [Description("The 95th percentile wind speed value in the prevailing direction.")]
         public virtual double PrevailingPercentile95 { get; set; } = double.NaN;
 
-        [Description("The median (50 percentile) wind speed value in the prevailing direction.")]
+        [Description("The median (50th percentile) wind speed value in the prevailing direction.")]
         public virtual double PrevailingPercentile50 { get; set; } = double.NaN;
 
-        [Description("The 95 percentile wind speed value.")]
+        [Description("The 95th percentile wind speed value.")]
         public virtual double Percentile95 { get; set; } = double.NaN;
 
-        [Description("The median (50 percentile) wind speed value.")]
+        [Description("The median (50th percentile) wind speed value.")]
         public virtual double Percentile50 { get; set; } = double.NaN;
 
-        [Description("The percentage of calm hours / total hours.")]
-        public virtual double PercentageOfCalmHours { get; set; } = double.NaN;
+        [Description("The ratio of calm hours to total hours. Calm hours are hours with a wind speed of 1e-10 or less.")]
+        public virtual double RatioOfCalmHours { get; set; } = double.NaN;
     }
 }

@@ -32,7 +32,7 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class PlotInformation : BHoMObject
     {
-        [Description("The image produced.")]
+        [Description("The image produced, either as a filepath to the file created, or as a base64 string representation of the image.")]
         public virtual string Image { get; set; } = "";
 
         [Description("Metadata about the data used to produce the image.")]

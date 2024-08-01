@@ -31,16 +31,16 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class SunPathData : ISimulationData
     {
-        [Description("Data for the december (winter) solstice.")]
+        [Description("Data describing the December (winter) solstice.")]
         public virtual SunData DecemberSolstice { get; set; } = new SunData();
 
-        [Description("Data for the march (spring) equinox.")]
+        [Description("Data describing the March (spring) equinox.")]
         public virtual SunData MarchEquinox { get; set; } = new SunData();
 
-        [Description("Data for the june (summer) solstice.")]
+        [Description("Data describing the June (summer) solstice.")]
         public virtual SunData JuneSolstice { get; set; } = new SunData();
 
-        [Description("Data for the september (autumn) equinox.")]
+        [Description("Data describing the September (autumn) equinox.")]
         public virtual SunData SeptemberEquinox { get; set; } = new SunData();
     }
 }

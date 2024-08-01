@@ -101,7 +101,10 @@ namespace BH.Adapter.LadybugTools
                     monthIndex++;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while deserialising the monthly means:");
+            }
 
             return toUpdate;
         }
@@ -128,7 +131,10 @@ namespace BH.Adapter.LadybugTools
                     index++;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while deserialising the prevailing wind direction:");
+            }
 
             if (!double.TryParse(oldData["prevailing_50percentile"].ToString(), out result))
                 result = double.NaN;
@@ -144,7 +150,7 @@ namespace BH.Adapter.LadybugTools
 
             if (!double.TryParse(oldData["calm_percent"].ToString(), out result))
                 result = double.NaN;
-            toUpdate.PercentageOfCalmHours = result;
+            toUpdate.RatioOfCalmHours = result;
 
             return toUpdate;
         }
@@ -155,9 +161,9 @@ namespace BH.Adapter.LadybugTools
         {
             try
             {
-                Dictionary<string, object> december_object = (oldData["december_solstice"] as CustomObject).CustomData;
+                Dictionary<string, object> decemberObject = (oldData["december_solstice"] as CustomObject).CustomData;
 
-                Dictionary<string, object> sunset = (december_object["sunset"] as CustomObject).CustomData;
+                Dictionary<string, object> sunset = (decemberObject["sunset"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
                     result = double.NaN;
@@ -167,7 +173,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.DecemberSolstice.SunsetTime = date;
 
-                Dictionary<string, object> sunrise = (december_object["sunrise"] as CustomObject).CustomData;
+                Dictionary<string, object> sunrise = (decemberObject["sunrise"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
                     result = double.NaN;
@@ -177,7 +183,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.DecemberSolstice.SunriseTime = date;
 
-                Dictionary<string, object> noon = (december_object["noon"] as CustomObject).CustomData;
+                Dictionary<string, object> noon = (decemberObject["noon"] as CustomObject).CustomData;
 
                 if (!double.TryParse(noon["altitude"].ToString(), out result))
                     result = double.NaN;
@@ -187,13 +193,16 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.DecemberSolstice.NoonTime = date;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while deserialising the December solstice:");
+            }
 
             try
             {
-                Dictionary<string, object> march_object = (oldData["march_equinox"] as CustomObject).CustomData;
+                Dictionary<string, object> marchObject = (oldData["march_equinox"] as CustomObject).CustomData;
 
-                Dictionary<string, object> sunset = (march_object["sunset"] as CustomObject).CustomData;
+                Dictionary<string, object> sunset = (marchObject["sunset"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
                     result = double.NaN;
@@ -203,7 +212,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.MarchEquinox.SunsetTime = date;
 
-                Dictionary<string, object> sunrise = (march_object["sunrise"] as CustomObject).CustomData;
+                Dictionary<string, object> sunrise = (marchObject["sunrise"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
                     result = double.NaN;
@@ -213,7 +222,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.MarchEquinox.SunriseTime = date;
 
-                Dictionary<string, object> noon = (march_object["noon"] as CustomObject).CustomData;
+                Dictionary<string, object> noon = (marchObject["noon"] as CustomObject).CustomData;
 
                 if (!double.TryParse(noon["altitude"].ToString(), out result))
                     result = double.NaN;
@@ -223,13 +232,16 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.MarchEquinox.NoonTime = date;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while deserialising the March equinox:");
+            }
 
             try
             {
-                Dictionary<string, object> june_object = (oldData["june_solstice"] as CustomObject).CustomData;
+                Dictionary<string, object> juneObject = (oldData["june_solstice"] as CustomObject).CustomData;
 
-                Dictionary<string, object> sunset = (june_object["sunset"] as CustomObject).CustomData;
+                Dictionary<string, object> sunset = (juneObject["sunset"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
                     result = double.NaN;
@@ -239,7 +251,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.JuneSolstice.SunsetTime = date;
 
-                Dictionary<string, object> sunrise = (june_object["sunrise"] as CustomObject).CustomData;
+                Dictionary<string, object> sunrise = (juneObject["sunrise"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
                     result = double.NaN;
@@ -249,7 +261,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.JuneSolstice.SunriseTime = date;
 
-                Dictionary<string, object> noon = (june_object["noon"] as CustomObject).CustomData;
+                Dictionary<string, object> noon = (juneObject["noon"] as CustomObject).CustomData;
 
                 if (!double.TryParse(noon["altitude"].ToString(), out result))
                     result = double.NaN;
@@ -259,13 +271,16 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.JuneSolstice.NoonTime = date;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while deserialising the June solstice:");
+            }
 
             try
             {
-                Dictionary<string, object> september_object = (oldData["september_equinox"] as CustomObject).CustomData;
+                Dictionary<string, object> septemberObject = (oldData["september_equinox"] as CustomObject).CustomData;
 
-                Dictionary<string, object> sunset = (september_object["sunset"] as CustomObject).CustomData;
+                Dictionary<string, object> sunset = (septemberObject["sunset"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunset["azimuth"].ToString(), out double result))
                     result = double.NaN;
@@ -275,7 +290,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.SeptemberEquinox.SunsetTime = date;
 
-                Dictionary<string, object> sunrise = (september_object["sunrise"] as CustomObject).CustomData;
+                Dictionary<string, object> sunrise = (septemberObject["sunrise"] as CustomObject).CustomData;
 
                 if (!double.TryParse(sunrise["azimuth"].ToString(), out result))
                     result = double.NaN;
@@ -285,7 +300,7 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.SeptemberEquinox.SunriseTime = date;
 
-                Dictionary<string, object> noon = (september_object["noon"] as CustomObject).CustomData;
+                Dictionary<string, object> noon = (septemberObject["noon"] as CustomObject).CustomData;
 
                 if (!double.TryParse(noon["altitude"].ToString(), out result))
                     result = double.NaN;
@@ -295,7 +310,10 @@ namespace BH.Adapter.LadybugTools
                     date = DateTime.MinValue;
                 toUpdate.SeptemberEquinox.NoonTime = date;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred while deserialising the September equinox:");
+            }
 
             return toUpdate;
         }
@@ -310,11 +328,11 @@ namespace BH.Adapter.LadybugTools
 
             if (!double.TryParse(oldData["hot_ratio"].ToString(), out result))
                 result = double.NaN;
-            toUpdate.HotRatio = result;
+            toUpdate.HeatStressRatio = result;
 
             if (!double.TryParse(oldData["cold_ratio"].ToString(), out result))
                 result = double.NaN;
-            toUpdate.ColdRatio = result;
+            toUpdate.ColdStressRatio = result;
 
             if (!double.TryParse(oldData["daytime_comfortable"].ToString(), out result))
                 result = double.NaN;
@@ -322,11 +340,11 @@ namespace BH.Adapter.LadybugTools
 
             if (!double.TryParse(oldData["daytime_hot"].ToString(), out result))
                 result = double.NaN;
-            toUpdate.DaytimeHotRatio = result;
+            toUpdate.DaytimeHeatStressRatio = result;
 
             if (!double.TryParse(oldData["daytime_cold"].ToString(), out result))
                 result = double.NaN;
-            toUpdate.DaytimeColdRatio = result;
+            toUpdate.DaytimeColdStressRatio = result;
 
             return toUpdate;
         }

@@ -31,22 +31,22 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class UTCIData : ISimulationData
     {
-        [Description("The ratio of comfortable hours / total hours.")]
+        [Description("The ratio of comfortable hours to total hours. Comfortable hours are hours between 9 and 26°C.")]
         public virtual double ComfortableRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of heat stress hours / total hours.")]
-        public virtual double HotRatio { get; set; } = double.NaN;
+        [Description("The ratio of heat stress hours to total hours. Heat stress hours are hours greater than 26°C.")]
+        public virtual double HeatStressRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of cold stress hours / total hours.")]
-        public virtual double ColdRatio { get; set; } = double.NaN;
+        [Description("The ratio of cold stress hours to total hours. Cold stress hours are hours less than 9°C.")]
+        public virtual double ColdStressRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of daytime active comfortable hours / daytime active hours.")]
+        [Description("The ratio of daytime comfortable hours to daytime hours. Daytime comfortable hours are hours between 9 and 26°C and between 07:00-22:59.")]
         public virtual double DaytimeComfortableRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of daytime active heat stress hours / daytime active hours.")]
-        public virtual double DaytimeHotRatio { get; set; } = double.NaN;
+        [Description("The ratio of daytime heat stress hours to daytime hours. Daytime heat stress hours are hours greater than 26°C and between 07:00-22:59.")]
+        public virtual double DaytimeHeatStressRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of daytime active cold stress hours / daytime active hours.")]
-        public virtual double DaytimeColdRatio { get; set; } = double.NaN;
+        [Description("The ratio of daytime cold stress hours to daytime hours. Daytime cold stress hours are hours less than 9°C and between 07:00-22:59.")]
+        public virtual double DaytimeColdStressRatio { get; set; } = double.NaN;
     }
 }
