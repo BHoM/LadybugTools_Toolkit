@@ -3,15 +3,17 @@
 import argparse
 import traceback
 from pathlib import Path
+import json
 
 
-def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = None) -> None:
+def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str, save_path:str = None) -> None:
     """Create a CSV file version of an EPW."""
     try:
         from ladybug.epw import EPW
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.plot._heatmap import heatmap
         from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+        from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
 
@@ -21,12 +23,22 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = 
         epw = EPW(epw_file)
         coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         fig = heatmap(collection_to_series(coll), cmap=colour_map).get_figure()
+
+        return_dict = {}
+
         if save_path == None or save_path == "":
             base64 = figure_to_base64(fig,html=False)
-            print(base64)
+            return_dict["figure"] = base64
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
-            print(save_path)
+            return_dict["figure"] = save_path
+        
+        return_dict["data"] = collection_metadata(coll)
+
+        with open(return_file, "w") as rtn:
+            rtn.write(json.dumps(return_dict, default=str))
+        
+        print(return_file)
             
 
     except Exception as e:
@@ -62,6 +74,13 @@ if __name__ == "__main__":
         required=True,
         )
     parser.add_argument(
+        "-r",
+        "--return_file",
+        help="json file to write return data to.",
+        type=str,
+        required=True,
+        )
+    parser.add_argument(
         "-p",
         "--save_path",
         help="Path where to save the output image.",
@@ -70,4 +89,4 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    heatmap(args.epw_file, args.data_type_key, args.colour_map, args.save_path)
+    heatmap(args.epw_file, args.data_type_key, args.colour_map, args.return_file, args.save_path)

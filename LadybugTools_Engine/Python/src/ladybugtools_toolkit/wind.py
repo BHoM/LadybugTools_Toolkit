@@ -1201,6 +1201,8 @@ class Wind:
         directions: int = 36,
         n: int = 1,
         as_cardinal: bool = False,
+        ignore_calm: bool = True,
+        threshold: float = 1e-10,
     ) -> list[float] | list[str]:
         """Calculate the prevailing wind direction/s for this object.
 
@@ -1218,6 +1220,10 @@ class Wind:
         """
 
         binned = self.bin_data(directions=directions)
+        
+        if ignore_calm:
+            binned = binned.loc[self.ws > threshold]
+
         prevailing_angles = binned.iloc[:, 0].value_counts().index[:n]
 
         if as_cardinal:
@@ -1506,6 +1512,34 @@ class Wind:
         )
         return return_strings
         # pylint: enable=line-too-long
+    
+    def prevailing_wind_speeds(self, n: int=1, directions: int=36, ignore_calm: bool=True, threshold: float=1e-10) -> tuple[list[pd.Series], list[tuple[float, float]]]:
+        """Gets the wind speeds for the prevailing directions
+        
+        Args:
+            n (int):
+                Number of prevailing directions to return. Defaults to 1
+            
+            directions (int):
+                Number of direction bins to use when calculating the prevailing directions. Defaults to 36
+            
+            ignore_calm (bool):
+                Whether to ignore calm hours when getting the prevailing directions. Defaults to True
+                
+            threshold (float):
+                The threshold for calm hours. Defaults to 1e-10
+        
+        Returns:
+            (list[pandas.Series], list[(float, float)]):
+                Tuple containing a list of time-indexed series containing wind speed data for each prevailing direction, from most to least prevailing,
+                and a list of wind directions corresponding to the serieses.
+        """
+        prevailing_directions = self.prevailing(n=n, directions=directions, ignore_calm=ignore_calm, threshold=threshold)
+
+        prevailing_wind_speeds = [self.ws.loc[self.bin_data(directions=directions)["Wind Direction (degrees)"] == direction] for direction in prevailing_directions]
+
+        return (prevailing_wind_speeds, prevailing_directions)
+
 
     def weibull_pdf(self) -> tuple[float]:
         """Calculate the parameters of an exponentiated Weibull continuous random variable.

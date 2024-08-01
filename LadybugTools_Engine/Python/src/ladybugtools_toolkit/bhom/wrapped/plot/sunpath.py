@@ -4,11 +4,13 @@ import argparse
 import traceback
 from pathlib import Path
 
-def sun_path(epw_file, analysis_period, size, save_path):
+def sun_path(epw_file, analysis_period, size, return_file: str, save_path):
     try:
         from ladybugtools_toolkit.plot._sunpath import sunpath
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybug.datacollection import HourlyContinuousCollection
+        from ladybug.sunpath import Sunpath
+        from ladybugtools_toolkit.bhom.wrapped.metadata.sunpath_metadata import sunpath_metadata
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
         from pathlib import Path
@@ -16,19 +18,26 @@ def sun_path(epw_file, analysis_period, size, save_path):
 
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         epw = EPW(epw_file)
-        collection = epw.global_horizontal_radiation
         fig = sunpath(
             location=epw.location, 
             analysis_period=analysis_period, 
             sun_size=size, 
         ).get_figure()
 
+        return_dict = {"data": sunpath_metadata(Sunpath.from_location(epw.location))}
+
         if save_path is None or save_path == "":
             base64 = figure_to_base64(fig, html=False)
-            print(base64)
+            return_dict["figure"] = base64
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
-            print(save_path)
+            return_dict["figure"] = save_path
+        
+        with open(return_file, "w") as rtn:
+            rtn.write(json.dumps(return_dict, default=str))
+
+        print(return_file)
+
     except Exception as e:
         print(e)
 
@@ -60,6 +69,13 @@ if __name__ == "__main__":
         required=True,
         )
     parser.add_argument(
+        "-r",
+        "--return_file",
+        help="json file to write return data to.",
+        type=str,
+        required=True,
+        )
+    parser.add_argument(
         "-p",
         "--save_path",
         help="Path where to save the output image.",
@@ -68,4 +84,4 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    sun_path(args.epw_file, args.analysis_period, args.size, args.save_path)
+    sun_path(args.epw_file, args.analysis_period, args.size, args.return_file, args.save_path)
