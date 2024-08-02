@@ -75,7 +75,9 @@ namespace BH.oM.LadybugTools
         TotalSkyCover,
         Visibility,
         [DisplayText("Wet Bulb Temperature")]
-        WetBulbTemperature,
+        [Description("Wet bulb temperature is a calculated property of epw data.")]
+        // This was added to handle calculating wet bulb temperature with c#/python interop. If utilising this enum for other purposes, ensure that this value being selected by a user is handled correctly (either by showing an appropriate error, or calculating the wet bulb temperature)
+        WetBulbTemperature, 
         [DisplayText("Wind Direction")]
         WindDirection,
         [DisplayText("Wind Speed")]
