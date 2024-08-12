@@ -9,6 +9,7 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
     try:
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+        from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
         from ladybugtools_toolkit.plot._diurnal import diurnal
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
@@ -16,13 +17,15 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
         import matplotlib.pyplot as plt
         
         epw = EPW(epw_file)
-        data_type_key = data_type_key.replace("_"," ")
-        coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
-        fig = diurnal(collection_to_series(coll), title=title, period=period, color=color).get_figure()
         
+        if data_type_key == "Wet Bulb Temperature":
+            coll = wet_bulb_temperature(epw)
+        else:
+            coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         
+        fig = diurnal(collection_to_series(coll),title=title, period=period, color=color).get_figure()
         return_dict = {"data": collection_metadata(coll)}
-
+        
         if save_path == None or save_path == "":
             base64 = figure_to_base64(fig, html=False)
             return_dict["figure"] = base64
