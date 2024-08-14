@@ -1965,6 +1965,74 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
         ]
     ]
 
+def fix_sunrise_sunset(row: pd.Series, sp: Sunpath) -> pd.Series:
+    """Method that fixes a row from sunrise_sunset based upon the altitude, generally for use when plotting to handle null timestamps, to be used with a df.apply() on the output from sunrise_sunset()
+    For times where the sun does not rise or set, sets the sunrise and sunset times appropriately depending on the altitude (below the horizon, sets rise/set to noon, above set rise to start of day and set to end of day)
+    
+    Args:
+        row(pd.Series):
+            A row from the dataframe output of sunrise_sunset()
+        sp(Sunpath):
+            A ladybug sunpath object for the location used in sunrise_sunset()
+    Returns:
+        pd.Series:
+            The updated input row.
+    
+    """
+    row = row.infer_objects(copy=False)
+    altitude = sp.calculate_sun_from_date_time(row["noon"]).altitude
+    
+    morning_names = [
+        "astronomical twilight start",
+        "nautical twilight start",
+        "civil twilight start",
+        "sunrise"
+    ]
+    afternoon_names = [
+        "astronomical twilight end",
+        "nautical twilight end",
+        "civil twilight end",
+        "sunset",
+    ]
+
+    start_time = pd.to_datetime(row.name)
+    end_time = start_time + timedelta(days=1) - timedelta(milliseconds=1)
+    
+    null_items = [name for name in morning_names + afternoon_names if pd.isna(row[name])]
+    
+    
+    #set rise/set times to noon if the sun isn't above the horizon
+    if altitude < 0.5334:
+        items = [item for item in null_items if item in ["sunrise", "sunset"]]
+        row[items] = pd.to_datetime(row["noon"])
+    
+    if altitude < -6:
+        items = [item for item in null_items if item in ["civil twilight start", "civil twilight end"]]
+        row[items] = pd.to_datetime(row["noon"])
+    
+    if altitude < -12:
+        items = [item for item in null_items if item in ["nautical twilight start", "nautical twilight end"]]
+        row[items] = pd.to_datetime(row["noon"])
+    
+    if altitude < -18:
+        items = [item for item in null_items if item in ["astronomical twilight start", "astronomical twilight end"]]
+        row[items] = pd.to_datetime(row["noon"])
+    
+    #set rise/set times to midnight-midnight if the sun is above the horizon
+    morning_items = [name for name in null_items if name in morning_names]
+    afternoon_items = [name for name in null_items if name in afternoon_names]
+    row[morning_items] = row[morning_items].fillna(start_time)
+    row[afternoon_items] = row[afternoon_items].fillna(end_time)
+    
+    for name in morning_names:
+        if row[name] < start_time:
+            row[name] = start_time
+    
+    for name in afternoon_names:
+        if row[name] > end_time:
+            row[name] = end_time
+    
+    return row
 
 @bhom_analytics()
 def safe_filename(filename: str) -> str:

@@ -13,7 +13,7 @@ from ladybug.epw import EPW, Location
 from ladybug.sunpath import Sunpath
 
 from ..ladybug_extension.datacollection import collection_to_series
-from ..helpers import sunrise_sunset
+from ..helpers import sunrise_sunset, fix_sunrise_sunset
 from ._heatmap import heatmap
 from ..categorical.categories import Categorical
 
@@ -87,6 +87,8 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
             The matplotlib axes.
     """
     srss_df = sunrise_sunset(location)
+    sp = Sunpath.from_location(location)
+    srss_df.apply(lambda row: fix_sunrise_sunset(row, sp), axis=1)
     #
     ## hours of daylight
     daylight = pd.Series(
@@ -213,6 +215,8 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         ax = plt.gca()
 
     srss_df = sunrise_sunset(location)
+    sp = Sunpath.from_location(location)
+    srss_df.apply(lambda row: fix_sunrise_sunset(row, sp), axis=1)
     seconds = srss_df.map(lambda a: ((a - a.normalize()) / pd.Timedelta("1 second")))
     hours = seconds / (60 * 60)
 
