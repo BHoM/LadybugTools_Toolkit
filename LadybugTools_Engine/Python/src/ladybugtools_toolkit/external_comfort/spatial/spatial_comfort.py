@@ -1,4 +1,5 @@
 """Methods for handling SpatialMetric results for spatial comfort assessments."""
+
 # pylint: disable=broad-exception-caught,W0212
 # pylint: disable=line-too-long
 # pylint: disable=E0401
@@ -44,9 +45,6 @@ from .cfd import spatial_wind_speed
 from .metric import SpatialMetric
 
 # pyling: enable=E0401
-
-
-
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -2029,7 +2027,7 @@ def spatial_comfort_possible(sim_dir: Path) -> bool:
     free_space = free_space // (2**20)
 
     sim_dir_size = 0
-    for filename  in sim_dir.glob("**/*.*"):
+    for filename in sim_dir.glob("**/*.*"):
         if not filename.is_file():
             continue
         if filename.suffix in [".parquet", ".png"]:
@@ -2040,6 +2038,8 @@ def spatial_comfort_possible(sim_dir: Path) -> bool:
     # additional results will be ~1.68 times smaller, based on precedent
     results_size = sim_dir_size / 1.68
     if results_size > free_space:
-        warnings.warn(f"You might not have enough disk space to run this process. Estimated results size of {results_size:0.0f}Mb, with free space of {free_space:0.0f}Mb. You might be alright, but it's worthwhile clearing some space just in case.")
+        warnings.warn(
+            f"You might not have enough disk space to run this process. Estimated results size of {results_size:0.0f}Mb, with free space of {free_space:0.0f}Mb. You might be alright, but it's worthwhile clearing some space just in case."
+        )
 
     return True
