@@ -3,6 +3,7 @@
 import numpy as np
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.material.opaque import EnergyMaterial
+
 from ..bhom.analytics import bhom_analytics
 
 
@@ -14,6 +15,7 @@ def calculate_sri(
     air_temperature: float = 36.85,
     sky_temperature: float = 26.85,
     wind_speed: float = 4,
+    age_years: float = 0,
 ) -> float:
     """Calculate the SRI of a material from its reflectance and emittance.
     Note, this method assumes a horizontal material (facing the sky).
@@ -35,6 +37,7 @@ def calculate_sri(
         air_temperature (float, optional): Air temperature. Defaults to 36.85C.
         sky_temperature (float, optional): Sky temperature. Defaults to 26.85C.
         wind_speed (float, optional): Speed of wind. Defaults to 4m/s.
+        age_years (float, optional): Age of the material in years. Defaults to 0.
 
     Returns:
         float: SRI of the material. Unitless.

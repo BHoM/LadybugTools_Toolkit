@@ -7,27 +7,22 @@ import io
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import matplotlib.image as mimage
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 from ladybug.color import Colorset
-from matplotlib.colors import (
-    LinearSegmentedColormap,
-    cnames,
-    colorConverter,
-    is_color_like,
-    rgb2hex,
-    to_hex,
-    to_rgb,
-    to_rgba_array,
-)
+from matplotlib.colors import (LinearSegmentedColormap, cnames, colorConverter,
+                               is_color_like, rgb2hex, to_hex, to_rgb,
+                               to_rgba_array)
 from matplotlib.tri import Triangulation
 from PIL import Image
 
 from ..bhom.analytics import bhom_analytics
+
+# pylint: enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -121,7 +116,7 @@ def contrasting_color(color: Any):
 
 
 def colormap_sequential(
-    *colors: str | float | int | tuple, N: int = 256
+    *colors: str | float | int | tuple, N: int = 256, name: str = None,
 ) -> LinearSegmentedColormap:
     """
     Create a sequential colormap from a list of input colors.
@@ -155,8 +150,11 @@ def colormap_sequential(
     for color in colors:
         fixed_colors.append(to_hex(color))
 
+    if name is None:
+        name = f"{'_'.join(fixed_colors)}"
+
     return LinearSegmentedColormap.from_list(
-        name=f"{'_'.join(fixed_colors)}",
+        name=name,
         colors=fixed_colors,
         N=N,
     )
@@ -193,7 +191,7 @@ def lb_colormap(name: int | str = "original") -> LinearSegmentedColormap:
     lb_cmap = getattr(colorset, name)()
     rgb = [[getattr(rgb, i) / 255 for i in ["r", "g", "b", "a"]] for rgb in lb_cmap]
     rgb = [tuple(i) for i in rgb]
-    return colormap_sequential(*rgb)
+    return colormap_sequential(*rgb, name=name)
 
 
 def annotate_imshow(

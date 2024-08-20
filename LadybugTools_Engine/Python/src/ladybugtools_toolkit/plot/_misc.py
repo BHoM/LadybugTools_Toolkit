@@ -5,18 +5,30 @@ from calendar import month_abbr  # pylint: disable=E0401
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-
 import numpy as np
 import pandas as pd
-
 from ladybug.epw import EPW, Location
 from ladybug.sunpath import Sunpath
 
-from ..ladybug_extension.datacollection import collection_to_series
-from ..helpers import sunrise_sunset
-from ._heatmap import heatmap
 from ..categorical.categories import Categorical
+from ..helpers import sunrise_sunset
+from ..ladybug_extension.datacollection import collection_to_series
+from ._heatmap import heatmap
 
+
+def hours_sunlight(location: Location) -> pd.DataFrame:
+    """Get the number of hours of sunlight for a location.
+
+    Note: This method returns values in TimeDelta format, and values which assume 
+    
+    Args:
+        location (Location):
+            The location to get the hours of sunlight for.
+    
+    Returns:
+        pd.DataFrame:
+            A DataFrame with the hours of sunlight, in TimeDelta format.
+    """
 
 def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
     """Plot cloud cover categories from an EPW file.
@@ -507,3 +519,6 @@ def solar_elevation_azimuth(location: Location, ax: plt.Axes = None) -> plt.Axes
     ax.clabel(ct, inline=1, fontsize="small")
 
     return ax
+
+
+

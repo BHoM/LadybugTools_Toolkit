@@ -20,16 +20,13 @@ import pandas as pd
 from caseconverter import snakecase
 from honeybee.config import folders as hb_folders
 from ladybug.datatype.temperature import WetBulbTemperature
-from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
+from ladybug.epw import (EPW, AnalysisPeriod, HourlyContinuousCollection,
+                         Location)
 from ladybug.psychrometrics import wet_bulb_from_db_rh
-from ladybug.skymodel import (
-    calc_horizontal_infrared,
-    calc_sky_temperature,
-    estimate_illuminance_from_irradiance,
-    get_extra_radiation,
-    zhang_huang_solar,
-    zhang_huang_solar_split,
-)
+from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
+                              estimate_illuminance_from_irradiance,
+                              get_extra_radiation, zhang_huang_solar,
+                              zhang_huang_solar_split)
 from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d import Vector2D
 from meteostat import Hourly, Point
@@ -1894,7 +1891,7 @@ def month_hour_binned_series(
     return df
 
 
-def sunrise_sunset(location: Location) -> pd.DataFrame():
+def sunrise_sunset(location: Location) -> pd.DataFrame:
     """Calculate sunrise and sunset times for a given location and year. Includes
     civil, nautical and astronomical twilight.
 
@@ -1966,3 +1963,32 @@ def safe_filename(filename: str) -> str:
     return "".join(
         [c for c in filename if c.isalpha() or c.isdigit() or c == " "]
     ).strip()
+
+
+
+from ladybug.datatype.rvalue import ClothingInsulation
+from ladybug_comfort.clo import schiavon_clo
+
+
+def estimate_clo(temperature: float | HourlyContinuousCollection, max_clo: float = 1.0, max_clo_temperature: float = -5, min_clo: float = 0.46, min_clo_temperature: float = 26,) -> float | HourlyContinuousCollection:
+
+    # if the temperature is hourly continuous, simplify the values
+    if isinstance(temperature, HourlyContinuousCollection):
+        date_times, temps = temperature.datetimes, temperature.values
+        last_time = date_times[0].sub_hour(18)  # clothing determined at 6 AM
+        last_val = temps[0]
+        new_vals = []
+        for v, dt in zip(temps, date_times):
+            time_diff = dt - last_time
+            if time_diff.days >= 1:
+                last_time, last_val = dt, v
+            new_vals.append(last_val)
+        temperature = temperature.duplicate()
+        temperature.values = new_vals
+
+    return HourlyContinuousCollection.compute_function_aligned(
+        schiavon_clo, 
+        [temperature, max_clo, max_clo_temperature, min_clo, min_clo_temperature],
+        ClothingInsulation(), 
+        'clo'
+    )

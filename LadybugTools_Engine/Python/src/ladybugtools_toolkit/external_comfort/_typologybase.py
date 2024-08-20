@@ -4,29 +4,22 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
 
 from ..bhom.analytics import bhom_analytics
-from ..helpers import (
-    convert_keys_to_snake_case,
-    decay_rate_smoother,
-    evaporative_cooling_effect,
-)
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
-from ._shelterbase import (
-    Shelter,
-    annual_sky_exposure,
-    annual_sun_exposure,
-    annual_wind_speed,
-)
+from ..helpers import (convert_keys_to_snake_case, decay_rate_smoother,
+                       evaporative_cooling_effect)
+from ..ladybug_extension.datacollection import (collection_from_series,
+                                                collection_to_series)
+from ._shelterbase import (Shelter, annual_sky_exposure, annual_sun_exposure,
+                           annual_wind_speed)
 from .simulate import SimulationResult
+
+# pylint: enable=E0401
+
+
 
 
 @dataclass(init=True, repr=True, eq=True)

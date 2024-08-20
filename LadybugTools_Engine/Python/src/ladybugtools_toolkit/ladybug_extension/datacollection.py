@@ -6,23 +6,22 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datacollection import (
-    BaseCollection,
-    HourlyContinuousCollection,
-    MonthlyCollection,
-)
+from ladybug.datacollection import (BaseCollection, HourlyContinuousCollection,
+                                    MonthlyCollection)
 from ladybug.datatype.angle import Angle
 from ladybug.dt import DateTime
+
 from ..bhom.analytics import bhom_analytics
 from ..helpers import circular_weighted_mean
-from .analysisperiod import analysis_period_to_datetimes
-from .analysisperiod import describe_analysis_period
+from .analysisperiod import (analysis_period_to_datetimes,
+                             describe_analysis_period)
 from .header import header_from_string, header_to_string
+
+# pylint: enable=E0401
+
 
 
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
@@ -67,7 +66,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
     header.metadata["source"] = "From custom pd.Series"
 
     freq = pd.infer_freq(series.index)
-    if freq in ["H"]:
+    if freq in ["H", "h"]:
         if series.index.is_leap_year.any():
             if len(series.index) != 8784:
                 raise ValueError(
