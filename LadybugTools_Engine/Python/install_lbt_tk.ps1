@@ -40,18 +40,20 @@ if (Test-Path $lbt_env_dir) {
     }
 }
 
+# check if the BHoM LadybugTools_Toolkit code exists
+if (-Not (Test-Path $lbt_tk_code_dir)) {
+    Write-Host ">>> $lbt_tk_code_dir not found" -ForegroundColor green
+    exit
+}
+
 # check if the python executable exists
-if (Test-Path $lb_python_exe) {
-    Write-Host ">>> Ladybug Python executable found at $lb_python_exe" -ForegroundColor green
-} else {
+if (-Not (Test-Path $lb_python_exe)) {
     Write-Host ">>> Ladybug Python executable not found at $lb_python_exe" -ForegroundColor green
     exit
 }
 
 # check if the Ladybug Tools Python executable exists
-if (Test-Path $root_python_exe) {
-    Write-Host ">>> BHoM Python executable found at $root_python_exe" -ForegroundColor green
-} else {
+if (-Not (Test-Path $root_python_exe)) {
     Write-Host ">>> BHoM Python executable not found at $root_python_exe" -ForegroundColor green
     exit
 }
@@ -83,9 +85,7 @@ $zip_file = Split-Path -Leaf $target_python_url
 $src_python_dir = $zip_file -replace ".zip", ""
 
 # check if the zip file already exists
-if (Test-Path $zip_file) {
-    Write-Host ">>> Python already downloaded ... re-using to save time" -ForegroundColor green
-} else {
+if (-Not (Test-Path $zip_file)) {
     Write-Host ">>> Downloading $target_python_url to $zip_file" -ForegroundColor green
     Invoke-WebRequest -Uri $target_python_url -OutFile $zip_file
 }
