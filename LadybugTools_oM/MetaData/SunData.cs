@@ -20,6 +20,7 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base;
 using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,7 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [NoAutoConstructor]
-    public class SunData
+    public class SunData : IObject
     {
         [Description("The azimuth angle at sunrise in degrees. Sunrise is defined as the time at which the sun is first visible above the horizon, ignoring atmospheric effects.")]
         public virtual double SunriseAzimuth { get; set; } = double.NaN;
