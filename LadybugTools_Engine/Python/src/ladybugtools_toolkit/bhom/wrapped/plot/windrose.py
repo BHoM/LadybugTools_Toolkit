@@ -3,7 +3,7 @@
 import argparse
 import traceback
 from pathlib import Path
-
+import matplotlib
 
 def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, return_file: str, save_path: str = None) -> None:
     """Method to wrap for creating wind roses from epw files."""
@@ -98,4 +98,5 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
+    matplotlib.use("Agg")
     windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.return_file, args.save_path)

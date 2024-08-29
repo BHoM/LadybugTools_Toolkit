@@ -3,6 +3,7 @@
 import argparse
 import traceback
 from pathlib import Path
+import matplotlib
 
 def sun_path(epw_file, analysis_period, size, return_file: str, save_path):
     try:
@@ -84,4 +85,5 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
+    matplotlib.use("Agg")
     sun_path(args.epw_file, args.analysis_period, args.size, args.return_file, args.save_path)

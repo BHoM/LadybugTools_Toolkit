@@ -4,7 +4,7 @@ import argparse
 import traceback
 from pathlib import Path
 import json
-
+import matplotlib
 
 def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str, save_path:str = None) -> None:
     """Create a CSV file version of an EPW."""
@@ -96,4 +96,5 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
+    matplotlib.use("Agg")
     heatmap(args.epw_file, args.data_type_key, args.colour_map, args.return_file, args.save_path)
