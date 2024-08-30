@@ -7,7 +7,7 @@ from ladybug.analysisperiod import AnalysisPeriod
 from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ...bhom import CONSOLE_LOGGER
+from ...bhom.logging import CONSOLE_LOGGER
 from ...ladybug_extension.analysisperiod import describe_analysis_period
 from ...plot.utilities import create_triangulation
 from .spatial_comfort import SpatialComfort, SpatialMetric

@@ -1,4 +1,5 @@
 """Methods for handling SpatialMetric results for spatial comfort assessments."""
+
 # pylint: disable=broad-exception-caught,W0212
 # pylint: disable=line-too-long
 # pylint: disable=E0401
@@ -6,52 +7,44 @@ import calendar
 import contextlib
 import copy
 import io
+import shutil
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-
-# pyling: enable=E0401
 
 import numpy as np
 import pandas as pd
 from honeybee.model import Model
 from ladybug.analysisperiod import AnalysisPeriod
 from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import PercentFormatter, StrMethodFormatter
-from matplotlib.colors import ListedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ...helpers import sanitise_string, wind_speed_at_height
-from ...honeybee_extension.results import load_ill, load_pts, load_res, make_annual
-from ...ladybug_extension.analysisperiod import (
-    analysis_period_to_boolean,
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
-from ...ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
-from ...ladybug_extension.epw import seasonality_from_month, sun_position_list
-from ...plot._utci import (
-    utci_heatmap_difference,
-    utci_heatmap_histogram,
-)
-from ...plot.utilities import create_triangulation
-from ...plot._sunpath import sunpath
-from .._simulatebase import SimulationResult
 from ...bhom.logging import CONSOLE_LOGGER
-
+from ...helpers import sanitise_string, wind_speed_at_height
+from ...honeybee_extension.results import (load_ill, load_pts, load_res,
+                                           make_annual)
+from ...ladybug_extension.analysisperiod import (analysis_period_to_boolean,
+                                                 analysis_period_to_datetimes,
+                                                 describe_analysis_period)
+from ...ladybug_extension.datacollection import (collection_from_series,
+                                                 collection_to_series)
+from ...ladybug_extension.epw import seasonality_from_month, sun_position_list
+from ...plot._sunpath import sunpath
+from ...plot._utci import utci_heatmap_difference, utci_heatmap_histogram
+from ...plot.utilities import create_triangulation
+from .._simulatebase import SimulationResult
 # from ..simulate import direct_sun_hours as dsh
 from ..utci import utci, utci_parallel
-from .calculate import (
-    rwdi_london_thermal_comfort_category,
-    shaded_unshaded_interpolation,
-)
+from .calculate import (rwdi_london_thermal_comfort_category,
+                        shaded_unshaded_interpolation)
 from .cfd import spatial_wind_speed
 from .metric import SpatialMetric
+
+# pyling: enable=E0401
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -1184,11 +1177,12 @@ class SpatialComfort:
         CONSOLE_LOGGER.info(
             f"[{self}] - Plotting Sunpath for {describe_analysis_period(analysis_period, include_timestep=True)}"
         )
-        fig = sunpath(
-            self.simulation_result.epw,
-            analysis_period,
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        sunpath(
+            location=self.simulation_result.epw.location,
+            ax=ax,
+            analysis_period=analysis_period,
             show_legend=False,
-            show_title=False,
             sun_size=20,
         )
         return fig
@@ -1699,7 +1693,7 @@ class SpatialComfort:
         save_path = self._plot_directory / "point_Openfield_utci.png"
         if not save_path.exists():
             CONSOLE_LOGGER.info(f"[{self}] - Plotting Openfield UTCI")
-            fig = utci_heatmap_histogram(self._unshaded_utci, "Openfield")
+            fig = utci_heatmap_histogram(self._unshaded_utci, title="Openfield")
             fig.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # # create openfield UTCI distance to comfortable plot
@@ -1717,7 +1711,7 @@ class SpatialComfort:
         )
         if not save_path.exists():
             CONSOLE_LOGGER.info(f"[{self}] - Plotting {point_identifier} UTCI")
-            f = utci_heatmap_histogram(point_utci, f"{self} - {point_identifier}")
+            f = utci_heatmap_histogram(point_utci, title=f"{self} - {point_identifier}")
             f.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # # create pt location UTCI distance to comfortable plot
@@ -1741,10 +1735,12 @@ class SpatialComfort:
             CONSOLE_LOGGER.info(
                 f"[{self}] - Plotting difference between Openfield and {point_identifier} UTCI"
             )
-            f = utci_heatmap_difference(
+            f, ax = plt.subplots(1, 1, figsize=(15, 5))
+            utci_heatmap_difference(
                 self._unshaded_utci,
                 point_utci,
-                f"{self} - Difference between Openfield UTCI and {point_identifier} UTCI",
+                ax=ax,
+                title=f"{self} - Difference between Openfield UTCI and {point_identifier} UTCI",
             )
             f.savefig(save_path, transparent=True, bbox_inches="tight")
 
@@ -2024,6 +2020,26 @@ def spatial_comfort_possible(sim_dir: Path) -> bool:
     if len(res_files) != 1:
         raise ValueError(
             "This process is currently only possible for a single Analysis Grid - multiple files found."
+        )
+
+    # check for available disk space in sim_dir
+    _, _, free_space = shutil.disk_usage("C:/")
+    free_space = free_space // (2**20)
+
+    sim_dir_size = 0
+    for filename in sim_dir.glob("**/*.*"):
+        if not filename.is_file():
+            continue
+        if filename.suffix in [".parquet", ".png"]:
+            continue
+        sim_dir_size += filename.stat().st_size
+    sim_dir_size = sim_dir_size / (2**20)
+
+    # additional results will be ~1.68 times smaller, based on precedent
+    results_size = sim_dir_size / 1.68
+    if results_size > free_space:
+        warnings.warn(
+            f"You might not have enough disk space to run this process. Estimated results size of {results_size:0.0f}Mb, with free space of {free_space:0.0f}Mb. You might be alright, but it's worthwhile clearing some space just in case."
         )
 
     return True
