@@ -193,7 +193,7 @@ def get_identifier(material_identifier: str) -> str:
     material_identifier = re.sub(keep_characters, "_", material_identifier).replace("__", "_").rstrip()
     
     # prepend `Material_` to identifiers which start with a number
-    if re.match("^\d", material_identifier):
+    if re.match(r"^\d", material_identifier):
         material_identifier = f"Material_{material_identifier}"
 
     return material_identifier
