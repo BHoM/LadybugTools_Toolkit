@@ -22,8 +22,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from python_toolkit.bhom.analytics import bhom_analytics
 
 from ..helpers import rolling_window, validate_timeseries
-from ..plot._heatmap import heatmap
 from ..plot.utilities import contrasting_color
+from python_toolkit.plot.heatmap import heatmap
 
 
 @dataclass(init=True, repr=True)
