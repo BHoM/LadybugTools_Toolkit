@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..helpers import (
     convert_keys_to_snake_case,
     decay_rate_smoother,

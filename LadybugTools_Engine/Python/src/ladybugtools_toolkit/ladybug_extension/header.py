@@ -6,7 +6,7 @@ from ladybug.datatype import TYPESDICT
 from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 
 def header_to_string(header: Header) -> str:

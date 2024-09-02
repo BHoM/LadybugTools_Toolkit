@@ -2,7 +2,7 @@
 import numpy as np
 from ladybug.location import Location
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 
 @bhom_analytics()

@@ -13,7 +13,7 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
 from ladybug.epw import EPW
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from .datacollection import collection_from_series, collection_to_series, to_hourly
 
 
