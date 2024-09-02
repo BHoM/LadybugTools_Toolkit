@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from ladybug.epw import EPW
 
-from ._heatmap import heatmap
+from python_toolkit.plot.heatmap import heatmap
 from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.location import location_to_string
 
