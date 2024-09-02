@@ -2,8 +2,9 @@
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import textwrap
 
-from ._diurnal import diurnal, textwrap
+from python_toolkit.plot.diurnal import diurnal
 
 
 def radiant_cooling_potential(
