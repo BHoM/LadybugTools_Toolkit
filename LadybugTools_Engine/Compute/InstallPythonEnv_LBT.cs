@@ -54,8 +54,9 @@ namespace BH.Engine.LadybugTools
             // create environment from scratch
             PythonEnvironment env = Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: false);
 
-            // install local package
-            env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName()));
+            // install local packages
+            env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName())); //ladybugtools_toolkit
+            env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Python.Query.ToolkitName())); //python_toolkit
 
             // create requirements from referenced executable
             string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
