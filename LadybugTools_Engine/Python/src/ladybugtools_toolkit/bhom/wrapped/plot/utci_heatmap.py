@@ -4,7 +4,7 @@ import argparse
 import traceback
 from pathlib import Path
 from unittest.util import _MIN_COMMON_LEN
-
+import matplotlib
 
 def utci_heatmap(epw_file:str,
             json_file:str,
@@ -114,4 +114,5 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
+    matplotlib.use("Agg")
     utci_heatmap(args.epw_path, args.json_args, args.return_file, args.wind_speed_multiplier, args.save_path)

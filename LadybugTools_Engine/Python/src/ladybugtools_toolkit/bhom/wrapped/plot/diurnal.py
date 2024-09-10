@@ -4,6 +4,7 @@ import argparse
 import json
 import traceback
 from pathlib import Path
+import matplotlib
 
 def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", color="#000000", title=None, period="monthly", save_path = None):
     try:
@@ -98,4 +99,5 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
+    matplotlib.use("Agg")
     diurnal(args.epw_file, args.return_file, args.data_type_key, args.colour, args.title, args.period, args.save_path)
