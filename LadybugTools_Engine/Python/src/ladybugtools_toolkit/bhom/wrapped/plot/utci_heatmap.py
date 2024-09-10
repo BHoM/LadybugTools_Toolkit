@@ -62,7 +62,7 @@ def utci_heatmap(epw_file:str,
         return_dict["figure"] = base64
     else:
         fig.savefig(save_path, dpi=150, transparent=True)
-        return_dict["figure"] = base64
+        return_dict["figure"] = save_path
     
     with open(return_file, "w") as rtn:
         rtn.write(json.dumps(return_dict, default=str))
