@@ -2,6 +2,7 @@
 """
 
 # pylint: disable=E0401
+import re
 from difflib import get_close_matches
 from pathlib import Path
 from enum import Enum
@@ -178,8 +179,26 @@ def get_material(material_identifier: str) -> _EnergyMaterialOpaqueBase:
                 f"Unknown material name: '{material_identifier}'. Did you mean {possible_materials}"
             ) from exc
 
+def get_identifier(material_identifier: str) -> str:
+    """Get the enum-valid identifier for a given material identifier.
+
+    Args:
+        material_identifier (str): The identifier to sanitise.
+
+    Returns:
+        str: The sanitised material identifier.
+    """
+    keep_characters = r"[^A-Za-z0-9_]"
+
+    material_identifier = re.sub(keep_characters, "_", material_identifier).replace("__", "_").rstrip()
+    
+    # prepend `Material_` to identifiers which start with a number
+    if re.match(r"^\d", material_identifier):
+        material_identifier = f"Material_{material_identifier}"
+
+    return material_identifier
 
 Materials = Enum(
     "Materials",
-    {sanitise_string(material.identifier): material for material in materials()},
+    {get_identifier(material.identifier): material for material in materials()},
 )

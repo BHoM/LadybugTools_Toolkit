@@ -4,6 +4,7 @@ import argparse
 import traceback
 from pathlib import Path
 import os
+import matplotlib
 
 def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectance, irradiance_type, isotropic, analysis_period, title, save_path):
     try:
@@ -114,5 +115,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["TQDM_DISABLE"] = "1" # set an environment variable so that progress bars are disabled for the simulation process
+    matplotlib.use("Agg")
     directional_solar_radiation(args.epw_file, args.azimuths, args.altitudes, args.ground_reflectance, args.irradiance_type, args.isotropic, args.analysis_period, args.title, args.save_path)
     del os.environ["TQDM_DISABLE"] # unset the env variable

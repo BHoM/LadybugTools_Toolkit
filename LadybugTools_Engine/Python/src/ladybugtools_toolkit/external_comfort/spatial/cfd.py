@@ -1,11 +1,10 @@
 """Methods for handling CFD results for spatial comfort assessments."""
+
 # pylint: disable=E0401
 import json
 import warnings
 from io import StringIO
 from pathlib import Path
-
-# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
@@ -15,6 +14,9 @@ from tqdm import tqdm
 
 from ...ladybug_extension.datacollection import collection_to_series
 from ...ladybug_extension.epw import unique_wind_speed_direction
+
+# pylint: enable=E0401
+
 
 EXAMPLE_CFD_CONFIG_JSON = """
 [
@@ -163,11 +165,16 @@ def load_cfd_extract(file: Path, velocity_col: str = "VELOCITY") -> pd.DataFrame
     with open(file, "r", encoding="utf-8") as fp:
         dat = fp.read()
 
-    df = (
-        pd.read_csv(StringIO(dat.split("\n\n")[1]), sep=",", header=[0, 1])
-        .reset_index()
-        .drop(columns=["level_0"])
-    )
+    try:
+        df = (
+            pd.read_csv(StringIO(dat.split("\n\n")[1]), sep=",", header=[0, 1])
+            .reset_index()
+            .drop(columns=["level_0"])
+        )
+    except pd.errors.ParserError:
+        df = pd.read_csv(
+            StringIO(dat.split("\n\n")[1]), sep=",", skiprows=1, index_col=0
+        )
     if len(df.columns) != 4:
         raise ValueError("Columns should be of length 4 (x, y, z, velocity)")
 

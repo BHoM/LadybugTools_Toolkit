@@ -181,7 +181,8 @@ def test_bin_data():
 
 def test_prevailing():
     """_"""
-    assert TEST_WIND.prevailing()[0] == (355.0, 5.0)
+    assert TEST_WIND.prevailing(ignore_calm=False)[0] == (355.0, 5.0)
+    assert TEST_WIND.prevailing()[0] == (205.0, 215.0)
 
 
 def test_probabilities():

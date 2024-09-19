@@ -3,14 +3,15 @@
 import argparse
 import traceback
 from pathlib import Path
+import matplotlib
 
-
-def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> None:
+def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, return_file: str, save_path: str = None) -> None:
     """Method to wrap for creating wind roses from epw files."""
     try:
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.wind import Wind
+        from ladybugtools_toolkit.bhom.wrapped.metadata.wind_metadata import wind_metadata
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         import matplotlib.pyplot as plt
         from pathlib import Path
@@ -24,19 +25,27 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, sa
         w_epw = Wind.from_epw(epw_file)
 
         fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "polar"})
+        
+        wind_filtered = w_epw.filter_by_analysis_period(analysis_period=analysis_period)
+
         w_epw.filter_by_analysis_period(analysis_period=analysis_period).plot_windrose(ax=ax, directions=bins, ylim=(0, 3.6/bins), colors=colour_map)
+
+        output_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
 
         plt.tight_layout()
         if save_path == None or save_path == "":
-            base64 = figure_to_base64(fig,html=False)
-            print(base64)
+            output_dict["figure"] = figure_to_base64(fig,html=False)
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
-            print(save_path)
+            output_dict["figure"] = save_path
+            
+        with open(return_file, "w") as rtn:
+            rtn.write(json.dumps(output_dict, default=str))
+        
+        print(return_file)
             
     except Exception as e:
         print(e)
-
 
 
 if __name__ == "__main__":
@@ -74,6 +83,13 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
+        "-r",
+        "--return_file",
+        help="json file to write return data to.",
+        type=str,
+        required=True,
+        )
+    parser.add_argument(
         "-p",
         "--save_path",
         help="Path where to save the output image.",
@@ -82,4 +98,5 @@ if __name__ == "__main__":
         )
 
     args = parser.parse_args()
-    windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.save_path)
+    matplotlib.use("Agg")
+    windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.return_file, args.save_path)

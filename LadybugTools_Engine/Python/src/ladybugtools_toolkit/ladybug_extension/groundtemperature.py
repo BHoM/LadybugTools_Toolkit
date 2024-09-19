@@ -203,7 +203,7 @@ def ground_temperature_at_depth(
                 ],
                 index=dbt.resample("D").min().index,
             )
-            .resample("60T")
+            .resample("60min")
             .mean()
             .interpolate()
             .values

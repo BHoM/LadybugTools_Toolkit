@@ -5,7 +5,7 @@ import itertools
 import textwrap
 from datetime import datetime
 import json
-import concurrent
+import concurrent.futures
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
