@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from ladybug.epw import EPW
 from .utilities import contrasting_color
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..ladybug_extension.epw import EPW, degree_time
 from ..ladybug_extension.location import location_to_string
 

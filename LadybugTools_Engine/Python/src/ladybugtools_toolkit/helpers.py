@@ -34,8 +34,8 @@ from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d import Vector2D
 from meteostat import Hourly, Point
 
-from .bhom.analytics import bhom_analytics
-from .bhom.logging import CONSOLE_LOGGER
+from python_toolkit.bhom.analytics import bhom_analytics
+from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.dt import lb_datetime_from_datetime
 
 # pylint: enable=E0401

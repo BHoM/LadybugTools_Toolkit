@@ -33,8 +33,8 @@ from .helpers import (
     wind_speed_at_height,
     remove_leap_days,
 )
-from .bhom.analytics import bhom_analytics
-from .bhom.logging import CONSOLE_LOGGER
+from python_toolkit.bhom.analytics import bhom_analytics
+from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.analysisperiod import (
     analysis_period_to_boolean,
     analysis_period_to_datetimes,

@@ -23,7 +23,7 @@ from matplotlib.dates import DateFormatter
 from matplotlib.ticker import PercentFormatter, StrMethodFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ...bhom.logging import CONSOLE_LOGGER
+from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from ...helpers import sanitise_string, wind_speed_at_height
 from ...honeybee_extension.results import (load_ill, load_pts, load_res,
                                            make_annual)

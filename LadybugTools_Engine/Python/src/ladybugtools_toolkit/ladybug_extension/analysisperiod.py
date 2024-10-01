@@ -9,7 +9,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from .dt import lb_datetime_from_datetime
 
 
