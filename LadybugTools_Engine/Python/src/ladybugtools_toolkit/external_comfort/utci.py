@@ -21,7 +21,7 @@ from ladybug_comfort.collection.utci import UTCI
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoricalComfort
 from ..helpers import evaporative_cooling_effect, month_hour_binned_series
 from ..ladybug_extension.datacollection import (

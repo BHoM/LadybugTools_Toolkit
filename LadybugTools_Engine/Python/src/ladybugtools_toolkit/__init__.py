@@ -12,4 +12,4 @@ import matplotlib.pyplot as plt
 os.environ["HOME"] = (Path("C:/Users/") / getpass.getuser()).as_posix()
 
 # set plotting style for modules within this toolkit
-plt.style.use(Path(__file__).parent / "bhom" / "bhom.mplstyle")
+plt.style.use(Path("C:/ProgramData/BHoM/Extensions/PythonCode/Python_Toolkit/src/python_toolkit/bhom/bhom.mplstyle"))

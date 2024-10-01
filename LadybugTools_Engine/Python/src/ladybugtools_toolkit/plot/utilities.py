@@ -27,7 +27,7 @@ from matplotlib.colors import (
 from matplotlib.tri import Triangulation
 from PIL import Image
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 
 @bhom_analytics()

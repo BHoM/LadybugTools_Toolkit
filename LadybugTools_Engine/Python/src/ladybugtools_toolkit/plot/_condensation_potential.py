@@ -7,7 +7,7 @@ import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from .utilities import create_title
 
 

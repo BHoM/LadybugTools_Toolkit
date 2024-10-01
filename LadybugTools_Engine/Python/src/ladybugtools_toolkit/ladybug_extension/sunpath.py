@@ -1,6 +1,6 @@
 ﻿from ladybug.sunpath import Sunpath
 from ladybug.location import Location
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 import pandas as pd
 from datetime import datetime

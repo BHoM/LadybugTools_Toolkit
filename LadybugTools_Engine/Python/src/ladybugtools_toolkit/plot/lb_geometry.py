@@ -15,7 +15,7 @@ from ladybug_geometry.geometry2d import (
     Vector2D,
 )
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 
 @bhom_analytics()
