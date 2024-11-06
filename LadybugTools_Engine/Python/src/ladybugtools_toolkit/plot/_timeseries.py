@@ -6,7 +6,7 @@ from datetime import datetime  # pylint: disable=E0401
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..helpers import validate_timeseries
 
 

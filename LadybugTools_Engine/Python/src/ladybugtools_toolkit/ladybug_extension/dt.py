@@ -3,7 +3,7 @@
 from datetime import datetime  # pylint: disable=E0401
 
 from ladybug.dt import DateTime
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 
 @bhom_analytics()

@@ -19,7 +19,7 @@ from matplotlib.ticker import PercentFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import make_interp_spline
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..categorical.categories import (
     UTCI_DEFAULT_CATEGORIES,
     CategoricalComfort,

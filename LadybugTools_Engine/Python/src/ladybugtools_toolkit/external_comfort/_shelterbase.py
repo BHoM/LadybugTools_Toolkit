@@ -28,7 +28,7 @@ from matplotlib.figure import Figure
 from mpl_toolkits import mplot3d
 
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..bhom.to_bhom import point3d_to_bhom
 from ..ladybug_extension.epw import sun_position_list
 from ..helpers import convert_keys_to_snake_case

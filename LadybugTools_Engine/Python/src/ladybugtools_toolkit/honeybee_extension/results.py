@@ -11,7 +11,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 from ladybug.sql import SQLiteResult
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..ladybug_extension.datacollection import collection_to_series
 
 
