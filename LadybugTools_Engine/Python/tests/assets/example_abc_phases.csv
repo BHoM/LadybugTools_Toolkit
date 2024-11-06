@@ -1,0 +1,6 @@
+condition_name,ta,mrt,rh,v,solar,met,clo,start_time,end_time,time_units,ramp
+Indoors - Seated,22,19,0.5,0.01,0,1,1,0,20,minutes,FALSE
+Outdoors - Walking,32,30,0.3,1.5,700,2.6,1,20,30,minutes,FALSE
+"Outdoors - Seated, sheltered",29,27,0.45,1,400,1.1,1,30,40,minutes,TRUE
+Outdoors - Walking again,32,31,0.3,1.5,700,2.6,1,40,50,minutes,FALSE
+Indoors - Seated again,22,19,0.5,0.01,0,1,1,50,80,minutes,FALSE
