@@ -15,6 +15,7 @@ from .dt import lb_datetime_from_datetime
 
 
 
+
 def analysis_period_to_datetimes(
     analysis_period: AnalysisPeriod,
 ) -> pd.DatetimeIndex:
