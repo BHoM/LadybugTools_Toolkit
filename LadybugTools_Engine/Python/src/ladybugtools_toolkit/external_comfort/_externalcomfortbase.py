@@ -1,19 +1,20 @@
 """Base class for external comfort objects."""
+
 # pylint: disable=E0401
 import json
 from dataclasses import dataclass
 from pathlib import Path
 
-# pylint: enable=E0401
-from caseconverter import pascalcase
 import matplotlib.pyplot as plt
 import pandas as pd
+# pylint: enable=E0401
+from caseconverter import pascalcase
 from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
-
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
+
 from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case
@@ -21,17 +22,11 @@ from ..ladybug_extension.analysisperiod import describe_analysis_period
 from ..ladybug_extension.datacollection import collection_to_series
 from ..plot._heatmap import heatmap
 from ..plot._utci import utci_day_comfort_metrics, utci_heatmap_histogram
-from ..plot.colormaps import (
-    DBT_COLORMAP,
-    MRT_COLORMAP,
-    RH_COLORMAP,
-    UTCI_DISTANCE_TO_COMFORTABLE,
-    WS_COLORMAP,
-)
+from ..plot.colormaps import (DBT_COLORMAP, MRT_COLORMAP, RH_COLORMAP,
+                              UTCI_DISTANCE_TO_COMFORTABLE, WS_COLORMAP)
 from ._simulatebase import SimulationResult
-from .typology import Typology, Typologies
+from .typology import Typologies, Typology
 from .utci import distance_to_comfortable
-
 
 _ATTRIBUTES = [
     "dry_bulb_temperature",
@@ -86,11 +81,15 @@ class ExternalComfort:
 
         if not getattr(self, "dry_bulb_temperature"):
             setattr(
-                self, "dry_bulb_temperature", self.typology.dry_bulb_temperature(_epw)
-            )
+                self,
+                "dry_bulb_temperature",
+                self.typology.dry_bulb_temperature(_epw))
 
         if not getattr(self, "relative_humidity"):
-            setattr(self, "relative_humidity", self.typology.relative_humidity(_epw))
+            setattr(
+                self,
+                "relative_humidity",
+                self.typology.relative_humidity(_epw))
 
         if not getattr(self, "wind_speed"):
             setattr(self, "wind_speed", self.typology.wind_speed(_epw))
@@ -116,7 +115,13 @@ class ExternalComfort:
 
         # add some accessors for collections as series
         for attr in _ATTRIBUTES:
-            setattr(self, f"{attr}_series", collection_to_series(getattr(self, attr)))
+            setattr(
+                self,
+                f"{attr}_series",
+                collection_to_series(
+                    getattr(
+                        self,
+                        attr)))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.simulation_result}, {self.typology})"
@@ -142,7 +147,8 @@ class ExternalComfort:
     def from_dict(cls, d: dict) -> "ExternalComfort":
         """Create a dictionary from this object."""
         if isinstance(d["simulation_result"], dict):
-            d["simulation_result"] = SimulationResult.from_dict(d["simulation_result"])
+            d["simulation_result"] = SimulationResult.from_dict(
+                d["simulation_result"])
 
         if isinstance(d["typology"], dict):
             d["typology"] = Typology.from_dict(d["typology"])
@@ -239,8 +245,7 @@ class ExternalComfort:
         """Return a description of this external comfort object."""
         return (
             f"{self.simulation_result.description(include_shade_material=bool(self.typology.shelters))}"
-            f"\n{self.typology.identifier}"
-        )
+            f"\n{self.typology.identifier}")
 
     def to_dataframe(self) -> pd.DataFrame:
         """Return a dataframe of all data for this typology."""

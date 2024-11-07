@@ -6,7 +6,6 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
 from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from python_toolkit.bhom.analytics import bhom_analytics
 
 
@@ -78,9 +77,8 @@ def spatial_heatmap(
             )
 
     if levels is None:
-        levels = np.linspace(
-            min(np.amin(i) for i in values), max(np.amax(i) for i in values), 10
-        )
+        levels = np.linspace(min(np.amin(i) for i in values),
+                             max(np.amax(i) for i in values), 10)
 
     if xlims is None:
         xlims = [
@@ -127,7 +125,11 @@ def spatial_heatmap(
                     linewidths=contour_widths,
                 )
                 if clabels:
-                    ax.clabel(tcl, inline=1, fontsize="small", colors=contour_colors)
+                    ax.clabel(
+                        tcl,
+                        inline=1,
+                        fontsize="small",
+                        colors=contour_colors)
                 tcls.append(tcl)
 
     if highlight_pts is not None:
@@ -138,8 +140,10 @@ def spatial_heatmap(
         pt_size = (xlims[1] - xlims[0]) / 5
         for k, v in highlight_pts.items():
             ax.scatter(
-                triangulations[0].x[v], triangulations[0].y[v], s=pt_size, c="red"
-            )
+                triangulations[0].x[v],
+                triangulations[0].y[v],
+                s=pt_size,
+                c="red")
             ax.text(
                 triangulations[0].x[v] + (pt_size / 10),
                 triangulations[0].y[v],

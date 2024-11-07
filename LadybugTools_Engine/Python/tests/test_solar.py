@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from ladybugtools_toolkit.solar import Solar
 import pytest
+from ladybugtools_toolkit.solar import Solar
 
-from . import EPW_OBJ, EPW_FILE
+from . import EPW_FILE, EPW_OBJ
 
 
 def test_solar_from_epw():
@@ -31,14 +31,12 @@ def test_azimuths():
 def test_solar_calc():
     solar = Solar.from_epw(EPW_OBJ)
 
-    assert solar.detailed_irradiance_matrix(location=EPW_OBJ.location).shape == (
-        8760,
-        36,
-    )
-    assert solar.directional_irradiance_matrix(location=EPW_OBJ.location).shape == (
-        8760,
-        128,
-    )
+    assert solar.detailed_irradiance_matrix(
+        location=EPW_OBJ.location).shape == (
+        8760, 36, )
+    assert solar.directional_irradiance_matrix(
+        location=EPW_OBJ.location).shape == (
+        8760, 128, )
 
 
 def test_solar_plot():

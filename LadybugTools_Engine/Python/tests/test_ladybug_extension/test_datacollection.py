@@ -2,9 +2,7 @@ import pandas as pd
 import pytest
 from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
+    collection_from_series, collection_to_series)
 
 from .. import EPW_OBJ
 
@@ -17,9 +15,9 @@ SERIES_GOOD = pd.Series(
 
 def test_to_series():
     """_"""
-    assert collection_to_series(EPW_OBJ.dry_bulb_temperature).mean() == pytest.approx(
-        EPW_OBJ.dry_bulb_temperature.average, rel=0.01
-    )
+    assert collection_to_series(
+        EPW_OBJ.dry_bulb_temperature).mean() == pytest.approx(
+        EPW_OBJ.dry_bulb_temperature.average, rel=0.01)
 
 
 def test_from_series_good_1():

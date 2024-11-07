@@ -1,4 +1,5 @@
 """Methods for modifying single points in-situ."""
+
 from copy import copy  # pylint: disable=E0401
 
 import pandas as pd
@@ -62,10 +63,18 @@ class PointMitigation:
         # adjust values in sim res to contain values from point location
         sim_res = copy(simulation_result)
         sim_res.UnshadedMeanRadiantTemperature = self._point_mrt
-        setattr(getattr(sim_res.epw, "wind_speed"), "values", self._point_ws.values)
         setattr(
-            getattr(sim_res.epw, "relative_humidity"), "values", self._point_rh.values
-        )
+            getattr(
+                sim_res.epw,
+                "wind_speed"),
+            "values",
+            self._point_ws.values)
+        setattr(
+            getattr(
+                sim_res.epw,
+                "relative_humidity"),
+            "values",
+            self._point_rh.values)
         setattr(
             getattr(sim_res.epw, "dry_bulb_temperature"),
             "values",

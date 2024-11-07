@@ -1,12 +1,11 @@
 """Methods for plotting psychrometric charts."""
+
 # pylint: disable=E1101
 # pylint: disable=E0401
 import textwrap
 from dataclasses import dataclass, field
 from enum import Enum
 from warnings import warn
-
-# pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,14 +17,16 @@ from ladybug_geometry.geometry2d import LineSegment2D, Mesh2D, Polyline2D
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import Colormap
 from matplotlib.patches import Polygon
-
 from python_toolkit.bhom.analytics import bhom_analytics
-from ..ladybug_extension.analysisperiod import (
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
+
+from ..ladybug_extension.analysisperiod import (analysis_period_to_datetimes,
+                                                describe_analysis_period)
 from ..ladybug_extension.epw import EPW, epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
+
+# pylint: disable=E0401
+
+
 
 
 @bhom_analytics()
@@ -201,21 +202,38 @@ def psychrometric(
         patch_collection.set_array(values)
         return patch_collection
 
-    p = lb_mesh_to_patch_collection(psychart.colored_mesh, psychart.hour_values)
+    p = lb_mesh_to_patch_collection(
+        psychart.colored_mesh,
+        psychart.hour_values)
     fig, ax = plt.subplots(1, 1, figsize=(10, 7))
     collections = ax.add_collection(p)
 
     if wet_bulb:
         # add wet-bulb lines
         for i in psychart.wb_lines:
-            ax.plot(*np.array(i.to_array()).T, c="k", ls=":", lw=0.5, alpha=0.5)
-        for pt, txt in list(zip(*[psychart.wb_label_points, psychart.wb_labels])):
+            ax.plot(
+                *
+                np.array(
+                    i.to_array()).T,
+                c="k",
+                ls=":",
+                lw=0.5,
+                alpha=0.5)
+        for pt, txt in list(
+                zip(*[psychart.wb_label_points, psychart.wb_labels])):
             _x, _y = pt.to_array()
             ax.text(_x, _y, txt, ha="right", va="bottom", fontsize="x-small")
     else:
         # add enthalpy lines
         for i in psychart.enthalpy_lines:
-            ax.plot(*np.array(i.to_array()).T, c="k", ls=":", lw=0.5, alpha=0.5)
+            ax.plot(
+                *
+                np.array(
+                    i.to_array()).T,
+                c="k",
+                ls=":",
+                lw=0.5,
+                alpha=0.5)
         for pt, txt in list(
             zip(*[psychart.enthalpy_label_points, psychart.enthalpy_labels])
         ):
@@ -251,7 +269,13 @@ def psychrometric(
 
     # add x axis label
     _x, _y = psychart.x_axis_location.to_array()
-    ax.text(_x, _y - 1, psychart.x_axis_text, ha="left", va="top", fontsize="large")
+    ax.text(
+        _x,
+        _y - 1,
+        psychart.x_axis_text,
+        ha="left",
+        va="top",
+        fontsize="large")
 
     # add y axis label
     _x, _y = psychart.y_axis_location.to_array()
@@ -382,8 +406,7 @@ def psychrometric(
     # add legend
     keys = (
         "WS: Wind speed | WD: Wind direction | DBT: Dry-bulb temperature | WBT: Wet-bulb temperature\n"
-        "RH: Relative humidity | DPT: Dew-point temperature | h: Enthalpy | HR: Humidity ratio"
-    )
+        "RH: Relative humidity | DPT: Dew-point temperature | h: Enthalpy | HR: Humidity ratio")
     ax.text(
         1,
         -0.05,
@@ -453,14 +476,14 @@ def psychrometric(
         def polygon_area(xs: list[float], ys: list[float]) -> list[float]:
             """https://en.wikipedia.org/wiki/Centroid#Of_a_polygon"""
             # https://stackoverflow.com/a/30408825/7128154
-            return 0.5 * (np.dot(xs, np.roll(ys, 1)) - np.dot(ys, np.roll(xs, 1)))
+            return 0.5 * (np.dot(xs, np.roll(ys, 1)) -
+                          np.dot(ys, np.roll(xs, 1)))
 
         def polygon_centroid(xs: list[float], ys: list[float]) -> list[float]:
             """https://en.wikipedia.org/wiki/Centroid#Of_a_polygon"""
             xy = np.array([xs, ys])
-            c = np.dot(
-                xy + np.roll(xy, 1, axis=1), xs * np.roll(ys, 1) - np.roll(xs, 1) * ys
-            ) / (6 * polygon_area(xs, ys))
+            c = np.dot(xy + np.roll(xy, 1, axis=1), xs * np.roll(ys,
+                                                                 1) - np.roll(xs, 1) * ys) / (6 * polygon_area(xs, ys))
             return c
 
         def merge_polygon_data(poly_data):
@@ -555,7 +578,8 @@ def psychrometric(
                     psychro_polygons.strategy_parameters.time_constant,
                     0.01,
                 )
-                dat = dat[0] if len(dat) == 1 else poly_obj.create_collection(dat, name)
+                dat = dat[0] if len(
+                    dat) == 1 else poly_obj.create_collection(dat, name)
                 polygon_data.append(dat)
                 polygon_names.append(name)
                 ax.add_collection(
@@ -652,8 +676,7 @@ def psychrometric(
         if PassiveStrategy.PASSIVE_SOLAR_HEATING in psychro_polygons.strategies:
             warn(
                 f"{PassiveStrategy.PASSIVE_SOLAR_HEATING} assumes radiation from "
-                "skylights only, using global horizontal radiation."
-            )
+                "skylights only, using global horizontal radiation.")
             bal_t = (
                 psychro_polygons.strategy_parameters.balance_temperature
                 if PassiveStrategy.INTERNAL_HEAT_CAPTURE in psychro_polygons.strategies
@@ -669,7 +692,8 @@ def psychrometric(
             if sol_poly is not None:
                 name = PassiveStrategy.PASSIVE_SOLAR_HEATING.value
                 poly = line_objs_to_vertices(sol_poly)
-                dat = dat[0] if len(dat) == 1 else poly_obj.create_collection(dat, name)
+                dat = dat[0] if len(
+                    dat) == 1 else poly_obj.create_collection(dat, name)
                 polygon_data.append(dat)
                 polygon_names.append(name)
                 ax.add_collection(
@@ -705,7 +729,8 @@ def psychrometric(
         )
         if isinstance(polygon_data[0], BaseCollection):
             merged_vals = merge_polygon_data(polygon_data)
-            total_comf_data = poly_obj.create_collection(merged_vals, "Total Comfort")
+            total_comf_data = poly_obj.create_collection(
+                merged_vals, "Total Comfort")
             total_comfort = total_comf_data.average
         else:
             total_comf_data = 1 if sum(polygon_data) > 0 else 0

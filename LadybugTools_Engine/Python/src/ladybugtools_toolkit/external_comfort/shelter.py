@@ -1,15 +1,18 @@
 """Module for creating shelter objects."""
+
 # pylint: disable=E0401
 import json
 import warnings
 from enum import Enum
 from pathlib import Path
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
+
 from ._shelterbase import Shelter
+
+# pylint: enable=E0401
+
 
 
 class TreeShelter(Enum):
@@ -55,19 +58,22 @@ class TreeShelter(Enum):
             vals = np.stack(
                 [
                     np.where(
-                        (idx < pd.to_datetime(tree_config["regrowth_period"][0]))
-                        | (idx > pd.to_datetime(tree_config["drop_period"][1])),
+                        (idx < pd.to_datetime(
+                            tree_config["regrowth_period"][0])) | (
+                            idx > pd.to_datetime(
+                                tree_config["drop_period"][1])),
                         tree_config["porosity_bare"],
                         np.nan,
                     ),
                     np.where(
-                        (idx > pd.to_datetime(tree_config["regrowth_period"][1]))
-                        & (idx < pd.to_datetime(tree_config["drop_period"][0])),
+                        (idx > pd.to_datetime(
+                            tree_config["regrowth_period"][1])) & (
+                            idx < pd.to_datetime(
+                                tree_config["drop_period"][0])),
                         tree_config["porosity_leafed"],
                         np.nan,
                     ),
-                ]
-            )
+                ])
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=RuntimeWarning)
                 vals = np.nanmax(vals, axis=0)

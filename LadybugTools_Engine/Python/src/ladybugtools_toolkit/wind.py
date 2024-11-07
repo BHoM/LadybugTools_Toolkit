@@ -10,8 +10,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -27,25 +25,19 @@ from pandas.tseries.frequencies import to_offset
 from scipy.stats import weibull_min
 
 from .categorical.categories import BEAUFORT_CATEGORIES
-from .helpers import (
-    OpenMeteoVariable,
-    angle_from_north,
-    angle_to_vector,
-    cardinality,
-    circular_weighted_mean,
-    rolling_window,
-    scrape_meteostat,
-    scrape_openmeteo,
-    wind_speed_at_height,
-)
-from .ladybug_extension.analysisperiod import (
-    AnalysisPeriod,
-    analysis_period_to_boolean,
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
+from .helpers import (OpenMeteoVariable, angle_from_north, angle_to_vector,
+                      cardinality, circular_weighted_mean, rolling_window,
+                      scrape_meteostat, scrape_openmeteo, wind_speed_at_height)
+from .ladybug_extension.analysisperiod import (AnalysisPeriod,
+                                               analysis_period_to_boolean,
+                                               analysis_period_to_datetimes,
+                                               describe_analysis_period)
 from .plot._timeseries import timeseries
 from .plot.utilities import contrasting_color, format_polar_plot
+
+# pylint: enable=E0401
+
+
 
 
 @dataclass(init=True, eq=True, repr=True)
@@ -75,9 +67,8 @@ class Wind:
         if self.height_above_ground < 0.1:
             raise ValueError("Height above ground must be >= 0.1m.")
 
-        if not (
-            len(self.wind_speeds) == len(self.wind_directions) == len(self.datetimes)
-        ):
+        if not (len(self.wind_speeds) == len(
+                self.wind_directions) == len(self.datetimes)):
             raise ValueError(
                 "wind_speeds, wind_directions and datetimes must be the same length."
             )
@@ -104,7 +95,9 @@ class Wind:
 
         if np.any(self.wind_speeds < 0):
             raise ValueError("wind_speeds must be >= 0")
-        if np.any(self.wind_directions < 0) or np.any(self.wind_directions > 360):
+        if np.any(
+                self.wind_directions < 0) or np.any(
+                self.wind_directions > 360):
             raise ValueError("wind_directions must be within 0-360")
         self.wind_directions = self.wind_directions % 360
 
@@ -119,8 +112,7 @@ class Wind:
         return (
             f"{self.__class__.__name__}({min(self.datetimes):%Y-%m-%d} to "
             f"{max(self.datetimes):%Y-%m-%d}, n={len(self.datetimes)} @{self.freq}, "
-            f"@{self.height_above_ground}m) NO SOURCE"
-        )
+            f"@{self.height_above_ground}m) NO SOURCE")
 
     def __str__(self) -> str:
         """The string representation of the given object"""
@@ -506,8 +498,11 @@ class Wind:
     def wd(self) -> pd.Series:
         """Convenience accessor for wind directions as a time-indexed pd.Series object."""
         return pd.Series(
-            self.wind_directions, index=self.index, name="Wind Direction (degrees)"
-        ).sort_index(ascending=True, inplace=False)
+            self.wind_directions,
+            index=self.index,
+            name="Wind Direction (degrees)").sort_index(
+            ascending=True,
+            inplace=False)
 
     @property
     def df(self) -> pd.DataFrame:
@@ -615,12 +610,9 @@ class Wind:
         """
 
         warnings.warn(
-            (
-                "Resampling wind speeds and direction is generally not advisable. "
-                "When input directions are opposing, the average returned is likely inaccurate, "
-                "and the average speed does not include any outliers. USE WITH CAUTION!"
-            )
-        )
+            ("Resampling wind speeds and direction is generally not advisable. "
+             "When input directions are opposing, the average returned is likely inaccurate, "
+             "and the average speed does not include any outliers. USE WITH CAUTION!"))
 
         common_dt = pd.to_datetime("2000-01-01")
         f_a = common_dt + to_offset(self.freq)
@@ -630,7 +622,8 @@ class Wind:
 
         resampled_speeds = self.ws.resample(rule).mean()
         resampled_datetimes = resampled_speeds.index.tolist()
-        resampled_directions = self.wd.resample(rule).apply(circular_weighted_mean)
+        resampled_directions = self.wd.resample(
+            rule).apply(circular_weighted_mean)
 
         return Wind(
             wind_speeds=resampled_speeds.tolist(),
@@ -744,7 +737,8 @@ class Wind:
             return self
 
         if analysis_period.timestep != 1:
-            raise ValueError("The timestep of the analysis period must be 1 hour.")
+            raise ValueError(
+                "The timestep of the analysis period must be 1 hour.")
 
         # remove 29th Feb dates where present
         df = self.df
@@ -754,14 +748,14 @@ class Wind:
         possible_datetimes = [
             DateTime(dt.month, dt.day, dt.hour, dt.minute) for dt in df.index
         ]
-        lookup = dict(
-            zip(AnalysisPeriod().datetimes, analysis_period_to_boolean(analysis_period))
-        )
+        lookup = dict(zip(AnalysisPeriod().datetimes,
+                          analysis_period_to_boolean(analysis_period)))
         mask = [lookup[i] for i in possible_datetimes]
         df = df[mask]
 
         if len(df) == 0:
-            raise ValueError("No data remains within the given analysis_period filter.")
+            raise ValueError(
+                "No data remains within the given analysis_period filter.")
 
         return Wind.from_dataframe(
             df,
@@ -788,7 +782,8 @@ class Wind:
             return self
 
         if len(self.ws.values[mask]) == 0:
-            raise ValueError("No data remains within the given boolean filters.")
+            raise ValueError(
+                "No data remains within the given boolean filters.")
 
         return Wind(
             wind_speeds=self.ws.values[mask].tolist(),
@@ -852,8 +847,10 @@ class Wind:
         )
 
     def filter_by_direction(
-        self, left_angle: float = 0, right_angle: float = 360, inclusive: bool = True
-    ) -> "Wind":
+            self,
+            left_angle: float = 0,
+            right_angle: float = 360,
+            inclusive: bool = True) -> "Wind":
         """Filter the current object by wind direction, based on the angle as observed from a location.
 
         Args:
@@ -875,7 +872,8 @@ class Wind:
         if left_angle == 0 and right_angle == 360:
             return self
 
-        if (left_angle == right_angle) or (left_angle == 360 and right_angle == 0):
+        if (left_angle == right_angle) or (
+                left_angle == 360 and right_angle == 0):
             raise ValueError("Angle limits cannot be identical.")
 
         if left_angle > right_angle:
@@ -890,7 +888,8 @@ class Wind:
                 mask = (self.wd > left_angle) & (self.wd < right_angle)
 
         if len(self.ws.values[mask]) == 0:
-            raise ValueError("No data remains within the given direction filter.")
+            raise ValueError(
+                "No data remains within the given direction filter.")
 
         return Wind(
             wind_speeds=self.ws.values[mask].tolist(),
@@ -901,8 +900,10 @@ class Wind:
         )
 
     def filter_by_speed(
-        self, min_speed: float = 0, max_speed: float = 999, inclusive: bool = True
-    ) -> "Wind":
+            self,
+            min_speed: float = 0,
+            max_speed: float = 999,
+            inclusive: bool = True) -> "Wind":
         """Filter the current object by wind speed, based on given low-high limit values.
 
         Args:
@@ -989,7 +990,8 @@ class Wind:
             include_lowest=True,
         )
 
-        x = [tuple([i.left, i.right]) for i in categories.cat.categories.tolist()]
+        x = [tuple([i.left, i.right])
+             for i in categories.cat.categories.tolist()]
         bin_tuples = x[1:-1]
         bin_tuples.append((bin_tuples[-1][1], bin_tuples[0][0]))
 
@@ -1047,8 +1049,9 @@ class Wind:
 
         if isinstance(other_data, list | tuple | np.ndarray):
             other_data = pd.Series(
-                other_data, index=self.index, name="other" if name is None else name
-            )
+                other_data,
+                index=self.index,
+                name="other" if name is None else name)
 
         if isinstance(other_data, pd.Series):
             if not other_data.index.equals(self.index):
@@ -1080,9 +1083,8 @@ class Wind:
         # bin the other data
         categories = pd.cut(other_data, bins=other_bins, include_lowest=False)
 
-        bin_tuples = [
-            tuple([i.left, i.right]) for i in categories.cat.categories.tolist()
-        ]
+        bin_tuples = [tuple([i.left, i.right])
+                      for i in categories.cat.categories.tolist()]
 
         mapper = dict(
             zip(
@@ -1127,7 +1129,8 @@ class Wind:
         other_categories, _ = self.process_other_data(
             other_data=other_data, other_bins=other_bins
         )
-        direction_categories, _ = self.process_direction_data(directions=directions)
+        direction_categories, _ = self.process_direction_data(
+            directions=directions)
 
         return pd.concat([direction_categories, other_categories], axis=1)
 
@@ -1162,8 +1165,7 @@ class Wind:
             other_data=other_data, other_bins=other_bins
         )
         direction_categories, direction_bin_tuples = self.process_direction_data(
-            directions=directions
-        )
+            directions=directions)
 
         df = pd.concat([direction_categories, other_categories], axis=1)
 
@@ -1179,7 +1181,8 @@ class Wind:
             .astype(int)
         )
 
-        # re-add missing rows/columns to the dataframe which were not in the cut data
+        # re-add missing rows/columns to the dataframe which were not in the
+        # cut data
         for b in other_bin_tuples:
             if b not in df.columns:
                 df[b] = 0
@@ -1220,7 +1223,7 @@ class Wind:
         """
 
         binned = self.bin_data(directions=directions)
-        
+
         if ignore_calm:
             binned = binned.loc[self.ws > threshold]
 
@@ -1268,9 +1271,11 @@ class Wind:
             s = pd.Series(other_data, name=data_name, index=self.index)
 
         # group data
-        temp = s.groupby(df.iloc[:, 0], observed=True).quantile(percentiles).unstack()
+        temp = s.groupby(df.iloc[:, 0], observed=True).quantile(
+            percentiles).unstack()
 
-        # rename columns to be percentages - potentially unecessary but makes it clearer for users
+        # rename columns to be percentages - potentially unecessary but makes
+        # it clearer for users
         temp.columns = [f"{i:0.1%}" for i in temp.columns]
         temp.columns.name = s.name
 
@@ -1386,8 +1391,7 @@ class Wind:
             other_data=other_data
         )
         direction_categories, direction_bin_tuples = self.process_direction_data(
-            directions=directions
-        )
+            directions=directions)
 
         if other_data is None:
             other_data = self.ws
@@ -1397,11 +1401,8 @@ class Wind:
             mask = self.index.month == month
             meets = other_data[mask] > limit_value
             temp = pd.concat([direction_categories[mask], meets], axis=1)
-            exceedance.append(
-                (temp.iloc[:, 1].groupby([temp.iloc[:, 0]]).sum() / mask.sum()).rename(
-                    calendar.month_abbr[month]
-                )
-            )
+            exceedance.append((temp.iloc[:, 1].groupby([temp.iloc[:, 0]]).sum(
+            ) / mask.sum()).rename(calendar.month_abbr[month]))
 
         df = pd.concat(exceedance, axis=1)
         df.columns.name = f"{other_categories.name} > {limit_value}"
@@ -1442,7 +1443,8 @@ class Wind:
             .unstack()
             .T
         )
-        wind_speeds.columns = [calendar.month_abbr[i] for i in wind_speeds.columns]
+        wind_speeds.columns = [calendar.month_abbr[i]
+                               for i in wind_speeds.columns]
 
         df = pd.concat(
             [wind_directions, wind_speeds], axis=1, keys=["direction", "speed"]
@@ -1476,8 +1478,10 @@ class Wind:
             if prevailing_angle[0] < prevailing_angle[1]
             else cardinality(0, directions=32)
         )
-        prevailing_mean = self.ws.values[binned.iloc[:, 0] == prevailing_angle].mean()
-        prevailing_max = self.ws.values[binned.iloc[:, 0] == prevailing_angle].max()
+        prevailing_mean = self.ws.values[binned.iloc[:, 0]
+                                         == prevailing_angle].mean()
+        prevailing_max = self.ws.values[binned.iloc[:, 0]
+                                        == prevailing_angle].max()
 
         # pylint: disable=line-too-long
         return_strings = []
@@ -1504,42 +1508,56 @@ class Wind:
             )
         else:
             return_strings.append(
-                f"Peak wind speeds were observed at {self.ws.idxmax()}, reaching {self.ws.max():.2f}m/s from {self.wd.loc[self.ws.idxmax()]}°.",
-            )
+                f"Peak wind speeds were observed at {self.ws.idxmax()}, reaching {self.ws.max():.2f}m/s from {self.wd.loc[self.ws.idxmax()]}°.", )
 
         return_strings.append(
             f"{self.calm():.2%} of the time, wind speeds are calm (≤ 1e-10m/s)."
         )
         return return_strings
         # pylint: enable=line-too-long
-    
-    def prevailing_wind_speeds(self, n: int=1, directions: int=36, ignore_calm: bool=True, threshold: float=1e-10) -> tuple[list[pd.Series], list[tuple[float, float]]]:
+
+    def prevailing_wind_speeds(
+        self,
+        n: int = 1,
+        directions: int = 36,
+        ignore_calm: bool = True,
+        threshold: float = 1e-10,
+    ) -> tuple[list[pd.Series], list[tuple[float, float]]]:
         """Gets the wind speeds for the prevailing directions
-        
+
         Args:
             n (int):
                 Number of prevailing directions to return. Defaults to 1
-            
+
             directions (int):
                 Number of direction bins to use when calculating the prevailing directions. Defaults to 36
-            
+
             ignore_calm (bool):
                 Whether to ignore calm hours when getting the prevailing directions. Defaults to True
-                
+
             threshold (float):
                 The threshold for calm hours. Defaults to 1e-10
-        
+
         Returns:
             (list[pandas.Series], list[(float, float)]):
                 Tuple containing a list of time-indexed series containing wind speed data for each prevailing direction, from most to least prevailing,
                 and a list of wind directions corresponding to the serieses.
         """
-        prevailing_directions = self.prevailing(n=n, directions=directions, ignore_calm=ignore_calm, threshold=threshold)
+        prevailing_directions = self.prevailing(
+            n=n,
+            directions=directions,
+            ignore_calm=ignore_calm,
+            threshold=threshold)
 
-        prevailing_wind_speeds = [self.ws.loc[self.bin_data(directions=directions)["Wind Direction (degrees)"] == direction] for direction in prevailing_directions]
+        prevailing_wind_speeds = [
+            self.ws.loc[
+                self.bin_data(directions=directions)["Wind Direction (degrees)"]
+                == direction
+            ]
+            for direction in prevailing_directions
+        ]
 
         return (prevailing_wind_speeds, prevailing_directions)
-
 
     def weibull_pdf(self) -> tuple[float]:
         """Calculate the parameters of an exponentiated Weibull continuous random variable.
@@ -1560,7 +1578,8 @@ class Wind:
         try:
             return weibull_min.fit(ws.tolist())
         except ValueError as exc:
-            warnings.warn(f"Not enough data to calculate Weibull parameters.\n{exc}")
+            warnings.warn(
+                f"Not enough data to calculate Weibull parameters.\n{exc}")
             return (np.nan, np.nan, np.nan)  # type: ignore
 
     def weibull_directional(self, directions: int = 36) -> pd.DataFrame:
@@ -1663,8 +1682,7 @@ class Wind:
         ):
             raise ValueError(
                 "The wind_speeds and wind_directions must cover all months of the "
-                "year, and all hours of the day, and align with each other."
-            )
+                "year, and all hours of the day, and align with each other.")
 
         cmap = kwargs.pop("cmap", "YlGnBu")
         vmin = kwargs.pop("vmin", _wind_speeds.values.min())
@@ -1677,7 +1695,7 @@ class Wind:
         _x = -np.sin(np.deg2rad(_wind_directions.values))
         _y = -np.cos(np.deg2rad(_wind_directions.values))
         direction_matrix = angle_from_north([_x, _y])
-        if (show_arrows):
+        if show_arrows:
             ax.quiver(
                 np.arange(1, 13, 1) - 0.5,
                 np.arange(0, 24, 1) + 0.5,
@@ -1717,7 +1735,8 @@ class Wind:
                         fontsize="xx-small",
                     )
         ax.set_xticks(np.arange(1, 13, 1) - 0.5)
-        ax.set_xticklabels([calendar.month_abbr[i] for i in np.arange(1, 13, 1)])
+        ax.set_xticklabels([calendar.month_abbr[i]
+                           for i in np.arange(1, 13, 1)])
         ax.set_yticks(np.arange(0, 24, 1) + 0.5)
         ax.set_yticklabels([f"{i:02d}:00" for i in np.arange(0, 24, 1)])
         for label in ax.yaxis.get_ticklabels()[1::2]:
@@ -1791,7 +1810,13 @@ class Wind:
 
         for spine in ["top", "right"]:
             ax.spines[spine].set_visible(False)
-        ax.grid(visible=True, which="major", axis="both", ls="--", lw=1, alpha=0.25)
+        ax.grid(
+            visible=True,
+            which="major",
+            axis="both",
+            ls="--",
+            lw=1,
+            alpha=0.25)
 
         ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
 
@@ -1864,14 +1889,19 @@ class Wind:
         if isinstance(colors, str):
             colors = plt.get_cmap(colors)
         if isinstance(colors, Colormap):
-            colors = [to_hex(colors(i)) for i in np.linspace(0, 1, len(binned.columns))]
+            colors = [
+                to_hex(
+                    colors(i)) for i in np.linspace(
+                    0, 1, len(
+                        binned.columns))]
         if isinstance(colors, list | tuple):
             if len(colors) != len(binned.columns):
                 raise ValueError(
                     f"colors must be a list of length {len(binned.columns)}, or a colormap."
                 )
 
-        # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
+        # HACK start - a fix introduced here to ensure that bar ends are curved
+        # when using a polar plot.
         fig = plt.figure()
         rect = [0.1, 0.1, 0.8, 0.8]
         hist_ax = plt.Axes(fig, rect)
@@ -1901,7 +1931,13 @@ class Wind:
                 color_list.append(colors[n])
                 y += val
             if label:
-                ax.text(x, y, f"{y:0.1%}", ha="center", va="center", fontsize="x-small")
+                ax.text(
+                    x,
+                    y,
+                    f"{y:0.1%}",
+                    ha="center",
+                    va="center",
+                    fontsize="x-small")
             x += theta_width
         local_cmap = ListedColormap(np.array(color_list).flatten())
         pc = PatchCollection(patches, cmap=local_cmap)
@@ -1997,14 +2033,22 @@ class Wind:
         _values = np.roll(hist.values, 1, axis=0).T
 
         pc = ax.pcolor(_values, cmap=cmap, vmin=vmin, vmax=vmax)
-        ax.set_xticks(np.arange(0.5, len(hist.index), 1), labels=_xticks, rotation=90)
+        ax.set_xticks(np.arange(0.5, len(hist.index), 1),
+                      labels=_xticks, rotation=90)
         ax.set_xlabel(hist.index.name)
-        ax.set_yticks(np.arange(0.5, len(hist.columns), 1), labels=hist.columns)
+        ax.set_yticks(
+            np.arange(
+                0.5, len(
+                    hist.columns), 1), labels=hist.columns)
         ax.set_ylabel(hist.columns.name)
 
-        cb = plt.colorbar(pc, pad=0.01, label="Density" if density else "Count")
+        cb = plt.colorbar(
+            pc,
+            pad=0.01,
+            label="Density" if density else "Count")
         if density:
-            cb.ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
+            cb.ax.yaxis.set_major_formatter(
+                mticker.PercentFormatter(1, decimals=1))
         cb.outline.set_visible(False)
 
         ax.set_title(textwrap.fill(f"{self.source}", 75))

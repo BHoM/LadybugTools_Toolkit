@@ -3,12 +3,8 @@ from ladybug.epw import EPW
 from ladybug_comfort.collection.utci import UTCI
 from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES
 from ladybugtools_toolkit.external_comfort.utci import (
-    compare_monthly_utci,
-    distance_to_comfortable,
-    feasible_utci_limits,
-    shade_benefit_category,
-    utci,
-)
+    compare_monthly_utci, distance_to_comfortable, feasible_utci_limits,
+    shade_benefit_category, utci)
 
 from .. import EPW_FILE
 
@@ -73,8 +69,7 @@ def test_shade_benefit_category():
 def test_distance_to_comfortable():
     """_"""
     assert distance_to_comfortable(LB_UTCI_COLLECTION).average == pytest.approx(
-        5.228092141408169, rel=0.01
-    )
+        5.228092141408169, rel=0.01)
 
 
 def test_feasible_utci_limits():

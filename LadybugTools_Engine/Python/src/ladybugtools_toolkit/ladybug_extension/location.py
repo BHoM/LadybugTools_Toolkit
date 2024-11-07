@@ -1,7 +1,7 @@
 """Methods for manipulating Ladybug Location objects."""
+
 import numpy as np
 from ladybug.location import Location
-
 from python_toolkit.bhom.analytics import bhom_analytics
 
 
@@ -41,44 +41,32 @@ def average_location(
     if len(locations) == 1:
         return locations[0]
 
-    lat = (
-        np.average(
-            np.array([loc.latitude for loc in locations]) + 1000, weights=weights
-        )
-        - 1000
-    )
-    lon = (
-        np.average(
-            np.array([loc.longitude for loc in locations]) + 1000, weights=weights
-        )
-        - 1000
-    )
-    elv = np.average(np.array([loc.elevation for loc in locations]), weights=weights)
+    lat = (np.average(np.array(
+        [loc.latitude for loc in locations]) + 1000, weights=weights) - 1000)
+    lon = (np.average(np.array(
+        [loc.longitude for loc in locations]) + 1000, weights=weights) - 1000)
+    elv = np.average(
+        np.array([loc.elevation for loc in locations]), weights=weights)
 
     state = "|".join(
         [
-            loc.state if not loc.state in ["", "-", None] else "NoState"
+            loc.state if loc.state not in ["", "-", None] else "NoState"
             for loc in locations
         ]
     )
-    city = "|".join(
-        [loc.city if not loc.city in ["", "-", None] else "NoCity" for loc in locations]
-    )
+    city = "|".join([loc.city if loc.city not in [
+        "", "-", None] else "NoCity" for loc in locations])
     country = "|".join(
         [
-            loc.country if not loc.country in ["", "-", None] else "NoCountry"
+            loc.country if loc.country not in ["", "-", None] else "NoCountry"
             for loc in locations
         ]
     )
-    station_id = "|".join(
-        [
-            loc.station_id if not loc.station_id in ["", "-", None] else "NoStationId"
-            for loc in locations
-        ]
-    )
+    station_id = "|".join([loc.station_id if loc.station_id not in [
+        "", "-", None] else "NoStationId" for loc in locations])
     source = "|".join(
         [
-            loc.source if not loc.source in ["", "-", None] else "NoSource"
+            loc.source if loc.source not in ["", "-", None] else "NoSource"
             for loc in locations
         ]
     )

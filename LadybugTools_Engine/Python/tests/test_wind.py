@@ -1,14 +1,16 @@
-import matplotlib.pyplot as plt
-import pandas as pd
 from pathlib import Path
 from tempfile import gettempdir
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pytest
 from ladybug.epw import AnalysisPeriod
-from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.ladybug_extension.datacollection import \
+    collection_to_series
 from ladybugtools_toolkit.wind import Wind
 
-from . import EPW_OBJ, EPW_FILE
+from . import EPW_FILE, EPW_OBJ
 
 TEST_WIND = Wind.from_epw(EPW_OBJ)
 
@@ -152,7 +154,12 @@ def test_wind_from_uv():
     """_"""
     u, v = TEST_WIND.uv.values.T
     with pytest.warns(UserWarning):
-        assert isinstance(Wind.from_uv(u=u, v=v, datetimes=TEST_WIND.datetimes), Wind)
+        assert isinstance(
+            Wind.from_uv(
+                u=u,
+                v=v,
+                datetimes=TEST_WIND.datetimes),
+            Wind)
 
 
 def test_calm():
@@ -188,9 +195,9 @@ def test_prevailing():
 def test_probabilities():
     """_"""
     assert TEST_WIND.probabilities().columns.tolist() == ["50.0%", "95.0%"]
-    assert TEST_WIND.probabilities(directions=4).values.mean() == pytest.approx(
-        5.0875, rel=0.01
-    )
+    assert TEST_WIND.probabilities(
+        directions=4).values.mean() == pytest.approx(
+        5.0875, rel=0.01)
 
 
 def test_stats():
@@ -198,7 +205,9 @@ def test_stats():
     assert TEST_WIND.max_speed == 17.5
     assert TEST_WIND.min_speed == 0
     assert TEST_WIND.mean_speed() == pytest.approx(0.43, rel=0.01)
-    assert TEST_WIND.mean_speed(remove_calm=True) == pytest.approx(0.46, rel=0.01)
+    assert TEST_WIND.mean_speed(
+        remove_calm=True) == pytest.approx(
+        0.46, rel=0.01)
     assert TEST_WIND.median_speed == 3.1
     assert TEST_WIND.percentile(0.25) == 1.5
 
@@ -224,13 +233,12 @@ def test_directional_factors():
 
 def test_filters():
     """_"""
-    assert (
-        len(
-            TEST_WIND.filter_by_analysis_period(AnalysisPeriod(st_month=3, end_month=5))
-        )
-        == 2208
-    )
-    assert len(TEST_WIND.filter_by_direction(left_angle=350, right_angle=94)) == 3185
+    assert (len(TEST_WIND.filter_by_analysis_period(
+        AnalysisPeriod(st_month=3, end_month=5))) == 2208)
+    assert len(
+        TEST_WIND.filter_by_direction(
+            left_angle=350,
+            right_angle=94)) == 3185
     assert len(TEST_WIND.filter_by_speed(min_speed=0.5, max_speed=4.5)) == 5806
     assert (
         len(
@@ -240,10 +248,8 @@ def test_filters():
         )
         == 351
     )
-    assert (
-        len(TEST_WIND.filter_by_time(months=[3, 4], hours=[4, 6, 19, 21], years=[2017]))
-        == 244
-    )
+    assert (len(TEST_WIND.filter_by_time(
+        months=[3, 4], hours=[4, 6, 19, 21], years=[2017])) == 244)
 
 
 def test_plot_windrose():

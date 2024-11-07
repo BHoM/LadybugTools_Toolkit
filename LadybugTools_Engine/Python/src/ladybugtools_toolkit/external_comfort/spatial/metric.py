@@ -1,15 +1,18 @@
 """Methods for handling SpatialMetric results for spatial comfort assessments."""
+
 # pylint: disable=E0401
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 from ...categorical.categories import UTCI_DEFAULT_CATEGORIES
+
+# pylint: enable=E0401
+
+
 
 UTCI_BOUNDARYNORM = UTCI_DEFAULT_CATEGORIES.norm
 UTCI_COLORMAP = UTCI_DEFAULT_CATEGORIES.cmap
@@ -111,7 +114,8 @@ class SpatialMetric(Enum):
         try:
             return cases[self.value]
         except KeyError as exc:
-            raise KeyError(f"tricontourf_kwargs not defined for {self}.") from exc
+            raise KeyError(
+                f"tricontourf_kwargs not defined for {self}.") from exc
 
     def tricontour_kwargs(self) -> dict[str, Any]:
         """kwargs for tricontour plot formatting of the given SpatialMetric."""
@@ -166,7 +170,8 @@ class SpatialMetric(Enum):
         try:
             return cases[self.value]
         except KeyError as exc:
-            raise KeyError(f"tricontourf_kwargs not defined for {self}.") from exc
+            raise KeyError(
+                f"tricontourf_kwargs not defined for {self}.") from exc
 
     def description(self) -> str:
         """Return the human readable description of this metric."""
@@ -193,7 +198,8 @@ class SpatialMetric(Enum):
         try:
             return cases[self.value]
         except KeyError as exc:
-            raise KeyError(f"A description is not defined for {self}.") from exc
+            raise KeyError(
+                f"A description is not defined for {self}.") from exc
 
     def is_temporal(self) -> bool:
         """Return False if the metric chosen is not temporal."""

@@ -6,13 +6,15 @@ import warnings
 from pathlib import Path
 from typing import Callable
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.sql import SQLiteResult
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..ladybug_extension.datacollection import collection_to_series
+
+# pylint: enable=E0401
+
 
 
 def _load_files(func: Callable, files: list[Path]) -> pd.DataFrame:
@@ -48,7 +50,9 @@ def _load_files(func: Callable, files: list[Path]) -> pd.DataFrame:
     return pd.concat([func(i) for i in files], axis=1).sort_index(axis=1)
 
 
-def _load_ill_file(ill_file: Path, sun_up_hours_file: Path = None) -> pd.DataFrame:
+def _load_ill_file(
+        ill_file: Path,
+        sun_up_hours_file: Path = None) -> pd.DataFrame:
     """Load a Radiance .ill file and return a DataFrame with the data.
 
     Args:
@@ -136,8 +140,16 @@ def _load_pts_file(pts_file: Path) -> pd.DataFrame:
     """
     pts_file = Path(pts_file)
     df = pd.read_csv(
-        pts_file, header=None, names=["x", "y", "z", "vx", "vy", "vz"], sep=r"\s+"
-    )
+        pts_file,
+        header=None,
+        names=[
+            "x",
+            "y",
+            "z",
+            "vx",
+            "vy",
+            "vz"],
+        sep=r"\s+")
     df.columns = pd.MultiIndex.from_product([[pts_file.stem], df.columns])
     return df
 
@@ -262,7 +274,9 @@ def load_sql(sql_files: Path | list[Path]) -> pd.DataFrame:
 
 
 @bhom_analytics()
-def load_sun_up_hours(sun_up_hours_file: Path, year: int = 2017) -> pd.DatetimeIndex:
+def load_sun_up_hours(
+        sun_up_hours_file: Path,
+        year: int = 2017) -> pd.DatetimeIndex:
     """Load a HB-Radiance generated sun-up-hours.txt file and return a DatetimeIndex with the data.
 
     Args:
@@ -277,7 +291,10 @@ def load_sun_up_hours(sun_up_hours_file: Path, year: int = 2017) -> pd.DatetimeI
     """
 
     sun_up_hours_file = Path(sun_up_hours_file)
-    float_hours = pd.read_csv(sun_up_hours_file, header=None, index_col=None).squeeze()
+    float_hours = pd.read_csv(
+        sun_up_hours_file,
+        header=None,
+        index_col=None).squeeze()
     start_date = datetime.datetime(year, 1, 1, 0, 0, 0)
     timedeltas = [datetime.timedelta(hours=i) for i in float_hours]
     index = pd.DatetimeIndex([start_date + i for i in timedeltas])
@@ -303,16 +320,19 @@ def make_annual(df: pd.DataFrame) -> pd.DataFrame:
     year = df.index[0].year
     freq = pd.infer_freq(
         [
-            datetime.datetime(year=year, month=1, day=1, hour=i.hour, minute=i.minute)
-            for i in np.unique(df.index.time)
-        ]
-    )
+            datetime.datetime(
+                year=year,
+                month=1,
+                day=1,
+                hour=i.hour,
+                minute=i.minute) for i in np.unique(
+                df.index.time)])
     minutes_of_hour = df.index.minute.unique().min()
     df2 = pd.DataFrame(
         index=pd.date_range(
-            start=f"{year}-01-01 00:{minutes_of_hour}:00", freq=freq, periods=8760
-        )
-    )
+            start=f"{year}-01-01 00:{minutes_of_hour}:00",
+            freq=freq,
+            periods=8760))
     df_reindexed = pd.concat([df2, df], axis=1)
     try:
         df_reindexed.columns = pd.MultiIndex.from_tuples(df_reindexed.columns)

@@ -1,13 +1,7 @@
-﻿from ladybug_geometry.geometry3d import Vector3D, Point3D, Plane
-
+﻿from ladybug_geometry.geometry3d import Plane, Point3D, Vector3D
 from ladybugtools_toolkit.honeybee_extension.model import (
-    plane_intersections,
-    HbModelGeometry,
-    linesegments_to_polycollection,
-    slice_geometry,
-    slice_model,
-    PolyCollection,
-)
+    HbModelGeometry, PolyCollection, linesegments_to_polycollection,
+    plane_intersections, slice_geometry, slice_model)
 from matplotlib import pyplot as plt
 
 from .. import TEST_DAYLIGHT_MODEL
@@ -64,11 +58,14 @@ def test_linesegments_to_polycollection():
 def test_model_get_geometry():
     """_"""
 
-    assert len(HbModelGeometry.AIRBOUNDARY.get_geometry(TEST_DAYLIGHT_MODEL)) == 0
-    assert len(HbModelGeometry.APERTURE.get_geometry(TEST_DAYLIGHT_MODEL)) == 32
+    assert len(HbModelGeometry.AIRBOUNDARY.get_geometry(
+        TEST_DAYLIGHT_MODEL)) == 0
+    assert len(HbModelGeometry.APERTURE.get_geometry(
+        TEST_DAYLIGHT_MODEL)) == 32
     assert len(HbModelGeometry.DOOR.get_geometry(TEST_DAYLIGHT_MODEL)) == 0
     assert len(HbModelGeometry.FLOOR.get_geometry(TEST_DAYLIGHT_MODEL)) == 8
-    assert len(HbModelGeometry.ROOFCEILING.get_geometry(TEST_DAYLIGHT_MODEL)) == 8
+    assert len(HbModelGeometry.ROOFCEILING.get_geometry(
+        TEST_DAYLIGHT_MODEL)) == 8
     assert len(HbModelGeometry.SHADE.get_geometry(TEST_DAYLIGHT_MODEL)) == 192
     assert len(HbModelGeometry.WALL.get_geometry(TEST_DAYLIGHT_MODEL)) == 32
 

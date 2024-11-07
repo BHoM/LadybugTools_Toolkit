@@ -6,26 +6,27 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datacollection import (
-    BaseCollection,
-    HourlyContinuousCollection,
-    MonthlyCollection,
-)
+from ladybug.datacollection import (BaseCollection, HourlyContinuousCollection,
+                                    MonthlyCollection)
 from ladybug.datatype.angle import Angle
 from ladybug.dt import DateTime
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import circular_weighted_mean
-from .analysisperiod import analysis_period_to_datetimes
-from .analysisperiod import describe_analysis_period
+from .analysisperiod import (analysis_period_to_datetimes,
+                             describe_analysis_period)
 from .header import header_from_string, header_to_string
 
+# pylint: enable=E0401
 
-def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
+
+
+def collection_to_series(
+        collection: BaseCollection,
+        name: str = None) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
 
     Args:
@@ -75,7 +76,8 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
                 )
         else:
             if len(series.index) != 8760:
-                raise ValueError("The series must have 8760 rows for non-leap years.")
+                raise ValueError(
+                    "The series must have 8760 rows for non-leap years.")
 
         return HourlyContinuousCollection(
             header=header,
@@ -122,7 +124,8 @@ def percentile(
         )
 
     # check if any collections input are angular, in which case, fail
-    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
+    if ("angle" in series_name.lower()) or (
+            "direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
 
     return collection_from_series(
@@ -148,10 +151,12 @@ def minimum(collections: list[BaseCollection]) -> BaseCollection:
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
-        raise ValueError('You cannot get the "minimum" across non-alike datatypes.')
+        raise ValueError(
+            'You cannot get the "minimum" across non-alike datatypes.')
 
     # check if any collections input are angular, in which case, fail
-    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
+    if ("angle" in series_name.lower()) or (
+            "direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
     return collection_from_series(df.min(axis=1).rename(series_name))
 
@@ -174,10 +179,12 @@ def maximum(collections: list[BaseCollection]) -> BaseCollection:
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
-        raise ValueError('You cannot get the "maximum" across non-alike datatypes.')
+        raise ValueError(
+            'You cannot get the "maximum" across non-alike datatypes.')
 
     # check if any collections input are angular, in which case, fail
-    if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
+    if ("angle" in series_name.lower()) or (
+            "direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
     return collection_from_series(df.max(axis=1).rename(series_name))
 
@@ -282,14 +289,8 @@ def summarise_collection(
 
     # common values
     _most_common, _most_common_counts = series.value_counts().reset_index().values.T
-    _most_common_str = (
-        " and ".join(
-            f"{unit}, ".join([f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(
-                ", ", 1
-            )
-        )
-        + unit
-    )
+    _most_common_str = (" and ".join(f"{unit}, ".join(
+        [f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(", ", 1)) + unit)
     _most_common_counts_str = (
         " and ".join(
             ", ".join(_most_common_counts[:_n_common].astype(int).astype(str)).rsplit(
@@ -307,30 +308,25 @@ def summarise_collection(
         if rate_of_change:
             descriptions.append(
                 f"Cumulative total {name} for {period} is "
-                f"{series.sum():,.0f}{collection.to_time_rate_of_change().header.unit}."
-            )
+                f"{series.sum():,.0f}{collection.to_time_rate_of_change().header.unit}.")
 
         # agg months
         _month_mean = series.resample("MS").mean()
         descriptions.append(
             f"The month with the lowest mean {name} is "
-            f"{_month_mean.idxmin():%B}, with a value of {_month_mean.min():,.1f}{unit}."
-        )
+            f"{_month_mean.idxmin():%B}, with a value of {_month_mean.min():,.1f}{unit}.")
         descriptions.append(
             f"The month with the highest mean {name} is "
-            f"{_month_mean.idxmax():%B}, with a value of {_month_mean.max():,.1f}{unit}."
-        )
+            f"{_month_mean.idxmax():%B}, with a value of {_month_mean.max():,.1f}{unit}.")
 
         # agg times
         _time_mean = series.groupby(series.index.time).mean()
         descriptions.append(
             f"The time when the highest mean {name} typically occurs "
-            f"is {_time_mean.idxmax():%H:%M}, with a value of {_time_mean.max():,.1f}{unit}."
-        )
+            f"is {_time_mean.idxmax():%H:%M}, with a value of {_time_mean.max():,.1f}{unit}.")
         descriptions.append(
             f"The time when the lowest mean {name} typically occurs "
-            f"is {_time_mean.idxmin():%H:%M}, with a mean value of {_time_mean.min():,.1f}{unit}."
-        )
+            f"is {_time_mean.idxmin():%H:%M}, with a mean value of {_time_mean.min():,.1f}{unit}.")
 
         # diurnal
         _month_grp = series.resample("MS")
@@ -341,14 +337,12 @@ def summarise_collection(
             f"The month when the largest range of {name} typically occurs "
             f"is {_month_range_month_avg.idxmax():%B}, with values between "
             f"{_month_grp_min.loc[_month_range_month_avg.idxmax()]:,.1f}{unit} "
-            f"and {_month_grp_max.loc[_month_range_month_avg.idxmax()]:,.1f}{unit}."
-        )
+            f"and {_month_grp_max.loc[_month_range_month_avg.idxmax()]:,.1f}{unit}.")
         descriptions.append(
             f"The month when the smallest range of {name} typically occurs "
             f"is {_month_range_month_avg.idxmin():%B}, with values between "
             f"{_month_grp_min.loc[_month_range_month_avg.idxmin()]:,.1f}{unit} "
-            f"and {_month_grp_max.loc[_month_range_month_avg.idxmin()]:,.1f}{unit}."
-        )
+            f"and {_month_grp_max.loc[_month_range_month_avg.idxmin()]:,.1f}{unit}.")
     # pylint: enable=C0301
     return descriptions
 
@@ -385,7 +379,8 @@ def average(
         weights = np.ones(len(collections)) / len(collections)
     weights = np.array(weights)
     if len(weights) != len(collections):
-        raise ValueError("The number of weights must match the number of collections.")
+        raise ValueError(
+            "The number of weights must match the number of collections.")
     if (weights < 0).sum():
         raise ValueError("Weights must be positive.")
 
@@ -443,12 +438,12 @@ def to_hourly(
         f"{series.index[0].year}-01-01", periods=8760, freq="h"
     )
     series_annual = series.reindex(annual_hourly_index)
-    series_annual[series_annual.index[-1]] = series_annual[series_annual.index[0]]
+    series_annual[series_annual.index[-1]
+                  ] = series_annual[series_annual.index[0]]
 
     return HourlyContinuousCollection(
-        header=collection.header,
-        values=series_annual.interpolate(method=interpolation_methods[method]).values,
-    )
+        header=collection.header, values=series_annual.interpolate(
+            method=interpolation_methods[method]).values, )
 
 
 @bhom_analytics()

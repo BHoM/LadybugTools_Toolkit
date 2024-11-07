@@ -1,43 +1,21 @@
-from datetime import timedelta
 import warnings  # pylint: disable=E0401
-
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
 import pytest
 from ladybugtools_toolkit.helpers import (
-    air_pressure_at_height,
-    AnalysisPeriod,
-    angle_from_cardinal,
-    angle_from_north,
-    cardinality,
-    chunks,
-    circular_weighted_mean,
-    decay_rate_smoother,
-    DecayMethod,
-    default_analysis_periods,
-    default_combined_analysis_periods,
-    default_hour_analysis_periods,
-    default_month_analysis_periods,
-    dry_bulb_temperature_at_height,
-    epw_wind_vectors,
-    evaporative_cooling_effect_collection,
-    evaporative_cooling_effect,
-    month_hour_binned_series,
-    OpenMeteoVariable,
-    proximity_decay,
-    radiation_at_height,
-    remove_leap_days,
-    rolling_window,
-    sanitise_string,
-    scrape_openmeteo,
-    sunrise_sunset,
-    target_wind_speed_collection,
-    temperature_at_height,
-    timedelta_tostring,
-    validate_timeseries,
-    wind_speed_at_height,
-)
+    AnalysisPeriod, DecayMethod, OpenMeteoVariable, air_pressure_at_height,
+    angle_from_cardinal, angle_from_north, cardinality, chunks,
+    circular_weighted_mean, decay_rate_smoother, default_analysis_periods,
+    default_combined_analysis_periods, default_hour_analysis_periods,
+    default_month_analysis_periods, dry_bulb_temperature_at_height,
+    epw_wind_vectors, evaporative_cooling_effect,
+    evaporative_cooling_effect_collection, month_hour_binned_series,
+    proximity_decay, radiation_at_height, remove_leap_days, rolling_window,
+    sanitise_string, scrape_openmeteo, sunrise_sunset,
+    target_wind_speed_collection, temperature_at_height, timedelta_tostring,
+    validate_timeseries, wind_speed_at_height)
 
 from . import EPW_OBJ
 
@@ -58,12 +36,10 @@ def test_openmeteo_variable():
     assert OpenMeteoVariable.TEMPERATURE_2M.target_unit == "C"
     assert OpenMeteoVariable.TEMPERATURE_2M.target_multiplier == 1
     assert OpenMeteoVariable.TEMPERATURE_2M.openmeteo_name == "temperature_2m"
-    assert (
-        OpenMeteoVariable.TEMPERATURE_2M.target_table_name == "Dry Bulb Temperature (C)"
-    )
-    assert (
-        OpenMeteoVariable.TEMPERATURE_2M.openmeteo_table_name == "temperature_2m (°C)"
-    )
+    assert (OpenMeteoVariable.TEMPERATURE_2M.target_table_name ==
+            "Dry Bulb Temperature (C)")
+    assert (OpenMeteoVariable.TEMPERATURE_2M.openmeteo_table_name ==
+            "temperature_2m (°C)")
     assert OpenMeteoVariable.TEMPERATURE_2M.convert(1) == 1
 
 
@@ -145,9 +121,15 @@ def test_chunks():
 def test_radiation_at_height():
     """_"""
     # Test with default lapse rate
-    assert radiation_at_height(100, 1000, 10) == pytest.approx(107.92, rel=1e-2)
-    assert radiation_at_height(200, 1000, 10) == pytest.approx(215.84, rel=1e-2)
-    assert radiation_at_height(300, 1000, 10) == pytest.approx(323.76, rel=1e-2)
+    assert radiation_at_height(
+        100, 1000, 10) == pytest.approx(
+        107.92, rel=1e-2)
+    assert radiation_at_height(
+        200, 1000, 10) == pytest.approx(
+        215.84, rel=1e-2)
+    assert radiation_at_height(
+        300, 1000, 10) == pytest.approx(
+        323.76, rel=1e-2)
 
     # Test with custom lapse rate
     assert radiation_at_height(100, 1000, 10, lapse_rate=0.1) == pytest.approx(
@@ -156,9 +138,9 @@ def test_radiation_at_height():
     assert radiation_at_height(200, 2000, 10, lapse_rate=0.2) == pytest.approx(
         279.6, rel=1e-2
     )
-    assert radiation_at_height(300, 10000, 10, lapse_rate=0.01) == pytest.approx(
-        329.97, rel=1e-2
-    )
+    assert radiation_at_height(
+        300, 10000, 10, lapse_rate=0.01) == pytest.approx(
+        329.97, rel=1e-2)
 
 
 def test_temperature_at_height():
@@ -213,7 +195,12 @@ def test_circular_weighted_mean():
     # Test with different weights
     angles = [90, 180, 270]
     weights = [0.3, 0.3, 0.4]
-    assert np.isclose(circular_weighted_mean(angles, weights), 198.43, rtol=0.1)
+    assert np.isclose(
+        circular_weighted_mean(
+            angles,
+            weights),
+        198.43,
+        rtol=0.1)
 
     # Test about 0
     angles = [355, 5]
@@ -265,7 +252,16 @@ def test_rolling_window():
 
     array = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     window = 2
-    expected_output = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]]
+    expected_output = [
+        [
+            0, 1], [
+            1, 2], [
+                2, 3], [
+                    3, 4], [
+                        4, 5], [
+                            5, 6], [
+                                6, 7], [
+                                    7, 8]]
     assert rolling_window(array, window).tolist() == expected_output
 
     array = [0, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -365,7 +361,8 @@ def test_cardinality_bad():
 
 def test_decay_rate_smoother():
     """_"""
-    s = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0])
+    s = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                  10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0])
     assert decay_rate_smoother(
         s, difference_threshold=2, transition_window=4, ewm_span=4
     ).sum() == pytest.approx(99.37681225198287, rel=0.1)
@@ -417,10 +414,18 @@ def test_proximity_decay_bad():
 def test_evaporative_cooling_effect():
     """_"""
     dbt, rh = evaporative_cooling_effect(20, 50, 0.5)
-    assert (dbt == pytest.approx(16.9, rel=0.1)) and (rh == pytest.approx(75, rel=0.1))
+    assert (
+        dbt == pytest.approx(
+            16.9, rel=0.1)) and (
+        rh == pytest.approx(
+            75, rel=0.1))
 
     dbt, rh = evaporative_cooling_effect(20, 110, 0.5)
-    assert (dbt == pytest.approx(20, rel=0.1)) and (rh == pytest.approx(100, rel=0.1))
+    assert (
+        dbt == pytest.approx(
+            20, rel=0.1)) and (
+        rh == pytest.approx(
+            100, rel=0.1))
 
 
 def test_evaporative_cooling_effect_collection():
@@ -443,9 +448,9 @@ def test_evaporative_cooling_effect_collection_bad():
 
 def test_target_wind_speed_collection():
     """_"""
-    assert target_wind_speed_collection(EPW_OBJ, 3, 10).average == pytest.approx(
-        3, rel=0.0001
-    )
+    assert target_wind_speed_collection(
+        EPW_OBJ, 3, 10).average == pytest.approx(
+        3, rel=0.0001)
 
 
 def test_wind_speed_at_height():
@@ -525,7 +530,10 @@ def test_remove_leap_days():
 def test_month_hour_binned_series():
     """_"""
     s = pd.Series(
-        index=pd.date_range(start="2017-01-01 00:00:00", freq="60min", periods=8760),
+        index=pd.date_range(
+            start="2017-01-01 00:00:00",
+            freq="60min",
+            periods=8760),
         data=range(8760),
     )
 
@@ -540,7 +548,8 @@ def test_month_hour_binned_series():
     with pytest.raises(ValueError):
         month_hour_binned_series(pd.Series(dtype=float))
 
-    # test that the function raises an error if the series does not contain at least 12 months of data
+    # test that the function raises an error if the series does not contain at
+    # least 12 months of data
     with pytest.raises(ValueError):
         month_hour_binned_series(
             pd.Series(
@@ -551,30 +560,35 @@ def test_month_hour_binned_series():
             )
         )
 
-    # test that the function raises an error if the series does not have at least 24 values per day
+    # test that the function raises an error if the series does not have at
+    # least 24 values per day
     with pytest.raises(ValueError):
         month_hour_binned_series(
             pd.Series(
                 index=pd.date_range(
-                    start="2017-01-01 00:00:00", freq="120min", periods=8760 * 3
-                ),
+                    start="2017-01-01 00:00:00",
+                    freq="120min",
+                    periods=8760 * 3),
                 data=range(8760),
-            )
-        )
+            ))
 
-    # test that the function raises an error if the length of hour-bin-labels does not match that of hour-bins
+    # test that the function raises an error if the length of hour-bin-labels
+    # does not match that of hour-bins
     with pytest.raises(ValueError):
         month_hour_binned_series(s, hour_labels=["Morning", "Afternoon"])
 
-    # test that the function raises an error if the length of month-bin-labels does not match that of month-bins
+    # test that the function raises an error if the length of month-bin-labels
+    # does not match that of month-bins
     with pytest.raises(ValueError):
         month_hour_binned_series(s, month_labels=["Q1", "Q2", "Q3"])
 
-    # test that the function raises an error if hour bins do not contain all hours [0-23]
+    # test that the function raises an error if hour bins do not contain all
+    # hours [0-23]
     with pytest.raises(ValueError):
         month_hour_binned_series(s, hour_bins=[[0, 1, 2], [3, 4, 5]])
 
-    # test that the function raises an error if month bins do not contain all months [1-12]
+    # test that the function raises an error if month bins do not contain all
+    # months [1-12]
     with pytest.raises(ValueError):
         month_hour_binned_series(s, month_bins=[[1, 2, 3], [4, 5, 6]])
 

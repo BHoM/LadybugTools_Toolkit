@@ -6,8 +6,8 @@ import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 from matplotlib.tri.triangulation import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
+
 from ...ladybug_extension.analysisperiod import describe_analysis_period
 from ...plot.utilities import create_triangulation
 from .spatial_comfort import SpatialComfort, SpatialMetric
@@ -93,12 +93,12 @@ def compare_utci(
         SpatialMetric.UTCI_INTERPOLATED.value,
         SpatialMetric.UTCI_CALCULATED.value,
     ]:
-        raise ValueError("This type of plot is not possible for the requested metric.")
+        raise ValueError(
+            "This type of plot is not possible for the requested metric.")
 
     CONSOLE_LOGGER.info(
         "[SpatialComfort - Comparison] - Plotting UTCI difference between "
-        f"{spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
-    )
+        f"{spatial_result_1} and {spatial_result_2} for {describe_analysis_period(analysis_period)}")
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
 
@@ -137,8 +137,10 @@ def compare_utci(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim([min(spatial_result_1.points.x), max(spatial_result_1.points.x)])
-    ax.set_ylim([min(spatial_result_1.points.y), max(spatial_result_1.points.y)])
+    ax.set_xlim([min(spatial_result_1.points.x),
+                max(spatial_result_1.points.x)])
+    ax.set_ylim([min(spatial_result_1.points.y),
+                max(spatial_result_1.points.y)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, utci_diff.values, **tcf_properties)
@@ -152,10 +154,8 @@ def compare_utci(
 
     # add title
     ax.set_title(
-        (
-            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
-            f"average difference\n{spatial_result_1} > {spatial_result_2}"
-        ),
+        (f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+         f"average difference\n{spatial_result_1} > {spatial_result_2}"),
         ha="left",
         va="bottom",
         x=0,
@@ -191,11 +191,8 @@ def compare_mrt(
     """
 
     CONSOLE_LOGGER.info(
-        (
-            f"[SpatialComfort - Comparison] - Plotting MRT difference between {spatial_result_1} and "
-            f"{spatial_result_2} for {describe_analysis_period(analysis_period)}"
-        )
-    )
+        (f"[SpatialComfort - Comparison] - Plotting MRT difference between {spatial_result_1} and "
+         f"{spatial_result_2} for {describe_analysis_period(analysis_period)}"))
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
 
@@ -236,12 +233,10 @@ def compare_mrt(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(
-        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
-    )
-    ax.set_ylim(
-        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
-    )
+    ax.set_xlim([min(spatial_result_1.points.x.values),
+                 max(spatial_result_1.points.x.values)])
+    ax.set_ylim([min(spatial_result_1.points.y.values),
+                 max(spatial_result_1.points.y.values)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, mrt_diff.values, **tcf_properties)
@@ -255,10 +250,8 @@ def compare_mrt(
 
     # add title
     ax.set_title(
-        (
-            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
-            f"average difference\n{spatial_result_1} > {spatial_result_2}"
-        ),
+        (f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+         f"average difference\n{spatial_result_1} > {spatial_result_2}"),
         ha="left",
         va="bottom",
         x=0,
@@ -294,11 +287,8 @@ def compare_sun_hours(
     """
 
     CONSOLE_LOGGER.info(
-        (
-            f"[SpatialComfort - Comparison] - Plotting Sun-Hours difference between {spatial_result_1} and "
-            f"{spatial_result_2} for {describe_analysis_period(analysis_period)}"
-        )
-    )
+        (f"[SpatialComfort - Comparison] - Plotting Sun-Hours difference between {spatial_result_1} and "
+         f"{spatial_result_2} for {describe_analysis_period(analysis_period)}"))
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
 
@@ -309,8 +299,10 @@ def compare_sun_hours(
     metric = SpatialMetric.DIRECT_SUN_HOURS
 
     # calculate typical sun-hours
-    sh_1 = spatial_result_1.direct_sun_hours(analysis_period).iloc[col_mask_1].values
-    sh_2 = spatial_result_2.direct_sun_hours(analysis_period).iloc[col_mask_2].values
+    sh_1 = spatial_result_1.direct_sun_hours(
+        analysis_period).iloc[col_mask_1].values
+    sh_2 = spatial_result_2.direct_sun_hours(
+        analysis_period).iloc[col_mask_2].values
 
     # obtain difference
     sh_diff = sh_2 - sh_1
@@ -328,12 +320,10 @@ def compare_sun_hours(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(
-        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
-    )
-    ax.set_ylim(
-        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
-    )
+    ax.set_xlim([min(spatial_result_1.points.x.values),
+                 max(spatial_result_1.points.x.values)])
+    ax.set_ylim([min(spatial_result_1.points.y.values),
+                 max(spatial_result_1.points.y.values)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, sh_diff, **tcf_properties)
@@ -347,10 +337,8 @@ def compare_sun_hours(
 
     # add title
     ax.set_title(
-        (
-            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
-            f"average difference\n{spatial_result_1} > {spatial_result_2}"
-        ),
+        (f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+         f"average difference\n{spatial_result_1} > {spatial_result_2}"),
         ha="left",
         va="bottom",
         x=0,
@@ -394,14 +382,12 @@ def compare_ws(
     if metric.value not in [
         SpatialMetric.WS_CFD.value,
     ]:
-        raise ValueError("This type of plot is not possible for the requested metric.")
+        raise ValueError(
+            "This type of plot is not possible for the requested metric.")
 
     CONSOLE_LOGGER.info(
-        (
-            f"[SpatialComfort - Comparison] - Plotting WS difference between {spatial_result_1} "
-            f"and {spatial_result_2} for {describe_analysis_period(analysis_period)}"
-        )
-    )
+        (f"[SpatialComfort - Comparison] - Plotting WS difference between {spatial_result_1} "
+         f"and {spatial_result_2} for {describe_analysis_period(analysis_period)}"))
     # get point indices
     indices = get_common_pt_indices(spatial_result_1, spatial_result_2)
 
@@ -440,12 +426,10 @@ def compare_ws(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(
-        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
-    )
-    ax.set_ylim(
-        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
-    )
+    ax.set_xlim([min(spatial_result_1.points.x.values),
+                 max(spatial_result_1.points.x.values)])
+    ax.set_ylim([min(spatial_result_1.points.y.values),
+                 max(spatial_result_1.points.y.values)])
 
     # add contour-fill
     tcf = ax.tricontourf(tri, ws_diff.values, **tcf_properties)
@@ -459,10 +443,8 @@ def compare_ws(
 
     # add title
     ax.set_title(
-        (
-            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
-            f"average difference\n{spatial_result_1} > {spatial_result_2}"
-        ),
+        (f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+         f"average difference\n{spatial_result_1} > {spatial_result_2}"),
         ha="left",
         va="bottom",
         x=0,
@@ -509,7 +491,8 @@ def compare_distance_to_comfortable(
         SpatialMetric.UTCI_INTERPOLATED.value,
         SpatialMetric.UTCI_CALCULATED.value,
     ]:
-        raise ValueError("This type of plot is not possible for the requested metric.")
+        raise ValueError(
+            "This type of plot is not possible for the requested metric.")
 
     # get comfort midpoint
     comfort_mid = np.mean(comfort_limits)
@@ -556,15 +539,14 @@ def compare_distance_to_comfortable(
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(
-        [min(spatial_result_1.points.x.values), max(spatial_result_1.points.x.values)]
-    )
-    ax.set_ylim(
-        [min(spatial_result_1.points.y.values), max(spatial_result_1.points.y.values)]
-    )
+    ax.set_xlim([min(spatial_result_1.points.x.values),
+                 max(spatial_result_1.points.x.values)])
+    ax.set_ylim([min(spatial_result_1.points.y.values),
+                 max(spatial_result_1.points.y.values)])
 
     # add contour-fill
-    tcf = ax.tricontourf(tri, -comfort_diff.mean(axis=0).values, **tcf_properties)
+    tcf = ax.tricontourf(
+        tri, -comfort_diff.mean(axis=0).values, **tcf_properties)
 
     # plot colorbar
     divider = make_axes_locatable(ax)
@@ -575,10 +557,8 @@ def compare_distance_to_comfortable(
 
     # add title
     ax.set_title(
-        (
-            f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
-            f"average difference\n{spatial_result_1} > {spatial_result_2}"
-        ),
+        (f"{describe_analysis_period(analysis_period)}\n{metric.description()} - "
+         f"average difference\n{spatial_result_1} > {spatial_result_2}"),
         ha="left",
         va="bottom",
         x=0,

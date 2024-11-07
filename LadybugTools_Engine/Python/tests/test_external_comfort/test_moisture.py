@@ -1,15 +1,11 @@
 from pathlib import Path
 from tempfile import gettempdir
-import pytest
 
 import numpy as np
-
+import pytest
 from ladybugtools_toolkit.external_comfort.spatial.moisture import (
-    MoistureSource,
-    DecayMethod,
-    Point2D,
-    spatial_evaporative_cooling_effect,
-)
+    DecayMethod, MoistureSource, Point2D, spatial_evaporative_cooling_effect)
+
 from .. import EPW_OBJ
 
 EVAP_CLG_EFFECT_0 = np.where(np.arange(8760) % 2 == 0, 0.1, 0.9)

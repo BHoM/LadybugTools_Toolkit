@@ -1,4 +1,5 @@
 """Predetermined categories for categorical data."""
+
 import numpy as np
 
 from .categorical import Categorical, CategoricalComfort, ComfortClass
@@ -131,6 +132,20 @@ BEAUFORT_CATEGORIES = Categorical(
         "#FF3300",
         "#FF0000",
     ),
-    bins=(0, 0.3, 1.5, 3.3, 5.5, 7.9, 10.7, 13.8, 17.1, 20.7, 24.4, 28.4, 32.6, np.inf),
+    bins=(
+        0,
+        0.3,
+        1.5,
+        3.3,
+        5.5,
+        7.9,
+        10.7,
+        13.8,
+        17.1,
+        20.7,
+        24.4,
+        28.4,
+        32.6,
+        np.inf),
     name="Beaufort scale",
 )

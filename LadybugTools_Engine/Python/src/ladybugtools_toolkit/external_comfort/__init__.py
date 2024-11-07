@@ -1,4 +1,5 @@
 """Root package for external_comfort."""
+
 # pylint: disable=E0401
 # import getpass
 # from pathlib import Path

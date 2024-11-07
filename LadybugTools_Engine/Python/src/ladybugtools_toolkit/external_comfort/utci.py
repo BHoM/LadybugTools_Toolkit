@@ -1,4 +1,5 @@
 """Methods for calculating UTCI."""
+
 # pylint: disable=C0302
 
 # pylint: disable=E0401
@@ -6,28 +7,28 @@ import warnings
 from calendar import month_abbr
 from concurrent.futures import ProcessPoolExecutor
 
-# pylint: enable=E0401
-
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import (
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
-)
+from ladybug.datatype.temperature import \
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
 from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
+from python_toolkit.bhom.analytics import bhom_analytics
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
-from python_toolkit.bhom.analytics import bhom_analytics
-from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoricalComfort
+from ..categorical.categories import (UTCI_DEFAULT_CATEGORIES,
+                                      CategoricalComfort)
 from ..helpers import evaporative_cooling_effect, month_hour_binned_series
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
+from ..ladybug_extension.datacollection import (collection_from_series,
+                                                collection_to_series)
+
+# pylint: enable=E0401
+
+
 
 
 def _saturated_vapor_pressure_hpa(dry_bulb_temperature: np.ndarray):
@@ -785,22 +786,18 @@ def utci_parallel(
 
 @bhom_analytics()
 def utci(
-    air_temperature: HourlyContinuousCollection
-    | pd.DataFrame
-    | pd.Series
-    | npt.NDArray[np.float64],
-    relative_humidity: HourlyContinuousCollection
-    | pd.DataFrame
-    | pd.Series
-    | npt.NDArray[np.float64],
-    mean_radiant_temperature: HourlyContinuousCollection
-    | pd.DataFrame
-    | pd.Series
-    | npt.NDArray[np.float64],
-    wind_speed: HourlyContinuousCollection
-    | pd.DataFrame
-    | pd.Series
-    | npt.NDArray[np.float64],
+    air_temperature: (
+        HourlyContinuousCollection | pd.DataFrame | pd.Series | npt.NDArray[np.float64]
+    ),
+    relative_humidity: (
+        HourlyContinuousCollection | pd.DataFrame | pd.Series | npt.NDArray[np.float64]
+    ),
+    mean_radiant_temperature: (
+        HourlyContinuousCollection | pd.DataFrame | pd.Series | npt.NDArray[np.float64]
+    ),
+    wind_speed: (
+        HourlyContinuousCollection | pd.DataFrame | pd.Series | npt.NDArray[np.float64]
+    ),
 ) -> HourlyContinuousCollection | pd.DataFrame | npt.NDArray[np.float64]:
     """Return the UTCI for the given inputs.
 
@@ -852,9 +849,11 @@ def utci(
                 mean_radiant_temperature=mean_radiant_temperature.values,
                 wind_speed=wind_speed.clip(lower=0, upper=17).values,
             ),
-            columns=_inputs[0].columns
-            if len(_inputs[0].columns) > 1
-            else ["Universal Thermal Climate Index (C)"],
+            columns=(
+                _inputs[0].columns
+                if len(_inputs[0].columns) > 1
+                else ["Universal Thermal Climate Index (C)"]
+            ),
             index=_inputs[0].index,
         )
 
@@ -924,7 +923,8 @@ def compare_monthly_utci(
 
     # ensure each collection given it a UTCI collection
     if len(utci_collections) < 2:
-        raise ValueError("At least two UTCI collections must be given to compare them.")
+        raise ValueError(
+            "At least two UTCI collections must be given to compare them.")
 
     if any(
         not isinstance(i.header.data_type, LB_UniversalThermalClimateIndex)
@@ -944,7 +944,8 @@ def compare_monthly_utci(
         _df = utci_categories.timeseries_summary_monthly(
             collection_to_series(i), density=density
         )
-        _df.columns = [utci_categories.interval_from_bin_name(i) for i in _df.columns]
+        _df.columns = [
+            utci_categories.interval_from_bin_name(i) for i in _df.columns]
         dd.append(_df)
     df = pd.concat(dd, axis=1, keys=identifiers)
     df = df.reorder_levels([1, 0], axis=1).sort_index(axis=1)
@@ -1035,7 +1036,10 @@ def shade_benefit_category(
             np.where(
                 shade_has_negative_impact,
                 "Shade is detrimental",
-                np.where(shade_has_positive_impact, "Shade is beneficial", "Undefined"),
+                np.where(
+                    shade_has_positive_impact,
+                    "Shade is beneficial",
+                    "Undefined"),
             ),
         ),
     )
@@ -1045,13 +1049,15 @@ def shade_benefit_category(
 
 @bhom_analytics()
 def distance_to_comfortable(
-    utci_value: int
-    | float
-    | list
-    | tuple
-    | pd.Series
-    | pd.DataFrame
-    | HourlyContinuousCollection,
+    utci_value: (
+        int
+        | float
+        | list
+        | tuple
+        | pd.Series
+        | pd.DataFrame
+        | HourlyContinuousCollection
+    ),
     comfort_thresholds: tuple[float] = (9, 26),
     distance_to_comfort_band_centroid: bool = True,
 ) -> int | float | list | tuple | pd.Series | pd.DataFrame | HourlyContinuousCollection:
@@ -1081,7 +1087,8 @@ def distance_to_comfortable(
         raise ValueError("comfort_thresholds must contain two unique values.")
 
     if comfort_thresholds[0] > comfort_thresholds[1]:
-        warnings.warn("comfort_thresholds are not increasing. Swapping the values.")
+        warnings.warn(
+            "comfort_thresholds are not increasing. Swapping the values.")
 
     low_limit = min(comfort_thresholds)
     high_limit = max(comfort_thresholds)
@@ -1095,8 +1102,13 @@ def distance_to_comfortable(
     if not distance_to_comfort_band_centroid:
         distance = np.where(
             original_value < low_limit,
-            original_value - low_limit,
-            np.where(original_value > high_limit, original_value - high_limit, 0),
+            original_value -
+            low_limit,
+            np.where(
+                original_value > high_limit,
+                original_value -
+                high_limit,
+                0),
         )
     else:
         distance = np.where(
@@ -1114,7 +1126,9 @@ def distance_to_comfortable(
         )
 
     if isinstance(utci_value, HourlyContinuousCollection):
-        if not isinstance(utci_value.header.data_type, LB_UniversalThermalClimateIndex):
+        if not isinstance(
+                utci_value.header.data_type,
+                LB_UniversalThermalClimateIndex):
             raise ValueError("Input collection is not a UTCI collection.")
         return collection_from_series(
             pd.Series(
@@ -1259,13 +1273,15 @@ def feasible_utci_category_limits(
     """
 
     lims = feasible_utci_limits(
-        epw, include_additional_moisture=include_additional_moisture, as_dataframe=True
-    )
+        epw,
+        include_additional_moisture=include_additional_moisture,
+        as_dataframe=True)
 
     if mask is not None:
         lims = lims[mask]
         if lims.index.month.nunique() != 12:
-            raise ValueError("Masked data include at least one value per month.")
+            raise ValueError(
+                "Masked data include at least one value per month.")
 
     df = (
         pd.concat(
@@ -1392,7 +1408,8 @@ def met_rate_adjustment(
             "met_rate must be <= 4.8 (representative of a exercise at 5-6km·h-1)."
         )
 
-    # data below extracted from https://doi.org/10.7163/GPol.0199 in the format {MET: [UTCI, ΔUTCI]}
+    # data below extracted from https://doi.org/10.7163/GPol.0199 in the
+    # format {MET: [UTCI, ΔUTCI]}
     data = {
         4.8: [
             [-50, 71.81581439393939],

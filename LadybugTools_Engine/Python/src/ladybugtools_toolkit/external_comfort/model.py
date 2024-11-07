@@ -4,14 +4,12 @@
 from honeybee.boundarycondition import boundary_conditions
 from honeybee.facetype import face_types
 from honeybee.model import Face, Model, Room, Shade
-from honeybee_energy.internalmass import InternalMass
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.shade import ShadeConstruction
-from honeybee_energy.material.opaque import (
-    EnergyMaterial,
-    EnergyMaterialVegetation,
-    _EnergyMaterialOpaqueBase,
-)
+from honeybee_energy.internalmass import InternalMass
+from honeybee_energy.material.opaque import (EnergyMaterial,
+                                             EnergyMaterialVegetation,
+                                             _EnergyMaterialOpaqueBase)
 from honeybee_radiance.sensorgrid import Sensor, SensorGrid
 from ladybug_geometry.geometry3d import Point3D, Vector3D
 
@@ -431,7 +429,8 @@ def get_ground_reflectance(model: Model) -> float:
     if not isinstance(model, Model):
         raise TypeError("model must be of type Model.")
 
-    _material: EnergyMaterial | EnergyMaterialVegetation = get_ground_material(model)
+    _material: EnergyMaterial | EnergyMaterialVegetation = get_ground_material(
+        model)
     return _material.solar_reflectance
 
 

@@ -1,20 +1,13 @@
 """Methods for plotting Ladybug Geometry objects."""
+
 # TODO - add more to this module
 import warnings  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import numpy as np
-from ladybug_geometry.geometry2d import (
-    Arc2D,
-    LineSegment2D,
-    Mesh2D,
-    Point2D,
-    Polygon2D,
-    Polyline2D,
-    Ray2D,
-    Vector2D,
-)
-
+from ladybug_geometry.geometry2d import (Arc2D, LineSegment2D, Mesh2D, Point2D,
+                                         Polygon2D, Polyline2D, Ray2D,
+                                         Vector2D)
 from python_toolkit.bhom.analytics import bhom_analytics
 
 

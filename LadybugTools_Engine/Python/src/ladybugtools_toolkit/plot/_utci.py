@@ -1,33 +1,33 @@
 """Plot methods for UTCI datasets"""
+
 # pylint: disable=C0302
 # pylint: disable=E0401
 import calendar
 import textwrap
-
-# pylint enable=E0401
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import (
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
-)
+from ladybug.datatype.temperature import \
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
 from matplotlib.figure import Figure
 from matplotlib.ticker import PercentFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from python_toolkit.bhom.analytics import bhom_analytics
 from scipy.interpolate import make_interp_spline
 
-from python_toolkit.bhom.analytics import bhom_analytics
-from ..categorical.categories import (
-    UTCI_DEFAULT_CATEGORIES,
-    CategoricalComfort,
-)
+from ..categorical.categories import (UTCI_DEFAULT_CATEGORIES,
+                                      CategoricalComfort)
 from ..ladybug_extension.datacollection import collection_to_series
 from ._heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
 from .utilities import contrasting_color, lighten_color
+
+# pylint enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -62,7 +62,9 @@ def utci_comfort_band_comparison(
     """
 
     for n, col in enumerate(utci_collections):
-        if not isinstance(col.header.data_type, LB_UniversalThermalClimateIndex):
+        if not isinstance(
+                col.header.data_type,
+                LB_UniversalThermalClimateIndex):
             raise ValueError(
                 f"Collection {n} data type is not UTCI and cannot be used in this plot."
             )
@@ -82,11 +84,8 @@ def utci_comfort_band_comparison(
             "The number of identifiers given does not match the number of UTCI collections given!"
         )
 
-    counts = pd.concat(
-        [utci_categories.value_counts(i, density=density) for i in utci_collections],
-        axis=1,
-        keys=identifiers,
-    )
+    counts = pd.concat([utci_categories.value_counts(i, density=density)
+                        for i in utci_collections], axis=1, keys=identifiers, )
     counts.T.plot(
         ax=ax,
         kind="bar",
@@ -112,9 +111,8 @@ def utci_comfort_band_comparison(
     # add labels to bars
 
     # get bar total heights
-    height = np.array([[i.get_height() for i in c] for c in ax.containers]).T.sum(
-        axis=1
-    )[0]
+    height = np.array([[i.get_height() for i in c]
+                      for c in ax.containers]).T.sum(axis=1)[0]
     for c in ax.containers:
         labels = []
         for v in c:
@@ -209,7 +207,8 @@ def utci_day_comfort_metrics(
     (b,) = axes[1].plot(dbt.loc[dt], c="red", alpha=0.75, label="DBT", ls="--")
     axes[1].set_ylabel("DBT")
     axes[1].grid(False)
-    (c,) = axes[2].plot(mrt.loc[dt], c="orange", alpha=0.75, label="MRT", ls="--")
+    (c,) = axes[2].plot(mrt.loc[dt], c="orange",
+                        alpha=0.75, label="MRT", ls="--")
     axes[2].set_ylabel("MRT")
     axes[2].grid(False)
     (d,) = axes[3].plot(rh.loc[dt], c="blue", alpha=0.75, label="RH", ls="--")
@@ -282,7 +281,9 @@ def utci_comparison_diurnal_day(
 
     # check all input collections are UTCI collections
     for n, col in enumerate(utci_collections):
-        if not isinstance(col.header.data_type, LB_UniversalThermalClimateIndex):
+        if not isinstance(
+                col.header.data_type,
+                LB_UniversalThermalClimateIndex):
             raise ValueError(
                 f"Collection {n} data type is not UTCI and cannot be used in this plot."
             )
@@ -304,9 +305,8 @@ def utci_comparison_diurnal_day(
     ax.set_title("\n".join([i for i in title if i is not None]))
 
     # combine utcis and add names to columns
-    df = pd.concat(
-        [collection_to_series(i) for i in utci_collections], axis=1, keys=collection_ids
-    )
+    df = pd.concat([collection_to_series(i)
+                    for i in utci_collections], axis=1, keys=collection_ids)
     ylim = kwargs.pop("ylim", [df.min().min(), df.max().max()])
     df_agg = df.groupby([df.index.month, df.index.hour]).agg(agg).loc[month]
     df_agg.index = range(24)
@@ -339,19 +339,18 @@ def utci_comparison_diurnal_day(
     ax.xaxis.set_major_locator(plt.FixedLocator([0, 6, 12, 18]))
     ax.xaxis.set_minor_locator(plt.FixedLocator([3, 9, 15, 21]))
     ax.yaxis.set_major_locator(plt.MaxNLocator(8))
-    ax.set_xticklabels(["00:00", "06:00", "12:00", "18:00"], minor=False, ha="left")
+    ax.set_xticklabels(["00:00", "06:00", "12:00", "18:00"],
+                       minor=False, ha="left")
     ax.set_ylabel("Universal Thermal Climate Index (°C)")
     ax.set_xlabel("Time of day")
 
     # add grid using a hacky fix
     for i in ax.get_xticks():
-        ax.axvline(
-            i, color=ax.xaxis.label.get_color(), ls=":", lw=0.5, alpha=0.1, zorder=5
-        )
+        ax.axvline(i, color=ax.xaxis.label.get_color(),
+                   ls=":", lw=0.5, alpha=0.1, zorder=5)
     for i in ax.get_yticks():
-        ax.axhline(
-            i, color=ax.yaxis.label.get_color(), ls=":", lw=0.5, alpha=0.1, zorder=5
-        )
+        ax.axhline(i, color=ax.yaxis.label.get_color(),
+                   ls=":", lw=0.5, alpha=0.1, zorder=5)
 
     if show_legend:
         handles, labels = ax.get_legend_handles_labels()
@@ -409,10 +408,15 @@ def utci_heatmap_difference(
     vmax = kwargs.pop("vmax", 10)
 
     return heatmap(
-        collection_to_series(utci_collection2) - collection_to_series(utci_collection1),
+        collection_to_series(utci_collection2) -
+        collection_to_series(utci_collection1),
         ax=ax,
-        cmap=kwargs.pop("cmap", UTCI_DIFFERENCE_COLORMAP),
-        title=kwargs.pop("title", "UTCI difference"),
+        cmap=kwargs.pop(
+            "cmap",
+            UTCI_DIFFERENCE_COLORMAP),
+        title=kwargs.pop(
+            "title",
+            "UTCI difference"),
         vmin=vmin,
         vmax=vmax,
         **kwargs,
@@ -565,7 +569,14 @@ def utci_journey(
     # add UTCI instance values to canvas
     for n, (idx, val) in enumerate(df_pit.items()):
         ax.scatter(n, val, c="white", s=400, zorder=9)
-        ax.text(n, val, idx, zorder=10, ha="center", va="center", fontsize="medium")
+        ax.text(
+            n,
+            val,
+            idx,
+            zorder=10,
+            ha="center",
+            va="center",
+            fontsize="medium")
 
     if show_grid:
         # Major ticks every 20, minor ticks every 5
@@ -676,7 +687,11 @@ def utci_heatmap_histogram(
     histogram_ax = fig.add_subplot(spec[1, 0])
 
     # Add heatmap
-    utci_categories.annual_heatmap(series, ax=heatmap_ax, show_colorbar=False, **kwargs)
+    utci_categories.annual_heatmap(
+        series,
+        ax=heatmap_ax,
+        show_colorbar=False,
+        **kwargs)
 
     # Add stacked plot
     utci_categories.annual_monthly_histogram(
@@ -801,8 +816,12 @@ def utci_histogram(
 
     # plot data
     series.plot(
-        kind="hist", ax=ax, bins=bins, color=color, alpha=alpha, density=density
-    )
+        kind="hist",
+        ax=ax,
+        bins=bins,
+        color=color,
+        alpha=alpha,
+        density=density)
 
     # set xlims
     xlim = kwargs.pop(

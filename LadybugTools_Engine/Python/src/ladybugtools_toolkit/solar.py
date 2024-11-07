@@ -1,50 +1,42 @@
 """Methods for handling solar radiation."""
 
 # pylint: disable=E0401
-import itertools
-import textwrap
-from datetime import datetime
-import json
 import concurrent.futures
+import itertools
+import json
+import textwrap
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
-
-# pylint: enable=E0401
 
 import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
-from ladybug.wea import EPW, AnalysisPeriod, Wea, Location
+from ladybug.sunpath import Sun, Sunpath
+from ladybug.wea import EPW, AnalysisPeriod, Location, Wea
 from matplotlib import pyplot as plt
-from tqdm import tqdm
-
-from .helpers import (
-    OpenMeteoVariable,
-    angle_from_north,
-    angle_to_vector,
-    cardinality,
-    circular_weighted_mean,
-    rolling_window,
-    scrape_meteostat,
-    scrape_openmeteo,
-    wind_speed_at_height,
-    remove_leap_days,
-)
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
-from .ladybug_extension.analysisperiod import (
-    analysis_period_to_boolean,
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
-from .ladybug_extension.location import location_to_string
-from ladybug.sunpath import Sunpath, Sun
-from .ladybug_extension.datacollection import header_to_string
+from tqdm import tqdm
 
+from .helpers import (OpenMeteoVariable, angle_from_north, angle_to_vector,
+                      cardinality, circular_weighted_mean, remove_leap_days,
+                      rolling_window, scrape_meteostat, scrape_openmeteo,
+                      wind_speed_at_height)
+from .ladybug_extension.analysisperiod import (analysis_period_to_boolean,
+                                               analysis_period_to_datetimes,
+                                               describe_analysis_period)
+from .ladybug_extension.datacollection import header_to_string
+from .ladybug_extension.location import location_to_string
 from .plot.utilities import contrasting_color, format_polar_plot
+
+# pylint: enable=E0401
+
+
+
 
 
 class IrradianceType(Enum):
@@ -90,7 +82,8 @@ class Solar:
             raise ValueError("datetimes contains duplicates.")
 
         # convert to lists
-        self.global_horizontal_irradiance = np.array(self.global_horizontal_irradiance)
+        self.global_horizontal_irradiance = np.array(
+            self.global_horizontal_irradiance)
         self.direct_normal_irradiance = np.array(self.direct_normal_irradiance)
         self.diffuse_horizontal_irradiance = np.array(
             self.diffuse_horizontal_irradiance
@@ -99,13 +92,15 @@ class Solar:
 
         # validate
         if np.any(np.isnan(self.global_horizontal_irradiance)):
-            raise ValueError("global_horizontal_irradiance contains null values.")
+            raise ValueError(
+                "global_horizontal_irradiance contains null values.")
 
         if np.any(np.isnan(self.direct_normal_irradiance)):
             raise ValueError("direct_normal_irradiance contains null values.")
 
         if np.any(np.isnan(self.diffuse_horizontal_irradiance)):
-            raise ValueError("diffuse_horizontal_irradiance contains null values.")
+            raise ValueError(
+                "diffuse_horizontal_irradiance contains null values.")
 
         if np.any(self.global_horizontal_irradiance < 0):
             raise ValueError("global_horizontal_irradiance must be >= 0")
@@ -318,7 +313,8 @@ class Solar:
             global_horizontal_irradiance=epw.global_horizontal_radiation.values,
             direct_normal_irradiance=epw.direct_normal_radiation.values,
             diffuse_horizontal_irradiance=epw.diffuse_horizontal_radiation.values,
-            datetimes=analysis_period_to_datetimes(AnalysisPeriod()),
+            datetimes=analysis_period_to_datetimes(
+                AnalysisPeriod()),
             source=source,
         )
 
@@ -361,7 +357,8 @@ class Solar:
         global_horizontal_irradiance = df[
             "Global Horizontal Radiation (Wh/m2)"
         ].tolist()
-        direct_normal_irradiance = df["Direct Normal Radiation (Wh/m2)"].tolist()
+        direct_normal_irradiance = df["Direct Normal Radiation (Wh/m2)"].tolist(
+        )
         diffuse_horizontal_irradiance = df[
             "Diffuse Horizontal Radiation (Wh/m2)"
         ].tolist()
@@ -452,7 +449,8 @@ class Solar:
 
         df = remove_leap_days(self.df)
 
-        grouped = df.groupby([df.index.month, df.index.day, df.index.hour]).mean()
+        grouped = df.groupby(
+            [df.index.month, df.index.day, df.index.hour]).mean()
         index = pd.date_range("2017-01-01", periods=8760, freq="60min")
         grouped.set_index(index, inplace=True)
 
@@ -519,9 +517,8 @@ class Solar:
         _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
         _dir.mkdir(exist_ok=True, parents=True)
         sp = (
-            _dir
-            / f"{location_to_string(location)}_{ground_reflectance}_{isotropic}_{directions}_{altitude}.h5"
-        )
+            _dir /
+            f"{location_to_string(location)}_{ground_reflectance}_{isotropic}_{directions}_{altitude}.h5")
         if reload and sp.exists():
             CONSOLE_LOGGER.info(f"Loading results from {sp}.")
             return pd.read_hdf(sp, key="df")
@@ -532,7 +529,10 @@ class Solar:
         idx = analysis_period_to_datetimes(cols[0].header.analysis_period)
 
         results = []
-        pbar = tqdm(total=len(midpoints), desc="Calculating irradiance", )
+        pbar = tqdm(
+            total=len(midpoints),
+            desc="Calculating irradiance",
+        )
         with concurrent.futures.ProcessPoolExecutor() as executor:
             futures = []
             for _az in midpoints:
@@ -608,9 +608,8 @@ class Solar:
         _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
         _dir.mkdir(exist_ok=True, parents=True)
         sp = (
-            _dir
-            / f"{location_to_string(location)}_{ground_reflectance}_{isotropic}_{len(altitudes)}_{len(azimuths)}.h5"
-        )
+            _dir /
+            f"{location_to_string(location)}_{ground_reflectance}_{isotropic}_{len(altitudes)}_{len(azimuths)}.h5")
 
         if reload and sp.exists():
             CONSOLE_LOGGER.info(f"Loading results from {sp}.")
@@ -714,9 +713,11 @@ class Solar:
         _max = mtx.max()
         _max_alt, _max_az, _, unit = mtx.idxmax()
         if agg == "sum":
-            unit = unit.replace("(W/m2)", "kWh/m$^2$").replace("Irradiance ", "")
+            unit = unit.replace(
+                "(W/m2)", "kWh/m$^2$").replace("Irradiance ", "")
         else:
-            unit = unit.replace("(W/m2)", "Wh/m$^2$").replace("Irradiance ", "")
+            unit = unit.replace(
+                "(W/m2)", "Wh/m$^2$").replace("Irradiance ", "")
 
         if _max == 0:
             raise ValueError(f"No solar radiation within {analysis_period}.")
@@ -784,11 +785,8 @@ class Solar:
             cb.ax.plot([0, 1], [quantile_val] * 2, "k", ls="--", alpha=0.5)
 
         ax.set_title(
-            (
-                f"{location_to_string(location)}, from {self.source}\n{irradiance_type.to_string()} "
-                f"Irradiance ({agg.upper()})\n{describe_analysis_period(analysis_period)}"
-            )
-        )
+            (f"{location_to_string(location)}, from {self.source}\n{irradiance_type.to_string()} "
+             f"Irradiance ({agg.upper()})\n{describe_analysis_period(analysis_period)}"))
         ax.set_xlabel("Panel orientation (clockwise from North at 0°)")
         ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
         return ax
@@ -869,14 +867,20 @@ class Solar:
         _max = data.max()
         _, _max_az, _, unit = data.idxmax()
         if agg == "sum":
-            unit = unit.replace("(W/m2)", "kWh/m$^2$").replace("Irradiance ", "")
+            unit = unit.replace(
+                "(W/m2)", "kWh/m$^2$").replace("Irradiance ", "")
         else:
-            unit = unit.replace("(W/m2)", "Wh/m$^2$").replace("Irradiance ", "")
+            unit = unit.replace(
+                "(W/m2)", "Wh/m$^2$").replace("Irradiance ", "")
         if _max == 0:
             raise ValueError(f"No solar radiation within {analysis_period}.")
 
         vmax = kwargs.pop("vmax", data.max())
-        colors = [cmap(i) for i in np.interp(data.values, [vmin, vmax], [0, 1])]
+        colors = [
+            cmap(i) for i in np.interp(
+                data.values, [
+                    vmin, vmax], [
+                    0, 1])]
         thetas = np.deg2rad(data.index.get_level_values("Azimuth"))
         radiis = data.values
         bars = ax.bar(
@@ -899,7 +903,12 @@ class Solar:
         norm = plt.Normalize(vmin=vmin, vmax=vmax)
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
-        cb = plt.colorbar(sm, ax=ax, orientation="vertical", label=unit, extend=extend)
+        cb = plt.colorbar(
+            sm,
+            ax=ax,
+            orientation="vertical",
+            label=unit,
+            extend=extend)
         cb.outline.set_visible(False)
 
         # labelling
@@ -935,20 +944,18 @@ class Solar:
                         val,
                         f" {val:,.0f}{unit} ",
                         rotation_mode="anchor",
-                        rotation=(-idx + 90) if idx < 180 else 180 + (-idx + 90),
+                        rotation=(-idx + 90) if idx < 180 else 180 +
+                        (-idx + 90),
                         ha="right" if idx < 180 else "left",
                         va="center",
                         fontsize="xx-small",
-                        c=contrasting_color(colr)
+                        c=contrasting_color(colr),
                         # bbox=dict(ec="none", fc="w", alpha=0.5, boxstyle="round,pad=0.3"),
                     )
 
         _ = ax.set_title(
-            (
-                f"{location_to_string(location)}, from {self.source}\n"
-                f"{irradiance_type.to_string()} irradiance ({agg.upper()}) at {altitude}° tilt\n"
-                f"{describe_analysis_period(analysis_period)}"
-            )
-        )
+            (f"{location_to_string(location)}, from {self.source}\n"
+             f"{irradiance_type.to_string()} irradiance ({agg.upper()}) at {altitude}° tilt\n"
+             f"{describe_analysis_period(analysis_period)}"))
 
         return ax

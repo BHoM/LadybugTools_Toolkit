@@ -1,8 +1,9 @@
 """Method to wrap for access to pre-defined materials."""
+
 # pylint: disable=C0415,E0401,W0703
 import argparse
-import traceback
 import json
+import traceback
 
 
 def main(json_file: str) -> None:

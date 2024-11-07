@@ -1,4 +1,5 @@
 """Protoype UTCI plotting methods."""
+
 # pylint: disable=line-too-long
 # # pylint: disable=E0401
 # import calendar
@@ -53,7 +54,7 @@
 #         shaded_utci (HourlyContinuousCollection | pd.Series):
 #             A dataset containing shaded UTCI values.
 #         comfort_limits (tuple[float], optional):
-#             The range within which "comfort" is achieved. Defaults to (9, 26).
+# The range within which "comfort" is achieved. Defaults to (9, 26).
 
 #     Keyword Args:
 #         - title (str, optional):

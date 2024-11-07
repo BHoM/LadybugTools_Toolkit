@@ -1,9 +1,10 @@
 """Methods for handling Ladybug geometry."""
+
 from warnings import warn  # pylint: disable=E0401
 
 from ladybug_geometry.bounding import bounding_rectangle
-from ladybug_geometry.geometry3d import Plane, Point3D, Vector3D, Mesh3D
 from ladybug_geometry.geometry2d import Mesh2D, Point2D, Polygon2D
+from ladybug_geometry.geometry3d import Mesh3D, Plane, Point3D, Vector3D
 from scipy.spatial.distance import cdist
 
 
@@ -33,8 +34,7 @@ def mesh3d_get_plane(mesh: Mesh3D) -> Plane:
     if not mesh3d_isplanar(mesh=mesh):
         warn(
             "The mesh given is not planar. This method will return a planar mesh "
-            "based on a selection of 3-points from the first 3-faces of this mesh."
-        )
+            "based on a selection of 3-points from the first 3-faces of this mesh.")
 
     plane = Plane.from_three_points(
         *[mesh.vertices[j] for j in [i[0] for i in mesh.faces[:3]]]

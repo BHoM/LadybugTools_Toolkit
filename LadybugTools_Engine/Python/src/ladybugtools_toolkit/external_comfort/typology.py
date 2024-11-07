@@ -1,14 +1,17 @@
 """Module for creating typology objects."""
+
 # pylint: disable=E0401,E1101
 from enum import Enum
 
+import numpy as np
+from python_toolkit.bhom.analytics import bhom_analytics
+
+from ._shelterbase import Shelter
+from ._typologybase import Typology
+
 # pylint: enable=E0401
 
-import numpy as np
 
-from python_toolkit.bhom.analytics import bhom_analytics
-from ._typologybase import Typology
-from ._shelterbase import Shelter
 
 
 class Typologies(Enum):
@@ -51,8 +54,13 @@ class Typologies(Enum):
     )
     PASSIVE_DOWNDRAUGHT_EVAPORATIVE_COOLING_TOWER = Typology(
         identifier="Passive downdraught evaporative cooling tower",
-        evaporative_cooling_effect=(0.7,) * 8760,
-        shelters=[Shelter.from_overhead_circle(height_above_ground=5, radius=4)],
+        evaporative_cooling_effect=(
+            0.7,
+        ) * 8760,
+        shelters=[
+            Shelter.from_overhead_circle(
+                height_above_ground=5,
+                radius=4)],
     )
     NORTH_SHELTER = Typology(
         identifier="Shelter from north",
@@ -125,7 +133,8 @@ def combine_typologies(
         .filled(np.nan)
         .tolist()
     )
-    target_wind_speed_avg = [None if np.isnan(i) else i for i in target_wind_speed_avg]
+    target_wind_speed_avg = [None if np.isnan(
+        i) else i for i in target_wind_speed_avg]
 
     radiant_temperature_adjustment_avg = np.average(
         [i.radiant_temperature_adjustment for i in typologies],

@@ -1,4 +1,5 @@
 """Methods for plotting sun-paths."""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -8,12 +9,10 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.location import Location
 from ladybug.sunpath import Sunpath
 from matplotlib.colors import BoundaryNorm, Colormap
-
 from python_toolkit.bhom.analytics import bhom_analytics
-from ..ladybug_extension.analysisperiod import (
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
+
+from ..ladybug_extension.analysisperiod import (analysis_period_to_datetimes,
+                                                describe_analysis_period)
 from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.location import location_to_string
 
@@ -60,16 +59,20 @@ def sunpath(
         ax = plt.gca()
 
     sunpath_obj = Sunpath.from_location(location)
-    all_suns = [
-        sunpath_obj.calculate_sun_from_date_time(i) for i in analysis_period.datetimes
-    ]
+    all_suns = [sunpath_obj.calculate_sun_from_date_time(
+        i) for i in analysis_period.datetimes]
     suns = [i for i in all_suns if i.altitude > 0]
     suns_x, suns_y = np.array([sun.position_2d().to_array() for sun in suns]).T
 
     day_suns = []
     for month in [6, 9, 12]:
         date = pd.to_datetime(f"2017-{month:02d}-21")
-        day_idx = pd.date_range(date, date + pd.Timedelta(hours=24), freq="1min")
+        day_idx = pd.date_range(
+            date,
+            date +
+            pd.Timedelta(
+                hours=24),
+            freq="1min")
         _ = []
         for idx in day_idx:
             s = sunpath_obj.calculate_sun_from_date_time(idx)
@@ -95,20 +98,32 @@ def sunpath(
                 ls="-",
             )
         )
-        for pt, lab in list(zip(*[compass.major_azimuth_points, compass.MAJOR_TEXT])):
+        for pt, lab in list(
+                zip(*[compass.major_azimuth_points, compass.MAJOR_TEXT])):
             _x, _y = np.array([[0, 0]] + [pt.to_array()]).T
             ax.plot(_x, _y, zorder=1, lw=0.5, ls="-", c="#555555", alpha=0.5)
-            t = ax.text(_x[1], _y[1], lab, ha="center", va="center", fontsize="medium")
-            t.set_bbox(
-                {"facecolor": "white", "alpha": 1, "edgecolor": None, "linewidth": 0}
-            )
-        for pt, lab in list(zip(*[compass.minor_azimuth_points, compass.MINOR_TEXT])):
+            t = ax.text(
+                _x[1],
+                _y[1],
+                lab,
+                ha="center",
+                va="center",
+                fontsize="medium")
+            t.set_bbox({"facecolor": "white", "alpha": 1,
+                        "edgecolor": None, "linewidth": 0})
+        for pt, lab in list(
+                zip(*[compass.minor_azimuth_points, compass.MINOR_TEXT])):
             _x, _y = np.array([[0, 0]] + [pt.to_array()]).T
             ax.plot(_x, _y, zorder=1, lw=0.5, ls="-", c="#555555", alpha=0.5)
-            t = ax.text(_x[1], _y[1], lab, ha="center", va="center", fontsize="small")
-            t.set_bbox(
-                {"facecolor": "white", "alpha": 1, "edgecolor": None, "linewidth": 0}
-            )
+            t = ax.text(
+                _x[1],
+                _y[1],
+                lab,
+                ha="center",
+                va="center",
+                fontsize="small")
+            t.set_bbox({"facecolor": "white", "alpha": 1,
+                        "edgecolor": None, "linewidth": 0})
 
     if data_collection is not None:
         new_idx = analysis_period_to_datetimes(analysis_period)
