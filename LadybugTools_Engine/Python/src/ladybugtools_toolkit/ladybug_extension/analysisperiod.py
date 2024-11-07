@@ -14,7 +14,6 @@ from .dt import lb_datetime_from_datetime
 # pylint: enable=E0401
 
 
-
 def analysis_period_to_datetimes(
     analysis_period: AnalysisPeriod,
 ) -> pd.DatetimeIndex:

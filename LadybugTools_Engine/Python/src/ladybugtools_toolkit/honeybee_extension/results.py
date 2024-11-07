@@ -16,7 +16,6 @@ from ..ladybug_extension.datacollection import collection_to_series
 # pylint: enable=E0401
 
 
-
 def _load_files(func: Callable, files: list[Path]) -> pd.DataFrame:
     """Load a set of input files and combine into a DataFrame with filename as header.
 

@@ -29,8 +29,6 @@ from ..ladybug_extension.datacollection import (collection_from_series,
 # pylint: enable=E0401
 
 
-
-
 def _saturated_vapor_pressure_hpa(dry_bulb_temperature: np.ndarray):
     """Calculate saturated vapor pressure (hPa) at temperature (C).
 

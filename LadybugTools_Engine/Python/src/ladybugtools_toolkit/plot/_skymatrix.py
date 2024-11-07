@@ -23,8 +23,6 @@ from ..ladybug_extension.location import location_to_string
 # pylint: enable=E0401
 
 
-
-
 @bhom_analytics()
 def skymatrix(
     epw: EPW,

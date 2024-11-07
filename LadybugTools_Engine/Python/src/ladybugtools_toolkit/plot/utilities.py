@@ -23,8 +23,6 @@ from python_toolkit.bhom.analytics import bhom_analytics
 # pylint: enable=E0401
 
 
-
-
 @bhom_analytics()
 def animation(
     images: list[str | Path | Image.Image],

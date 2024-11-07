@@ -13,7 +13,6 @@ from scipy import spatial
 # pylint: enable=E0401
 
 
-
 @dataclass
 class KoeppenClassification:
     """Summary of KoeppenClassification dataclass."""

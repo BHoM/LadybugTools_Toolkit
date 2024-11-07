@@ -21,8 +21,6 @@ from .simulate import SimulationResult
 # pylint: enable=E0401
 
 
-
-
 @dataclass(init=True, repr=True, eq=True)
 class Typology:
     """_"""

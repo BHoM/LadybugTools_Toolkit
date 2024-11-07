@@ -23,7 +23,6 @@ from .header import header_from_string, header_to_string
 # pylint: enable=E0401
 
 
-
 def collection_to_series(
         collection: BaseCollection,
         name: str = None) -> pd.Series:

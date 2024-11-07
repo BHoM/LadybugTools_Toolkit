@@ -27,8 +27,6 @@ from ..ladybug_extension.location import location_to_string
 # pylint: disable=E0401
 
 
-
-
 @bhom_analytics()
 def strategy_warning(polygon_name):
     """Give a warning about a polygon not fitting on the chart."""

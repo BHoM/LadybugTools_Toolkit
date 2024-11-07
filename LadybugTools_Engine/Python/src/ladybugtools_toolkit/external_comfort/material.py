@@ -19,7 +19,6 @@ from ..helpers import sanitise_string
 # pylint: enable=E0401
 
 
-
 def _ice_tool_materials(
     path: Path = Path(__file__).parent.parent.parent
     / "data"

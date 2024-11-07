@@ -20,8 +20,6 @@ from .datacollection import (collection_from_series, collection_to_series,
 # pylint: enable=E0401
 
 
-
-
 @bhom_analytics()
 def energyplus_strings(epw: EPW) -> str:
     """Generate strings to add into EnergyPlus simulation for slightly more

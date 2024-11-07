@@ -38,8 +38,6 @@ from .plot.utilities import contrasting_color, format_polar_plot
 # pylint: enable=E0401
 
 
-
-
 @dataclass(init=True, eq=True, repr=True)
 class Wind:
     """An object containing historic, time-indexed wind data.

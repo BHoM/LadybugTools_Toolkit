@@ -14,7 +14,6 @@ from ._shelterbase import Shelter
 # pylint: enable=E0401
 
 
-
 class TreeShelter(Enum):
     """_"""
 

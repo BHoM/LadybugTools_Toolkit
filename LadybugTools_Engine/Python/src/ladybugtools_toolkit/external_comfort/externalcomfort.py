@@ -14,8 +14,6 @@ from ._typologybase import Typology
 # pylint: enable=E0401
 
 
-
-
 @bhom_analytics()
 def modify_external_comfort(
         external_comfort: ExternalComfort,

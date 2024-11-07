@@ -17,8 +17,6 @@ from .utci import utci
 # pylint: enable=E0401
 
 
-
-
 @bhom_analytics()
 def ranked_mitigations(
     simulation_result: SimulationResult,

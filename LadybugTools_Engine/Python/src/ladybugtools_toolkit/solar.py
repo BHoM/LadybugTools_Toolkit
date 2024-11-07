@@ -36,9 +36,6 @@ from .plot.utilities import contrasting_color, format_polar_plot
 # pylint: enable=E0401
 
 
-
-
-
 class IrradianceType(Enum):
     """Irradiance types."""
 

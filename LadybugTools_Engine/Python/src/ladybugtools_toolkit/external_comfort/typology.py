@@ -12,8 +12,6 @@ from ._typologybase import Typology
 # pylint: enable=E0401
 
 
-
-
 class Typologies(Enum):
     """_"""
 

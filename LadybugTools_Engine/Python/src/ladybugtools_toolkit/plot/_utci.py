@@ -28,8 +28,6 @@ from .utilities import contrasting_color, lighten_color
 # pylint enable=E0401
 
 
-
-
 @bhom_analytics()
 def utci_comfort_band_comparison(
     utci_collections: tuple[HourlyContinuousCollection],

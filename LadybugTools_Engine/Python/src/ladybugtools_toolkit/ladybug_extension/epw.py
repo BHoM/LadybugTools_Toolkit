@@ -44,8 +44,6 @@ from .location import average_location, location_to_string
 # pylint: enable=E0401
 
 
-
-
 @bhom_analytics()
 def epw_to_dataframe(
     epw: EPW, include_additional: bool = False, **kwargs

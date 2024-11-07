@@ -28,8 +28,6 @@ from ..ladybug_extension.epw import sun_position_list
 # pylint: enable=E0401
 
 
-
-
 SENSOR_LOCATION = Point3D(0, 0, 1.2)
 
 

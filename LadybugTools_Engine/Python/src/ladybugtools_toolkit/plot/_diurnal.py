@@ -18,8 +18,6 @@ from .utilities import create_title
 # pylint: enable=E0401
 
 
-
-
 @bhom_analytics()
 def diurnal(
     series: pd.Series,

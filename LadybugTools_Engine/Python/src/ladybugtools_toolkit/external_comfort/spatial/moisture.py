@@ -20,9 +20,6 @@ from ...ladybug_geometry_extension import pt_distances
 # pylint: enable=E0401
 
 
-
-
-
 @dataclass(init=True, eq=True, repr=True)
 class MoistureSource:
     """An object defining where moisture is present in a spatial thermal comfort simulation.
