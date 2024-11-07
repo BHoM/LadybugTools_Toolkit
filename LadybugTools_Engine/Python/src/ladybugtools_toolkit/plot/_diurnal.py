@@ -4,8 +4,6 @@
 import calendar
 import textwrap
 
-# pylint: enable=E0401
-
 import matplotlib.collections as mcollections
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -13,9 +11,13 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from .utilities import create_title
+
+# pylint: enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -52,7 +54,8 @@ def diurnal(
 
     show_legend = kwargs.pop("legend", True)
 
-    # NOTE - no checks here for missing days, weeks, or months, it should be evident from the plot
+    # NOTE - no checks here for missing days, weeks, or months, it should be
+    # evident from the plot
 
     # obtain plotting parameters
     minmax_range = kwargs.pop("minmax_range", [0.0001, 0.9999])
@@ -70,7 +73,8 @@ def diurnal(
     color = kwargs.pop("color", "slategray")
 
     # resample to hourly to ensuure hour alignment
-    # TODO - for now we only resample to hourly, but this could be made more flexible by allowing any subset of period
+    # TODO - for now we only resample to hourly, but this could be made more
+    # flexible by allowing any subset of period
     series = series.resample("h").mean()
 
     # remove nan/inf
@@ -112,15 +116,17 @@ def diurnal(
             elif i[1] == 12:
                 major_ticklabels.append("")
     else:
-        raise ValueError("period must be one of 'daily', 'weekly', or 'monthly'")
+        raise ValueError(
+            "period must be one of 'daily', 'weekly', or 'monthly'")
 
     samples_per_timestep = group.count().mean()
     ax.set_title(
         create_title(
-            kwargs.pop("title", None),
+            kwargs.pop(
+                "title",
+                None),
             f"Average {period} diurnal profile (≈{samples_per_timestep:0.0f} samples per timestep)",
-        )
-    )
+        ))
 
     # Get values to plot
     minima = group.min()
@@ -143,26 +149,28 @@ def diurnal(
             continue
         # q-q
         ax.fill_between(
-            range(len(df) + 1)[i : i + 25],
-            (df["lower"].tolist() + [df["lower"].values[0]])[i : i + 24]
-            + [(df["lower"].tolist() + [df["lower"].values[0]])[i : i + 24][0]],
-            (df["upper"].tolist() + [df["upper"].values[0]])[i : i + 24]
-            + [(df["upper"].tolist() + [df["upper"].values[0]])[i : i + 24][0]],
+            range(len(df) + 1)[i: i + 25],
+            (df["lower"].tolist() + [df["lower"].values[0]])[i: i + 24]
+            + [(df["lower"].tolist() + [df["lower"].values[0]])[i: i + 24][0]],
+            (df["upper"].tolist() + [df["upper"].values[0]])[i: i + 24]
+            + [(df["upper"].tolist() + [df["upper"].values[0]])[i: i + 24][0]],
             alpha=quantile_alpha,
             color=color,
             lw=None,
             ec=None,
-            label=f"{quantile_range[0]:0.0%}-{quantile_range[1]:0.0%}ile"
-            if n == 0
-            else "_nolegend_",
+            label=(
+                f"{quantile_range[0]:0.0%}-{quantile_range[1]:0.0%}ile"
+                if n == 0
+                else "_nolegend_"
+            ),
         )
         # q-extreme
         ax.fill_between(
-            range(len(df) + 1)[i : i + 25],
-            (df["lower"].tolist() + [df["lower"].values[0]])[i : i + 24]
-            + [(df["lower"].tolist() + [df["lower"].values[0]])[i : i + 24][0]],
-            (df["minima"].tolist() + [df["minima"].values[0]])[i : i + 24]
-            + [(df["minima"].tolist() + [df["minima"].values[0]])[i : i + 24][0]],
+            range(len(df) + 1)[i: i + 25],
+            (df["lower"].tolist() + [df["lower"].values[0]])[i: i + 24]
+            + [(df["lower"].tolist() + [df["lower"].values[0]])[i: i + 24][0]],
+            (df["minima"].tolist() + [df["minima"].values[0]])[i: i + 24]
+            + [(df["minima"].tolist() + [df["minima"].values[0]])[i: i + 24][0]],
             alpha=minmax_alpha,
             color=color,
             lw=None,
@@ -170,11 +178,11 @@ def diurnal(
             label="Range" if n == 0 else "_nolegend_",
         )
         ax.fill_between(
-            range(len(df) + 1)[i : i + 25],
-            (df["upper"].tolist() + [df["upper"].values[0]])[i : i + 24]
-            + [(df["upper"].tolist() + [df["upper"].values[0]])[i : i + 24][0]],
-            (df["maxima"].tolist() + [df["maxima"].values[0]])[i : i + 24]
-            + [(df["maxima"].tolist() + [df["maxima"].values[0]])[i : i + 24][0]],
+            range(len(df) + 1)[i: i + 25],
+            (df["upper"].tolist() + [df["upper"].values[0]])[i: i + 24]
+            + [(df["upper"].tolist() + [df["upper"].values[0]])[i: i + 24][0]],
+            (df["maxima"].tolist() + [df["maxima"].values[0]])[i: i + 24]
+            + [(df["maxima"].tolist() + [df["maxima"].values[0]])[i: i + 24][0]],
             alpha=minmax_alpha,
             color=color,
             lw=None,
@@ -183,18 +191,18 @@ def diurnal(
         )
         # mean/median
         ax.plot(
-            range(len(df) + 1)[i : i + 25],
-            (df["mean"].tolist() + [df["mean"].values[0]])[i : i + 24]
-            + [(df["mean"].tolist() + [df["mean"].values[0]])[i : i + 24][0]],
+            range(len(df) + 1)[i: i + 25],
+            (df["mean"].tolist() + [df["mean"].values[0]])[i: i + 24]
+            + [(df["mean"].tolist() + [df["mean"].values[0]])[i: i + 24][0]],
             c=color,
             ls="-",
             lw=1,
             label="Average" if n == 0 else "_nolegend_",
         )
         ax.plot(
-            range(len(df) + 1)[i : i + 25],
-            (df["median"].tolist() + [df["median"].values[0]])[i : i + 24]
-            + [(df["median"].tolist() + [df["median"].values[0]])[i : i + 24][0]],
+            range(len(df) + 1)[i: i + 25],
+            (df["median"].tolist() + [df["median"].values[0]])[i: i + 24]
+            + [(df["median"].tolist() + [df["median"].values[0]])[i: i + 24][0]],
             c=color,
             ls="--",
             lw=1,
@@ -271,18 +279,18 @@ def stacked_diurnals(
         if isinstance(handle, mlines.Line2D):
             new_handles.append(
                 mlines.Line2D(
-                    (0,), (0,), color="slategray", linestyle=handle.get_linestyle()
-                )
-            )
+                    (0,), (0,), color="slategray", linestyle=handle.get_linestyle()))
 
-    plt.legend(
-        new_handles, labels, bbox_to_anchor=(0.5, -0.12), loc="upper center", ncol=4
-    )
+    plt.legend(new_handles, labels, bbox_to_anchor=(
+        0.5, -0.12), loc="upper center", ncol=4)
 
     fig.suptitle(
         create_title(
-            kwargs.pop("title", None),
-            f"Average {period} diurnal profile" + "s" if len(datasets) > 1 else "",
+            kwargs.pop(
+                "title",
+                None),
+            f"Average {period} diurnal profile" +
+            "s" if len(datasets) > 1 else "",
         ),
         x=fig.subplotpars.left,
         ha="left",

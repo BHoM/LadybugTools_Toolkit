@@ -1,14 +1,11 @@
-import pytest
 from pathlib import Path
-from ladybugtools_toolkit.honeybee_extension.simulation.radiance import (
-    radiance_parameters,
-    HoneybeeRadiance,
-)
+
+import pytest
 from ladybug.futil import nukedir
+from ladybugtools_toolkit.honeybee_extension.simulation.radiance import (
+    HoneybeeRadiance, radiance_parameters)
 from ladybugtools_toolkit.ladybug_extension.analysisperiod import (
-    describe_analysis_period,
-    AnalysisPeriod,
-)
+    AnalysisPeriod, describe_analysis_period)
 
 from .. import TEST_DAYLIGHT_MODEL, TEST_WEA
 
@@ -59,7 +56,9 @@ def test_simulate_annual_daylight():
         TEST_HB_RAD.annual_daylight()
 
     with pytest.warns(UserWarning):
-        assert isinstance(TEST_HB_RAD.simulate_annual_daylight(wea=TEST_WEA), Path)
+        assert isinstance(
+            TEST_HB_RAD.simulate_annual_daylight(
+                wea=TEST_WEA), Path)
 
     assert TEST_HB_RAD.annual_daylight().shape == (4398, 200)
     assert TEST_HB_RAD.annual_daylight().values.sum() == pytest.approx(
@@ -76,7 +75,9 @@ def test_simulate_annual_irradiance():
         TEST_HB_RAD.annual_irradiance()
 
     with pytest.warns(UserWarning):
-        assert isinstance(TEST_HB_RAD.simulate_annual_irradiance(wea=TEST_WEA), Path)
+        assert isinstance(
+            TEST_HB_RAD.simulate_annual_irradiance(
+                wea=TEST_WEA), Path)
 
     assert TEST_HB_RAD.annual_irradiance().shape == (4398, 200)
     assert TEST_HB_RAD.annual_irradiance().values.sum() == pytest.approx(
@@ -89,8 +90,8 @@ def test_direct_sun_hours():
     ap = AnalysisPeriod(st_month=3)
 
     nukedir(
-        TEST_HB_RAD.output_directory
-        / f"direct_sun_hours_{describe_analysis_period(ap, save_path=True, include_timestep=True)}",
+        TEST_HB_RAD.output_directory /
+        f"direct_sun_hours_{describe_analysis_period(ap, save_path=True, include_timestep=True)}",
         rmdir=True,
     )
 
@@ -98,8 +99,10 @@ def test_direct_sun_hours():
         TEST_HB_RAD.direct_sun_hours()
 
     assert isinstance(
-        TEST_HB_RAD.simulate_direct_sun_hours(wea=TEST_WEA, analysis_period=ap), Path
-    )
+        TEST_HB_RAD.simulate_direct_sun_hours(
+            wea=TEST_WEA,
+            analysis_period=ap),
+        Path)
 
     assert TEST_HB_RAD.direct_sun_hours().shape == (25, 8)
     assert TEST_HB_RAD.direct_sun_hours().values.sum() == 75444.0

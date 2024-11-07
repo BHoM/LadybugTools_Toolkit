@@ -1,4 +1,5 @@
 """Categorical objects for grouping data into bins."""
+
 # pylint: disable=W0212
 # pylint: disable=E0401
 import calendar
@@ -6,26 +7,21 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
 
+import matplotlib.ticker as mticker
 # pylint: enable=E0401
 import numpy as np
 import pandas as pd
 from ladybug.legend import Color
 from matplotlib import patches
 from matplotlib import pyplot as plt
-from matplotlib.colors import (
-    BoundaryNorm,
-    Colormap,
-    ListedColormap,
-    to_hex,
-    to_rgba,
-)
+from matplotlib.colors import (BoundaryNorm, Colormap, ListedColormap, to_hex,
+                               to_rgba)
 from matplotlib.legend import Legend
-import matplotlib.ticker as mticker
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import rolling_window, validate_timeseries
-from ..plot.utilities import contrasting_color
 from ..plot._heatmap import heatmap
+from ..plot.utilities import contrasting_color
 
 
 @dataclass(init=True, repr=True)
@@ -63,7 +59,8 @@ class Categorical:
             self.bin_names = [str(i) for i in self.interval_index]
 
         # ensure the number of bins, colors and bin names are consistent
-        if len(set([len(self.bin_names), len(self.colors), (len(self.bins) - 1)])) > 1:
+        if len(set([len(self.bin_names), len(self.colors),
+               (len(self.bins) - 1)])) > 1:
             raise ValueError(
                 f"The number of colors ({len(self.colors)}) and bin names "
                 f"({len(self.bin_names)}) must be one less than the number of "
@@ -341,8 +338,10 @@ class Categorical:
                 The categorised data.
         """
         categorical = pd.cut(
-            data, self.bins, labels=self.bin_names_detailed, include_lowest=True
-        )
+            data,
+            self.bins,
+            labels=self.bin_names_detailed,
+            include_lowest=True)
         if categorical.isna().any():
             raise ValueError(
                 f"The input value/s are outside the range of the categories ({self.bins[0]} <= x <= {self.bins[-1]})."
@@ -367,7 +366,8 @@ class Categorical:
             pd.Series:
                 The number of counts within each categorical bin.
         """
-        result = self.categorise(data).value_counts()[list(self.bin_names_detailed)]
+        result = self.categorise(data).value_counts()[
+            list(self.bin_names_detailed)]
         if density:
             return result / len(data)
         return result
@@ -396,8 +396,9 @@ class Categorical:
             raise ValueError("The series must have a time series.")
 
         counts = (
-            self.categorise(series).groupby(series.index.month).value_counts().unstack()
-        ).sort_index(axis=0)
+            self.categorise(series).groupby(
+                series.index.month).value_counts().unstack()).sort_index(
+            axis=0)
         counts.columns.name = None
         counts.index.name = "Month"
         if density:
@@ -532,10 +533,11 @@ class Categorical:
 
         if show_labels:
             for i, c in enumerate(ax.containers):
-                label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
-                labels = [
-                    f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c
-                ]
+                label_colors = [
+                    contrasting_color(
+                        i.get_facecolor()) for i in c.patches]
+                labels = [f"{v.get_height():0.1%}" if v.get_height()
+                          > 0.15 else "" for v in c]
                 ax.bar_label(
                     c,
                     labels=labels,
@@ -619,7 +621,8 @@ class CategoricalComfort(Categorical):
             The comfort classes to use.
     """
 
-    comfort_classes: tuple[ComfortClass] = field(default_factory=tuple, repr=False)
+    comfort_classes: tuple[ComfortClass] = field(
+        default_factory=tuple, repr=False)
 
     def __post_init__(self):
         if len(self.comfort_classes) == 0:
@@ -639,7 +642,8 @@ class CategoricalComfort(Categorical):
                 The simplified categorical comfort.
         """
         d = {}
-        for comfort_class, bin_left in list(zip(*[self.comfort_classes, self.bins])):
+        for comfort_class, bin_left in list(
+                zip(*[self.comfort_classes, self.bins])):
             if comfort_class in d:
                 continue
             d[comfort_class] = bin_left

@@ -3,12 +3,8 @@
 import numpy as np
 import pytest
 from ladybugtools_toolkit.external_comfort.material import (
-    _custom_materials,
-    _ice_tool_materials,
-    _lbt_materials,
-    get_material,
-    materials,
-)
+    _custom_materials, _ice_tool_materials, _lbt_materials, get_material,
+    materials)
 
 TEST_GROUND_MATERIAL = get_material("Concrete Pavement")
 TEST_SHADE_MATERIAL = get_material("Fabric")
@@ -20,9 +16,8 @@ def test_lbt_materials():
     assert len(_materials) == 114
     assert _materials[0].identifier == "Generic Roof Membrane"
     assert _materials[-1].identifier == "Grassy Lawn"
-    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
-        4.06154874650346
-    )
+    assert np.array([i.conductivity for i in _materials]
+                    ).mean() == pytest.approx(4.06154874650346)
 
 
 def test_ice_tool_materials():
@@ -31,9 +26,8 @@ def test_ice_tool_materials():
     assert len(_materials) == 39
     assert _materials[0].identifier == "SD1 - Quartzite (Beige/brown/black New/Rough)"
     assert _materials[-1].identifier == "WT1 - Water small (- -)"
-    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
-        1.498974358974359
-    )
+    assert np.array([i.conductivity for i in _materials]
+                    ).mean() == pytest.approx(1.498974358974359)
 
 
 def test_custom_materials():
@@ -42,9 +36,8 @@ def test_custom_materials():
     assert len(_materials) == 3
     assert _materials[0].identifier == "Fabric"
     assert _materials[-1].identifier == "Travertine"
-    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
-        1.2033333333333334
-    )
+    assert np.array([i.conductivity for i in _materials]
+                    ).mean() == pytest.approx(1.2033333333333334)
 
 
 def test_materials():
@@ -53,9 +46,8 @@ def test_materials():
     assert len(_materials) == 154
     assert _materials[0].identifier == "Generic Roof Membrane"
     assert _materials[-1].identifier == "WT1 - Water small (- -)"
-    assert np.array([i.conductivity for i in _materials]).mean() == pytest.approx(
-        3.4017114097493146
-    )
+    assert np.array([i.conductivity for i in _materials]
+                    ).mean() == pytest.approx(3.4017114097493146)
 
 
 def test_get_material():

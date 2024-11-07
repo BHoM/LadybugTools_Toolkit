@@ -4,15 +4,13 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from ladybug.wea import AnalysisPeriod, Wea
-from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort import SpatialComfort
-from ladybugtools_toolkit.honeybee_extension.simulation.radiance import HoneybeeRadiance
+from ladybugtools_toolkit.external_comfort.spatial.spatial_comfort import \
+    SpatialComfort
+from ladybugtools_toolkit.honeybee_extension.simulation.radiance import \
+    HoneybeeRadiance
 
-from .. import (
-    CFD_DIRECTORY,
-    EPW_FILE,
-    SPATIAL_COMFORT_MODEL_OBJ,
-    SPATIAL_COMFORT_DIRECTORY,
-)
+from .. import (CFD_DIRECTORY, EPW_FILE, SPATIAL_COMFORT_DIRECTORY,
+                SPATIAL_COMFORT_MODEL_OBJ)
 from .test_simulate import TEST_SIMULATION_RESULT
 
 SPATIAL_COMFORT_DIRECTORY.mkdir(parents=True, exist_ok=True)
@@ -55,7 +53,9 @@ def test_spatial_comfort():
 def test_spatial_comfort_processing():
     """_"""
 
-    spatial_comfort = SpatialComfort(SPATIAL_COMFORT_DIRECTORY, TEST_SIMULATION_RESULT)
+    spatial_comfort = SpatialComfort(
+        SPATIAL_COMFORT_DIRECTORY,
+        TEST_SIMULATION_RESULT)
 
     # remove existing files
     for fp in spatial_comfort.spatial_simulation_directory.glob("*.parquet"):
@@ -63,14 +63,16 @@ def test_spatial_comfort_processing():
 
     # with pytest.warns((pd.errors.PerformanceWarning)):
     assert isinstance(
-        spatial_comfort.universal_thermal_climate_index_calculated, pd.DataFrame
-    )
+        spatial_comfort.universal_thermal_climate_index_calculated,
+        pd.DataFrame)
 
 
 def test_spatial_comfort_summary():
     """_"""
 
-    spatial_comfort = SpatialComfort(SPATIAL_COMFORT_DIRECTORY, TEST_SIMULATION_RESULT)
+    spatial_comfort = SpatialComfort(
+        SPATIAL_COMFORT_DIRECTORY,
+        TEST_SIMULATION_RESULT)
 
     # remove analsyis periods fo testing
     spatial_comfort.analysis_periods = [

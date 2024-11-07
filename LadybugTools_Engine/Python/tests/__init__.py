@@ -27,7 +27,8 @@ SPATIAL_COMFORT_DIRECTORY = (
 SPATIAL_COMFORT_MODEL_FILE = (
     Path(__file__).parent / "assets" / "example_spatial_comfort.hbjson"
 )
-SPATIAL_COMFORT_MODEL_OBJ: Model = Model.from_hbjson(SPATIAL_COMFORT_MODEL_FILE)
+SPATIAL_COMFORT_MODEL_OBJ: Model = Model.from_hbjson(
+    SPATIAL_COMFORT_MODEL_FILE)
 
 EPW_FILE = Path(__file__).parent / "assets" / "example.epw"
 EPW_CSV_FILE = (Path(__file__).parent / "assets" / "example.csv",)

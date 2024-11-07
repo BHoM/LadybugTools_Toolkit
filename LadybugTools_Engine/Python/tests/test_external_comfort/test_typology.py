@@ -1,12 +1,11 @@
 from pathlib import Path
 from tempfile import gettempdir
+
 import pytest
 from ladybug.epw import EPW
-from ladybugtools_toolkit.external_comfort.typology import (
-    Typology,
-    combine_typologies,
-    Typologies,
-)
+from ladybugtools_toolkit.external_comfort.typology import (Typologies,
+                                                            Typology,
+                                                            combine_typologies)
 
 from .. import EPW_FILE, EXTERNAL_COMFORT_IDENTIFIER
 from .test_shelter import TEST_SHELTER
@@ -42,9 +41,8 @@ def test_combine_typologies():
 
 def test_dry_bulb_temperature():
     """_"""
-    assert TEST_TYPOLOGY.dry_bulb_temperature(EPW_OBJ).average == pytest.approx(
-        10.036858349164525, rel=0.1
-    )
+    assert TEST_TYPOLOGY.dry_bulb_temperature(
+        EPW_OBJ).average == pytest.approx(10.036858349164525, rel=0.1)
 
 
 def test_relative_humidity():

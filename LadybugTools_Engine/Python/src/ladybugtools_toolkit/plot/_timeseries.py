@@ -2,11 +2,10 @@
 
 from datetime import datetime  # pylint: disable=E0401
 
-
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import validate_timeseries
 
 
@@ -42,7 +41,7 @@ def timeseries(
     if ax is None:
         ax = plt.gca()
 
-    ax.plot(series.index, series.values, **kwargs)  ## example plot here
+    ax.plot(series.index, series.values, **kwargs)  # example plot here
 
     # TODO - add cmap arg to color line by y value -
     # https://matplotlib.org/stable/gallery/lines_bars_and_markers/multicolored_line.html

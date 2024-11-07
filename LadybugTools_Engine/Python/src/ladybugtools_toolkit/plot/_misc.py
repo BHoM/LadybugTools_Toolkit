@@ -1,21 +1,20 @@
 """Miscellaneous plots that don't really fit anywhere else."""
+
 # pylint: disable=line-too-long
 from calendar import month_abbr  # pylint: disable=E0401
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-
 import numpy as np
 import pandas as pd
-
 from ladybug.epw import EPW, Location
 from ladybug.sunpath import Sunpath
 
-from ..ladybug_extension.datacollection import collection_to_series
-from ..helpers import sunrise_sunset
-from ._heatmap import heatmap
 from ..categorical.categories import Categorical
+from ..helpers import sunrise_sunset
+from ..ladybug_extension.datacollection import collection_to_series
+from ._heatmap import heatmap
 
 
 def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
@@ -35,7 +34,8 @@ def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
         ax = plt.gca()
 
     s = collection_to_series(epw.opaque_sky_cover)
-    mtx = s.groupby([s.index.month, s.index.day]).value_counts().unstack().fillna(0)
+    mtx = s.groupby([s.index.month, s.index.day]
+                    ).value_counts().unstack().fillna(0)
     mapper = {
         0: "clear",
         1: "clear",
@@ -54,7 +54,14 @@ def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
     ]
     mtx = (mtx.T / mtx.sum(axis=1)).T
 
-    mtx.plot.area(ax=ax, color=["#95B5DF", "#B1C4DD", "#C9D0D9", "#ACB0B6", "#989CA1"])
+    mtx.plot.area(
+        ax=ax,
+        color=[
+            "#95B5DF",
+            "#B1C4DD",
+            "#C9D0D9",
+            "#ACB0B6",
+            "#989CA1"])
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
     ax.set_xticks(
         ticks=[n for n, i in enumerate(mtx.index) if i[1] == 1],
@@ -88,29 +95,23 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
     """
     srss_df = sunrise_sunset(location)
     #
-    ## hours of daylight
+    # hours of daylight
     daylight = pd.Series(
         [i.seconds / (60 * 60) for i in (srss_df["sunset"] - srss_df["sunrise"])],
         name="daylight",
         index=srss_df.index,
     )
-    civil_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (srss_df["civil twilight end"] - srss_df["civil twilight start"])
-        ]
-        - daylight
-    ).rename("civil twilight")
-    nautical_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (
-                srss_df["nautical twilight end"] - srss_df["nautical twilight start"]
-            )
-        ]
-        - daylight
-        - civil_twilight
-    ).rename("nautical twilight")
+    civil_twilight = ([i.seconds /
+                       (60 *
+                        60) for i in (srss_df["civil twilight end"] -
+                                      srss_df["civil twilight start"])] -
+                      daylight).rename("civil twilight")
+    nautical_twilight = ([i.seconds /
+                          (60 *
+                           60) for i in (srss_df["nautical twilight end"] -
+                                         srss_df["nautical twilight start"])] -
+                         daylight -
+                         civil_twilight).rename("nautical twilight")
     astronomical_twilight = (
         [
             i.seconds / (60 * 60)
@@ -123,14 +124,16 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
         - civil_twilight
         - nautical_twilight
     ).rename("astronomical twilight")
-    night = (
-        24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)
-    ).rename("night")
+    night = (24 - (daylight + civil_twilight + nautical_twilight +
+                   astronomical_twilight)).rename("night")
 
-    temp = pd.concat(
-        [daylight, civil_twilight, nautical_twilight, astronomical_twilight, night],
-        axis=1,
-    )
+    temp = pd.concat([daylight,
+                      civil_twilight,
+                      nautical_twilight,
+                      astronomical_twilight,
+                      night],
+                     axis=1,
+                     )
     ax = plt.gca()
     ax.stackplot(
         daylight.index,
@@ -149,7 +152,8 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
     ax.scatter(temp.daylight.idxmax(), temp.daylight.max(), c="k", s=10)
     ax.text(
         temp.daylight.idxmax(),
-        temp.daylight.max() - 0.5,
+        temp.daylight.max() -
+        0.5,
         f"Summer solstice\n{np.floor(temp.daylight.max()):0.0f} hrs, {(temp.daylight.max() % 1) * 60:0.0f} mins\n{temp.daylight.idxmax():%d %b}",
         ha="center",
         va="top",
@@ -158,14 +162,18 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
     ax.scatter(temp.daylight.idxmin(), temp.daylight.min(), c="k", s=10)
     ax.text(
         temp.daylight.idxmin(),
-        temp.daylight.min() - 0.5,
+        temp.daylight.min() -
+        0.5,
         f"Winter solstice\n{np.floor(temp.daylight.min()):0.0f} hrs, {(temp.daylight.min() % 1) * 60:0.0f} mins\n{temp.daylight.idxmin():%d %b}",
         ha="right" if temp.daylight.idxmin().month > 6 else "left",
         va="top",
     )
 
     equionoosss = abs((temp.daylight - temp.daylight.median())).sort_values()
-    ax.scatter(equionoosss.index[0], temp.daylight[equionoosss.index[0]], c="k", s=10)
+    ax.scatter(equionoosss.index[0],
+               temp.daylight[equionoosss.index[0]],
+               c="k",
+               s=10)
     ax.text(
         equionoosss.index[0],
         temp.daylight[equionoosss.index[0]] - 0.5,
@@ -181,7 +189,8 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
     ax.scatter(ix, temp.daylight[ix], c="k", s=10)
     ax.text(
         ix,
-        temp.daylight[ix] - 0.5,
+        temp.daylight[ix] -
+        0.5,
         f"Equinox\n{np.floor(temp.daylight[ix]):0.0f} hrs, {(temp.daylight[ix] % 1) * 60:0.0f} mins\n{ix:%d %b}",
         ha="right" if ix.month > 6 else "left",
         va="top",
@@ -213,32 +222,28 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         ax = plt.gca()
 
     srss_df = sunrise_sunset(location)
-    seconds = srss_df.map(lambda a: ((a - a.normalize()) / pd.Timedelta("1 second")))
+    seconds = srss_df.map(
+        lambda a: (
+            (a - a.normalize()) / pd.Timedelta("1 second")))
     hours = seconds / (60 * 60)
 
-    ## hours of daylight
+    # hours of daylight
     daylight = pd.Series(
         [i.seconds / (60 * 60) for i in (srss_df["sunset"] - srss_df["sunrise"])],
         name="daylight",
         index=srss_df.index,
     )
-    civil_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (srss_df["civil twilight end"] - srss_df["civil twilight start"])
-        ]
-        - daylight
-    ).rename("civil twilight")
-    nautical_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (
-                srss_df["nautical twilight end"] - srss_df["nautical twilight start"]
-            )
-        ]
-        - daylight
-        - civil_twilight
-    ).rename("nautical twilight")
+    civil_twilight = ([i.seconds /
+                       (60 *
+                        60) for i in (srss_df["civil twilight end"] -
+                                      srss_df["civil twilight start"])] -
+                      daylight).rename("civil twilight")
+    nautical_twilight = ([i.seconds /
+                          (60 *
+                           60) for i in (srss_df["nautical twilight end"] -
+                                         srss_df["nautical twilight start"])] -
+                         daylight -
+                         civil_twilight).rename("nautical twilight")
     astronomical_twilight = (
         [
             i.seconds / (60 * 60)
@@ -251,14 +256,16 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         - civil_twilight
         - nautical_twilight
     ).rename("astronomical twilight")
-    night = (
-        24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)
-    ).rename("night")
+    night = (24 - (daylight + civil_twilight + nautical_twilight +
+                   astronomical_twilight)).rename("night")
 
-    temp = pd.concat(
-        [daylight, civil_twilight, nautical_twilight, astronomical_twilight, night],
-        axis=1,
-    )
+    temp = pd.concat([daylight,
+                      civil_twilight,
+                      nautical_twilight,
+                      astronomical_twilight,
+                      night],
+                     axis=1,
+                     )
 
     ax = plt.gca()
     ax.fill_between(
@@ -290,8 +297,11 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         label="Civil twilight",
     )
     ax.fill_between(
-        hours.index, hours["sunrise"], hours["sunset"], fc="#FCE49D", label="Day"
-    )
+        hours.index,
+        hours["sunrise"],
+        hours["sunset"],
+        fc="#FCE49D",
+        label="Day")
     ax.fill_between(
         hours.index,
         hours["sunset"],
@@ -321,7 +331,8 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         label="__nolegend__",
     )
 
-    [ax.plot(hours.index, hours[i], c="k", lw=1) for i in ["sunrise", "noon", "sunset"]]
+    [ax.plot(hours.index, hours[i], c="k", lw=1)
+     for i in ["sunrise", "noon", "sunset"]]
 
     ax.axvline(temp.daylight.idxmax(), c="k", ls=":", alpha=0.5)
     ax.text(
@@ -386,7 +397,8 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
     ax.axvline(ix, c="k", ls=":", alpha=0.5)
     ax.text(
         ix,
-        hours.noon.loc[ix] + 0.5,
+        hours.noon.loc[ix] +
+        0.5,
         f"Equinox ({ix:%d %b})\n{np.floor(temp.daylight[ix]):0.0f} hrs, {(temp.daylight[ix] % 1) * 60:0.0f} mins",
         ha="right" if ix.month > 6 else "left",
         va="bottom",
@@ -406,7 +418,9 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
     return ax
 
 
-def solar_elevation_azimuth(location: Location, ax: plt.Axes = None) -> plt.Axes:
+def solar_elevation_azimuth(
+        location: Location,
+        ax: plt.Axes = None) -> plt.Axes:
     """Plot the solar elevation and azimuth for a location.
 
     Args:
@@ -474,7 +488,10 @@ def solar_elevation_azimuth(location: Location, ax: plt.Axes = None) -> plt.Axes
         ax = plt.gca()
 
     sp = Sunpath.from_location(location)
-    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="10min")
+    idx = pd.date_range(
+        "2017-01-01 00:00:00",
+        "2018-01-01 00:00:00",
+        freq="10min")
     suns = [sp.calculate_sun_from_date_time(i) for i in idx]
     a = pd.DataFrame(index=idx)
     a["altitude"] = [i.altitude for i in suns]

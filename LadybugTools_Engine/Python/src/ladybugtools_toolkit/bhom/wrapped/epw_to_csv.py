@@ -1,4 +1,5 @@
 """Method to wrap for conversion of EPW to CSV file."""
+
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import traceback
@@ -8,7 +9,8 @@ from pathlib import Path
 def main(epw_file: str, include_additional: bool) -> None:
     """Create a CSV file version of an EPW."""
     try:
-        from ladybugtools_toolkit.ladybug_extension.epw import epw_to_dataframe, EPW
+        from ladybugtools_toolkit.ladybug_extension.epw import (
+            EPW, epw_to_dataframe)
 
         epw = EPW(epw_file)
         df = epw_to_dataframe(epw=epw, include_additional=include_additional)

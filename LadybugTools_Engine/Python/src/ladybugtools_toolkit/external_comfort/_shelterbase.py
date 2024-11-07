@@ -1,11 +1,10 @@
 """Base shelter object for use in external comfort calculations."""
+
 # pylint: disable=E0401
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from dataclasses import dataclass
-
-# pylint: enable=E0401
 
 import honeybee.dictutil as hb_dict_util
 import honeybee_energy.dictutil as energy_dict_util
@@ -16,22 +15,20 @@ from honeybee.model import Face, Model, Shade
 from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 from ladybug.epw import EPW
 from ladybug.viewsphere import ViewSphere
-from ladybug_geometry.geometry3d import (
-    Face3D,
-    LineSegment3D,
-    Plane,
-    Point3D,
-    Ray3D,
-    Vector3D,
-)
+from ladybug_geometry.geometry3d import (Face3D, LineSegment3D, Plane, Point3D,
+                                         Ray3D, Vector3D)
 from matplotlib.figure import Figure
 from mpl_toolkits import mplot3d
-
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..bhom.to_bhom import point3d_to_bhom
-from ..ladybug_extension.epw import sun_position_list
 from ..helpers import convert_keys_to_snake_case
+from ..ladybug_extension.epw import sun_position_list
+
+# pylint: enable=E0401
+
+
+
 
 SENSOR_LOCATION = Point3D(0, 0, 1.2)
 
@@ -60,7 +57,8 @@ class Shelter:
 
         if len(self.radiation_porosity) != 8760:
             raise ValueError("radiation_porosity must be 8760 items long.")
-        if any(not isinstance(i, (float, int)) for i in self.radiation_porosity):
+        if any(not isinstance(i, (float, int))
+               for i in self.radiation_porosity):
             raise ValueError("radiation_porosity must be a list of floats.")
         self.radiation_porosity = [float(i) for i in self.radiation_porosity]
         if any(i < 0 for i in self.radiation_porosity):
@@ -68,7 +66,9 @@ class Shelter:
         if any(i > 1 for i in self.radiation_porosity):
             raise ValueError("radiation_porosity values must be <= 1.")
 
-        if sum(self.wind_porosity) == 8760 and sum(self.radiation_porosity) == 8760:
+        if sum(
+                self.wind_porosity) == 8760 and sum(
+                self.radiation_porosity) == 8760:
             raise ValueError(
                 "This shelter would have no effect as it does not impact wind or radiation exposure."
             )
@@ -223,24 +223,26 @@ class Shelter:
 
         origin = Point3D()
         angle = np.deg2rad(-angle)
-        return cls(
-            vertices=(
-                Point3D(width / 2, -length / 2, height_above_ground).rotate_xy(
-                    angle, origin
-                ),
-                Point3D(width / 2, length / 2, height_above_ground).rotate_xy(
-                    angle, origin
-                ),
-                Point3D(-width / 2, length / 2, height_above_ground).rotate_xy(
-                    angle, origin
-                ),
-                Point3D(-width / 2, -length / 2, height_above_ground).rotate_xy(
-                    angle, origin
-                ),
-            ),
-            wind_porosity=wind_porosity,
-            radiation_porosity=radiation_porosity,
-        )
+        return cls(vertices=(Point3D(width / 2,
+                                     -length / 2,
+                                     height_above_ground).rotate_xy(angle,
+                                                                    origin),
+                             Point3D(width / 2,
+                                     length / 2,
+                                     height_above_ground).rotate_xy(angle,
+                                                                    origin),
+                             Point3D(-width / 2,
+                                     length / 2,
+                                     height_above_ground).rotate_xy(angle,
+                                                                    origin),
+                             Point3D(-width / 2,
+                                     -length / 2,
+                                     height_above_ground).rotate_xy(angle,
+                                                                    origin),
+                             ),
+                   wind_porosity=wind_porosity,
+                   radiation_porosity=radiation_porosity,
+                   )
 
     @classmethod
     def from_overhead_circle(
@@ -330,10 +332,13 @@ class Shelter:
 
         return cls(
             vertices=Face3D.from_extrusion(
-                extrusion_vector=Vector3D(0, 0, wall_height), line_segment=base_line
-            )
-            .rotate_xy(origin=origin, angle=angle)
-            .vertices,
+                extrusion_vector=Vector3D(
+                    0,
+                    0,
+                    wall_height),
+                line_segment=base_line) .rotate_xy(
+                origin=origin,
+                angle=angle) .vertices,
             wind_porosity=wind_porosity,
             radiation_porosity=radiation_porosity,
         )
@@ -383,11 +388,9 @@ class Shelter:
         # get shade transmittance schedule, if it is present
         try:
             radiation_porosity = (
-                shade.properties.energy.transmittance_schedule.data_collection.values
-            )
+                shade.properties.energy.transmittance_schedule.data_collection.values)
             wind_porosity = (
-                shade.properties.energy.transmittance_schedule.data_collection.values
-            )
+                shade.properties.energy.transmittance_schedule.data_collection.values)
         except AttributeError:
             radiation_porosity = (0,) * 8760
             wind_porosity = (0,) * 8760
@@ -425,7 +428,8 @@ class Shelter:
                 if hb_obj is None:
                     hb_obj = energy_dict_util.dict_to_object(hb_dict, False)
                     if hb_obj is None:
-                        hb_obj = radiance_dict_util.dict_to_object(hb_dict, False)
+                        hb_obj = radiance_dict_util.dict_to_object(
+                            hb_dict, False)
                 hb_objs.append(hb_obj)
 
         if isinstance(hb_objs, Model):
@@ -449,7 +453,8 @@ class Shelter:
         Returns:
             Path: A Path to the Honeybee JSON file.
         """
-        # TODO - maintain the origin porosity as a properties.energy.transmissivity_schedule
+        # TODO - maintain the origin porosity as a
+        # properties.energy.transmissivity_schedule
         with open(hbjson_path, "w") as fp:
             json.dump(self.face3d.to_dict(), fp)
 
@@ -523,7 +528,9 @@ class Shelter:
             wind_porosity=porosity,
         )
 
-    def annual_sky_exposure(self, include_radiation_porosity: bool = True) -> float:
+    def annual_sky_exposure(
+            self,
+            include_radiation_porosity: bool = True) -> float:
         """Determine the proportion of sky the analytical point is exposed to.
             Also account for radiation_porosity in that exposure.
 
@@ -543,9 +550,11 @@ class Shelter:
             Ray3D(SENSOR_LOCATION, vector)
             for vector in view_sphere.reinhart_dome_vectors
         ]
-        n_intersections = sum(bool(self.face3d.intersect_line_ray(ray)) for ray in rays)
+        n_intersections = sum(
+            bool(self.face3d.intersect_line_ray(ray)) for ray in rays)
         if include_radiation_porosity:
-            return 1 - ((n_intersections / len(rays)) * (1 - _radiation_porosity))
+            return 1 - ((n_intersections / len(rays))
+                        * (1 - _radiation_porosity))
         return 1 - (n_intersections / len(rays))
 
     def annual_sun_exposure(
@@ -584,8 +593,9 @@ class Shelter:
                 continue
 
             ray = Ray3D(
-                SENSOR_LOCATION, (sun.position_3d() - SENSOR_LOCATION).normalize()
-            )
+                SENSOR_LOCATION,
+                (sun.position_3d() -
+                 SENSOR_LOCATION).normalize())
 
             if self.face3d.intersect_line_ray(ray) is None:
                 _sun_exposure.append(1)
@@ -642,11 +652,14 @@ class Shelter:
         wind_direction_vector = Vector3D(
             np.sin(wind_direction_rad), np.cos(wind_direction_rad)
         )  # TODO - check that this is going the right direction
-        wind_direction_plane = Plane(n=wind_direction_vector, o=SENSOR_LOCATION)
+        wind_direction_plane = Plane(
+            n=wind_direction_vector, o=SENSOR_LOCATION)
 
         # check that the shelter is not in the opposite direction to the wind
-        if not any(wind_direction_plane.is_point_above(i) for i in self.vertices):
-            # the shelter is in the opposite direction to the wind, no multiplier needed
+        if not any(wind_direction_plane.is_point_above(i)
+                   for i in self.vertices):
+            # the shelter is in the opposite direction to the wind, no
+            # multiplier needed
             return 1
 
         # check if shelter is too high to impact wind
@@ -660,7 +673,8 @@ class Shelter:
 
         if len(set(i.z for i in self.vertices)) == 1:
             # the shelter is flat, no multiplier needed
-            # TODO - if shelter angled, approximate funneling towards/away from ground effect
+            # TODO - if shelter angled, approximate funneling towards/away from
+            # ground effect
             return 1
 
         wind_ray = Ray3D(p=SENSOR_LOCATION, v=wind_direction_vector)
@@ -671,7 +685,11 @@ class Shelter:
             )
         ):
             wr = wind_ray.rotate_xy(origin=SENSOR_LOCATION, angle=az_angle)
-            for rotation in np.deg2rad(np.linspace(0, 180, n_samples_rotational)):
+            for rotation in np.deg2rad(
+                np.linspace(
+                    0,
+                    180,
+                    n_samples_rotational)):
                 wind_rays.append(
                     wr.rotate(
                         origin=SENSOR_LOCATION,
@@ -689,7 +707,8 @@ class Shelter:
             d[vv] = wr
 
         # get the number of intersections with the shelter object
-        intersections = [bool(self.face3d.intersect_line_ray(i)) for i in d.values()]
+        intersections = [bool(self.face3d.intersect_line_ray(i))
+                         for i in d.values()]
 
         if sum(intersections) == 0:
             return 1
@@ -789,10 +808,13 @@ class Shelter:
             tri_kwargs.get(
                 "color",
                 tri_kwargs.get(
-                    "c", tri_kwargs.get("fc", tri_kwargs.get("facecolor", "grey"))
-                ),
-            )
-        )
+                    "c",
+                    tri_kwargs.get(
+                        "fc",
+                        tri_kwargs.get(
+                            "facecolor",
+                            "grey"))),
+            ))
         tri.set_alpha(
             tri_kwargs.get(
                 "alpha",
@@ -848,9 +870,8 @@ def annual_sky_exposure(
         return [1] * 8760
 
     view_sphere = ViewSphere()
-    rays = [
-        Ray3D(SENSOR_LOCATION, vector) for vector in view_sphere.reinhart_dome_vectors
-    ]
+    rays = [Ray3D(SENSOR_LOCATION, vector)
+            for vector in view_sphere.reinhart_dome_vectors]
 
     results = []
     for ray in rays:
@@ -929,7 +950,9 @@ def annual_wind_speed(
 
 
 @bhom_analytics()
-def write_shelters_to_hbjson(shelters: list[Shelter], hbjson_path: Path) -> Path:
+def write_shelters_to_hbjson(
+        shelters: list[Shelter],
+        hbjson_path: Path) -> Path:
     """Create a Honeybee JSON file from a list of Shelter objects.
 
     Args:

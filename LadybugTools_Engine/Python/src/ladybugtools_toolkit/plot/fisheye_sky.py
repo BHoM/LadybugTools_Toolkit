@@ -1,4 +1,5 @@
 ﻿"""Methods for creating fisheye sky images."""
+
 import copy  # pylint: disable=E0401
 
 import numpy as np
@@ -50,7 +51,14 @@ def fisheye_sky(
     for face in model.faces:
         face.properties.radiance.modifier = modifier
 
-    view = View("fisheye_sky", sensor, view_direction, up_vector, "a", 360, 360)
+    view = View(
+        "fisheye_sky",
+        sensor,
+        view_direction,
+        up_vector,
+        "a",
+        360,
+        360)
 
     model.properties.radiance.views = [view]
 
@@ -74,7 +82,10 @@ def fisheye_sky(
     img = imread(pth, flags=IMREAD_ANYDEPTH)
 
     # convert RGB values per pixel into single values per pixel
-    normalised = np.interp(img, [img.min(), img.max()], [0, 255]).astype("uint8")
+    normalised = np.interp(
+        img, [
+            img.min(), img.max()], [
+            0, 255]).astype("uint8")
     img = Image.fromarray(normalised)
 
     # image brightness enhancer
@@ -92,9 +103,9 @@ def fisheye_sky(
             new_data.append(item)
     img.putdata(new_data)
     # smooth image
-    im1 = img.resize(
-        (int(img.size[0] * 0.9), int(img.size[0] * 0.9)), Image.Resampling.BILINEAR
-    )
+    im1 = img.resize((int(img.size[0] * 0.9),
+                      int(img.size[0] * 0.9)),
+                     Image.Resampling.BILINEAR)
     im1_as_array = np.array(im1)
     alpha = im1_as_array[:, :, 3]
     semi_transparent_indices = alpha < 255
@@ -105,7 +116,8 @@ def fisheye_sky(
     # img = img.filter(ImageFilter.SMOOTH_MORE)
 
     # crop out most of floor from fisheye view. typically we see
-    # 210deg, so if the image is 360, crop 40$ off of the image (20% from each edge)
+    # 210deg, so if the image is 360, crop 40$ off of the image (20% from each
+    # edge)
     image_size = img.size[0]
     img = img.crop(
         (

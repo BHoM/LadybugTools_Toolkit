@@ -1,12 +1,11 @@
 """Methods for calculating spatial comfort metrics."""
+
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from ...ladybug_extension.analysisperiod import (
-    AnalysisPeriod,
-    analysis_period_to_datetimes,
-)
+from ...ladybug_extension.analysisperiod import (AnalysisPeriod,
+                                                 analysis_period_to_datetimes)
 
 
 def shaded_unshaded_interpolation(
@@ -59,8 +58,7 @@ def shaded_unshaded_interpolation(
     if not len(sky_view) == total_irradiance.shape[1]:
         raise ValueError(
             "Number of sky-view values must match length of total irradiance values "
-            f"({len(sky_view)} != {total_irradiance.shape[1]})"
-        )
+            f"({len(sky_view)} != {total_irradiance.shape[1]})")
     if (
         len(unshaded_value)
         != len(shaded_value)
@@ -69,10 +67,10 @@ def shaded_unshaded_interpolation(
     ):
         raise ValueError(
             "Number of points-in-time must match for unshaded, shaded, "
-            f"total_irradiance and sun_up values ({len(sky_view)} != {total_irradiance.shape[1]})"
-        )
+            f"total_irradiance and sun_up values ({len(sky_view)} != {total_irradiance.shape[1]})")
 
-    # get the target range into which the value should fit following interpolation
+    # get the target range into which the value should fit following
+    # interpolation
     target_range = np.stack([shaded_value, unshaded_value], axis=1)
     target_low = target_range.min(axis=1)
     target_high = target_range.max(axis=1)
@@ -182,18 +180,22 @@ def rwdi_london_thermal_comfort_category(
     transient = (winter_comfort < 0.25) | (
         (spring_comfort < 0.5) | (summer_comfort < 0.5) | (fall_comfort < 0.5)
     )
-    short_term_seasonal = (winter_comfort >= 0.25) & (
-        (spring_comfort >= 0.5) & (summer_comfort >= 0.5) & (fall_comfort >= 0.5)
-    )
+    short_term_seasonal = (
+        winter_comfort >= 0.25) & (
+        (spring_comfort >= 0.5) & (
+            summer_comfort >= 0.5) & (
+                fall_comfort >= 0.5))
     short_term = (
         (winter_comfort >= 0.5)
         & (spring_comfort >= 0.5)
         & (summer_comfort >= 0.5)
         & (fall_comfort >= 0.5)
     )
-    seasonal = (winter_comfort >= 0.7) & (
-        (spring_comfort >= 0.9) & (summer_comfort >= 0.9) & (fall_comfort >= 0.9)
-    )
+    seasonal = (
+        winter_comfort >= 0.7) & (
+        (spring_comfort >= 0.9) & (
+            summer_comfort >= 0.9) & (
+                fall_comfort >= 0.9))
     all_season = (
         (winter_comfort >= 0.9)
         & (spring_comfort >= 0.9)

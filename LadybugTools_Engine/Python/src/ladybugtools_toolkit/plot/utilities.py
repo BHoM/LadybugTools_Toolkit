@@ -1,4 +1,5 @@
 """Color handling utilities"""
+
 # pylint: disable=E0401
 import base64
 import colorsys
@@ -7,27 +8,21 @@ import io
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import matplotlib.image as mimage
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 from ladybug.color import Colorset
-from matplotlib.colors import (
-    LinearSegmentedColormap,
-    cnames,
-    colorConverter,
-    is_color_like,
-    rgb2hex,
-    to_hex,
-    to_rgb,
-    to_rgba_array,
-)
+from matplotlib.colors import (LinearSegmentedColormap, cnames, colorConverter,
+                               is_color_like, rgb2hex, to_hex, to_rgb,
+                               to_rgba_array)
 from matplotlib.tri import Triangulation
 from PIL import Image
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
+# pylint: enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -191,7 +186,8 @@ def lb_colormap(name: int | str = "original") -> LinearSegmentedColormap:
         raise ValueError(f"name must be one of {cmap_strings}")
 
     lb_cmap = getattr(colorset, name)()
-    rgb = [[getattr(rgb, i) / 255 for i in ["r", "g", "b", "a"]] for rgb in lb_cmap]
+    rgb = [[getattr(rgb, i) / 255 for i in ["r", "g", "b", "a"]]
+           for rgb in lb_cmap]
     rgb = [tuple(i) for i in rgb]
     return colormap_sequential(*rgb)
 
@@ -241,7 +237,8 @@ def annotate_imshow(
     else:
         threshold = im.norm(data.max()) / 2.0
 
-    # Set default alignment to center, but allow it to be overwritten by textkw.
+    # Set default alignment to center, but allow it to be overwritten by
+    # textkw.
     text_kw = {"ha": "center", "va": "center"}
     text_kw.update({"ha": "center", "va": "center"})
 
@@ -257,7 +254,8 @@ def annotate_imshow(
             if data[i, j] in exclude_vals:
                 pass
             else:
-                text_kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+                text_kw.update(color=textcolors[int(
+                    im.norm(data[i, j]) > threshold)])
                 text = im.axes.text(j, i, valfmt(data[i, j], None), **text_kw)
                 texts.append(text)
 
@@ -410,7 +408,9 @@ def image_to_base64(image_path: Path, html: bool = False) -> str:
 
 
 @bhom_analytics()
-def figure_to_base64(figure: plt.Figure, html: bool = False, transparent: bool = True) -> str:
+def figure_to_base64(
+    figure: plt.Figure, html: bool = False, transparent: bool = True
+) -> str:
     """Convert a matplotlib figure object into a base64 string.
 
     Arguments:
@@ -571,7 +571,8 @@ def create_triangulation(
     """
 
     if alpha is None:
-        # TODO - add method here to automatically determine appropriate alpha value
+        # TODO - add method here to automatically determine appropriate alpha
+        # value
         alpha = 1.1
 
     if len(x) != len(y):
@@ -622,11 +623,22 @@ def format_polar_plot(ax: plt.Axes, yticklabels: bool = True) -> plt.Axes:
     ax.yaxis.set_major_locator(plt.MaxNLocator(6))
     plt.setp(ax.get_yticklabels(), fontsize="small")
     ax.set_xticks(np.radians((0, 90, 180, 270)), minor=False)
-    ax.set_xticklabels(("N", "E", "S", "W"), minor=False, **{"fontsize": "medium"})
+    ax.set_xticklabels(("N", "E", "S", "W"), minor=False,
+                       **{"fontsize": "medium"})
     ax.set_xticks(
         np.radians(
-            (22.5, 45, 67.5, 112.5, 135, 157.5, 202.5, 225, 247.5, 292.5, 315, 337.5)
-        ),
+            (22.5,
+             45,
+             67.5,
+             112.5,
+             135,
+             157.5,
+             202.5,
+             225,
+             247.5,
+             292.5,
+             315,
+             337.5)),
         minor=True,
     )
     ax.set_xticklabels(

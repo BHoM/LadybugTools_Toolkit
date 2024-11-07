@@ -1,18 +1,12 @@
 from pathlib import Path
 from tempfile import gettempdir
+
 import numpy as np
 import pytest
 from ladybug.epw import EPW
 from ladybugtools_toolkit.external_comfort._shelterbase import (
-    Point3D,
-    Shelter,
-    annual_sky_exposure,
-    annual_sun_exposure,
-    annual_wind_speed,
-    write_shelters_to_hbjson,
-)
-
-
+    Point3D, Shelter, annual_sky_exposure, annual_sun_exposure,
+    annual_wind_speed, write_shelters_to_hbjson)
 from ladybugtools_toolkit.external_comfort.shelter import TreeShelter
 from ladybugtools_toolkit.ladybug_extension.epw import sun_position_list
 
@@ -37,8 +31,9 @@ def test_tree_species():
 
     assert isinstance(TreeShelter.ACER_PLATANOIDES.shelter(), Shelter)
     assert isinstance(
-        TreeShelter.ACER_PLATANOIDES.shelter(northern_hemisphere=False), Shelter
-    )
+        TreeShelter.ACER_PLATANOIDES.shelter(
+            northern_hemisphere=False),
+        Shelter)
 
 
 def test_round_trip():
@@ -55,15 +50,20 @@ def test_set_porosity():
     """Test whether porosity setting works."""
     assert list(TEST_SHELTER.wind_porosity) == [0] * 8760
     assert list(TEST_SHELTER.radiation_porosity) == [0] * 8760
-    assert list(TEST_SHELTER.set_porosity([0.5] * 8760).wind_porosity) == [0.5] * 8760
+    assert list(TEST_SHELTER.set_porosity(
+        [0.5] * 8760).wind_porosity) == [0.5] * 8760
     assert (
-        list(TEST_SHELTER.set_porosity([0.5] * 8760).radiation_porosity) == [0.5] * 8760
-    )
+        list(
+            TEST_SHELTER.set_porosity(
+                [0.5] *
+                8760).radiation_porosity) == [0.5] *
+        8760)
 
 
 def test_sky_exposure():
     """Test amount of sky exposure."""
-    assert sum(TEST_SHELTER.annual_sky_exposure()) == pytest.approx(2732.7556325820833)
+    assert sum(TEST_SHELTER.annual_sky_exposure()
+               ) == pytest.approx(2732.7556325820833)
 
 
 def test_sun_exposure():
@@ -80,7 +80,8 @@ def test_wind_adjustment():
 
 def test_annual_sky_exposure():
     """_"""
-    assert sum(annual_sky_exposure([TEST_SHELTER])) == pytest.approx(2732.7556325820833)
+    assert sum(annual_sky_exposure([TEST_SHELTER])
+               ) == pytest.approx(2732.7556325820833)
 
 
 def test_annual_wind_speed():
@@ -92,9 +93,10 @@ def test_annual_wind_speed():
 
 def test_annual_sun_exposure():
     """_"""
-    assert np.nansum(annual_sun_exposure([TEST_SHELTER], EPW_OBJ)) == pytest.approx(
-        2041
-    )
+    assert np.nansum(
+        annual_sun_exposure(
+            [TEST_SHELTER],
+            EPW_OBJ)) == pytest.approx(2041)
 
 
 def test_write_shelters_to_hbjson():

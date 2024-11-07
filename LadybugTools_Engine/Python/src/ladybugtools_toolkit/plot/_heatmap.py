@@ -4,8 +4,8 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import validate_timeseries
 
 

@@ -5,24 +5,11 @@ import pytest
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.epw import (
-    clearness_index,
-    enthalpy,
-    epw_from_dataframe,
-    epw_to_dataframe,
-    equality,
-    equation_of_time,
-    humidity_ratio,
-    solar_altitude,
-    solar_altitude_radians,
-    solar_azimuth,
-    solar_azimuth_radians,
-    solar_declination,
-    solar_time_datetime,
-    solar_time_hour,
-    sun_position_collection,
-    sun_position_list,
-    wet_bulb_temperature,
-)
+    clearness_index, enthalpy, epw_from_dataframe, epw_to_dataframe, equality,
+    equation_of_time, humidity_ratio, solar_altitude, solar_altitude_radians,
+    solar_azimuth, solar_azimuth_radians, solar_declination,
+    solar_time_datetime, solar_time_hour, sun_position_collection,
+    sun_position_list, wet_bulb_temperature)
 
 from .. import EPW_OBJ
 
@@ -74,7 +61,9 @@ def test_humidity_ratio():
 
 def test_solar_altitude_radians():
     """_"""
-    assert isinstance(solar_altitude_radians(EPW_OBJ), HourlyContinuousCollection)
+    assert isinstance(
+        solar_altitude_radians(EPW_OBJ),
+        HourlyContinuousCollection)
 
 
 def test_solar_altitude():
@@ -84,7 +73,9 @@ def test_solar_altitude():
 
 def test_solar_azimuth_radians():
     """_"""
-    assert isinstance(solar_azimuth_radians(EPW_OBJ), HourlyContinuousCollection)
+    assert isinstance(
+        solar_azimuth_radians(EPW_OBJ),
+        HourlyContinuousCollection)
 
 
 def test_solar_azimuth():
@@ -109,7 +100,9 @@ def test_solar_time_hour():
 
 def test_sun_position_collection():
     """_"""
-    assert isinstance(sun_position_collection(EPW_OBJ), HourlyContinuousCollection)
+    assert isinstance(
+        sun_position_collection(EPW_OBJ),
+        HourlyContinuousCollection)
 
 
 def test_sun_position_list():
@@ -119,4 +112,6 @@ def test_sun_position_list():
 
 def test_wet_bulb_temperature():
     """_"""
-    assert isinstance(wet_bulb_temperature(EPW_OBJ), HourlyContinuousCollection)
+    assert isinstance(
+        wet_bulb_temperature(EPW_OBJ),
+        HourlyContinuousCollection)

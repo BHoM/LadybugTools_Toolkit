@@ -4,17 +4,22 @@
 import inspect
 from warnings import warn
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
-from honeybee_energy.lib.scheduletypelimits import schedule_type_limit_by_identifier
+from honeybee_energy.lib.scheduletypelimits import \
+    schedule_type_limit_by_identifier
 from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
-from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
+from ladybug.datacollection import (HourlyContinuousCollection,
+                                    MonthlyCollection)
 from ladybug.epw import EPW
-
 from python_toolkit.bhom.analytics import bhom_analytics
-from .datacollection import collection_from_series, collection_to_series, to_hourly
+
+from .datacollection import (collection_from_series, collection_to_series,
+                             to_hourly)
+
+# pylint: enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -191,7 +196,8 @@ def ground_temperature_at_depth(
                 days_since_coldest_day.append(i - coldest_day)
 
         annual_profile = 2 * np.pi / day_count
-        annual_profile_factored = np.sqrt(2 * soil_diffusivity * 86400 / annual_profile)
+        annual_profile_factored = np.sqrt(
+            2 * soil_diffusivity * 86400 / annual_profile)
         gnd_temp_daily = (
             pd.Series(
                 [

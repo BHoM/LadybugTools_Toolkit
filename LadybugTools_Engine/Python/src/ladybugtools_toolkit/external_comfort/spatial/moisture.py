@@ -2,29 +2,25 @@
 
 # pylint: disable=E0401
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from dataclasses import dataclass
-
-# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, AnalysisPeriod
-
 from ladybug_geometry.geometry2d.pointvector import Point2D, Vector2D
 from tqdm import tqdm
 
-from ...helpers import (
-    DecayMethod,
-    angle_to_vector,
-    convert_keys_to_snake_case,
-    proximity_decay,
-)
-from ...ladybug_extension.datacollection import (
-    analysis_period_to_datetimes,
-)
+from ...helpers import (DecayMethod, angle_to_vector,
+                        convert_keys_to_snake_case, proximity_decay)
+from ...ladybug_extension.datacollection import analysis_period_to_datetimes
 from ...ladybug_geometry_extension import pt_distances
+
+# pylint: enable=E0401
+
+
+
 
 
 @dataclass(init=True, eq=True, repr=True)
@@ -63,9 +59,8 @@ class MoistureSource:
             raise ValueError(
                 "evaporative_cooling_effect must be a list of 8760 values."
             )
-        if any(
-            not isinstance(i, (float, int)) for i in self.evaporative_cooling_effect
-        ):
+        if any(not isinstance(i, (float, int))
+                for i in self.evaporative_cooling_effect):
             raise ValueError(
                 "evaporative_cooling_effect must be a list of numeric values."
             )
@@ -227,7 +222,8 @@ def is_point_downwind(
         if all(isinstance(i, (int, float)) for i in source):
             source = Point2D(*source)
         else:
-            raise ValueError("source must be a Point2D or [X, Y] coordinate list.")
+            raise ValueError(
+                "source must be a Point2D or [X, Y] coordinate list.")
 
     if isinstance(points, list):
         if all(isinstance(i, Point2D) for i in points):
@@ -256,7 +252,9 @@ def is_point_downwind(
         temp = []
         for pts_vector in pts_vectors:
             try:
-                temp.append(vector.angle(pts_vector) < np.radians(plume_angle / 2))
+                temp.append(
+                    vector.angle(pts_vector) < np.radians(
+                        plume_angle / 2))
             except ZeroDivisionError:
                 temp.append(True)
         in_plume[angle] = temp

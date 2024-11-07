@@ -1,15 +1,19 @@
 """Method for plotting evaporative cooling potential."""
 
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 from ladybug.epw import EPW
 
-from ._heatmap import heatmap
 from ..ladybug_extension.datacollection import collection_to_series
 from ..ladybug_extension.location import location_to_string
+from ._heatmap import heatmap
 
 
-def evaporative_cooling_potential(epw: EPW, ax: plt.Axes = None, **kwargs) -> plt.Axes:
+def evaporative_cooling_potential(
+        epw: EPW,
+        ax: plt.Axes = None,
+        **kwargs) -> plt.Axes:
     """Plot evaporative cooling potential (DBT - DPT).
 
     Args:

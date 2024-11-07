@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from .utilities import create_title
 
 
@@ -45,7 +45,8 @@ def condensation_potential(
 
     """
 
-    # check that the series are the same length and have the same index and are both indexes of pd.DatetimeIndex
+    # check that the series are the same length and have the same index and
+    # are both indexes of pd.DatetimeIndex
     if not len(dry_bulb_temperature) == len(dew_point_temperature):
         raise ValueError(
             "The dry bulb temperature and dew point temperature must have the same length"
@@ -54,9 +55,11 @@ def condensation_potential(
         raise ValueError(
             "The dry bulb temperature and dew point temperature must have the same index"
         )
-    if not isinstance(dry_bulb_temperature.index, pd.DatetimeIndex) or not isinstance(
-        dew_point_temperature.index, pd.DatetimeIndex
-    ):
+    if not isinstance(
+            dry_bulb_temperature.index,
+            pd.DatetimeIndex) or not isinstance(
+            dew_point_temperature.index,
+            pd.DatetimeIndex):
         raise ValueError(
             "The dry bulb temperature and dew point temperature must be time series"
         )
@@ -81,11 +84,12 @@ def condensation_potential(
     )
 
     # prepare data
-    df = pd.concat(
-        [dry_bulb_temperature, dew_point_temperature], axis=1, keys=["dbt", "dpt"]
-    )
-    dbt = df.dbt.groupby([df.index.month, df.index.hour], axis=0).quantile(dbt_quantile)
-    dpt = df.dpt.groupby([df.index.month, df.index.hour], axis=0).quantile(dpt_quantile)
+    df = pd.concat([dry_bulb_temperature, dew_point_temperature],
+                   axis=1, keys=["dbt", "dpt"])
+    dbt = df.dbt.groupby([df.index.month, df.index.hour],
+                         axis=0).quantile(dbt_quantile)
+    dpt = df.dpt.groupby([df.index.month, df.index.hour],
+                         axis=0).quantile(dpt_quantile)
 
     # plot values
     for n, i in enumerate(range(len(dbt) + 1)[::24]):
@@ -93,14 +97,14 @@ def condensation_potential(
             continue
 
         # get local values
-        x = np.array(range(len(dbt) + 1)[i : i + 25])
+        x = np.array(range(len(dbt) + 1)[i: i + 25])
         dbt_y = np.array(
-            (dbt.values.tolist() + [dbt.values[0]])[i : i + 24]
-            + [(dbt.values.tolist() + [dbt.values[0]])[i : i + 24][0]]
+            (dbt.values.tolist() + [dbt.values[0]])[i: i + 24]
+            + [(dbt.values.tolist() + [dbt.values[0]])[i: i + 24][0]]
         )
         dpt_y = np.array(
-            (dpt.values.tolist() + [dpt.values[0]])[i : i + 24]
-            + [(dpt.values.tolist() + [dpt.values[0]])[i : i + 24][0]]
+            (dpt.values.tolist() + [dpt.values[0]])[i: i + 24]
+            + [(dpt.values.tolist() + [dpt.values[0]])[i: i + 24][0]]
         )
 
         # dbt line
@@ -108,18 +112,22 @@ def condensation_potential(
             x,
             dbt_y,
             c=dbt_color,
-            label=f"Dry bulb temperature ({dbt_quantile:0.0%}-ile)"
-            if n == 0
-            else "_nolegend_",
+            label=(
+                f"Dry bulb temperature ({dbt_quantile:0.0%}-ile)"
+                if n == 0
+                else "_nolegend_"
+            ),
         )
         # dpt line
         ax.plot(
             x,
             dpt_y,
             c=dpt_color,
-            label=f"Dew-point temperature ({dpt_quantile:0.0%}-ile)"
-            if n == 0
-            else "_nolegend_",
+            label=(
+                f"Dew-point temperature ({dpt_quantile:0.0%}-ile)"
+                if n == 0
+                else "_nolegend_"
+            ),
         )
         # potential ranges
         ax.fill_between(
@@ -134,11 +142,9 @@ def condensation_potential(
     ax.text(
         1,
         1,
-        (
-            f"{(dbt.values < dpt.values).sum() / len(dbt):0.1%} of annual hours "
-            f"with potential for condensation\n(using {dbt_quantile:0.0%}-ile DBT "
-            f"and {dpt_quantile:0.0%}-ile DPT)"
-        ),
+        (f"{(dbt.values < dpt.values).sum() / len(dbt):0.1%} of annual hours "
+         f"with potential for condensation\n(using {dbt_quantile:0.0%}-ile DBT "
+         f"and {dpt_quantile:0.0%}-ile DPT)"),
         ha="right",
         va="top",
         transform=ax.transAxes,

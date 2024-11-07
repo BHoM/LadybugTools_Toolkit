@@ -1,19 +1,22 @@
 """_"""
+
 # pylint: disable=E0401
 import itertools
 import warnings
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
+from python_toolkit.bhom.analytics import bhom_analytics
 from tqdm import tqdm
 
-from python_toolkit.bhom.analytics import bhom_analytics
 from ..helpers import evaporative_cooling_effect
 from ..ladybug_extension.epw import AnalysisPeriod, collection_to_series
 from ._simulatebase import SimulationResult
 from .utci import utci
+
+# pylint: enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -48,8 +51,7 @@ def ranked_mitigations(
     """
     warnings.warn(
         "This method is not yet complete, or at least it requires some further "
-        "thought to make it faster, better, stronger!"
-    )
+        "thought to make it faster, better, stronger!")
 
     # TODO - break method out into parts - namely basic inputs and single
     # Series output, referenced from elsewhere
@@ -75,7 +77,8 @@ def ranked_mitigations(
         simulation_result.shaded_mean_radiant_temperature, "mrt_shaded"
     )
     utci_unshaded = utci(dbt, rh, mrt_unshaded, ws).rename("utci_unshaded")
-    df = pd.concat([atm, dbt, rh, ws, mrt_unshaded, mrt_shaded, utci_unshaded], axis=1)
+    df = pd.concat([atm, dbt, rh, ws, mrt_unshaded,
+                   mrt_shaded, utci_unshaded], axis=1)
 
     # filter by analysis period
     df = df.iloc[list(analysis_period.hoys_int)]
@@ -89,10 +92,10 @@ def ranked_mitigations(
     df["utci_unshaded_distance_from_comfortable_midpoint"] = (
         df.utci_unshaded - comfort_mid
     )
-    df[
-        "utci_unshaded_distance_from_comfortable"
-    ] = df.utci_unshaded_distance_from_comfortable_midpoint.where(
-        ~df.utci_unshaded_comfortable, 0
+    df["utci_unshaded_distance_from_comfortable"] = (
+        df.utci_unshaded_distance_from_comfortable_midpoint.where(
+            ~df.utci_unshaded_comfortable, 0
+        )
     )
 
     # get possible values for shade/shelter/evapclg
@@ -120,10 +123,14 @@ def ranked_mitigations(
             ]
         ).T
         wss = ws * wind_shelter_proportions
-        mrts = np.interp(shading_proportions, [0, 1], [mrt_unshaded, mrt_shaded])
+        mrts = np.interp(
+            shading_proportions, [
+                0, 1], [
+                mrt_unshaded, mrt_shaded])
 
         # create all possible combinations of inputs
-        dbts, rhs, mrts, wss = np.array(list(itertools.product(dbts, rhs, mrts, wss))).T
+        dbts, rhs, mrts, wss = np.array(
+            list(itertools.product(dbts, rhs, mrts, wss))).T
         utcis = utci([dbts], [rhs], [mrts], [wss])[0]
         shad_props, _, windshlt_props, evapclg_props = np.array(
             list(
@@ -165,9 +172,9 @@ def ranked_mitigations(
 
         # get distance from comfortable (midpoint) for current timestep
         mtx["utci_distance_from_comfortable_midpoint"] = mtx.utci - comfort_mid
-        mtx[
-            "utci_distance_from_comfortable"
-        ] = mtx.utci_distance_from_comfortable_midpoint.where(~mtx.utci_comfortable, 0)
+        mtx["utci_distance_from_comfortable"] = (
+            mtx.utci_distance_from_comfortable_midpoint.where(
+                ~mtx.utci_comfortable, 0))
 
         # determine whether comfort has improved, and drop rows where it hasnt
         mtx["comfort_improved"] = abs(
@@ -179,7 +186,8 @@ def ranked_mitigations(
         mtx["utci_distance_from_comfortable_midpoint_absolute"] = abs(
             mtx.utci_distance_from_comfortable_midpoint
         )
-        mtx = mtx.sort_values("utci_distance_from_comfortable_midpoint_absolute")
+        mtx = mtx.sort_values(
+            "utci_distance_from_comfortable_midpoint_absolute")
 
         # normalise variables
         temp = (

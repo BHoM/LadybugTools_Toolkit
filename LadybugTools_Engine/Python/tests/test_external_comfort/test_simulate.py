@@ -1,16 +1,12 @@
 from pathlib import Path
 from tempfile import gettempdir
+
+import pytest
 from ladybug.epw import HourlyContinuousCollection
 from ladybugtools_toolkit.external_comfort._simulatebase import (
-    SimulationResult,
-    radiant_temperature,
-    simulate_surface_temperatures,
-    simulation_directory,
-    simulation_id,
-)
-
+    SimulationResult, radiant_temperature, simulate_surface_temperatures,
+    simulation_directory, simulation_id)
 from ladybugtools_toolkit.external_comfort.model import create_model
-import pytest
 
 from .. import EPW_FILE, EPW_OBJ, EXTERNAL_COMFORT_IDENTIFIER
 from .test_material import TEST_GROUND_MATERIAL, TEST_SHADE_MATERIAL
@@ -78,7 +74,8 @@ def test_simulate_surface_temperature():
     """_"""
     with pytest.raises(ValueError):
         simulate_surface_temperatures(model="not_a_model", epw_file=EPW_FILE)
-        simulate_surface_temperatures(model=TEST_MODEL, epw_file="not_an_epw_file.epw")
+        simulate_surface_temperatures(
+            model=TEST_MODEL, epw_file="not_an_epw_file.epw")
 
     result = simulate_surface_temperatures(
         model=TEST_MODEL, epw_file=EPW_FILE, remove_dir=True
@@ -98,17 +95,15 @@ def test_simulate_surface_temperature():
     reloaded_result = simulate_surface_temperatures(
         model=TEST_MODEL, epw_file=EPW_FILE, remove_dir=False
     )
-    assert (
-        reloaded_result["unshaded_up_temperature"] == result["unshaded_up_temperature"]
-    )
+    assert (reloaded_result["unshaded_up_temperature"]
+            == result["unshaded_up_temperature"])
     assert reloaded_result["shaded_up_temperature"] == result["shaded_up_temperature"]
     assert (
         reloaded_result["unshaded_down_temperature"]
         == result["unshaded_down_temperature"]
     )
-    assert (
-        reloaded_result["shaded_down_temperature"] == result["shaded_down_temperature"]
-    )
+    assert (reloaded_result["shaded_down_temperature"]
+            == result["shaded_down_temperature"])
 
 
 def test_round_trip():

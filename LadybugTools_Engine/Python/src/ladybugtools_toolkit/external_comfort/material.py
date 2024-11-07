@@ -4,22 +4,20 @@
 # pylint: disable=E0401
 import re
 from difflib import get_close_matches
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
+
+import pandas as pd
+from honeybee_energy.lib.materials import (OPAQUE_MATERIALS,
+                                           opaque_material_by_identifier)
+from honeybee_energy.material.opaque import (EnergyMaterial,
+                                             EnergyMaterialVegetation,
+                                             _EnergyMaterialOpaqueBase)
+
+from ..helpers import sanitise_string
 
 # pylint: enable=E0401
 
-import pandas as pd
-from honeybee_energy.lib.materials import (
-    OPAQUE_MATERIALS,
-    opaque_material_by_identifier,
-)
-from honeybee_energy.material.opaque import (
-    EnergyMaterial,
-    EnergyMaterialVegetation,
-    _EnergyMaterialOpaqueBase,
-)
-from ..helpers import sanitise_string
 
 
 def _ice_tool_materials(
@@ -43,8 +41,8 @@ def _ice_tool_materials(
         try:
             mat = EnergyMaterial(
                 identifier=f"{row['id']} - {row['specific name']} ({row['color']} {row['age/rugosite']})".replace(
-                    ",", " "
-                ),
+                    ",",
+                    " "),
                 thickness=0.01,
                 conductivity=row["Thermal condutivity (W/m.K)"],
                 density=row["density (kg/m³)"],
@@ -149,7 +147,8 @@ def materials() -> list[_EnergyMaterialOpaqueBase]:
     # remove dodgy materials
     filtered_materials = []
     for mat in all_materials:
-        if any(i in mat.identifier.lower() for i in [" air ", " gap ", " void "]):
+        if any(i in mat.identifier.lower()
+               for i in [" air ", " gap ", " void "]):
             continue
         filtered_materials.append(mat)
     return filtered_materials
@@ -179,6 +178,7 @@ def get_material(material_identifier: str) -> _EnergyMaterialOpaqueBase:
                 f"Unknown material name: '{material_identifier}'. Did you mean {possible_materials}"
             ) from exc
 
+
 def get_identifier(material_identifier: str) -> str:
     """Get the enum-valid identifier for a given material identifier.
 
@@ -190,15 +190,22 @@ def get_identifier(material_identifier: str) -> str:
     """
     keep_characters = r"[^A-Za-z0-9_]"
 
-    material_identifier = re.sub(keep_characters, "_", material_identifier).replace("__", "_").rstrip()
-    
+    material_identifier = (
+        re.sub(
+            keep_characters,
+            "_",
+            material_identifier).replace(
+            "__",
+            "_").rstrip())
+
     # prepend `Material_` to identifiers which start with a number
     if re.match(r"^\d", material_identifier):
         material_identifier = f"Material_{material_identifier}"
 
     return material_identifier
 
+
 Materials = Enum(
-    "Materials",
-    {get_identifier(material.identifier): material for material in materials()},
-)
+    "Materials", {
+        get_identifier(
+            material.identifier): material for material in materials()}, )

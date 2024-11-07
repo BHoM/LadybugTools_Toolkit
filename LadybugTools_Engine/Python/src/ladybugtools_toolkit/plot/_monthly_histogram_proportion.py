@@ -1,11 +1,12 @@
 """Methods for plotting binned data per-month."""
+
 import calendar  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import pandas as pd
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import validate_timeseries
 from .utilities import contrasting_color
 
@@ -52,16 +53,19 @@ def monthly_histogram_proportion(
         ax = plt.gca()
 
     t = pd.cut(series, bins=bins, labels=labels)
-    t = t.groupby([t.index.year, t.index.month, t], observed=True).count().unstack().T
+    t = t.groupby([t.index.year, t.index.month, t],
+                  observed=True).count().unstack().T
     t = t / t.sum()
 
     # adjust column labels
     if show_year_in_label:
         t.columns = [
-            f"{year}\n{calendar.month_abbr[month]}" for year, month in t.columns.values
-        ]
+            f"{year}\n{calendar.month_abbr[month]}" for year,
+            month in t.columns.values]
     else:
-        t.columns = [f"{calendar.month_abbr[month]}" for _, month in t.columns.values]
+        t.columns = [
+            f"{calendar.month_abbr[month]}" for _,
+            month in t.columns.values]
 
     t.T.plot.bar(
         ax=ax,
@@ -87,10 +91,11 @@ def monthly_histogram_proportion(
 
     if show_labels:
         for i, c in enumerate(ax.containers):
-            label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
-            labels = [
-                f"{v.get_height():0.1%}" if v.get_height() > 0.1 else "" for v in c
-            ]
+            label_colors = [
+                contrasting_color(
+                    i.get_facecolor()) for i in c.patches]
+            labels = [f"{v.get_height():0.1%}" if v.get_height()
+                      > 0.1 else "" for v in c]
             ax.bar_label(
                 c,
                 labels=labels,

@@ -1,46 +1,42 @@
 """Module for the external comfort package, handling simulation of shaded/
 unshaded surface temperatures in an abstract "openfield" condition."""
+
 # pylint: disable=E0401
 import json
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-from caseconverter import pascalcase
 import numpy as np
 import pandas as pd
+# pylint: enable=E0401
+from caseconverter import pascalcase
 from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 from honeybee_energy.dictutil import dict_to_material
-from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
+from honeybee_energy.material.opaque import (EnergyMaterial,
+                                             EnergyMaterialVegetation)
 from honeybee_energy.run import run_idf, run_osw, to_openstudio_osw
-from honeybee_energy.simulation.parameter import (
-    ShadowCalculation,
-    SimulationControl,
-    SimulationOutput,
-    SimulationParameter,
-)
+from honeybee_energy.simulation.parameter import (ShadowCalculation,
+                                                  SimulationControl,
+                                                  SimulationOutput,
+                                                  SimulationParameter)
 from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.futil import nukedir
-from ladybug_comfort.collection.solarcal import OutdoorSolarCal, SolarCalParameter
-
+from ladybug_comfort.collection.solarcal import (OutdoorSolarCal,
+                                                 SolarCalParameter)
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
-from ..bhom.to_bhom import (
-    hourlycontinuouscollection_to_bhom,
-    material_to_bhom,
-)
+
+from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom, material_to_bhom
+from ..helpers import convert_keys_to_snake_case, sanitise_string
 from ..honeybee_extension.results import load_sql
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
+from ..ladybug_extension.datacollection import (collection_from_series,
+                                                collection_to_series)
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.epw import equality as epw_equality
 from ..ladybug_extension.groundtemperature import energyplus_strings
-from .model import create_model, get_ground_reflectance, model_equality
-from ..helpers import convert_keys_to_snake_case, sanitise_string
 from .material import Materials
+from .model import create_model, get_ground_reflectance, model_equality
 
 
 def simulation_id(
@@ -76,7 +72,8 @@ def simulation_directory(model: Model) -> Path:
         Path: The simulation directory associated with the given model.
     """
 
-    working_dir: Path = Path(hb_folders.default_simulation_folder) / model.identifier
+    working_dir: Path = Path(
+        hb_folders.default_simulation_folder) / model.identifier
     working_dir.mkdir(parents=True, exist_ok=True)
 
     return working_dir
@@ -228,8 +225,8 @@ def simulate_surface_temperatures(
 
 
 def radiant_temperature(
-    collections: list[HourlyContinuousCollection], view_factors: list[float] = None
-) -> HourlyContinuousCollection:
+        collections: list[HourlyContinuousCollection],
+        view_factors: list[float] = None) -> HourlyContinuousCollection:
     """Calculate the MRT from a list of surface temperature collections, and view
         factors to each of those surfaces.
 
@@ -248,24 +245,26 @@ def radiant_temperature(
     if view_factors is None:
         view_factors = [1 / len(collections)] * len(collections)
     if len(collections) != len(view_factors):
-        raise ValueError("The number of collections and view factors must be the same.")
+        raise ValueError(
+            "The number of collections and view factors must be the same.")
     if sum(view_factors) != 1:
         raise ValueError("The sum of view factors must be 1.")
 
     mrt_series = (
         np.power(
-            (
-                np.power(
-                    pd.concat([collection_to_series(i) for i in collections], axis=1)
-                    + 273.15,
-                    4,
-                )
-                * view_factors
-            ).sum(axis=1),
+            (np.power(
+                pd.concat(
+                    [
+                        collection_to_series(i) for i in collections],
+                    axis=1) +
+                273.15,
+                4,
+            ) *
+                view_factors).sum(
+                axis=1),
             0.25,
-        )
-        - 273.15
-    )
+        ) -
+        273.15)
     mrt_series.name = "Radiant Temperature (C)"
     return collection_from_series(mrt_series)
 
@@ -430,12 +429,20 @@ class SimulationResult:
                 setattr(
                     self,
                     f"{shadedness}_{var.replace('mrt', 'mean_radiant_temperature')}",
-                    getattr(cal, var),
+                    getattr(
+                        cal,
+                        var),
                 )
 
         # add some accessors for collections as series
         for attr in _ATTRIBUTES:
-            setattr(self, f"{attr}_series", collection_to_series(getattr(self, attr)))
+            setattr(
+                self,
+                f"{attr}_series",
+                collection_to_series(
+                    getattr(
+                        self,
+                        attr)))
 
     def to_dict(self) -> dict[str, Any]:
         """Convert this object to a dictionary."""

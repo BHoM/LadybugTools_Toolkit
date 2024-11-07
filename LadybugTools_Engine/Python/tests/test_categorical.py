@@ -1,15 +1,12 @@
-import pandas as pd
-from ladybugtools_toolkit.categorical.categories import (
-    Categorical,
-    UTCI_DEFAULT_CATEGORIES,
-    ComfortClass,
-    CategoricalComfort,
-)
-from matplotlib.legend import Legend
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pytest
-from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.categorical.categories import (
+    UTCI_DEFAULT_CATEGORIES, Categorical, CategoricalComfort, ComfortClass)
+from ladybugtools_toolkit.ladybug_extension.datacollection import \
+    collection_to_series
+from matplotlib.legend import Legend
 
 from . import EPW_OBJ
 
@@ -39,7 +36,8 @@ def test_categorical():
 def test_generic_categorical_properties():
     """_"""
     assert TEST_CATEGORICAL_UNBOUNDED.name == "GenericCategories"
-    assert TEST_CATEGORICAL_UNBOUNDED.bin_names == ["(-inf, 0.0]", "(0.0, inf]"]
+    assert TEST_CATEGORICAL_UNBOUNDED.bin_names == [
+        "(-inf, 0.0]", "(0.0, inf]"]
     assert TEST_CATEGORICAL_UNBOUNDED.colors == ("#0000ffff", "#ff0000ff")
     assert TEST_CATEGORICAL_UNBOUNDED.bins == [-np.inf, 0, np.inf]
     assert TEST_CATEGORICAL_UNBOUNDED.bins_finite == (0,)
@@ -47,27 +45,29 @@ def test_generic_categorical_properties():
         "(-inf, 0.0] (-inf to 0.0)",
         "(0.0, inf] (0.0 to inf)",
     ]
-    assert TEST_CATEGORICAL_UNBOUNDED.descriptions == ["-inf to 0.0", "0.0 to inf"]
+    assert TEST_CATEGORICAL_UNBOUNDED.descriptions == [
+        "-inf to 0.0", "0.0 to inf"]
     assert len(TEST_CATEGORICAL_BOUNDED.lb_colors) == 2
 
 
 def test_categorical_computed_properties():
     """_"""
-    assert TEST_CATEGORICAL_UNBOUNDED.color_from_bin_name("(-inf, 0.0]") == "#0000ffff"
+    assert TEST_CATEGORICAL_UNBOUNDED.color_from_bin_name(
+        "(-inf, 0.0]") == "#0000ffff"
 
     with pytest.raises(ValueError):
         TEST_CATEGORICAL_UNBOUNDED.get_color(value=3)
     assert TEST_CATEGORICAL_BOUNDED.get_color(value=3) == "#ff0000ff"
     assert isinstance(
-        TEST_CATEGORICAL_BOUNDED.interval_from_bin_name("(0, 100]"), pd.Interval
-    )
+        TEST_CATEGORICAL_BOUNDED.interval_from_bin_name("(0, 100]"), pd.Interval)
 
     assert isinstance(TEST_CATEGORICAL_BOUNDED.categorise([3]), pd.Categorical)
     assert (
         TEST_CATEGORICAL_BOUNDED.summarise([-5, -2, 0, 10])
         == '"(-100, 0]" occurs 3 times (75.0%).\n"(0, 100]" occurs 1 times (25.0%).'
     )
-    assert isinstance(TEST_CATEGORICAL_BOUNDED.value_counts([-5, -2, 0, 10]), pd.Series)
+    assert isinstance(TEST_CATEGORICAL_BOUNDED.value_counts(
+        [-5, -2, 0, 10]), pd.Series)
 
     with pytest.raises(ValueError):
         TEST_CATEGORICAL_BOUNDED.get_color(-1000)
@@ -112,14 +112,22 @@ def test_categorical_comfort():
 def test_from():
     """_"""
     assert isinstance(
-        Categorical.from_cmap(bins=[0, 1, 2], cmap=plt.get_cmap("inferno")), Categorical
-    )
+        Categorical.from_cmap(
+            bins=[
+                0,
+                1,
+                2],
+            cmap=plt.get_cmap("inferno")),
+        Categorical)
+    assert isinstance(Categorical.from_cmap(
+        bins=[-np.inf, 1, 2], cmap=plt.get_cmap("inferno")), Categorical, )
     assert isinstance(
-        Categorical.from_cmap(bins=[-np.inf, 1, 2], cmap=plt.get_cmap("inferno")),
-        Categorical,
-    )
-    assert isinstance(
-        Categorical.from_cmap(bins=[0, 1, np.inf], cmap=plt.get_cmap("inferno")),
+        Categorical.from_cmap(
+            bins=[
+                0,
+                1,
+                np.inf],
+            cmap=plt.get_cmap("inferno")),
         Categorical,
     )
 
@@ -132,14 +140,16 @@ def test_legend():
 
 def test_timeseries_summary_monthly():
     """_"""
-    s = TEST_CATEGORICAL_BOUNDED.timeseries_summary_monthly(TEST_TIMESERIES_DATA)
+    s = TEST_CATEGORICAL_BOUNDED.timeseries_summary_monthly(
+        TEST_TIMESERIES_DATA)
     assert isinstance(s, pd.DataFrame)
     assert s.shape == (12, 2)
     assert s.sum().sum() == 8760
     assert s.quantile(0.8).mean() == pytest.approx(392.7, abs=0.01)
 
     with pytest.raises(ValueError):
-        TEST_CATEGORICAL_BOUNDED.timeseries_summary_monthly("not_a_timeseries_data")
+        TEST_CATEGORICAL_BOUNDED.timeseries_summary_monthly(
+            "not_a_timeseries_data")
         TEST_CATEGORICAL_BOUNDED.timeseries_summary_monthly(
             TEST_TIMESERIES_DATA.reset_index(drop=True)
         )
@@ -155,10 +165,8 @@ def test_annual_heatmap():
 
 def test_annual_monthly_histogram():
     """_"""
-    assert isinstance(
-        TEST_CATEGORICAL_BOUNDED.annual_monthly_histogram(TEST_TIMESERIES_DATA),
-        plt.Axes,
-    )
+    assert isinstance(TEST_CATEGORICAL_BOUNDED.annual_monthly_histogram(
+        TEST_TIMESERIES_DATA), plt.Axes, )
     plt.close("all")
 
     assert isinstance(

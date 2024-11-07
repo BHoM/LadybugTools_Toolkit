@@ -1,4 +1,5 @@
 """_"""
+
 # pylint: disable=E0401
 import json
 from dataclasses import dataclass, field
@@ -21,8 +22,8 @@ from lbt_recipes.recipe import Recipe, RecipeSettings
 from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
+
 from ...ladybug_extension.analysisperiod import describe_analysis_period
 from ..model import HbModelGeometry
 from ..results import load_ill, load_npy, load_res
@@ -252,7 +253,8 @@ class HoneybeeRadiance:
         recipe_name = "daylight-factor"
         folder_name = "daylight_factor"
 
-        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
+        CONSOLE_LOGGER.info(
+            f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -271,9 +273,9 @@ class HoneybeeRadiance:
         results_folder = recipe.run(settings)
 
         if delete_tempfiles:
-            for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
-                "**/*.res"
-            ):
+            for fp in (
+                    Path(results_folder) /
+                    f"{folder_name}/initial_results").glob("**/*.res"):
                 fp.unlink()
 
         return Path(results_folder) / folder_name
@@ -315,9 +317,8 @@ class HoneybeeRadiance:
             for i in _filter_grids_by_pattern(grids_info, grids_filter)
         ]
 
-        return (pd.concat([load_res(files)], axis=1).sort_index(axis=1)).rename(
-            columns=renamer, level=0
-        )
+        return (pd.concat([load_res(files)], axis=1).sort_index(
+            axis=1)).rename(columns=renamer, level=0)
 
     def summarise_daylight_factor(
         self,
@@ -353,17 +354,21 @@ class HoneybeeRadiance:
                         "Average": vals.mean(),
                         "Median": np.median(vals),
                         "Maximum": vals.max(),
-                        "Uniformity": vals.min() / vals.mean(),
-                        "Area <2%": np.array(grid.mesh.face_areas)[vals < 2].sum()
-                        / grid.mesh.area
-                        * 100,
-                        "Area >5%": np.array(grid.mesh.face_areas)[vals > 5].sum()
-                        / grid.mesh.area
-                        * 100,
+                        "Uniformity": vals.min() /
+                        vals.mean(),
+                        "Area <2%": np.array(
+                            grid.mesh.face_areas)[
+                            vals < 2].sum() /
+                        grid.mesh.area *
+                        100,
+                        "Area >5%": np.array(
+                            grid.mesh.face_areas)[
+                            vals > 5].sum() /
+                        grid.mesh.area *
+                        100,
                     },
                     name=grid_name,
-                )
-            )
+                ))
         return pd.DataFrame(summaries)
 
     def plot_daylight_factor(
@@ -403,8 +408,8 @@ class HoneybeeRadiance:
             for grid in grids:
                 vals = results[grid.full_identifier].dropna().values
                 pc = as_patchcollection(
-                    sensorgrid=grid, cmap="magma", norm=Normalize(vmin=0, vmax=10)
-                )
+                    sensorgrid=grid, cmap="magma", norm=Normalize(
+                        vmin=0, vmax=10))
                 pc.set_array(vals)
                 ax.add_collection(pc)
 
@@ -412,8 +417,9 @@ class HoneybeeRadiance:
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="5%", pad=0.15)
             cb = fig.colorbar(
-                mappable=ax.get_children()[0], cax=cax, label="Daylight Factor (%)"
-            )
+                mappable=ax.get_children()[0],
+                cax=cax,
+                label="Daylight Factor (%)")
             cb.outline.set_visible(False)
 
             # add wireframe
@@ -472,7 +478,8 @@ class HoneybeeRadiance:
         recipe_name = "annual-daylight"
         folder_name = "annual_daylight"
 
-        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
+        CONSOLE_LOGGER.info(
+            f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -493,7 +500,8 @@ class HoneybeeRadiance:
         results_folder = recipe.run(settings)
 
         if delete_tempfiles:
-            for fp in (Path(results_folder) / f"{folder_name}/calcs").glob("**/*.ill"):
+            for fp in (Path(results_folder) /
+                       f"{folder_name}/calcs").glob("**/*.ill"):
                 fp.unlink()
 
         return Path(results_folder) / folder_name
@@ -535,9 +543,8 @@ class HoneybeeRadiance:
             for i in _filter_grids_by_pattern(grids_info, grids_filter)
         ]
 
-        return (pd.concat([load_npy(files)], axis=1).sort_index(axis=1)).rename(
-            columns=renamer, level=0
-        )
+        return (pd.concat([load_npy(files)], axis=1).sort_index(
+            axis=1)).rename(columns=renamer, level=0)
 
     def simulate_annual_irradiance(
         self,
@@ -574,7 +581,8 @@ class HoneybeeRadiance:
         recipe_name = "annual-irradiance"
         folder_name = "annual_irradiance"
 
-        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
+        CONSOLE_LOGGER.info(
+            f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -596,9 +604,9 @@ class HoneybeeRadiance:
         results_folder = recipe.run(settings)
 
         if delete_tempfiles:
-            for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
-                "**/*.ill"
-            ):
+            for fp in (
+                    Path(results_folder) /
+                    f"{folder_name}/initial_results").glob("**/*.ill"):
                 fp.unlink()
 
         return Path(results_folder) / folder_name
@@ -623,9 +631,8 @@ class HoneybeeRadiance:
                 A pandas DataFrame with irradiance results per grid requested.
         """
 
-        results_folder = (
-            self.output_directory / f"annual_irradiance/results/{irradiance_type}"
-        )
+        results_folder = (self.output_directory /
+                          f"annual_irradiance/results/{irradiance_type}")
         if not results_folder.exists():
             raise ValueError(
                 "The given folder does not contain annual irradiance results. Try running a simulation first."
@@ -646,9 +653,8 @@ class HoneybeeRadiance:
             for i in _filter_grids_by_pattern(grids_info, grids_filter)
         ]
 
-        return (pd.concat([load_ill(files)], axis=1).sort_index(axis=1)).rename(
-            columns=renamer, level=0
-        )
+        return (pd.concat([load_ill(files)], axis=1).sort_index(
+            axis=1)).rename(columns=renamer, level=0)
 
     def simulate_sky_view(
         self,
@@ -681,7 +687,8 @@ class HoneybeeRadiance:
         recipe_name = "sky-view"
         folder_name = "sky_view"
 
-        CONSOLE_LOGGER.info(f"Running {recipe_name} recipe for model {self.model_name}")
+        CONSOLE_LOGGER.info(
+            f"Running {recipe_name} recipe for model {self.model_name}")
 
         recipe = Recipe(recipe_name)
         params = radiance_parameters(
@@ -700,9 +707,9 @@ class HoneybeeRadiance:
         results_folder = recipe.run(settings)
 
         if delete_tempfiles:
-            for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
-                "**/*.res"
-            ):
+            for fp in (
+                    Path(results_folder) /
+                    f"{folder_name}/initial_results").glob("**/*.res"):
                 fp.unlink()
 
         return Path(results_folder) / folder_name
@@ -743,9 +750,8 @@ class HoneybeeRadiance:
             for i in _filter_grids_by_pattern(grids_info, grids_filter)
         ]
 
-        return (pd.concat([load_res(files)], axis=1).sort_index(axis=1)).rename(
-            columns=renamer, level=0
-        )
+        return (pd.concat([load_res(files)], axis=1).sort_index(
+            axis=1)).rename(columns=renamer, level=0)
 
     def simulate_direct_sun_hours(
         self,
@@ -777,9 +783,11 @@ class HoneybeeRadiance:
         """
 
         ap_str = describe_analysis_period(
-            analysis_period=analysis_period, save_path=True, include_timestep=True
-        )
-        simulation_directory = self.output_directory / f"direct_sun_hours_{ap_str}"
+            analysis_period=analysis_period,
+            save_path=True,
+            include_timestep=True)
+        simulation_directory = self.output_directory / \
+            f"direct_sun_hours_{ap_str}"
         simulation_directory.mkdir(exist_ok=True, parents=True)
 
         recipe_name = "direct-sun-hours"
@@ -787,8 +795,7 @@ class HoneybeeRadiance:
 
         CONSOLE_LOGGER.info(
             f"Running {recipe_name} recipe for model {self.model_name} over "
-            f"{describe_analysis_period(analysis_period, include_timestep=True)}"
-        )
+            f"{describe_analysis_period(analysis_period, include_timestep=True)}")
 
         recipe = Recipe(recipe_name)
         recipe.input_value_by_name("model", self.model)
@@ -803,13 +810,13 @@ class HoneybeeRadiance:
         results_folder = recipe.run(settings)
 
         if delete_tempfiles:
-            for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
-                "**/*.res"
-            ):
+            for fp in (
+                    Path(results_folder) /
+                    f"{folder_name}/initial_results").glob("**/*.res"):
                 fp.unlink()
-            for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
-                "**/*.ill"
-            ):
+            for fp in (
+                    Path(results_folder) /
+                    f"{folder_name}/initial_results").glob("**/*.ill"):
                 fp.unlink()
 
         return Path(results_folder) / folder_name
@@ -839,7 +846,8 @@ class HoneybeeRadiance:
                 "Only cumulative direct sun hours are currently supported."
             )
 
-        results_folders = list(self.output_directory.glob("direct_sun_hours_*"))
+        results_folders = list(
+            self.output_directory.glob("direct_sun_hours_*"))
 
         if not results_folders:
             raise ValueError(

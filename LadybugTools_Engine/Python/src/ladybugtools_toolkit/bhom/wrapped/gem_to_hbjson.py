@@ -1,4 +1,5 @@
 """Method to wrap for conversion of IES GEM to HBJSON file."""
+
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import traceback
@@ -12,7 +13,9 @@ def main(gem_file: str) -> None:
 
         gem_file_path = Path(gem_file)
         model = model_from_ies(gem_file_path.as_posix())
-        model.to_hbjson(folder=gem_file_path.parent.as_posix(), name=gem_file_path.stem)
+        model.to_hbjson(
+            folder=gem_file_path.parent.as_posix(),
+            name=gem_file_path.stem)
 
     except Exception as e:
         print(e)

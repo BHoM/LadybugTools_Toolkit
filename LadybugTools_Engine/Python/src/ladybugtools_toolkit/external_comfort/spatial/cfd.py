@@ -78,7 +78,8 @@ def spatial_wind_speed(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
             A time indexed, spatial matrix of point-wind-speeds.
     """
 
-    # for each unique wind direction, get the interpolated normalised wind speed
+    # for each unique wind direction, get the interpolated normalised wind
+    # speed
     uniques = unique_wind_speed_direction(epw)
     unique_directions = np.unique(uniques.T[1])
 
@@ -88,7 +89,11 @@ def spatial_wind_speed(simulation_directory: Path, epw: EPW) -> pd.DataFrame:
     # interpolate to unique directions from known directions
     x = cfd_results.columns
     y = cfd_results.values
-    z = pd.DataFrame(interp1d(x, y)(unique_directions), columns=unique_directions)
+    z = pd.DataFrame(
+        interp1d(
+            x,
+            y)(unique_directions),
+        columns=unique_directions)
 
     # for each unique combo of ws and wd, get the associated pt-ws
     d = {}
@@ -126,15 +131,20 @@ def load_cfd_results(simulation_directory: Path) -> pd.DataFrame:
     # load each CSV in config, and construct mega-dataframe
     dfs = []
     for result in config:
-        # load the wind speed, and divide by the source wind velocity to get a normalised velocity
+        # load the wind speed, and divide by the source wind velocity to get a
+        # normalised velocity
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             dfs.append(
                 load_cfd_extract(
-                    cfd_dir / result["pt_velocity_file"], result["wind_direction"]
-                ).drop(columns=["x", "y", "z"])
-                / result["source_velocity"]
-            )
+                    cfd_dir /
+                    result["pt_velocity_file"],
+                    result["wind_direction"]).drop(
+                    columns=[
+                        "x",
+                        "y",
+                        "z"]) /
+                result["source_velocity"])
     df = pd.concat(dfs, axis=1)
     df = df.loc[:, ~df.columns.duplicated()]
 
@@ -147,7 +157,9 @@ def load_cfd_results(simulation_directory: Path) -> pd.DataFrame:
     return df.sort_index(axis=1)
 
 
-def load_cfd_extract(file: Path, velocity_col: str = "VELOCITY") -> pd.DataFrame:
+def load_cfd_extract(
+        file: Path,
+        velocity_col: str = "VELOCITY") -> pd.DataFrame:
     """Load a file containing an extract from CFX-Post, with point XYZ values,
         and variable for that point.
 
@@ -203,17 +215,16 @@ def cfd_directory(simulation_directory: Path) -> Path:
         not (simulation_directory / "cfd" / "config.json").exists()
     ):
         raise FileNotFoundError(
-            f'No "cfd" directory exists in {simulation_directory}. For this method to work, '
-            + "you need a cfd directory containing a set of csv files extracted from CFD "
-            + "simulations of at least 8 wind directions. Values in these files should correspond "
-            + "with the wind velocities at the points from the SpatialComfort case being assessed."
-            + "\nFor example, the folder should contain 8 CSV files:"
-            + '\n    ["./V315.csv", "./V000.csv", "./V045.csv", "./V090.csv", "./V135.csv", '
-            + '"./V180.csv", "./V225.csv", "./V270.csv"]'
-            + "\n... each containing point-velocities for the points in the SpatialComfort simulation"
-            + "\nAdditionally, a JSON config should also be included, which stores the velocity "
-            + "applied across the simulations for scaling in the thermal comfort assessment. An "
-            + "example config can be found in this modules __init__.py"
-        )
+            f'No "cfd" directory exists in {simulation_directory}. For this method to work, ' +
+            "you need a cfd directory containing a set of csv files extracted from CFD " +
+            "simulations of at least 8 wind directions. Values in these files should correspond " +
+            "with the wind velocities at the points from the SpatialComfort case being assessed." +
+            "\nFor example, the folder should contain 8 CSV files:" +
+            '\n    ["./V315.csv", "./V000.csv", "./V045.csv", "./V090.csv", "./V135.csv", ' +
+            '"./V180.csv", "./V225.csv", "./V270.csv"]' +
+            "\n... each containing point-velocities for the points in the SpatialComfort simulation" +
+            "\nAdditionally, a JSON config should also be included, which stores the velocity " +
+            "applied across the simulations for scaling in the thermal comfort assessment. An " +
+            "example config can be found in this modules __init__.py")
 
     return simulation_directory / "cfd"

@@ -1,32 +1,26 @@
 """Base class for typology objects."""
+
 # pylint: disable=E0401
 import json
 from dataclasses import dataclass
 from pathlib import Path
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
-
 from python_toolkit.bhom.analytics import bhom_analytics
-from ..helpers import (
-    convert_keys_to_snake_case,
-    decay_rate_smoother,
-    evaporative_cooling_effect,
-)
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
-from ._shelterbase import (
-    Shelter,
-    annual_sky_exposure,
-    annual_sun_exposure,
-    annual_wind_speed,
-)
+
+from ..helpers import (convert_keys_to_snake_case, decay_rate_smoother,
+                       evaporative_cooling_effect)
+from ..ladybug_extension.datacollection import (collection_from_series,
+                                                collection_to_series)
+from ._shelterbase import (Shelter, annual_sky_exposure, annual_sun_exposure,
+                           annual_wind_speed)
 from .simulate import SimulationResult
+
+# pylint: enable=E0401
+
+
 
 
 @dataclass(init=True, repr=True, eq=True)
@@ -44,15 +38,17 @@ class Typology:
 
         # validation
         if len(self.shelters) > 0:
-            if any(not isinstance(shelter, Shelter) for shelter in self.shelters):
+            if any(not isinstance(shelter, Shelter)
+                   for shelter in self.shelters):
                 raise ValueError("All shelters must be of type 'Shelter'.")
 
         if len(self.evaporative_cooling_effect) != 8760:
-            raise ValueError("evaporative_cooling_effect must be 8760 items long.")
-        if any(
-            not isinstance(i, (float, int)) for i in self.evaporative_cooling_effect
-        ):
-            raise ValueError("evaporative_cooling_effect must be a list of floats.")
+            raise ValueError(
+                "evaporative_cooling_effect must be 8760 items long.")
+        if any(not isinstance(i, (float, int))
+                for i in self.evaporative_cooling_effect):
+            raise ValueError(
+                "evaporative_cooling_effect must be a list of floats.")
         if any(i < 0 for i in self.evaporative_cooling_effect):
             raise ValueError("evaporative_cooling_effect must be >= 0.")
         if any(i > 1 for i in self.evaporative_cooling_effect):
@@ -73,11 +69,12 @@ class Typology:
                 )
 
         if len(self.radiant_temperature_adjustment) != 8760:
-            raise ValueError("radiant_temperature_adjustment must be 8760 items long.")
-        if any(
-            not isinstance(i, (float, int)) for i in self.radiant_temperature_adjustment
-        ):
-            raise ValueError("radiant_temperature_adjustment must be a list of floats.")
+            raise ValueError(
+                "radiant_temperature_adjustment must be 8760 items long.")
+        if any(not isinstance(i, (float, int))
+                for i in self.radiant_temperature_adjustment):
+            raise ValueError(
+                "radiant_temperature_adjustment must be a list of floats.")
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.identifier})"
@@ -158,12 +155,14 @@ class Typology:
     @bhom_analytics()
     def sky_exposure(self) -> list[float]:
         """Direct access to "sky_exposure" method for this typology object."""
-        return annual_sky_exposure(self.shelters, include_radiation_porosity=True)
+        return annual_sky_exposure(
+            self.shelters, include_radiation_porosity=True)
 
     @bhom_analytics()
     def sun_exposure(self, epw: EPW) -> list[float]:
         """Direct access to "sun_exposure" method for this typology object."""
-        return annual_sun_exposure(self.shelters, epw, include_radiation_porosity=True)
+        return annual_sun_exposure(
+            self.shelters, epw, include_radiation_porosity=True)
 
     @bhom_analytics()
     def wind_speed(self, epw: EPW) -> list[float]:
@@ -171,7 +170,8 @@ class Typology:
         shelter_wind_speed = annual_wind_speed(self.shelters, epw)
 
         ws = []
-        for sh_ws, tgt_ws in list(zip(shelter_wind_speed, self.target_wind_speed)):
+        for sh_ws, tgt_ws in list(
+                zip(shelter_wind_speed, self.target_wind_speed)):
             if tgt_ws is None or np.isnan(tgt_ws):
                 ws.append(sh_ws)
             else:
@@ -284,10 +284,12 @@ class Typology:
             zip(*[_sun_exposure, _sky_exposure, shaded_mrt.values, unshaded_mrt.values])
         ):
             if pd.isna(sun_exp):
-                # The sun isn't above the horizon (sun_exp is null), therefore it's night so use the sky view.
+                # The sun isn't above the horizon (sun_exp is null), therefore
+                # it's night so use the sky view.
                 mrts.append(np.interp(sky_exp, [0, 1], [shaded, unshaded]))
             else:
-                # The sun is above the horizon and is fully or partially visible.
+                # The sun is above the horizon and is fully or partially
+                # visible.
                 mrts.append(np.interp(sun_exp, [0, 1], [shaded, unshaded]))
 
         # Fill any gaps where sun-visible/sun-occluded values are missing
@@ -299,8 +301,10 @@ class Typology:
         # transition between shaded/unshaded periods on surrounding surface
         # temperatures
         mrt_series = decay_rate_smoother(
-            mrt_series, difference_threshold=-10, transition_window=4, ewm_span=1.25
-        )
+            mrt_series,
+            difference_threshold=-10,
+            transition_window=4,
+            ewm_span=1.25)
 
         # fill missing data at beginning with interpolation from end of year
         mrt_series.iloc[0] = mrt_series.iloc[24]

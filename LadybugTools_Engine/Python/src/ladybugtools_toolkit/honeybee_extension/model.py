@@ -1,12 +1,13 @@
 """Methods for handling honeybee models."""
+
 # pylint: disable=R0911
 from enum import Enum, auto  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
+import numpy as np
 from honeybee.model import AirBoundary, Face3D, Floor, Model, RoofCeiling, Wall
 from ladybug_geometry.geometry3d import LineSegment3D, Plane
 from matplotlib.collections import PolyCollection
-import numpy as np
 
 
 class HbModelGeometry(Enum):
@@ -24,17 +25,21 @@ class HbModelGeometry(Enum):
         """Return the objects of a model that correspond to the type of object."""
         match self:
             case HbModelGeometry.WALL:
-                return [i.geometry for i in model.faces if isinstance(i.type, Wall)]
+                return [
+                    i.geometry for i in model.faces if isinstance(
+                        i.type, Wall)]
             case HbModelGeometry.FLOOR:
-                return [i.geometry for i in model.faces if isinstance(i.type, Floor)]
+                return [
+                    i.geometry for i in model.faces if isinstance(
+                        i.type, Floor)]
             case HbModelGeometry.ROOFCEILING:
                 return [
-                    i.geometry for i in model.faces if isinstance(i.type, RoofCeiling)
-                ]
+                    i.geometry for i in model.faces if isinstance(
+                        i.type, RoofCeiling)]
             case HbModelGeometry.AIRBOUNDARY:
                 return [
-                    i.geometry for i in model.faces if isinstance(i.type, AirBoundary)
-                ]
+                    i.geometry for i in model.faces if isinstance(
+                        i.type, AirBoundary)]
             case HbModelGeometry.SHADE:
                 return [i.geometry for i in model.shades]
             case HbModelGeometry.APERTURE:
@@ -44,7 +49,10 @@ class HbModelGeometry(Enum):
             case _:
                 raise ValueError(f"Invalid SliceColoring: {self}")
 
-    def slice_polycollection(self, model: Model, plane: Plane) -> PolyCollection:
+    def slice_polycollection(
+            self,
+            model: Model,
+            plane: Plane) -> PolyCollection:
         """Slice a model with a plane and return a matplotlib PolyCollection.
 
         Args:
@@ -352,7 +360,11 @@ def slice_model(model: Model, plane: Plane, ax: plt.Axes = None) -> plt.Axes:
     }
 
     for _, v in meta.items():
-        slice_geometry(hb_objects=v["objects"], plane=plane, ax=ax, **v["poly_kwargs"])
+        slice_geometry(
+            hb_objects=v["objects"],
+            plane=plane,
+            ax=ax,
+            **v["poly_kwargs"])
 
     ax.autoscale_view()
     ax.set_aspect("equal")

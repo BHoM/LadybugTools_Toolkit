@@ -1,9 +1,11 @@
 from pathlib import Path
 from tempfile import gettempdir
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
-from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
+from ladybugtools_toolkit.external_comfort.externalcomfort import \
+    ExternalComfort
 from ladybugtools_toolkit.external_comfort.typology import Typologies
 
 from .test_simulate import TEST_SIMULATION_RESULT
@@ -20,8 +22,8 @@ def test_externalcomfort():
 
     assert isinstance(
         ExternalComfort(
-            simulation_result=TEST_SIMULATION_RESULT, typology=Typologies.OPENFIELD
-        ),
+            simulation_result=TEST_SIMULATION_RESULT,
+            typology=Typologies.OPENFIELD),
         ExternalComfort,
     )
 
@@ -62,7 +64,9 @@ def test_to_dataframe():
 def test_plot_utci_day_comfort_metrics():
     """_"""
 
-    assert isinstance(TEST_EXTERNAL_COMFORT.plot_utci_day_comfort_metrics(), plt.Axes)
+    assert isinstance(
+        TEST_EXTERNAL_COMFORT.plot_utci_day_comfort_metrics(),
+        plt.Axes)
     plt.close("all")
 
 
@@ -76,7 +80,9 @@ def test_plot_utci_heatmap():
 def test_plot_utci_heatmap_histogram():
     """_"""
 
-    assert isinstance(TEST_EXTERNAL_COMFORT.plot_utci_heatmap_histogram(), plt.Figure)
+    assert isinstance(
+        TEST_EXTERNAL_COMFORT.plot_utci_heatmap_histogram(),
+        plt.Figure)
     plt.close("all")
 
 

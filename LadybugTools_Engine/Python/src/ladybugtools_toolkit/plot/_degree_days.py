@@ -1,13 +1,14 @@
 """Methods for plotting degree days from EPW files."""
+
 import calendar  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 from ladybug.epw import EPW
-from .utilities import contrasting_color
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..ladybug_extension.epw import EPW, degree_time
 from ..ladybug_extension.location import location_to_string
+from .utilities import contrasting_color
 
 
 @bhom_analytics()
@@ -67,7 +68,9 @@ def cooling_degree_days(
     if show_labels:
         max_height = max(v.get_height() for v in ax.containers[0])
         for i, c in enumerate(ax.containers):
-            label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
+            label_colors = [
+                contrasting_color(
+                    i.get_facecolor()) for i in c.patches]
             labels = [
                 f"{v.get_height():0.0f}" if v.get_height() > 0.1 * max_height else ""
                 for v in c
@@ -158,7 +161,9 @@ def heating_degree_days(
     if show_labels:
         max_height = max(v.get_height() for v in ax.containers[0])
         for i, c in enumerate(ax.containers):
-            label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
+            label_colors = [
+                contrasting_color(
+                    i.get_facecolor()) for i in c.patches]
             labels = [
                 f"{v.get_height():0.0f}" if v.get_height() > 0.1 * max_height else ""
                 for v in c
@@ -191,7 +196,11 @@ def heating_degree_days(
 
 
 @bhom_analytics()
-def degree_days(epw: EPW, heat_base: float = 18, cool_base: float = 23, **kwargs):
+def degree_days(
+        epw: EPW,
+        heat_base: float = 18,
+        cool_base: float = 23,
+        **kwargs):
     """Plot the heating/cooling degree days from a given EPW object.
 
     Args:
@@ -220,8 +229,21 @@ def degree_days(epw: EPW, heat_base: float = 18, cool_base: float = 23, **kwargs
     cool_color = kwargs.pop("cool_color", "#00A9E0")
 
     fig, ax = plt.subplots(nrows=2, figsize=figsize)
-    heating_degree_days(epw, ax=ax[0], heat_base=heat_base, color=heat_color, **kwargs)
-    cooling_degree_days(epw, ax=ax[1], cool_base=cool_base, color=cool_color, **kwargs)
+    heating_degree_days(
+        epw,
+        ax=ax[0],
+        heat_base=heat_base,
+        color=heat_color,
+        **kwargs)
+    cooling_degree_days(
+        epw,
+        ax=ax[1],
+        cool_base=cool_base,
+        color=cool_color,
+        **kwargs)
 
-    ax[0].set_title(f"{location_to_string(epw.location)} degree days", x=0, ha="left")
+    ax[0].set_title(
+        f"{location_to_string(epw.location)} degree days",
+        x=0,
+        ha="left")
     return fig

@@ -1,6 +1,7 @@
 """Convert methods for objects generic to Ladybug."""
 
-from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
+from honeybee_energy.material.opaque import (EnergyMaterial,
+                                             EnergyMaterialVegetation)
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW, Location
@@ -109,7 +110,8 @@ def header_to_bhom(obj: Header) -> dict:
     }
 
 
-def hourlycontinuouscollection_to_bhom(obj: HourlyContinuousCollection) -> dict:
+def hourlycontinuouscollection_to_bhom(
+        obj: HourlyContinuousCollection) -> dict:
     """Convert this object into a BHOM deserialisable dictionary."""
     return {
         "_t": "BH.oM.LadybugTools.HourlyContinuousCollection",

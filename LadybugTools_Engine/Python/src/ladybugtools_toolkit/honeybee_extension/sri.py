@@ -56,7 +56,8 @@ def calculate_sri(
     coeffs = [5, 12, 30]
     wind_convection_coefficient = np.interp(wind_speed, speeds, coeffs)
 
-    # set the sensitivity threshold for the iterative calculation. Lower is more accurate but slower.
+    # set the sensitivity threshold for the iterative calculation. Lower is
+    # more accurate but slower.
     threshold = 0.5  # W
     increment = 0.01  # K
     iterations = 100000
@@ -65,24 +66,23 @@ def calculate_sri(
     sky_temperature = sky_temperature + 273.15  # K
 
     sigma = 5.67e-8  # W m-2 K-4 Stefan-Boltzmann constant
-    blackbody_solar_reflectance = 0.05  #  0 - 1
-    whitebody_solar_reflectance = 0.8  #  0 - 1
-    blackbody_thermal_emittance = 0.9  #  0 - 1
-    whitebody_thermal_emittance = 0.9  #  0 - 1
+    blackbody_solar_reflectance = 0.05  # 0 - 1
+    whitebody_solar_reflectance = 0.8  # 0 - 1
+    blackbody_thermal_emittance = 0.9  # 0 - 1
+    whitebody_thermal_emittance = 0.9  # 0 - 1
 
     surface_temperature = 200.0  # K
     n = 0
-    while not np.isclose(
-        (1 - solar_reflectance) * insolation
-        - (
-            thermal_emittance
-            * sigma
-            * (surface_temperature**4 - sky_temperature**4)
-            + wind_convection_coefficient * (surface_temperature - air_temperature)
-        ),
-        0,
-        atol=threshold,
-    ):
+    while not np.isclose((1 -
+                          solar_reflectance) *
+                         insolation -
+                         (thermal_emittance *
+                          sigma *
+                          (surface_temperature**4 -
+                           sky_temperature**4) +
+                          wind_convection_coefficient *
+                          (surface_temperature -
+                              air_temperature)), 0, atol=threshold, ):
         n += 1
         if n > iterations:
             raise ValueError(

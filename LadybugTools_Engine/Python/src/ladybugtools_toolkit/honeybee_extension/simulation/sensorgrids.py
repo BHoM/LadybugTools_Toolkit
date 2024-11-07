@@ -1,4 +1,5 @@
 """Methods for handling Honeybee sensorgrids."""
+
 # pylint: disable=E0401
 from warnings import warn
 
@@ -32,8 +33,10 @@ def is_planar(sensorgrid: SensorGrid) -> bool:
     )
     for sensor in sensorgrid.sensors:
         if not np.isclose(
-            a=plane.distance_to_point(point=Point3D.from_array(sensor.pos)), b=0
-        ):
+                a=plane.distance_to_point(
+                    point=Point3D.from_array(
+                sensor.pos)),
+                b=0):
             return False
     return True
 
@@ -224,14 +227,14 @@ def as_patchcollection(
             f"{sensorgrid} does not have a mesh. This should have been assigned when the sensorgrid was created."
         )
 
-    # flatten the mesh to 2D in XY plane, raising warnings if the mesh is not 2D planar
+    # flatten the mesh to 2D in XY plane, raising warnings if the mesh is not
+    # 2D planar
     mesh3d_get_plane(mesh=sensorgrid.mesh)
 
     patches = []
     for face in sensorgrid.mesh.face_vertices:
-        patches.append(
-            mpatches.Polygon(np.array([i.to_array()[:2] for i in face]), closed=False)
-        )
+        patches.append(mpatches.Polygon(
+            np.array([i.to_array()[:2] for i in face]), closed=False))
     return mcollections.PatchCollection(patches, **kwargs)
 
 
@@ -267,7 +270,8 @@ def plot_values(
     return ax
 
 
-def get_limits(sensorgrids: list[SensorGrid], buffer: float = 2) -> tuple[tuple[float]]:
+def get_limits(sensorgrids: list[SensorGrid],
+               buffer: float = 2) -> tuple[tuple[float]]:
     """Get the X/Y limits from a set of sensor grids.
 
     Args:

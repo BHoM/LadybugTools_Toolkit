@@ -4,13 +4,15 @@
 import calendar
 from datetime import datetime
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from .dt import lb_datetime_from_datetime
+
+# pylint: enable=E0401
+
 
 
 def analysis_period_to_datetimes(
@@ -75,7 +77,8 @@ def analysis_period_to_boolean(
 
 
 @bhom_analytics()
-def analysis_period_from_datetimes(datetimes: list[datetime]) -> AnalysisPeriod:
+def analysis_period_from_datetimes(
+        datetimes: list[datetime]) -> AnalysisPeriod:
     """Convert a list of datetimes (in order from earliest to latest) into an
     AnalysisPeriod object.
 
@@ -100,8 +103,7 @@ def analysis_period_from_datetimes(datetimes: list[datetime]) -> AnalysisPeriod:
         raise ValueError(
             f"The number of datetimes ({len(datetimes)}) does not match the number of datetimes in "
             "the AnalysisPeriod ({len(analysis_period.datetimes)}), which probably means your "
-            "datetime-list has an irregular time-step and cannot be coerced into an AnalysisPeriod."
-        )
+            "datetime-list has an irregular time-step and cannot be coerced into an AnalysisPeriod.")
     return analysis_period
 
 
@@ -153,7 +155,8 @@ def describe_analysis_period(
 
     if save_path:
         if len(analysis_period) != 1:
-            raise ValueError("Only one analysis period can be used for a save path.")
+            raise ValueError(
+                "Only one analysis period can be used for a save path.")
         analysis_period = analysis_period[0]
         if include_timestep:
             return (
@@ -184,7 +187,8 @@ def describe_analysis_period(
 
 
 def analysis_period_from_description(description_str: str) -> AnalysisPeriod:
-    # TODO: implement this, based on the output from the method above to recreate the analysis period
+    # TODO: implement this, based on the output from the method above to
+    # recreate the analysis period
     raise NotImplementedError()
 
 
@@ -214,22 +218,16 @@ def do_analysis_periods_represent_entire_year(
     if any(ap.timestep != 1 for ap in analysis_periods):
         raise ValueError("All input analysis period timesteps must be hourly.")
 
-    if any(
-        ap.is_leap_year != analysis_periods[0].is_leap_year for ap in analysis_periods
-    ):
+    if any(ap.is_leap_year !=
+            analysis_periods[0].is_leap_year for ap in analysis_periods):
         raise ValueError(
             "All input analysis periods must be either leap year, or not leap "
             "year. Mixed leapedness is not allowed."
         )
 
     target_datetimes = analysis_period_to_datetimes(AnalysisPeriod())
-    actual_datetimes = (
-        pd.concat(
-            [analysis_period_to_datetimes(ap).to_series() for ap in analysis_periods]
-        )
-        .sort_index()
-        .index
-    )
+    actual_datetimes = (pd.concat([analysis_period_to_datetimes(
+        ap).to_series() for ap in analysis_periods]) .sort_index() .index)
     target_timesteps = 8784 if analysis_periods[0].is_leap_year else 8760
     actual_timesteps = sum(len(ap) for ap in analysis_periods)
     if actual_timesteps > target_timesteps:
@@ -242,11 +240,10 @@ def do_analysis_periods_represent_entire_year(
     if actual_timesteps < target_timesteps:
         # pylint: disable=E1125
         missing = (
-            pd.DatetimeIndex(list(set(target_datetimes) - set(actual_datetimes)))
-            .to_series()
-            .sort_index()
-            .index
-        )
+            pd.DatetimeIndex(
+                list(
+                    set(target_datetimes) -
+                    set(actual_datetimes))) .to_series() .sort_index() .index)
         # pylint: enable=E1125
         raise ValueError(
             "The number of timesteps contained within the input analysis "

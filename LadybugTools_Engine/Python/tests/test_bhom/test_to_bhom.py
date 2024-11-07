@@ -1,23 +1,16 @@
-from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.header import Header, DataTypeBase
-from ladybug.datatype.temperature import Temperature
+from honeybee_energy.material.opaque import (EnergyMaterial,
+                                             EnergyMaterialVegetation)
 from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.datatype.temperature import Temperature
+from ladybug.header import DataTypeBase, Header
 from ladybug_geometry.geometry3d.pointvector import Point3D
-
-from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialVegetation
-
 from ladybugtools_toolkit.bhom.to_bhom import (
-    energymaterialvegetation_to_bhom,
-    energymaterial_to_bhom,
-    point3d_to_bhom,
-    analysisperiod_to_bhom,
-    hourlycontinuouscollection_to_bhom,
-    header_to_bhom,
-    datatype_to_bhom,
-    location_to_bhom,
-    epw_to_bhom,
-    material_to_bhom,
-)
+    analysisperiod_to_bhom, datatype_to_bhom, energymaterial_to_bhom,
+    energymaterialvegetation_to_bhom, epw_to_bhom, header_to_bhom,
+    hourlycontinuouscollection_to_bhom, location_to_bhom, material_to_bhom,
+    point3d_to_bhom)
+
 from .. import EPW_OBJ
 
 ENERGY_MATERIAL_VEGETATION = EnergyMaterialVegetation(
@@ -95,7 +88,8 @@ def test_material_to_bhom():
     """_"""
 
     assert material_to_bhom(ENERGY_MATERIAL)["Roughness"] == "Smooth"
-    assert material_to_bhom(ENERGY_MATERIAL_VEGETATION)["MinStomatalResist"] == 100
+    assert material_to_bhom(ENERGY_MATERIAL_VEGETATION)[
+        "MinStomatalResist"] == 100
 
 
 def test_point3d_to_bhom():

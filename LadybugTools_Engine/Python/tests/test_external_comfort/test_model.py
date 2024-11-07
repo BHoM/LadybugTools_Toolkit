@@ -5,22 +5,11 @@ from honeybee.model import Model
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.shade import ShadeConstruction
 from ladybugtools_toolkit.external_comfort.model import (
-    _GROUND_THICKNESS,
-    _SHADE_HEIGHT_ABOVE_GROUND,
-    _SHADE_THICKNESS,
-    _ZONE_DEPTH,
-    _ZONE_WIDTH,
-    _ground_zone,
-    _shade_valence,
-    _shade_zone,
-    create_model,
-    get_ground_material,
-    get_ground_reflectance,
-    get_shade_material,
-    model_equality,
-    opaque_to_shade,
-    single_layer_construction,
-)
+    _GROUND_THICKNESS, _SHADE_HEIGHT_ABOVE_GROUND, _SHADE_THICKNESS,
+    _ZONE_DEPTH, _ZONE_WIDTH, _ground_zone, _shade_valence, _shade_zone,
+    create_model, get_ground_material, get_ground_reflectance,
+    get_shade_material, model_equality, opaque_to_shade,
+    single_layer_construction)
 
 from .test_material import TEST_GROUND_MATERIAL, TEST_SHADE_MATERIAL
 
@@ -116,7 +105,8 @@ def test_get_ground_reflectance():
         ground_material=TEST_GROUND_MATERIAL,
         shade_material=TEST_SHADE_MATERIAL,
     )
-    assert get_ground_reflectance(model) == TEST_GROUND_MATERIAL.solar_reflectance
+    assert get_ground_reflectance(
+        model) == TEST_GROUND_MATERIAL.solar_reflectance
 
     with pytest.raises(TypeError):
         get_ground_reflectance("not_a_model")

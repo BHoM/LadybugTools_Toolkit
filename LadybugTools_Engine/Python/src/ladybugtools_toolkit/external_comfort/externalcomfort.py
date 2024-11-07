@@ -4,27 +4,32 @@
 import copy
 import warnings
 
-# pylint: enable=E0401
-
 import numpy as np
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ._externalcomfortbase import ExternalComfort
 from ._shelterbase import Shelter
 from ._typologybase import Typology
 
+# pylint: enable=E0401
+
+
+
 
 @bhom_analytics()
 def modify_external_comfort(
-    external_comfort: ExternalComfort,
-    additional_shelters: tuple[Shelter] = (),
-    target_wind_speed: tuple[float] = (np.nan * np.empty(8760)).tolist(),
-    evaporative_cooling_effect: tuple[float] = (np.nan * np.empty(8760)).tolist(),
-    radiant_temperature_adjustment: tuple[float] = (np.nan * np.empty(8760)).tolist(),
-    existing_shelters_wind_porosity: tuple[float] = (np.nan * np.empty(8760)).tolist(),
-    existing_shelters_radiation_porosity: tuple[float] = (
-        np.nan * np.empty(8760)
-    ).tolist(),
+        external_comfort: ExternalComfort,
+        additional_shelters: tuple[Shelter] = (),
+        target_wind_speed: tuple[float] = (
+            np.nan * np.empty(8760)).tolist(),
+    evaporative_cooling_effect: tuple[float] = (
+                np.nan * np.empty(8760)).tolist(),
+        radiant_temperature_adjustment: tuple[float] = (
+                    np.nan * np.empty(8760)).tolist(),
+        existing_shelters_wind_porosity: tuple[float] = (
+                        np.nan * np.empty(8760)).tolist(),
+        existing_shelters_radiation_porosity: tuple[float] = (
+                            np.nan * np.empty(8760)).tolist(),
 ) -> ExternalComfort:
     """Apply varying levels of additional measures to the insitu comfort model,
     taking into account any existing measures that are in place already.
@@ -83,7 +88,8 @@ def modify_external_comfort(
 
     # construct name
     modified_name = (
-        f"{external_comfort.typology.identifier} + modified"  # TODO - add more info
+        # TODO - add more info
+        f"{external_comfort.typology.identifier} + modified"
     )
 
     # construct new typology

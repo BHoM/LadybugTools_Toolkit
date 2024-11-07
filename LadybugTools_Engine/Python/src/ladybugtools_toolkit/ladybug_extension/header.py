@@ -5,7 +5,6 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype import TYPESDICT
 from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
-
 from python_toolkit.bhom.analytics import bhom_analytics
 
 
@@ -108,7 +107,8 @@ def header_from_multiindex(multiindex: pd.MultiIndex) -> Header:
 
     # get the metadata
     metadata = {}
-    for n, (k, v) in enumerate(list(zip(*[multiindex.names, multiindex.values[0]]))):
+    for n, (k, v) in enumerate(
+            list(zip(*[multiindex.names, multiindex.values[0]]))):
         if n <= 1:
             continue
         metadata[k] = v

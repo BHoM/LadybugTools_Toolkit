@@ -5,12 +5,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
-# pylint: enable=E0401
-
 import pandas as pd
 from ladybug.epw import EPW, Location
-from scipy import spatial
 from python_toolkit.bhom.analytics import bhom_analytics
+from scipy import spatial
+
+# pylint: enable=E0401
+
 
 
 @dataclass
@@ -57,7 +58,8 @@ class KoeppenClassification:
             "ET",
         ]
         if self.classification not in classifications:
-            raise ValueError(f"Invalid Koeppen classification: {self.classification}")
+            raise ValueError(
+                f"Invalid Koeppen classification: {self.classification}")
 
     @bhom_analytics()
     def to_dict(self):

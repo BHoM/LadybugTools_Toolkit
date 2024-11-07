@@ -1,19 +1,33 @@
 ﻿"""Method to wrap creation of panel orientation plots"""
+
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import os
 import traceback
 from pathlib import Path
-import os
+
 import matplotlib
 
-def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectance, irradiance_type, isotropic, analysis_period, title, save_path):
+
+def directional_solar_radiation(
+    epw_file,
+    azimuths,
+    altitudes,
+    ground_reflectance,
+    irradiance_type,
+    isotropic,
+    analysis_period,
+    title,
+    save_path,
+):
     try:
-        from ladybugtools_toolkit.solar import Solar, IrradianceType
+        import json
+        from pathlib import Path
+
+        import matplotlib.pyplot as plt
         from ladybug.wea import EPW, AnalysisPeriod
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        import matplotlib.pyplot as plt
-        from pathlib import Path
-        import json
+        from ladybugtools_toolkit.solar import IrradianceType, Solar
 
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
 
@@ -28,10 +42,18 @@ def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectanc
 
         epw = EPW(epw_file)
         solar = Solar.from_epw(epw)
-        fig, ax = plt.subplots(1, 1, figsize=(22.8/2, 7.6/2))
-        solar.plot_tilt_orientation_factor(location=epw.location, ax=ax, azimuths=azimuths, altitudes=altitudes, isotropic=isotropic, irradiance_type=irradiance_type, analysis_period=analysis_period, ground_reflectance=ground_reflectance).get_figure()
+        fig, ax = plt.subplots(1, 1, figsize=(22.8 / 2, 7.6 / 2))
+        solar.plot_tilt_orientation_factor(
+            location=epw.location,
+            ax=ax,
+            azimuths=azimuths,
+            altitudes=altitudes,
+            isotropic=isotropic,
+            irradiance_type=irradiance_type,
+            analysis_period=analysis_period,
+            ground_reflectance=ground_reflectance,
+        ).get_figure()
         ax.set_title(title)
-
 
         if save_path is None or save_path == "":
             base64 = figure_to_base64(fig, html=False)
@@ -42,11 +64,10 @@ def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectanc
     except Exception as ex:
         print(traceback.format_exc())
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, extract a heatmap"
-        )
+        description=("Given an EPW file path, extract a heatmap")
     )
     parser.add_argument(
         "-e",
@@ -110,11 +131,23 @@ if __name__ == "__main__":
         help="Path where to save the output image.",
         type=str,
         required=False,
-        )
+    )
 
     args = parser.parse_args()
 
-    os.environ["TQDM_DISABLE"] = "1" # set an environment variable so that progress bars are disabled for the simulation process
+    os.environ["TQDM_DISABLE"] = (
+        "1"  # set an environment variable so that progress bars are disabled for the simulation process
+    )
     matplotlib.use("Agg")
-    directional_solar_radiation(args.epw_file, args.azimuths, args.altitudes, args.ground_reflectance, args.irradiance_type, args.isotropic, args.analysis_period, args.title, args.save_path)
-    del os.environ["TQDM_DISABLE"] # unset the env variable
+    directional_solar_radiation(
+        args.epw_file,
+        args.azimuths,
+        args.altitudes,
+        args.ground_reflectance,
+        args.irradiance_type,
+        args.isotropic,
+        args.analysis_period,
+        args.title,
+        args.save_path,
+    )
+    del os.environ["TQDM_DISABLE"]  # unset the env variable

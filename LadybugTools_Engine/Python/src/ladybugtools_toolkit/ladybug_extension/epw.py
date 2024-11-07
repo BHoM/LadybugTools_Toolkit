@@ -1,4 +1,5 @@
 """Methods for manipulating Ladybug EPW objects."""
+
 # pylint: disable=C0302
 # pylint: disable=E0401
 import calendar
@@ -8,8 +9,6 @@ import json
 import warnings
 from pathlib import Path
 from typing import Any
-
-# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
@@ -24,31 +23,27 @@ from ladybug.datatype.time import Time
 from ladybug.epw import EPW, EPWFields, MonthlyCollection
 from ladybug.header import Header
 from ladybug.location import Location
-from ladybug.psychrometrics import (
-    dew_point_from_db_wb,
-    enthalpy_from_db_hr,
-    humid_ratio_from_db_rh,
-    rel_humid_from_db_wb,
-    wet_bulb_from_db_rh,
-)
+from ladybug.psychrometrics import (dew_point_from_db_wb, enthalpy_from_db_hr,
+                                    humid_ratio_from_db_rh,
+                                    rel_humid_from_db_wb, wet_bulb_from_db_rh)
 from ladybug.skymodel import clearness_index as lb_ci
 from ladybug.sunpath import Sun, Sunpath
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
-
 from python_toolkit.bhom.analytics import bhom_analytics
-from ..helpers import (
-    air_pressure_at_height,
-    radiation_at_height,
-    temperature_at_height,
-    timedelta_tostring,
-    wind_speed_at_height,
-)
+
+from ..helpers import (air_pressure_at_height, radiation_at_height,
+                       temperature_at_height, timedelta_tostring,
+                       wind_speed_at_height)
 from .analysisperiod import analysis_period_to_datetimes
 from .datacollection import average as average_collection
 from .datacollection import collection_to_series
 from .groundtemperature import hourly_ground_temperature
 from .header import header_to_string
 from .location import average_location, location_to_string
+
+# pylint: enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -114,8 +109,7 @@ def epw_to_dataframe(
         except (ValueError, TypeError):
             warnings.warn(
                 f"{prop} is not available in this EPW file. This is most likely "
-                "because this file does not follow normal EPW content conventions."
-            )
+                "because this file does not follow normal EPW content conventions.")
 
     if not include_additional:
         return pd.concat(all_series, axis=1).sort_index(axis=1)
@@ -414,7 +408,8 @@ def solar_time_hour(
     hour_values = [i.hour for i in epw.dry_bulb_temperature.datetimes]
 
     solar_time = [
-        sunpath._calculate_solar_time(j, k, False)  # pylint: disable=protected-access
+        sunpath._calculate_solar_time(
+            j, k, False)  # pylint: disable=protected-access
         for j, k in list(zip(*[hour_values, eot.values]))
     ]
 
@@ -464,7 +459,8 @@ def solar_time_datetime(
     # Sometimes the first datetime for solar time occurs before the target year -
     # so this moves the first datetime to the previous day
     for i in range(12):
-        if (_datetimes[i].year == _datetimes[-1].year) and (_datetimes[i].hour > 12):
+        if (_datetimes[i].year ==
+                _datetimes[-1].year) and (_datetimes[i].hour > 12):
             _datetimes[i] = _datetimes[i] - pd.Timedelta(days=1)
 
     return HourlyContinuousCollection(
@@ -843,8 +839,8 @@ def epw_content_check(epw: EPW, fields: list[str] = None) -> bool:
         # pylint: disable=protected-access
         if all(i == epw_field.missing for i in epw._get_data_by_field(field_no)):
             warnings.warn(
-                f"{epw} - {epw_field.name} contains only missing values.", stacklevel=2
-            )
+                f"{epw} - {epw_field.name} contains only missing values.",
+                stacklevel=2)
             valid = False
         # pylint: enable=protected-access
     return valid
@@ -947,12 +943,8 @@ def seasonality_from_day_length_location(
     idx = analysis_period_to_datetimes(AnalysisPeriod())
     df = pd.Series([0] * len(idx), index=idx).resample("1D").mean()
 
-    sun_times = pd.DataFrame.from_dict(
-        [
-            Sunpath.from_location(location).calculate_sunrise_sunset(i.month, i.day)
-            for i in df.index
-        ]
-    )
+    sun_times = pd.DataFrame.from_dict([Sunpath.from_location(
+        location).calculate_sunrise_sunset(i.month, i.day) for i in df.index])
     sun_times.index = df.index
     sun_times["day_length"] = sun_times.sunset - sun_times.sunrise
 
@@ -1000,24 +992,32 @@ def seasonality_from_day_length_location(
     # construct datetime indexed series with categories
     categories = np.where(
         spring_mask,
-        f"Spring ({middlest_day_length} average sun-up time, {spring_left:%b %d} to {spring_right: %b %d})"
-        if annotate
-        else "Spring",
+        (
+            f"Spring ({middlest_day_length} average sun-up time, {spring_left:%b %d} to {spring_right: %b %d})"
+            if annotate
+            else "Spring"
+        ),
         np.where(
             summer_mask,
-            f"Summer ({longest_day_length} average sun-up time, {spring_right:%b %d} to {autumn_left: %b %d})"
-            if annotate
-            else "Summer",
+            (
+                f"Summer ({longest_day_length} average sun-up time, {spring_right:%b %d} to {autumn_left: %b %d})"
+                if annotate
+                else "Summer"
+            ),
             np.where(
                 autumn_mask,
-                f"Autumn ({middlest_day_length} average sun-up time, {autumn_left:%b %d} to {autumn_right: %b %d})"
-                if annotate
-                else "Autumn",
+                (
+                    f"Autumn ({middlest_day_length} average sun-up time, {autumn_left:%b %d} to {autumn_right: %b %d})"
+                    if annotate
+                    else "Autumn"
+                ),
                 np.where(
                     winter_mask,
-                    f"Winter ({shortest_day_length} average sun-up time, {autumn_right:%b %d} to {spring_left: %b %d})"
-                    if annotate
-                    else "Winter",
+                    (
+                        f"Winter ({shortest_day_length} average sun-up time, {autumn_right:%b %d} to {spring_left: %b %d})"
+                        if annotate
+                        else "Winter"
+                    ),
                     "Undefined",
                 ),
             ),
@@ -1045,7 +1045,8 @@ def seasonality_from_temperature_timeseries(
     """
 
     if not isinstance(series.index, pd.DatetimeIndex):
-        raise ValueError(f"The series's index must be of type {type(pd.DatetimeIndex)}")
+        raise ValueError(
+            f"The series's index must be of type {type(pd.DatetimeIndex)}")
 
     # remove NaN values
     series.dropna(axis=0, how="any", inplace=True)
@@ -1063,8 +1064,7 @@ def seasonality_from_temperature_timeseries(
     if series.std() <= 2.5:
         warnings.warn(
             "Input dataset has a low variance, indicating that seasonality may "
-            "not be determined accurately from dry-bulb temperature."
-        )
+            "not be determined accurately from dry-bulb temperature.")
 
     # create the aggregate year
     dbt = series.groupby(
@@ -1074,16 +1074,21 @@ def seasonality_from_temperature_timeseries(
         dbt.drop((2, 29), axis=0, inplace=True)
     except KeyError:
         pass
-    dbt.index = pd.date_range("2017-01-01 00:00:00", freq="60min", periods=8760)
+    dbt.index = pd.date_range(
+        "2017-01-01 00:00:00",
+        freq="60min",
+        periods=8760)
     dbt.name = "dbt"
 
-    # prepare a 3-year dataset using the aggregate year from the input data and drop leap days if included
+    # prepare a 3-year dataset using the aggregate year from the input data
+    # and drop leap days if included
     dbt_3year = pd.Series(
         index=pd.date_range("2016-01-01 00:00:00", freq="60min", periods=len(dbt) * 3),
         data=np.array([[i] * 3 for i in dbt.values]).T.flatten(),
     )
 
-    # resample to weeks to get min and max week, and then min/max datetime within the middle of that week
+    # resample to weeks to get min and max week, and then min/max datetime
+    # within the middle of that week
     dbt_week_mean = dbt.resample("1W").mean()
     peak_summer = (dbt_week_mean.idxmax() + pd.Timedelta(days=3)).date()
     if peak_summer.year != dbt.index[0].year:
@@ -1096,7 +1101,8 @@ def seasonality_from_temperature_timeseries(
             dbt.index[0].year, peak_winter.month, peak_winter.day
         ).date()
 
-    # get ranges of dates between peak days - regardless of whether they cross the year boundary
+    # get ranges of dates between peak days - regardless of whether they cross
+    # the year boundary
     if peak_summer > peak_winter:
         # print("summer later in year")
         summer_to_winter_3year_mask = (dbt_3year.index.date > peak_summer) & (
@@ -1114,7 +1120,8 @@ def seasonality_from_temperature_timeseries(
             dbt_3year.index.date > peak_summer
         )
 
-    # create subset of 3-year data containing values where spring/autumn can be defined
+    # create subset of 3-year data containing values where spring/autumn can
+    # be defined
     autumn_series = dbt_3year[summer_to_winter_3year_mask]
     spring_series = dbt_3year[winter_to_summer_3year_mask]
 
@@ -1124,22 +1131,25 @@ def seasonality_from_temperature_timeseries(
     autumn_upper_limit = autumn_series.quantile(0.75)
     spring_upper_limit = spring_series.quantile(0.75)
 
-    # get the number of hours in each day in the mask where the majority of hours are within that band
+    # get the number of hours in each day in the mask where the majority of
+    # hours are within that band
     autumn_temp = (
-        autumn_series.between(autumn_lower_limit, autumn_upper_limit, inclusive="left")
-        .groupby(autumn_series.index.date)
-        .sum()
-        > 12
-    )
+        autumn_series.between(
+            autumn_lower_limit,
+            autumn_upper_limit,
+            inclusive="left") .groupby(
+            autumn_series.index.date) .sum() > 12)
     spring_temp = (
-        spring_series.between(spring_lower_limit, spring_upper_limit, inclusive="left")
-        .groupby(spring_series.index.date)
-        .sum()
-        > 12
-    )
+        spring_series.between(
+            spring_lower_limit,
+            spring_upper_limit,
+            inclusive="left") .groupby(
+            spring_series.index.date) .sum() > 12)
 
-    # convert timestamps to epoch and get the weighted mean date for those dates where it's "spring"/"autumn"-y
-    autumn_epoch = pd.to_datetime(autumn_temp.index).view("int64").astype("float64")
+    # convert timestamps to epoch and get the weighted mean date for those
+    # dates where it's "spring"/"autumn"-y
+    autumn_epoch = pd.to_datetime(
+        autumn_temp.index).view("int64").astype("float64")
     autumn_weighted_mean_date = pd.to_datetime(
         (autumn_epoch * autumn_temp.astype(int)).sum() / autumn_temp.sum()
     ).date()
@@ -1149,7 +1159,8 @@ def seasonality_from_temperature_timeseries(
         autumn_weighted_mean_date.day,
     ).date()
 
-    spring_epoch = pd.to_datetime(spring_temp.index).view("int64").astype("float64")
+    spring_epoch = pd.to_datetime(
+        spring_temp.index).view("int64").astype("float64")
     spring_weighted_mean_date = pd.to_datetime(
         (spring_epoch * spring_temp.astype(int)).sum() / spring_temp.sum()
     ).date()
@@ -1159,7 +1170,8 @@ def seasonality_from_temperature_timeseries(
         spring_weighted_mean_date.day,
     ).date()
 
-    # determine the midpoints between seasonal peaks to get the ranges of dates over which seasons occur
+    # determine the midpoints between seasonal peaks to get the ranges of
+    # dates over which seasons occur
     if peak_spring > peak_winter:
         # print("spring happens after winter in the same year")
         spring_start = peak_spring + (peak_winter - peak_spring) / 2
@@ -1315,9 +1327,11 @@ def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
                 f"Autumn ({', '.join(autumn_month_labels)})" if annotate else "Autumn",
                 np.where(
                     idx.month.isin(winter_months),
-                    f"Winter ({', '.join(winter_month_labels)})"
-                    if annotate
-                    else "Winter",
+                    (
+                        f"Winter ({', '.join(winter_month_labels)})"
+                        if annotate
+                        else "Winter"
+                    ),
                     "Undefined",
                 ),
             ),
@@ -1328,7 +1342,8 @@ def seasonality_from_month(epw: EPW, annotate: bool = False) -> pd.Series:
 
 
 @bhom_analytics()
-def seasonality_from_temperature(epw: EPW, annotate: bool = False) -> pd.Series:
+def seasonality_from_temperature(epw: EPW,
+                                 annotate: bool = False) -> pd.Series:
     """Create a Series containing a category for each timestep of an EPW giving it's season.
     Args:
         epw (EPW):
@@ -1396,11 +1411,17 @@ def degree_time(
     )
 
     cdh = pd.DataFrame(
-        cooling_degree_time_v(df, cool_base), index=df.index, columns=df.columns
-    )
+        cooling_degree_time_v(
+            df,
+            cool_base),
+        index=df.index,
+        columns=df.columns)
     hdh = pd.DataFrame(
-        heating_degree_time_v(df, heat_base), index=df.index, columns=df.columns
-    )
+        heating_degree_time_v(
+            df,
+            heat_base),
+        index=df.index,
+        columns=df.columns)
 
     if return_type.lower() == "hours":
         return (
@@ -1434,7 +1455,10 @@ def degree_time(
 
 
 @bhom_analytics()
-def translate_to_height(epw: EPW, target_height: float, save: bool = False) -> EPW:
+def translate_to_height(
+        epw: EPW,
+        target_height: float,
+        save: bool = False) -> EPW:
     """Translate an EPW to a different height above ground (assuming that the
     original height represented is at ground level, with wind measured at 10m).
 
@@ -1709,7 +1733,10 @@ def longest_day(epw: EPW) -> datetime:
     The longest day in the year associated with this epw object."""
 
     sunpath = Sunpath.from_location(epw.location)
-    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1min")
+    idx = pd.date_range(
+        "2017-01-01 00:00:00",
+        "2018-01-01 00:00:00",
+        freq="1min")
     suns = [sunpath.calculate_sun_from_date_time(i) for i in idx][:-1]
 
     s = pd.Series([i.altitude for i in suns], index=idx[:-1])
@@ -1722,7 +1749,10 @@ def shortest_day(epw: EPW) -> datetime:
     The shortest day in the year associated with this epw object."""
 
     sunpath = Sunpath.from_location(epw.location)
-    idx = pd.date_range("2017-01-01 00:00:00", "2018-01-01 00:00:00", freq="1min")
+    idx = pd.date_range(
+        "2017-01-01 00:00:00",
+        "2018-01-01 00:00:00",
+        freq="1min")
     suns = [sunpath.calculate_sun_from_date_time(i) for i in idx][:-1]
 
     s = pd.Series([i.altitude for i in suns], index=idx[:-1])
@@ -1748,7 +1778,8 @@ def average_epw(
 
     # set location data as average of all inputs
     if location is None:
-        location = average_location([i.location for i in epws], weights=weights)
+        location = average_location(
+            [i.location for i in epws], weights=weights)
     synthetic_epw.location = location
 
     # set metadata
@@ -1767,7 +1798,9 @@ def average_epw(
     for depth in all_depths:
         collections = []
         for n, epw in enumerate(epws):
-            collections.append(epw.monthly_ground_temperature[depth] * weights[n])
+            collections.append(
+                epw.monthly_ground_temperature[depth] *
+                weights[n])
 
         # get the average for the collections included
         base = collections[0]

@@ -1,20 +1,12 @@
-import pytest
-from ladybugtools_toolkit.honeybee_extension.simulation.sensorgrids import (
-    is_planar,
-    get_plane,
-    position_array,
-    vector_array,
-    estimate_spacing,
-    as_triangulation,
-    as_patchcollection,
-    plot_values,
-    get_limits,
-)
-from matplotlib.collections import PatchCollection
-from matplotlib.tri import Triangulation
 import matplotlib.pyplot as plt
 import numpy as np
-from ladybug_geometry.geometry3d import Vector3D, Plane, Point3D
+import pytest
+from ladybug_geometry.geometry3d import Plane, Point3D, Vector3D
+from ladybugtools_toolkit.honeybee_extension.simulation.sensorgrids import (
+    as_patchcollection, as_triangulation, estimate_spacing, get_limits,
+    get_plane, is_planar, plot_values, position_array, vector_array)
+from matplotlib.collections import PatchCollection
+from matplotlib.tri import Triangulation
 
 from .. import TEST_DAYLIGHT_MODEL
 
@@ -63,11 +55,18 @@ def test_as_patchcollection():
 def test_plot_values():
     """_"""
     assert isinstance(
-        plot_values(sensorgrid=TEST_SENSORGRID, values=np.random.randint(0, 100, 25)),
+        plot_values(
+            sensorgrid=TEST_SENSORGRID,
+            values=np.random.randint(
+                0,
+                100,
+                25)),
         plt.Axes,
     )
 
 
 def test_get_limits():
     """_"""
-    assert get_limits(sensorgrids=[TEST_SENSORGRID]) == ((-1.5, 6.5), (-1.5, 6.5))
+    assert get_limits(
+        sensorgrids=[TEST_SENSORGRID]) == (
+        (-1.5, 6.5), (-1.5, 6.5))

@@ -22,8 +22,8 @@ from matplotlib.colors import ListedColormap
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import PercentFormatter, StrMethodFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
+
 from ...helpers import sanitise_string, wind_speed_at_height
 from ...honeybee_extension.results import (load_ill, load_pts, load_res,
                                            make_annual)
@@ -61,11 +61,17 @@ class SpatialComfort:
         SpatialComfort: A SpatialComfort object.
     """
 
-    spatial_simulation_directory: Path = field(init=True, repr=True, compare=False)
-    simulation_result: SimulationResult = field(init=True, repr=True, compare=False)
+    spatial_simulation_directory: Path = field(
+        init=True, repr=True, compare=False)
+    simulation_result: SimulationResult = field(
+        init=True, repr=True, compare=False)
 
     _model: Model = field(init=False, compare=False, repr=False, default=None)
-    _points: pd.DataFrame = field(init=False, compare=False, repr=False, default=None)
+    _points: pd.DataFrame = field(
+        init=False,
+        compare=False,
+        repr=False,
+        default=None)
     _dry_bulb_temperature_epw: pd.DataFrame = field(
         init=False, compare=False, repr=False, default=None
     )
@@ -87,7 +93,11 @@ class SpatialComfort:
     _irradiance_diffuse: pd.DataFrame = field(
         init=False, repr=False, compare=False, default=None
     )
-    _sky_view: pd.DataFrame = field(init=False, repr=False, compare=False, default=None)
+    _sky_view: pd.DataFrame = field(
+        init=False,
+        repr=False,
+        compare=False,
+        default=None)
     _mean_radiant_temperature_interpolated: pd.DataFrame = field(
         init=False, repr=False, compare=False, default=None
     )
@@ -102,7 +112,8 @@ class SpatialComfort:
     )
 
     def __post_init__(self):
-        self.spatial_simulation_directory = Path(self.spatial_simulation_directory)
+        self.spatial_simulation_directory = Path(
+            self.spatial_simulation_directory)
 
         if not spatial_comfort_possible(self.spatial_simulation_directory):
             raise RuntimeError(
@@ -215,16 +226,18 @@ class SpatialComfort:
             metric = SpatialMetric.POINTS
             save_path = metric.filepath(self.spatial_simulation_directory)
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 self._points = pd.read_parquet(save_path)
                 return self._points
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             files = list(
-                (
-                    self.spatial_simulation_directory / "sky_view" / "model" / "grid"
-                ).glob("*.pts")
-            )
+                (self.spatial_simulation_directory /
+                 "sky_view" /
+                 "model" /
+                 "grid").glob("*.pts"))
             df = load_pts(files).droplevel(0, axis=1)
             df.to_parquet(save_path)
             self._points = df
@@ -238,13 +251,15 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._dry_bulb_temperature_epw = df
                 return self._dry_bulb_temperature_epw
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             series = collection_to_series(
                 self.simulation_result.epw.dry_bulb_temperature
             )
@@ -265,14 +280,17 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._relative_humidity_epw = df
                 return self._relative_humidity_epw
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            series = collection_to_series(self.simulation_result.epw.relative_humidity)
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
+            series = collection_to_series(
+                self.simulation_result.epw.relative_humidity)
             df = pd.DataFrame(
                 np.tile(series.values, (len(self.points.x.values), 1)).T,
                 index=series.index,
@@ -290,14 +308,17 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._wind_speed_epw = df
                 return self._wind_speed_epw
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            series = collection_to_series(self.simulation_result.epw.wind_speed)
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
+            series = collection_to_series(
+                self.simulation_result.epw.wind_speed)
             df = pd.DataFrame(
                 np.tile(series.values, (len(self.points.x.values), 1)).T,
                 index=series.index,
@@ -315,14 +336,17 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._wind_direction_epw = df
                 return self._wind_direction_epw
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
-            series = collection_to_series(self.simulation_result.epw.wind_direction)
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
+            series = collection_to_series(
+                self.simulation_result.epw.wind_direction)
             df = pd.DataFrame(
                 np.tile(series.values, (len(self.points.x.values), 1)).T,
                 index=series.index,
@@ -340,13 +364,15 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._irradiance_total = df
                 return self._irradiance_total
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             ill_files = list(
                 (
                     self.spatial_simulation_directory
@@ -375,13 +401,15 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._irradiance_direct = df
                 return self._irradiance_direct
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             ill_files = list(
                 (
                     self.spatial_simulation_directory
@@ -410,16 +438,19 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._irradiance_diffuse = df
                 return self._irradiance_diffuse
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             df: pd.DataFrame = (
-                (self.irradiance_total - self.irradiance_direct).clip(lower=0).round(0)
-            )
+                (self.irradiance_total -
+                 self.irradiance_direct).clip(
+                    lower=0).round(0))
             df.columns = df.columns.astype(str)
             df.to_parquet(save_path)
             self._irradiance_diffuse = df
@@ -433,12 +464,14 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 self._sky_view = df
                 return self._sky_view
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             try:
                 files = list(
                     (
@@ -451,10 +484,9 @@ class SpatialComfort:
                 df = load_res(files).clip(lower=0, upper=100).round(2)
             except Exception as _:
                 files = list(
-                    (self.spatial_simulation_directory / "sky_view" / "results").glob(
-                        "*.res"
-                    )
-                )
+                    (self.spatial_simulation_directory /
+                     "sky_view" /
+                     "results").glob("*.res"))
                 df = load_res(files).clip(lower=0, upper=100).round(2)
 
             df.to_parquet(save_path)
@@ -469,13 +501,15 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._mean_radiant_temperature_interpolated = df
                 return self._mean_radiant_temperature_interpolated
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             df = shaded_unshaded_interpolation(
                 unshaded_value=self.simulation_result.unshaded_mean_radiant_temperature.values,
                 shaded_value=self.simulation_result.shaded_mean_radiant_temperature.values,
@@ -499,19 +533,22 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._wind_speed_cfd = df
                 return self._wind_speed_cfd
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             df = spatial_wind_speed(
                 self.spatial_simulation_directory, self.simulation_result.epw
             ).round(2)
-            df = wind_speed_at_height(
-                df, 1.5, 10
-            )  # TODO - this part assumes wind speed extracted from CFD results at 1.5m above ground, to translate to 10m above ground. This may not be correct in certain cases.
+            # TODO - this part assumes wind speed extracted from CFD results at
+            # 1.5m above ground, to translate to 10m above ground. This may not
+            # be correct in certain cases.
+            df = wind_speed_at_height(df, 1.5, 10)
             df.columns = df.columns.astype(str)
             df.to_parquet(save_path)
             self._wind_speed_cfd = df
@@ -525,13 +562,15 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._universal_thermal_climate_index_interpolated = df
                 return self._universal_thermal_climate_index_interpolated
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             df = shaded_unshaded_interpolation(
                 unshaded_value=self._unshaded_utci.values,
                 shaded_value=self._shaded_utci.values,
@@ -555,13 +594,15 @@ class SpatialComfort:
             save_path = metric.filepath(self.spatial_simulation_directory)
 
             if save_path.exists():
-                CONSOLE_LOGGER.info(f"[{self}] - Loading {metric.description()}")
+                CONSOLE_LOGGER.info(
+                    f"[{self}] - Loading {metric.description()}")
                 df = pd.read_parquet(save_path)
                 df.columns = df.columns.astype(int)
                 self._universal_thermal_climate_index_calculated = df
                 return self._universal_thermal_climate_index_calculated
 
-            CONSOLE_LOGGER.info(f"[{self}] - Generating {metric.description()}")
+            CONSOLE_LOGGER.info(
+                f"[{self}] - Generating {metric.description()}")
             dbt = self.dry_bulb_temperature_epw
             rh = self.relative_humidity_epw
 
@@ -640,8 +681,7 @@ class SpatialComfort:
 
         if new_obj._dry_bulb_temperature_epw is not None:
             new_obj._dry_bulb_temperature_epw = new_obj.dry_bulb_temperature_epw.iloc[
-                :, indices
-            ]
+                :, indices]
 
         if new_obj._relative_humidity_epw is not None:
             new_obj._relative_humidity_epw = new_obj.relative_humidity_epw.iloc[
@@ -706,14 +746,14 @@ class SpatialComfort:
     ) -> float:
         """_"""
         if time_proportion_threshold >= 1 or time_proportion_threshold <= 0:
-            raise ValueError("Time proportion threshold must be between 0 and 1.")
+            raise ValueError(
+                "Time proportion threshold must be between 0 and 1.")
 
         _percenttimecomfortable = self.calculate_comfortable_time_percentage(
             analysis_periods, comfort_limits
         )
-        return (_percenttimecomfortable > time_proportion_threshold).sum() / len(
-            _percenttimecomfortable
-        )
+        return (_percenttimecomfortable > time_proportion_threshold).sum(
+        ) / len(_percenttimecomfortable)
 
     def calculate_annual_comfortable_hours(
         self,
@@ -722,7 +762,8 @@ class SpatialComfort:
     ) -> float:
         """_"""
         # given a list of analysis periods and comfort limits, calculate the annual comfortable hours
-        # across all AP hours within teh comofrt limts per AP period, in the year
+        # across all AP hours within teh comofrt limts per AP period, in the
+        # year
         if len(analysis_period_groups) != len(comfort_limit_groups):
             raise ValueError(
                 "The number of analysis period groups must match the number of comfort limit groups."
@@ -730,10 +771,13 @@ class SpatialComfort:
 
         annual_hours = 0
         annual_comf_hours = 0
-        for ap_group, cl_group in zip(analysis_period_groups, comfort_limit_groups):
+        for ap_group, cl_group in zip(
+                analysis_period_groups, comfort_limit_groups):
             _bool = analysis_period_to_boolean(ap_group)
             _filtered = self.universal_thermal_climate_index_calculated[_bool]
-            _iscomfortable = (_filtered >= min(cl_group)) & (_filtered <= max(cl_group))
+            _iscomfortable = (
+                _filtered >= min(cl_group)) & (
+                _filtered <= max(cl_group))
             _hourscomfortable = _iscomfortable.sum(axis=0)
             annual_comf_hours += _hourscomfortable.sum()
             annual_hours += _iscomfortable.shape[0] * _iscomfortable.shape[1]
@@ -832,18 +876,23 @@ class SpatialComfort:
         raise ValueError(f"{metric} cannot be obtained!")
 
     def plot_typical_point_in_time(
-        self, metric: SpatialMetric, month: int, hour: int, levels: list[float] = None
-    ) -> plt.Figure:
+            self,
+            metric: SpatialMetric,
+            month: int,
+            hour: int,
+            levels: list[float] = None) -> plt.Figure:
         """Create a typical point-in-time plot of the given metric."""
 
         # test that metric passed is temporal
         if not metric.is_temporal():
             raise ValueError(f"{metric} is not a temporal metric.")
 
-        if not month in range(1, 13, 1):
-            raise ValueError(f"Month must be between 1 and 12 inclusive, got {month}")
-        if not hour in range(0, 24, 1):
-            raise ValueError(f"Hour must be between 0 and 23 inclusive, got {hour}")
+        if month not in range(1, 13, 1):
+            raise ValueError(
+                f"Month must be between 1 and 12 inclusive, got {month}")
+        if hour not in range(0, 24, 1):
+            raise ValueError(
+                f"Hour must be between 0 and 23 inclusive, got {hour}")
 
         df = self.get_spatial_metric(metric)
 
@@ -851,7 +900,8 @@ class SpatialComfort:
             f"[{self}] - Plotting {metric.description()} for {calendar.month_abbr[month]} {hour:02d}:00"
         )
 
-        # get global levels for this metric (to enable like-for-like comparison between time periods.)
+        # get global levels for this metric (to enable like-for-like comparison
+        # between time periods.)
         tcf_properties = metric.tricontourf_kwargs()
         if levels is not None:
             tcf_properties["levels"] = levels
@@ -957,11 +1007,13 @@ class SpatialComfort:
     ) -> plt.Figure:
         """Return a plot showing the RWDI London thermal comfort category."""
 
-        comfort_category = self.london_comfort_category(metric, comfort_limits, hours)
+        comfort_category = self.london_comfort_category(
+            metric, comfort_limits, hours)
 
         # convert categori
 
-        CONSOLE_LOGGER.info(f"[{self}] - Plotting London Thermal Comfort Category")
+        CONSOLE_LOGGER.info(
+            f"[{self}] - Plotting London Thermal Comfort Category")
 
         # convert category to numeric
         mapper = {
@@ -1225,11 +1277,8 @@ class SpatialComfort:
         )
 
         z_temp = metric_values.iloc[list(analysis_period.hoys_int), :]
-        z = (
-            ((z_temp >= min(comfort_thresholds)) & (z_temp <= max(comfort_thresholds)))
-            .sum()
-            .values
-        ) / len(analysis_period.hoys_int)
+        z = (((z_temp >= min(comfort_thresholds)) & (z_temp <= max(
+            comfort_thresholds))) .sum() .values) / len(analysis_period.hoys_int)
         z_mean = np.mean(z)
 
         # set tricontour properties
@@ -1321,7 +1370,8 @@ class SpatialComfort:
         )
 
         z_temp = metric_values.iloc[list(analysis_period.hoys_int), :]
-        z = (z_temp < cold_threshold).sum().values / len(analysis_period.hoys_int)
+        z = (z_temp < cold_threshold).sum().values / \
+            len(analysis_period.hoys_int)
         z_mean = np.mean(z)
 
         # set tricontour properties
@@ -1413,7 +1463,8 @@ class SpatialComfort:
         )
 
         z_temp = metric_values.iloc[list(analysis_period.hoys_int), :]
-        z = (z_temp > hot_threshold).sum().values / len(analysis_period.hoys_int)
+        z = (z_temp > hot_threshold).sum().values / \
+            len(analysis_period.hoys_int)
         z_mean = np.mean(z)
 
         # set tricontour properties
@@ -1606,9 +1657,9 @@ class SpatialComfort:
         date_form = DateFormatter("%b-%d")
 
         fig, ax = plt.subplots(1, 1, figsize=(16, 2))
-        collection_to_series(self.simulation_result.epw.dry_bulb_temperature).resample(
-            "D"
-        ).mean().plot(ax=ax, c="orange")
+        collection_to_series(
+            self.simulation_result.epw.dry_bulb_temperature).resample("D").mean().plot(
+            ax=ax, c="orange")
         lims = ax.get_ylim()
         ax.axvline(self.hottest_day, c="red")
         ax.text(
@@ -1658,7 +1709,8 @@ class SpatialComfort:
         )
 
         # plot point location
-        save_path = self._plot_directory / f"point_{point_identifier}_location.png"
+        save_path = self._plot_directory / \
+            f"point_{point_identifier}_location.png"
         if not save_path.exists():
             CONSOLE_LOGGER.info(
                 f"[{self}] - Plotting point location for {point_identifier}"
@@ -1693,7 +1745,8 @@ class SpatialComfort:
         save_path = self._plot_directory / "point_Openfield_utci.png"
         if not save_path.exists():
             CONSOLE_LOGGER.info(f"[{self}] - Plotting Openfield UTCI")
-            fig = utci_heatmap_histogram(self._unshaded_utci, title="Openfield")
+            fig = utci_heatmap_histogram(
+                self._unshaded_utci, title="Openfield")
             fig.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # # create openfield UTCI distance to comfortable plot
@@ -1707,11 +1760,12 @@ class SpatialComfort:
 
         # create point location UTCI plot
         save_path = (
-            self._plot_directory / f"point_{sanitise_string(point_identifier)}_utci.png"
-        )
+            self._plot_directory /
+            f"point_{sanitise_string(point_identifier)}_utci.png")
         if not save_path.exists():
             CONSOLE_LOGGER.info(f"[{self}] - Plotting {point_identifier} UTCI")
-            f = utci_heatmap_histogram(point_utci, title=f"{self} - {point_identifier}")
+            f = utci_heatmap_histogram(
+                point_utci, title=f"{self} - {point_identifier}")
             f.savefig(save_path, transparent=True, bbox_inches="tight")
 
         # # create pt location UTCI distance to comfortable plot
@@ -1783,8 +1837,11 @@ class SpatialComfort:
 
         for point_identifier, point_index in focus_pts.items():
             self.summarise_point(
-                point_index, point_identifier, metric, comfort_limits, analysis_period
-            )
+                point_index,
+                point_identifier,
+                metric,
+                comfort_limits,
+                analysis_period)
 
         return None
 
@@ -1853,23 +1910,25 @@ class SpatialComfort:
         for analysis_period in self.analysis_periods:
             if sunpaths:
                 save_path = (
-                    self._plot_directory
-                    / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=True)}_sunpath.png"
-                )
+                    self._plot_directory /
+                    f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=True)}_sunpath.png")
                 if not save_path.exists():
                     fig = self.plot_sunpath(analysis_period)
-                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                    fig.savefig(
+                        save_path,
+                        transparent=True,
+                        bbox_inches="tight")
                     plt.close(fig)
 
             if typical_mrt:
                 if analysis_period.timestep == 1:
                     save_path = (
-                        self._plot_directory
-                        / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_mrt.png"
-                    )
+                        self._plot_directory /
+                        f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_mrt.png")
                     if not save_path.exists():
                         fig = self.plot_mrt_average(analysis_period)
-                        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                        fig.savefig(
+                            save_path, transparent=True, bbox_inches="tight")
                         plt.close(fig)
 
             if typical_wind:
@@ -1877,14 +1936,12 @@ class SpatialComfort:
                 try:
                     if analysis_period.timestep == 1:
                         save_path = (
-                            self._plot_directory
-                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_wind.png"
-                        )
+                            self._plot_directory /
+                            f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_typical_wind.png")
                         if not save_path.exists():
                             fig = self.plot_wind_average(analysis_period)
                             fig.savefig(
-                                save_path, transparent=True, bbox_inches="tight"
-                            )
+                                save_path, transparent=True, bbox_inches="tight")
                             plt.close(fig)
                 except Exception:
                     pass
@@ -1895,9 +1952,8 @@ class SpatialComfort:
                     if analysis_period.timestep == 1:
                         # time cold
                         save_path = (
-                            self._plot_directory
-                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_cold.png"
-                        )
+                            self._plot_directory /
+                            f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_cold.png")
                         if not save_path.exists():
                             fig = self.plot_hours_cold(
                                 analysis_period,
@@ -1905,31 +1961,25 @@ class SpatialComfort:
                                 cold_threshold=cold_threshold,
                             )
                             fig.savefig(
-                                save_path, transparent=True, bbox_inches="tight"
-                            )
+                                save_path, transparent=True, bbox_inches="tight")
                             plt.close(fig)
 
                         # time comfortable
                         save_path = (
-                            self._plot_directory
-                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_comfortable.png"
-                        )
+                            self._plot_directory /
+                            f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_comfortable.png")
                         if not save_path.exists():
                             fig = self.plot_hours_comfortable(
-                                analysis_period,
-                                SpatialMetric.UTCI_CALCULATED,
-                                comfort_thresholds=(cold_threshold, hot_threshold),
-                            )
+                                analysis_period, SpatialMetric.UTCI_CALCULATED, comfort_thresholds=(
+                                    cold_threshold, hot_threshold), )
                             fig.savefig(
-                                save_path, transparent=True, bbox_inches="tight"
-                            )
+                                save_path, transparent=True, bbox_inches="tight")
                             plt.close(fig)
 
                         # time hot
                         save_path = (
-                            self._plot_directory
-                            / f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_hot.png"
-                        )
+                            self._plot_directory /
+                            f"{describe_analysis_period(analysis_period, save_path=True, include_timestep=False)}_hours_hot.png")
                         if not save_path.exists():
                             fig = self.plot_hours_hot(
                                 analysis_period,
@@ -1937,8 +1987,7 @@ class SpatialComfort:
                                 hot_threshold=hot_threshold,
                             )
                             fig.savefig(
-                                save_path, transparent=True, bbox_inches="tight"
-                            )
+                                save_path, transparent=True, bbox_inches="tight")
                             plt.close(fig)
                 except Exception:
                     pass
@@ -1946,7 +1995,8 @@ class SpatialComfort:
             datetimes = analysis_period_to_datetimes(analysis_period)
             time_delta = datetimes.max() - datetimes.min()
 
-            if time_delta <= pd.Timedelta(days=1) and analysis_period.timestep > 1:
+            if time_delta <= pd.Timedelta(
+                    days=1) and analysis_period.timestep > 1:
                 pass
                 # if sunlight_hours:
                 #     save_path = (
@@ -1965,7 +2015,10 @@ class SpatialComfort:
                     fig = self.plot_london_comfort_category(
                         metric=SpatialMetric.UTCI_CALCULATED
                     )
-                    fig.savefig(save_path, transparent=True, bbox_inches="tight")
+                    fig.savefig(
+                        save_path,
+                        transparent=True,
+                        bbox_inches="tight")
                     plt.close(fig)
             except Exception:
                 pass
@@ -1996,10 +2049,8 @@ def spatial_comfort_possible(sim_dir: Path) -> bool:
 
     # Check for annual irradiance data
     annual_irradiance_directory = sim_dir / "annual_irradiance"
-    if (
-        not annual_irradiance_directory.exists()
-        or len(list((annual_irradiance_directory / "results").glob("**/*.ill"))) == 0
-    ):
+    if (not annual_irradiance_directory.exists() or len(
+            list((annual_irradiance_directory / "results").glob("**/*.ill"))) == 0):
         raise FileNotFoundError(
             f"Annual-irradiance data is not available in {annual_irradiance_directory}."
         )
@@ -2010,7 +2061,10 @@ def spatial_comfort_possible(sim_dir: Path) -> bool:
         raise FileNotFoundError(
             f"Sky-view data is not available in {sky_view_directory}."
         )
-    res_files = list((sky_view_directory / "results" / "sky_view").glob("**/*.res"))
+    res_files = list(
+        (sky_view_directory /
+         "results" /
+         "sky_view").glob("**/*.res"))
     if len(res_files) == 0:
         res_files += list((sky_view_directory / "results").glob("**/*.res"))
     if len(res_files) == 0:

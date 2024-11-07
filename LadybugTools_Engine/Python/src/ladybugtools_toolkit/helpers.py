@@ -1,4 +1,5 @@
 """Helper methods used throughout the ladybugtools_toolkit."""
+
 # pylint: disable=C0302
 # pylint: disable=E0401
 import calendar
@@ -20,22 +21,19 @@ import pandas as pd
 from caseconverter import snakecase
 from honeybee.config import folders as hb_folders
 from ladybug.datatype.temperature import WetBulbTemperature
-from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
+from ladybug.epw import (EPW, AnalysisPeriod, HourlyContinuousCollection,
+                         Location)
 from ladybug.psychrometrics import wet_bulb_from_db_rh
-from ladybug.skymodel import (
-    calc_horizontal_infrared,
-    calc_sky_temperature,
-    estimate_illuminance_from_irradiance,
-    get_extra_radiation,
-    zhang_huang_solar,
-    zhang_huang_solar_split,
-)
+from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
+                              estimate_illuminance_from_irradiance,
+                              get_extra_radiation, zhang_huang_solar,
+                              zhang_huang_solar_split)
 from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d import Vector2D
 from meteostat import Hourly, Point
-
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
+
 from .ladybug_extension.dt import lb_datetime_from_datetime
 
 # pylint: enable=E0401
@@ -142,7 +140,7 @@ def chunks(lst: list[Any], chunksize: int):
         list[Any]: A list of length "chunksize".
     """
     for i in range(0, len(lst), chunksize):
-        yield lst[i : i + chunksize]
+        yield lst[i: i + chunksize]
 
 
 @bhom_analytics()
@@ -180,7 +178,8 @@ def scrape_weather(
     else:
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
-    # Scrape data from source website (https://mesonet.agron.iastate.edu/request/download.phtml)
+    # Scrape data from source website
+    # (https://mesonet.agron.iastate.edu/request/download.phtml)
     uri = (
         "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
         f"station={station}&"
@@ -379,7 +378,8 @@ def rolling_window(array: list[Any], window: int):
 
     a: np.ndarray = np.array(array)
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-    strides = a.strides + (a.strides[-1],)  # pylint: disable=unsubscriptable-object
+    strides = a.strides + (a.strides[-1],
+                           )  # pylint: disable=unsubscriptable-object
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
@@ -475,7 +475,8 @@ def decay_rate_smoother(
     # Find periods of major transition (where values vary significantly)
     transition_index = series.diff() < difference_threshold
 
-    # Get boolean index for all periods within window from the transition indices
+    # Get boolean index for all periods within window from the transition
+    # indices
     ewm_mask = []
     n = 0
     for i in transition_index:
@@ -633,7 +634,8 @@ def angle_from_cardinal(cardinal_direction: str) -> float:
         "NbW",
     ]
     if cardinal_direction not in cardinal_directions:
-        raise ValueError(f"{cardinal_direction} is not a known cardinal_direction.")
+        raise ValueError(
+            f"{cardinal_direction} is not a known cardinal_direction.")
     angles = np.arange(0, 360, 11.25)
 
     lookup = dict(zip(cardinal_directions, angles))
@@ -673,7 +675,8 @@ def angle_to_vector(clockwise_angle_from_north: float) -> list[float]:
 
     clockwise_angle_from_north = np.radians(clockwise_angle_from_north)
 
-    return np.sin(clockwise_angle_from_north), np.cos(clockwise_angle_from_north)
+    return np.sin(clockwise_angle_from_north), np.cos(
+        clockwise_angle_from_north)
 
 
 def epw_wind_vectors(epw: EPW, normalise: bool = False) -> list[Vector2D]:
@@ -1089,7 +1092,7 @@ def scrape_openmeteo(
     if variables is None:
         variables = tuple(OpenMeteoVariable)
     # else:
-        # TODO fix error that happens here
+    # TODO fix error that happens here
     #     if not all(isinstance(val, OpenMeteoVariable) for val in variables):
     #         raise ValueError(
     #             "All values in the variables tuple must be of type OpenMeteoVariable."
@@ -1102,28 +1105,33 @@ def scrape_openmeteo(
     missing_variables = []
     available_data = []
     for var in variables:
-        # TODO - add check in here for whether data exists as subset of longer time period within cache
+        # TODO - add check in here for whether data exists as subset of longer
+        # time period within cache
         sp = (
-            _dir
-            / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
-        )
+            _dir /
+            f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv")
         if sp.exists() and (
-            (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 100
-        ):
+            (datetime.now() -
+             datetime.fromtimestamp(
+                sp.stat().st_mtime)).days <= 100):
             CONSOLE_LOGGER.info(f"Reloading cached data for {var.name}")
-            available_data.append(pd.read_csv(sp, index_col=0, parse_dates=True))
+            available_data.append(
+                pd.read_csv(
+                    sp,
+                    index_col=0,
+                    parse_dates=True))
         else:
             CONSOLE_LOGGER.info(f"Querying data for {var.name}")
             missing_variables.append(var)
 
     if len(missing_variables) != 0:
         # construct query string
-        var_strings = ",".join([var.openmeteo_name for var in missing_variables])
+        var_strings = ",".join(
+            [var.openmeteo_name for var in missing_variables])
         query_string = (
             "https://archive-api.open-meteo.com/v1/era5?latitude="
             f"{latitude}&longitude={longitude}&start_date={start_date:%Y-%m-%d}&"
-            f"end_date={end_date:%Y-%m-%d}&hourly={var_strings}"
-        )
+            f"end_date={end_date:%Y-%m-%d}&hourly={var_strings}")
 
         # request data
         with urllib.request.urlopen(query_string) as url:
@@ -1138,7 +1146,9 @@ def scrape_openmeteo(
 
         # write to cache
         for col in df.columns:
-            sp = (_dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv")
+            sp = (
+                _dir /
+                f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv")
             df[col].to_csv(sp)
             available_data.append(df[col])
 
@@ -1155,7 +1165,8 @@ def scrape_openmeteo(
     for i in OpenMeteoVariable:
         try:
             # print(i.target_table_name, i.openmeteo_table_name, i.target_multiplier)
-            new_df[i.target_table_name] = df[i.openmeteo_name] * i.target_multiplier
+            new_df[i.target_table_name] = df[i.openmeteo_name] * \
+                i.target_multiplier
         except Exception as e:
             pass
 
@@ -1191,7 +1202,8 @@ def scrape_meteostat(
             A DataFrame containing scraped data.
     """
 
-    # TODO - implement caching in here, similar to how it's done for the OpenMeteo method
+    # TODO - implement caching in here, similar to how it's done for the
+    # OpenMeteo method
 
     if latitude < -90 or latitude > 90:
         raise ValueError("The latitude must be between -90 and 90 degrees.")
@@ -1262,13 +1274,13 @@ def scrape_meteostat(
             if col_name == "coco":
                 temp.append(
                     pd.Series(
-                        col_values.map(weather_codes), name=converter[col_name][1]
-                    )
-                )
+                        col_values.map(weather_codes),
+                        name=converter[col_name][1]))
             else:
                 temp.append(
-                    (col_values * converter[col_name][0]).rename(converter[col_name][1])
-                )
+                    (col_values *
+                     converter[col_name][0]).rename(
+                        converter[col_name][1]))
         return pd.concat(temp, axis=1)
 
     return data
@@ -1344,7 +1356,8 @@ def circular_weighted_mean(angles: list[float], weights: list[float] = None):
         raise ValueError("weights must be the same size as angles.")
 
     if np.any(angles < 0) or np.any(angles > 360):
-        raise ValueError("Input angles exist outside of expected range (0-360).")
+        raise ValueError(
+            "Input angles exist outside of expected range (0-360).")
 
     # checks for opposing or equally spaced angles, with equal weighting
     if len(set(weights)) == 1:
@@ -1483,8 +1496,7 @@ def temperature_at_height(
     if (target_height > 8000) or (reference_height > 8000):
         warnings.warn(
             "The heights input into this calculation exist partially above "
-            "the egde of the troposphere. This method is only valid below 8000m."
-        )
+            "the egde of the troposphere. This method is only valid below 8000m.")
 
     lapse_rate = kwargs.get("lapse_rate", 0.0065)
     kwargs = {}  # reset kwargs to remove invalid arguments
@@ -1581,7 +1593,8 @@ def target_wind_speed_collection(
             A ladybug annual hourly data wind speed collection.
     """
 
-    # Translate target wind speed at ground level to wind speed at 10m, assuming an open terrain per airport conditions
+    # Translate target wind speed at ground level to wind speed at 10m,
+    # assuming an open terrain per airport conditions
     target_average_wind_speed_at_10m = wind_speed_at_height(
         reference_value=target_average_wind_speed,
         reference_height=target_height,
@@ -1589,7 +1602,8 @@ def target_wind_speed_collection(
         terrain_roughness_length=0.03,
     )
 
-    # Adjust hourly values in wind_speed to give a new overall average equal to that of the target wind-speed
+    # Adjust hourly values in wind_speed to give a new overall average equal
+    # to that of the target wind-speed
     adjustment_factor = target_average_wind_speed_at_10m / epw.wind_speed.average
 
     return epw.wind_speed * adjustment_factor
@@ -1729,7 +1743,8 @@ def evaporative_cooling_effect_collection(
     if (evaporative_cooling_effectiveness > 1) or (
         evaporative_cooling_effectiveness < 0
     ):
-        raise ValueError("evaporative_cooling_effectiveness must be between 0 and 1.")
+        raise ValueError(
+            "evaporative_cooling_effectiveness must be between 0 and 1.")
 
     wbt = HourlyContinuousCollection.compute_function_aligned(
         wet_bulb_from_db_rh,
@@ -1743,23 +1758,24 @@ def evaporative_cooling_effect_collection(
     )
     dbt = epw.dry_bulb_temperature.duplicate()
     dbt = dbt - ((dbt - wbt) * evaporative_cooling_effectiveness)
-    dbt.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+    dbt.header.metadata["evaporative_cooling"] = (
+        f"{evaporative_cooling_effectiveness:0.0%}"
+    )
 
     rh = epw.relative_humidity.duplicate()
     rh = (rh * (1 - evaporative_cooling_effectiveness)) + (
         evaporative_cooling_effectiveness * 100
     )
-    rh.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+    rh.header.metadata["evaporative_cooling"] = (
+        f"{evaporative_cooling_effectiveness:0.0%}"
+    )
 
     return [dbt, rh]
 
 
 @bhom_analytics()
-def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
+def remove_leap_days(pd_object: pd.DataFrame |
+                     pd.Series) -> pd.DataFrame | pd.Series:
     """A removal of all timesteps within a time-indexed pandas
     object where the day is the 29th of February."""
 
@@ -1821,7 +1837,8 @@ def month_hour_binned_series(
     if series.groupby(series.index.day_of_year).count().min() < 24:
         raise ValueError("The series must contain at least 24-values per day")
 
-    # create generic month/hour sets for binning, from existing defaults if no input
+    # create generic month/hour sets for binning, from existing defaults if no
+    # input
     if month_bins is None:
         _months = np.arange(1, 13, 1)
         month_bins = []
@@ -1857,17 +1874,21 @@ def month_hour_binned_series(
         raise ValueError("hour_bins hours must not contain duplicates")
     if len(set(flat_months)) != len(flat_months):
         raise ValueError("month_bins hours must not contain duplicates")
-    if (set(flat_hours) != set(list(range(24)))) or (len(set(flat_hours)) != 24):
-        raise ValueError("Input hour_bins does not contain all hours of the day")
+    if (set(flat_hours) != set(list(range(24)))) or (
+            len(set(flat_hours)) != 24):
+        raise ValueError(
+            "Input hour_bins does not contain all hours of the day")
     if (set(flat_months) != set(list(range(1, 13, 1)))) or (
         len(set(flat_months)) != 12
     ):
-        raise ValueError("Input month_bins does not contain all months of the year")
+        raise ValueError(
+            "Input month_bins does not contain all months of the year")
 
     # create index/column labels
     if month_labels:
         if len(month_labels) != len(month_bins):
-            raise ValueError("month_labels must be the same length as month_bins")
+            raise ValueError(
+                "month_labels must be the same length as month_bins")
         col_labels = month_labels
     else:
         col_labels = []
@@ -1880,10 +1901,12 @@ def month_hour_binned_series(
                 )
     if hour_labels:
         if len(hour_labels) != len(hour_bins):
-            raise ValueError("hour_labels must be the same length as hour_bins")
+            raise ValueError(
+                "hour_labels must be the same length as hour_bins")
         row_labels = hour_labels
     else:
-        row_labels = [f"{i[0]:02d}:00 ≤ t < {i[-1] + 1:02d}:00" for i in hour_bins]
+        row_labels = [
+            f"{i[0]:02d}:00 ≤ t < {i[-1] + 1:02d}:00" for i in hour_bins]
 
     # create indexing bins
     values = []
