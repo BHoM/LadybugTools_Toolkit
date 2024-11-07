@@ -22,7 +22,7 @@ from matplotlib.colors import (
 from matplotlib.legend import Legend
 import matplotlib.ticker as mticker
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..helpers import rolling_window, validate_timeseries
 from ..plot.utilities import contrasting_color
 from ..plot._heatmap import heatmap

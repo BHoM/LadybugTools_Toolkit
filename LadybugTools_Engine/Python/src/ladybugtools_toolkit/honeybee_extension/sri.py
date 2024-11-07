@@ -5,6 +5,7 @@ import pandas as pd
 from honeybee.typing import clean_string
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.material.opaque import EnergyMaterial
+
 from honeybee_radiance.modifier.material import Plastic
 from matplotlib.colors import hex2color
 from sklearn.linear_model import LinearRegression

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..helpers import evaporative_cooling_effect
 from ..ladybug_extension.epw import AnalysisPeriod, collection_to_series
 from ._simulatebase import SimulationResult

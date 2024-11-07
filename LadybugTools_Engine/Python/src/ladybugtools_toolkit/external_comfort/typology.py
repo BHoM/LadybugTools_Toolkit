@@ -6,7 +6,7 @@ from enum import Enum
 
 import numpy as np
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ._typologybase import Typology
 from ._shelterbase import Shelter
 

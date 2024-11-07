@@ -35,7 +35,7 @@ from ladybug.skymodel import clearness_index as lb_ci
 from ladybug.sunpath import Sun, Sunpath
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..helpers import (
     air_pressure_at_height,
     radiation_at_height,

@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 from ladybug.epw import EPW, Location
 from scipy import spatial
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 
 @dataclass
