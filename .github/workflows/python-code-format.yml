@@ -1,0 +1,28 @@
+name: Format Python Code
+on: push
+jobs:
+  python-code-format:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          architecture: "x64"
+      - name: Display Python version
+        run: python --version
+      - name: Install packages
+        run: pip install black autopep8 isort
+      - name: Formatter
+        run: |
+          black ./LadybugTools_Engine/Python
+          autopep8 --recursive --in-place --aggressive --aggressive ./LadybugTools_Engine/Python
+          isort ./LadybugTools_Engine/Python
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: Auto code format
+          title: Fixes by format action
+          body: This is an auto-generated PR with fixes.
+          labels: automated pr
+          branch: python-code-format-patches
