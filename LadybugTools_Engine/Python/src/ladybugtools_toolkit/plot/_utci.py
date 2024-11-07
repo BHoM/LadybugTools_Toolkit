@@ -1,33 +1,35 @@
 """Plot methods for UTCI datasets"""
-# pylint: disable=C0302
-# pylint: disable=E0401
+
+# pylint: disable=C0302,E0401
 import calendar
 import textwrap
-
-# pylint enable=E0401
+import warnings
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import (
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
-)
+from ladybug.datatype.temperature import \
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
+from ladybug.location import Location
+from matplotlib.colors import ListedColormap
 from matplotlib.figure import Figure
-from matplotlib.ticker import PercentFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from python_toolkit.bhom.analytics import bhom_analytics
 from scipy.interpolate import make_interp_spline
 
-from python_toolkit.bhom.analytics import bhom_analytics
-from ..categorical.categories import (
-    UTCI_DEFAULT_CATEGORIES,
-    CategoricalComfort,
-)
+from ..categorical.categories import (UTCI_DEFAULT_CATEGORIES,
+                                      CategoricalComfort)
+from ..external_comfort.utci import shade_benefit_category
+from ..helpers import sunrise_sunset
 from ..ladybug_extension.datacollection import collection_to_series
 from ._heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
 from .utilities import contrasting_color, lighten_color
+
+# pylint enable=E0401
 
 
 @bhom_analytics()
@@ -63,9 +65,7 @@ def utci_comfort_band_comparison(
 
     for n, col in enumerate(utci_collections):
         if not isinstance(col.header.data_type, LB_UniversalThermalClimateIndex):
-            raise ValueError(
-                f"Collection {n} data type is not UTCI and cannot be used in this plot."
-            )
+            raise ValueError(f"Collection {n} data type is not UTCI and cannot be used in this plot.")
     if any(len(i) != len(utci_collections[0]) for i in utci_collections):
         raise ValueError("All collections must be the same length.")
 
@@ -78,9 +78,7 @@ def utci_comfort_band_comparison(
     if identifiers is None:
         identifiers = [f"{n}" for n in range(len(utci_collections))]
     if len(identifiers) != len(utci_collections):
-        raise ValueError(
-            "The number of identifiers given does not match the number of UTCI collections given!"
-        )
+        raise ValueError("The number of identifiers given does not match the number of UTCI collections given!")
 
     counts = pd.concat(
         [utci_categories.value_counts(i, density=density) for i in utci_collections],
@@ -112,9 +110,108 @@ def utci_comfort_band_comparison(
     # add labels to bars
 
     # get bar total heights
-    height = np.array([[i.get_height() for i in c] for c in ax.containers]).T.sum(
-        axis=1
-    )[0]
+    height = np.array([[i.get_height() for i in c] for c in ax.containers]).T.sum(axis=1)[0]
+    for c in ax.containers:
+        labels = []
+        for v in c:
+            label = f"{v.get_height():0.1%}" if density else f"{v.get_height():0.0f}"
+            if v.get_height() / height > 0.04:
+                labels.append(label)
+            else:
+                labels.append("")
+
+        ax.bar_label(
+            c,
+            labels=labels,
+            label_type="center",
+            color=contrasting_color(v.get_facecolor()),
+        )
+
+    ax.tick_params(axis="both", which="both", length=0)
+    ax.grid(False)
+    plt.xticks(rotation=0)
+    ax.yaxis.set_major_locator(plt.NullLocator())
+
+    return ax
+
+
+@bhom_analytics()
+def utci_comfort_band_comparison_series(
+    utci_series: tuple[pd.Series],
+    ax: plt.Axes = None,
+    identifiers: tuple[str] = None,
+    utci_categories: CategoricalComfort = UTCI_DEFAULT_CATEGORIES,
+    density: bool = True,
+    **kwargs,
+) -> plt.Axes:
+    """Create a proportional bar chart showing how different UTCI collections
+    compare in terms of time within each comfort band.
+
+    Args:
+        utci_series (list[pd.Series]):
+            A list of UTCI series objects.
+        ax (plt.Axes, optional):
+            The matplotlib Axes to plot on. Defaults to None which uses the current Axes.
+        identifiers (list[str], optional):
+            A list of names to give each collection. Defaults to None.
+        utci_categories (Categories, optional):
+            The UTCI categories to use. Defaults to UTCI_DEFAULT_CATEGORIES.
+        density (bool, optional):
+            If True, then show percentage, otherwise show count. Defaults to True.
+        **kwargs:
+            Additional keyword arguments to pass to the function.
+
+    Returns:
+        plt.Axes:
+            A matplotlib Axes object.
+    """
+
+    if any(len(i) != len(utci_series[0]) for i in utci_series):
+        raise ValueError("All collections must be the same length.")
+
+    if ax is None:
+        ax = plt.gca()
+
+    # set the title
+    ax.set_title(kwargs.pop("title", None))
+
+    if identifiers is None:
+        identifiers = [f"{n}" for n in range(len(utci_series))]
+
+    if len(identifiers) != len(utci_series):
+        raise ValueError("The number of identifiers given does not match the number of UTCI collections given!")
+
+    counts = pd.concat(
+        [utci_categories.value_counts(i, density=density) for i in utci_series],
+        axis=1,
+        keys=identifiers,
+    )
+    counts.T.plot(
+        ax=ax,
+        kind="bar",
+        stacked=True,
+        color=utci_categories.colors,
+        width=0.8,
+        legend=False,
+    )
+
+    if kwargs.pop("legend", True):
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(
+            handles[::-1],
+            labels[::-1],
+            title=utci_categories.name,
+            bbox_to_anchor=(1, 0.5),
+            loc="center left",
+        )
+
+    for spine in ["top", "right", "bottom", "left"]:
+        ax.spines[spine].set_visible(False)
+
+    # add labels to bars
+
+    # get bar total heights
+    height = np.array([[i.get_height() for i in c] for c in ax.containers]).T.sum(axis=1)[0]
     for c in ax.containers:
         labels = []
         for v in c:
@@ -283,18 +380,14 @@ def utci_comparison_diurnal_day(
     # check all input collections are UTCI collections
     for n, col in enumerate(utci_collections):
         if not isinstance(col.header.data_type, LB_UniversalThermalClimateIndex):
-            raise ValueError(
-                f"Collection {n} data type is not UTCI and cannot be used in this plot."
-            )
+            raise ValueError(f"Collection {n} data type is not UTCI and cannot be used in this plot.")
 
     if ax is None:
         ax = plt.gca()
 
     if collection_ids is None:
         collection_ids = [f"{i:02d}" for i in range(len(utci_collections))]
-    assert len(utci_collections) == len(
-        collection_ids
-    ), "The length of collections_ids must match the number of collections."
+    assert len(utci_collections) == len(collection_ids), "The length of collections_ids must match the number of collections."
 
     # set the title
     title = [
@@ -304,9 +397,7 @@ def utci_comparison_diurnal_day(
     ax.set_title("\n".join([i for i in title if i is not None]))
 
     # combine utcis and add names to columns
-    df = pd.concat(
-        [collection_to_series(i) for i in utci_collections], axis=1, keys=collection_ids
-    )
+    df = pd.concat([collection_to_series(i) for i in utci_collections], axis=1, keys=collection_ids)
     ylim = kwargs.pop("ylim", [df.min().min(), df.max().max()])
     df_agg = df.groupby([df.index.month, df.index.hour]).agg(agg).loc[month]
     df_agg.index = range(24)
@@ -345,13 +436,9 @@ def utci_comparison_diurnal_day(
 
     # add grid using a hacky fix
     for i in ax.get_xticks():
-        ax.axvline(
-            i, color=ax.xaxis.label.get_color(), ls=":", lw=0.5, alpha=0.1, zorder=5
-        )
+        ax.axvline(i, color=ax.xaxis.label.get_color(), ls=":", lw=0.5, alpha=0.1, zorder=5)
     for i in ax.get_yticks():
-        ax.axhline(
-            i, color=ax.yaxis.label.get_color(), ls=":", lw=0.5, alpha=0.1, zorder=5
-        )
+        ax.axhline(i, color=ax.yaxis.label.get_color(), ls=":", lw=0.5, alpha=0.1, zorder=5)
 
     if show_legend:
         handles, labels = ax.get_legend_handles_labels()
@@ -393,13 +480,9 @@ def utci_heatmap_difference(
             A matplotlib Axes object.
     """
 
-    if not isinstance(
-        utci_collection1.header.data_type, LB_UniversalThermalClimateIndex
-    ):
+    if not isinstance(utci_collection1.header.data_type, LB_UniversalThermalClimateIndex):
         raise ValueError("Input collection 1 is not a UTCI collection.")
-    if not isinstance(
-        utci_collection2.header.data_type, LB_UniversalThermalClimateIndex
-    ):
+    if not isinstance(utci_collection2.header.data_type, LB_UniversalThermalClimateIndex):
         raise ValueError("Input collection 2 is not a UTCI collection.")
 
     if ax is None:
@@ -448,9 +531,7 @@ def utci_pie(
         plt.Axes: A matplotlib Axes object.
     """
 
-    if not isinstance(
-        utci_collection.header.data_type, LB_UniversalThermalClimateIndex
-    ):
+    if not isinstance(utci_collection.header.data_type, LB_UniversalThermalClimateIndex):
         raise ValueError("Input collection is not a UTCI collection.")
 
     if ax is None:
@@ -655,12 +736,8 @@ def utci_heatmap_histogram(
             A matplotlib Figure object.
     """
 
-    if not isinstance(
-        utci_collection.header.data_type, LB_UniversalThermalClimateIndex
-    ):
-        raise ValueError(
-            "Collection data type is not UTCI and cannot be used in this plot."
-        )
+    if not isinstance(utci_collection.header.data_type, LB_UniversalThermalClimateIndex):
+        raise ValueError("Collection data type is not UTCI and cannot be used in this plot.")
 
     series = collection_to_series(utci_collection)
 
@@ -669,9 +746,7 @@ def utci_heatmap_histogram(
 
     # Instantiate figure
     fig = plt.figure(figsize=figsize, constrained_layout=True)
-    spec = fig.add_gridspec(
-        ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0
-    )
+    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0)
     heatmap_ax = fig.add_subplot(spec[0, 0])
     histogram_ax = fig.add_subplot(spec[1, 0])
 
@@ -679,9 +754,7 @@ def utci_heatmap_histogram(
     utci_categories.annual_heatmap(series, ax=heatmap_ax, show_colorbar=False, **kwargs)
 
     # Add stacked plot
-    utci_categories.annual_monthly_histogram(
-        series=series, ax=histogram_ax, show_labels=True
-    )
+    utci_categories.annual_monthly_histogram(series=series, ax=histogram_ax, show_labels=True)
 
     if show_colorbar:
         # add colorbar
@@ -695,9 +768,7 @@ def utci_heatmap_histogram(
             extend="both",
         )
         cb.outline.set_visible(False)
-        for bin_name, interval in list(
-            zip(*[utci_categories.bin_names, utci_categories.interval_index])
-        ):
+        for bin_name, interval in list(zip(*[utci_categories.bin_names, utci_categories.interval_index])):
             if np.isinf(interval.left):
                 ha = "right"
                 position = interval.right
@@ -753,12 +824,8 @@ def utci_histogram(
     if ax is None:
         ax = plt.gca()
 
-    if not isinstance(
-        utci_collection.header.data_type, LB_UniversalThermalClimateIndex
-    ):
-        raise ValueError(
-            "Collection data type is not UTCI and cannot be used in this plot."
-        )
+    if not isinstance(utci_collection.header.data_type, LB_UniversalThermalClimateIndex):
+        raise ValueError("Collection data type is not UTCI and cannot be used in this plot.")
 
     ti = kwargs.pop("title", None)
     if ti is not None:
@@ -800,9 +867,7 @@ def utci_histogram(
     series = collection_to_series(utci_collection)
 
     # plot data
-    series.plot(
-        kind="hist", ax=ax, bins=bins, color=color, alpha=alpha, density=density
-    )
+    series.plot(kind="hist", ax=ax, bins=bins, color=color, alpha=alpha, density=density)
 
     # set xlims
     xlim = kwargs.pop(
@@ -854,6 +919,147 @@ def utci_histogram(
                 fontsize="small",
             )
 
-    ax.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=2))
+    ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1, decimals=2))
 
     return ax
+
+
+def utci_shade_benefit(
+    unshaded_utci: HourlyContinuousCollection | pd.Series,
+    shaded_utci: HourlyContinuousCollection | pd.Series,
+    comfort_limits: tuple[float] = (9, 26),
+    location: Location = None,
+    color_config: dict[str, str] = None,
+    figsize: tuple[float] = (15, 5),
+) -> plt.Figure:
+    """Plot the shade benefit category.
+
+    Args:
+        unshaded_utci (HourlyContinuousCollection | pd.Series):
+            A dataset containing unshaded UTCI values.
+        shaded_utci (HourlyContinuousCollection | pd.Series):
+            A dataset containing shaded UTCI values.
+        comfort_limits (tuple[float], optional):
+            The range within which "comfort" is achieved. Defaults to (9, 26).
+        location (Location, optional):
+            A location object used to plot sun up/down times. Defaults to None.
+        color_config (dict[str, str], optional):
+            A dictionary of colors for each category. Defaults to None.
+        figsize (tuple[float], optional):
+            The size of the figure. Defaults to (15, 5).
+
+    Returns:
+        plt.Figure:
+            A figure object.
+    """
+
+    warnings.warn("This method is not fully formed, and needs to be updated to just be better overall!")
+
+    if color_config is None:
+        color_config = {
+            "Comfortable with shade": "blue",
+            "Comfortable without shade": "green",
+            "Shade is beneficial": "orange",
+            "Shade is detrimental": "red",
+            "Undefined": "grey",
+            "Sun up": "k",
+        }
+
+    utci_shade_benefit_categories = shade_benefit_category(
+        unshaded_utci=unshaded_utci,
+        shaded_utci=shaded_utci,
+        comfort_limits=comfort_limits,
+    )
+    cat = pd.Series(
+        pd.Categorical(utci_shade_benefit_categories),
+        index=utci_shade_benefit_categories.index,
+    )
+    numeric = cat.cat.codes
+
+    colors = [
+        color_config[i]
+        for i in [
+            "Comfortable with shade",
+            "Comfortable without shade",
+            "Shade is beneficial",
+            "Shade is detrimental",
+            "Undefined",
+        ]
+    ]
+    cmap = ListedColormap(colors)
+
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
+    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0)
+    heatmap_ax = fig.add_subplot(spec[0, 0])
+    histogram_ax = fig.add_subplot(spec[1, 0])
+
+    # Add heatmap
+    hmap = heatmap(numeric, ax=heatmap_ax, show_colorbar=False, cmap=cmap)
+
+    # add categorical
+    us = cat.groupby(cat.index.month).value_counts().unstack()
+    t = us.divide(us.sum(axis=1), axis=0)
+    t.plot(
+        ax=histogram_ax,
+        kind="bar",
+        stacked=True,
+        color=colors,
+        width=1,
+        legend=False,
+    )
+    histogram_ax.set_xlim(-0.5, len(t) - 0.5)
+    histogram_ax.set_ylim(0, 1)
+    histogram_ax.set_xticklabels(
+        [calendar.month_abbr[int(i)] for i in t.index],
+        ha="center",
+        rotation=0,
+    )
+    for spine in ["top", "right", "left", "bottom"]:
+        histogram_ax.spines[spine].set_visible(False)
+    histogram_ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
+    for i, c in enumerate(histogram_ax.containers):
+        label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
+        labels = [f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c]
+        histogram_ax.bar_label(
+            c,
+            labels=labels,
+            label_type="center",
+            color=label_colors[i],
+            fontsize="x-small",
+        )
+
+    # add sun up indicator lines
+    if location is not None:
+        ymin = min(hmap.get_ylim())
+        sun_rise_set = sunrise_sunset(location=location)
+        sunrise = [ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24)) for i in sun_rise_set.sunrise]
+        sunset = [ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24)) for i in sun_rise_set.sunset]
+        # heatmap_ax.plot(s.index, s.values, zorder=9, c="#F0AC1B", lw=1)
+        xx = np.arange(min(heatmap_ax.get_xlim()), max(heatmap_ax.get_xlim()) + 1, 1)
+        heatmap_ax.plot(xx, sunrise, zorder=9, c=color_config["Sun up"], lw=1)
+        heatmap_ax.plot(xx, sunset, zorder=9, c=color_config["Sun up"], lw=1)
+
+    # add colorbar
+    divider = make_axes_locatable(histogram_ax)
+    colorbar_ax = divider.append_axes("bottom", size="20%", pad=0.5)
+    cb = fig.colorbar(
+        mappable=heatmap_ax.get_children()[0],
+        cax=colorbar_ax,
+        orientation="horizontal",
+        drawedges=False,
+        extend="both",
+    )
+    cb.outline.set_visible(False)
+    ticks = np.arange(0, 4, 4 / 5 / 2)[1::2]
+    cb.set_ticks(
+        ticks,
+        labels=[
+            "Comfortable with shade",
+            "Comfortable without shade",
+            "Shade is beneficial",
+            "Shade is detrimental",
+            "Undefined",
+        ],
+    )
+
+    return fig
