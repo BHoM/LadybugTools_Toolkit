@@ -11,8 +11,8 @@ from matplotlib.colors import hex2color
 from sklearn.linear_model import LinearRegression
 
 from .. import SRI_DATA
-from ..bhom.analytics import bhom_analytics
-from ..bhom.logging import CONSOLE_LOGGER
+from python_toolkit.bhom.analytics import bhom_analytics
+from python_toolkit.bhom.logging import CONSOLE_LOGGER
 
 
 @bhom_analytics()
