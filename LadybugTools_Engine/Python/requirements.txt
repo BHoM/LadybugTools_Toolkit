@@ -1,6 +1,9 @@
+beautifulsoup4
 case-converter
 meteostat
 openpyxl
+plotly
+plotly-express
 pyarrow
 pyet
 pylint

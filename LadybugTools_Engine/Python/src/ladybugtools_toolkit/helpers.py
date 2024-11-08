@@ -1,4 +1,5 @@
 """Helper methods used throughout the ladybugtools_toolkit."""
+
 # pylint: disable=C0302
 # pylint: disable=E0401
 import calendar
@@ -19,6 +20,7 @@ import numpy as np
 import pandas as pd
 from caseconverter import snakecase
 from honeybee.config import folders as hb_folders
+from ladybug.datatype.rvalue import ClothingInsulation
 from ladybug.datatype.temperature import WetBulbTemperature
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
 from ladybug.psychrometrics import wet_bulb_from_db_rh
@@ -31,11 +33,12 @@ from ladybug.skymodel import (
     zhang_huang_solar_split,
 )
 from ladybug.sunpath import Sunpath
+from ladybug_comfort.clo import schiavon_clo
 from ladybug_geometry.geometry2d import Vector2D
 from meteostat import Hourly, Point
-
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
+
 from .ladybug_extension.dt import lb_datetime_from_datetime
 
 # pylint: enable=E0401
@@ -270,9 +273,7 @@ def scrape_weather(
         for row in df.itertuples()
     ]
     df["sky_temperature"] = [
-        calc_sky_temperature(
-            row.horizontal_infrared_radiation_intensity, source_emissivity=1
-        )
+        calc_sky_temperature(row.horizontal_infrared_radiation_intensity, source_emissivity=1)
         for row in df.itertuples()
     ]
 
@@ -321,9 +322,9 @@ def scrape_weather(
     df["extraterrestrial_horizontal_radiation"] = [
         get_extra_radiation(i) for i in df.index.day_of_year
     ]
-    df["extraterrestrial_horizontal_radiation"] = df[
-        "extraterrestrial_horizontal_radiation"
-    ].where(df.global_horizontal_radiation != 0, 0)
+    df["extraterrestrial_horizontal_radiation"] = df["extraterrestrial_horizontal_radiation"].where(
+        df.global_horizontal_radiation != 0, 0
+    )
     df["direct_normal_radiation"].fillna(0, inplace=True)
     df["diffuse_horizontal_radiation"].fillna(0, inplace=True)
     df["global_horizontal_radiation"].fillna(0, inplace=True)
@@ -1089,7 +1090,7 @@ def scrape_openmeteo(
     if variables is None:
         variables = tuple(OpenMeteoVariable)
     # else:
-        # TODO fix error that happens here
+    # TODO fix error that happens here
     #     if not all(isinstance(val, OpenMeteoVariable) for val in variables):
     #         raise ValueError(
     #             "All values in the variables tuple must be of type OpenMeteoVariable."
@@ -1103,14 +1104,11 @@ def scrape_openmeteo(
     available_data = []
     for var in variables:
         # TODO - add check in here for whether data exists as subset of longer time period within cache
-        sp = (
-            _dir
-            / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
-        )
+        sp = _dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
         if sp.exists() and (
             (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 100
         ):
-            CONSOLE_LOGGER.info(f"Reloading cached data for {var.name}")
+            CONSOLE_LOGGER.info("Reloading cached data for %s", var.name)
             available_data.append(pd.read_csv(sp, index_col=0, parse_dates=True))
         else:
             CONSOLE_LOGGER.info(f"Querying data for {var.name}")
@@ -1138,7 +1136,7 @@ def scrape_openmeteo(
 
         # write to cache
         for col in df.columns:
-            sp = (_dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv")
+            sp = _dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv"
             df[col].to_csv(sp)
             available_data.append(df[col])
 
@@ -1154,7 +1152,6 @@ def scrape_openmeteo(
     new_df = pd.DataFrame()
     for i in OpenMeteoVariable:
         try:
-            # print(i.target_table_name, i.openmeteo_table_name, i.target_multiplier)
             new_df[i.target_table_name] = df[i.openmeteo_name] * i.target_multiplier
         except Exception as e:
             pass
@@ -1260,15 +1257,9 @@ def scrape_meteostat(
         temp = []
         for col_name, col_values in data.items():
             if col_name == "coco":
-                temp.append(
-                    pd.Series(
-                        col_values.map(weather_codes), name=converter[col_name][1]
-                    )
-                )
+                temp.append(pd.Series(col_values.map(weather_codes), name=converter[col_name][1]))
             else:
-                temp.append(
-                    (col_values * converter[col_name][0]).rename(converter[col_name][1])
-                )
+                temp.append((col_values * converter[col_name][0]).rename(converter[col_name][1]))
         return pd.concat(temp, axis=1)
 
     return data
@@ -1443,9 +1434,7 @@ def wind_speed_at_height(
             / np.log(reference_height / terrain_roughness_length)
         )
     wind_shear_exponent = 1 / 7
-    return reference_value * (
-        np.power((target_height / reference_height), wind_shear_exponent)
-    )
+    return reference_value * (np.power((target_height / reference_height), wind_shear_exponent))
 
 
 def temperature_at_height(
@@ -1553,10 +1542,7 @@ def air_pressure_at_height(
         float:
             The pressure at the given height.
     """
-    return (
-        reference_value
-        * (1 - 0.0065 * (target_height - reference_height) / 288.15) ** 5.255
-    )
+    return reference_value * (1 - 0.0065 * (target_height - reference_height) / 288.15) ** 5.255
 
 
 @bhom_analytics()
@@ -1596,9 +1582,7 @@ def target_wind_speed_collection(
 
 
 @bhom_analytics()
-def dry_bulb_temperature_at_height(
-    epw: EPW, target_height: float
-) -> HourlyContinuousCollection:
+def dry_bulb_temperature_at_height(epw: EPW, target_height: float) -> HourlyContinuousCollection:
     """Translate DBT values from an EPW into
 
     Args:
@@ -1610,8 +1594,7 @@ def dry_bulb_temperature_at_height(
     """
     dbt_collection = copy.copy(epw.dry_bulb_temperature)
     dbt_collection.values = [
-        temperature_at_height(i, 10, target_height)
-        for i in epw.dry_bulb_temperature.values
+        temperature_at_height(i, 10, target_height) for i in epw.dry_bulb_temperature.values
     ]
     return dbt_collection
 
@@ -1647,9 +1630,7 @@ def validate_timeseries(
     if not isinstance(obj.index, pd.DatetimeIndex):
         raise TypeError("series must have a datetime index")
     if is_annual:
-        if (obj.index.day_of_year.nunique() != 365) or (
-            obj.index.day_of_year.nunique() != 366
-        ):
+        if (obj.index.day_of_year.nunique() != 365) or (obj.index.day_of_year.nunique() != 366):
             raise ValueError("series is not annual")
     if is_hourly:
         if obj.index.hour.nunique() != 24:
@@ -1693,8 +1674,7 @@ def evaporative_cooling_effect(
     )
 
     new_dbt = dry_bulb_temperature - (
-        (dry_bulb_temperature - wet_bulb_temperature)
-        * evaporative_cooling_effectiveness
+        (dry_bulb_temperature - wet_bulb_temperature) * evaporative_cooling_effectiveness
     )
     new_rh = (
         relative_humidity * (1 - evaporative_cooling_effectiveness)
@@ -1726,9 +1706,7 @@ def evaporative_cooling_effect_collection(
             evaporative cooling effect.
     """
 
-    if (evaporative_cooling_effectiveness > 1) or (
-        evaporative_cooling_effectiveness < 0
-    ):
+    if (evaporative_cooling_effectiveness > 1) or (evaporative_cooling_effectiveness < 0):
         raise ValueError("evaporative_cooling_effectiveness must be between 0 and 1.")
 
     wbt = HourlyContinuousCollection.compute_function_aligned(
@@ -1743,17 +1721,11 @@ def evaporative_cooling_effect_collection(
     )
     dbt = epw.dry_bulb_temperature.duplicate()
     dbt = dbt - ((dbt - wbt) * evaporative_cooling_effectiveness)
-    dbt.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+    dbt.header.metadata["evaporative_cooling"] = f"{evaporative_cooling_effectiveness:0.0%}"
 
     rh = epw.relative_humidity.duplicate()
-    rh = (rh * (1 - evaporative_cooling_effectiveness)) + (
-        evaporative_cooling_effectiveness * 100
-    )
-    rh.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+    rh = (rh * (1 - evaporative_cooling_effectiveness)) + (evaporative_cooling_effectiveness * 100)
+    rh.header.metadata["evaporative_cooling"] = f"{evaporative_cooling_effectiveness:0.0%}"
 
     return [dbt, rh]
 
@@ -1859,9 +1831,7 @@ def month_hour_binned_series(
         raise ValueError("month_bins hours must not contain duplicates")
     if (set(flat_hours) != set(list(range(24)))) or (len(set(flat_hours)) != 24):
         raise ValueError("Input hour_bins does not contain all hours of the day")
-    if (set(flat_months) != set(list(range(1, 13, 1)))) or (
-        len(set(flat_months)) != 12
-    ):
+    if (set(flat_months) != set(list(range(1, 13, 1)))) or (len(set(flat_months)) != 12):
         raise ValueError("Input month_bins does not contain all months of the year")
 
     # create index/column labels
@@ -1900,7 +1870,7 @@ def month_hour_binned_series(
     return df
 
 
-def sunrise_sunset(location: Location) -> pd.DataFrame():
+def sunrise_sunset(location: Location) -> pd.DataFrame:
     """Calculate sunrise and sunset times for a given location and year. Includes
     civil, nautical and astronomical twilight.
 
@@ -1969,6 +1939,97 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
 @bhom_analytics()
 def safe_filename(filename: str) -> str:
     """Remove all non-alphanumeric characters from a filename."""
-    return "".join(
-        [c for c in filename if c.isalpha() or c.isdigit() or c == " "]
-    ).strip()
+    return "".join([c for c in filename if c.isalpha() or c.isdigit() or c == " "]).strip()
+
+
+def estimate_clo(
+    temperature: float | HourlyContinuousCollection,
+    max_clo: float = 1.0,
+    max_clo_temperature: float = -5,
+    min_clo: float = 0.46,
+    min_clo_temperature: float = 26,
+) -> float | HourlyContinuousCollection:
+
+    # if the temperature is hourly continuous, simplify the values
+    if isinstance(temperature, HourlyContinuousCollection):
+        date_times, temps = temperature.datetimes, temperature.values
+        last_time = date_times[0].sub_hour(18)  # clothing determined at 6 AM
+        last_val = temps[0]
+        new_vals = []
+        for v, dt in zip(temps, date_times):
+            time_diff = dt - last_time
+            if time_diff.days >= 1:
+                last_time, last_val = dt, v
+            new_vals.append(last_val)
+        temperature = temperature.duplicate()
+        temperature.values = new_vals
+
+    return HourlyContinuousCollection.compute_function_aligned(
+        schiavon_clo,
+        [temperature, max_clo, max_clo_temperature, min_clo, min_clo_temperature],
+        ClothingInsulation(),
+        "clo",
+    )
+
+
+def synthetic_day_series(series: pd.Series, agg: str = "mean") -> pd.Series:
+    """Create a synthetic day of values from a time-indexed pandas Series.
+
+    Args:
+        series (pd.Series): The series to use as a base.
+        agg (str, optional): The aggregation method to use. Defaults to "mean". Can be one of ["mean", "median", "min", "max", "polar_mean"].
+
+    Returns:
+        pd.Series: A synthetic day of values.
+    """
+
+    # check that the Series is time indexed
+    if not isinstance(series.index, pd.DatetimeIndex):
+        raise ValueError(
+            f"The input series' [{series.name}] index must be of type {type(pd.DatetimeIndex)}"
+        )
+
+    if agg == "polar_mean":
+        warnings.warn(
+            f"The input series [{series.name}] wil be interepreted as polar, with values % 360"
+        )
+        series = series % 360
+
+    # groupby time of day
+    group = series.groupby(series.index.time)
+
+    # apply aggregation
+    if agg == "polar_mean":
+        s = group.agg(circular_weighted_mean)
+    else:
+        s = group.agg(agg)
+
+    return s
+
+
+def synthetic_day_dataframe(
+    df: pd.DataFrame, agg: str = "mean", polar_columns: list[str] = None
+) -> pd.DataFrame:
+    """Create a synthetic day of values from a time-indexed pandas DataFrame.
+
+    Args:
+        df (pd.DataFrame): A time-indexed DataFrame.
+        polar_columns (list[str], optional): A list of column names to treat as circular. Defaults to None.
+
+    Returns:
+        pd.DataFrame: A synthetic day of values.
+    """
+
+    # iterate over columns
+    new_df = pd.DataFrame()
+    for col in df.columns:
+        if polar_columns and col in polar_columns:
+            new_df[col] = synthetic_day_series(df[col], agg="polar_mean")
+            if agg != "mean":
+                warnings.warn(
+                    "Aggregation method is ignored for polar columns, which are always mean."
+                )
+        else:
+            new_df[col] = synthetic_day_series(df[col], agg=agg)
+
+    return new_df

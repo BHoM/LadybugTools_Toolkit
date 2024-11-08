@@ -5,7 +5,6 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype import TYPESDICT
 from ladybug.datatype.generic import GenericType
 from ladybug.header import Header
-
 from python_toolkit.bhom.analytics import bhom_analytics
 
 
@@ -41,9 +40,7 @@ def header_to_multiindex(header: Header) -> pd.MultiIndex:
         "datatype",
         "unit",
     ] + [i.split(":")[0].strip() for i in meta[2:]]
-    values = [str(header.data_type), header.unit] + [
-        i.split(":")[-1].strip() for i in meta[2:]
-    ]
+    values = [str(header.data_type), header.unit] + [i.split(":")[-1].strip() for i in meta[2:]]
     return pd.MultiIndex.from_arrays([[i] for i in values], names=names)
 
 
@@ -120,5 +117,44 @@ def header_from_multiindex(multiindex: pd.MultiIndex) -> Header:
         analysis_period=AnalysisPeriod(),
         metadata=metadata,
     )
+
+    return header
+
+
+def combine_headers(headers: list[Header]) -> Header:
+    """Combine like-headers into a single header, retaining metadata.
+
+    Args:
+        headers (list[Header]):
+            A list of Ladybug headers.
+
+    Returns:
+        Header:
+            A Ladybug header object.
+    """
+
+    # ensure each header shares the same dtype, unit and analysis period
+    if not all([h.data_type == headers[0].data_type for h in headers]):
+        raise ValueError("All headers must share the same data type.")
+    if not all([h.unit == headers[0].unit for h in headers]):
+        raise ValueError("All headers must share the same unit.")
+    if not all([h.analysis_period == headers[0].analysis_period for h in headers]):
+        raise ValueError("All headers must share the same analysis period.")
+
+    # create a new header
+    header = Header(
+        data_type=headers[0].data_type,
+        unit=headers[0].unit,
+        analysis_period=headers[0].analysis_period,
+        metadata={},
+    )
+    # combine metadata and add to resultant collection
+    old_metadata = [c.metadata for c in headers]
+    for n, dd in enumerate(old_metadata):
+        for k, v in dd.items():
+            if k in header.metadata:
+                header.metadata[k] += f", {n}: {v}"
+            else:
+                header.metadata[k] = f"{n}: v"
 
     return header

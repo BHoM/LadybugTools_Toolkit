@@ -2,27 +2,22 @@
 
 # pylint: disable=E0401
 import warnings
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import datetime
 from typing import Any
-
-# pylint: enable=E0401
 
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datacollection import (
-    BaseCollection,
-    HourlyContinuousCollection,
-    MonthlyCollection,
-)
+from ladybug.datacollection import BaseCollection, HourlyContinuousCollection, MonthlyCollection
 from ladybug.datatype.angle import Angle
 from ladybug.dt import DateTime
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import circular_weighted_mean
-from .analysisperiod import analysis_period_to_datetimes
-from .analysisperiod import describe_analysis_period
-from .header import header_from_string, header_to_string
+from .analysisperiod import analysis_period_to_datetimes, describe_analysis_period
+from .header import combine_headers, header_from_string, header_to_string
+
+# pylint: enable=E0401
 
 
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
@@ -61,18 +56,14 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
         BaseCollection: A Ladybug BaseCollection-like object.
     """
 
-    header = header_from_string(
-        series.name, is_leap_year=series.index.is_leap_year.any()
-    )
+    header = header_from_string(series.name, is_leap_year=series.index.is_leap_year.any())
     header.metadata["source"] = "From custom pd.Series"
 
     freq = pd.infer_freq(series.index)
     if freq in ["H", "h"]:
         if series.index.is_leap_year.any():
             if len(series.index) != 8784:
-                raise ValueError(
-                    "The number of values in the series must be 8784 for leap years."
-                )
+                raise ValueError("The number of values in the series must be 8784 for leap years.")
         else:
             if len(series.index) != 8760:
                 raise ValueError("The series must have 8760 rows for non-leap years.")
@@ -96,9 +87,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
 
 
 @bhom_analytics()
-def percentile(
-    collections: list[BaseCollection], nth_percentile: float
-) -> BaseCollection:
+def percentile(collections: list[BaseCollection], nth_percentile: float) -> BaseCollection:
     """Create an nth percentile of the given data collections.
 
     Args:
@@ -117,17 +106,19 @@ def percentile(
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
-        raise ValueError(
-            'You cannot get the "nth percentile" across non-alike datatypes.'
-        )
+        raise ValueError('You cannot get the "nth percentile" across non-alike datatypes.')
 
     # check if any collections input are angular, in which case, fail
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
 
-    return collection_from_series(
-        df.quantile(nth_percentile, axis=1).rename(series_name)
-    )
+    collection = collection_from_series(df.quantile(nth_percentile, axis=1).rename(series_name))
+
+    # assign combined header metadata
+    new_header = combine_headers([c.header for c in collections])
+    collection.header.metadata = new_header.metadata
+
+    return collection
 
 
 @bhom_analytics()
@@ -153,7 +144,14 @@ def minimum(collections: list[BaseCollection]) -> BaseCollection:
     # check if any collections input are angular, in which case, fail
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
-    return collection_from_series(df.min(axis=1).rename(series_name))
+
+    collection = collection_from_series(df.min(axis=1).rename(series_name))
+
+    # assign combined header metadata
+    new_header = combine_headers([c.header for c in collections])
+    collection.header.metadata = new_header.metadata
+
+    return collection
 
 
 @bhom_analytics()
@@ -179,7 +177,14 @@ def maximum(collections: list[BaseCollection]) -> BaseCollection:
     # check if any collections input are angular, in which case, fail
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
-    return collection_from_series(df.max(axis=1).rename(series_name))
+
+    collection = collection_from_series(df.max(axis=1).rename(series_name))
+
+    # assign combined header metadata
+    new_header = combine_headers([c.header for c in collections])
+    collection.header.metadata = new_header.metadata
+
+    return collection
 
 
 @bhom_analytics()
@@ -203,12 +208,8 @@ def summarise_collection(
 
     name = " ".join(series.name.split(" ")[:-1])
     unit = series.name.split(" ")[-1].replace("(", "").replace(")", "")
-    period_ts = describe_analysis_period(
-        collection.header.analysis_period, include_timestep=True
-    )
-    period = describe_analysis_period(
-        collection.header.analysis_period, include_timestep=False
-    )
+    period_ts = describe_analysis_period(collection.header.analysis_period, include_timestep=True)
+    period = describe_analysis_period(collection.header.analysis_period, include_timestep=False)
 
     if (collection.header.analysis_period.st_month != 1) or (
         collection.header.analysis_period.end_month != 12
@@ -284,17 +285,13 @@ def summarise_collection(
     _most_common, _most_common_counts = series.value_counts().reset_index().values.T
     _most_common_str = (
         " and ".join(
-            f"{unit}, ".join([f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(
-                ", ", 1
-            )
+            f"{unit}, ".join([f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(", ", 1)
         )
         + unit
     )
     _most_common_counts_str = (
         " and ".join(
-            ", ".join(_most_common_counts[:_n_common].astype(int).astype(str)).rsplit(
-                ", ", 1
-            )
+            ", ".join(_most_common_counts[:_n_common].astype(int).astype(str)).rsplit(", ", 1)
         )
         + " times respectively"
     )
@@ -353,10 +350,7 @@ def summarise_collection(
     return descriptions
 
 
-@bhom_analytics()
-def average(
-    collections: list[BaseCollection], weights: list[float] = None
-) -> BaseCollection:
+def average(collections: list[BaseCollection], weights: list[float] = None) -> BaseCollection:
     """Create an Average of the given data collections.
 
     Args:
@@ -403,13 +397,17 @@ def average(
             .values.tolist()
         )
 
-    return collections[0].get_aligned_collection(vals)
+    collection = collections[0].get_aligned_collection(vals)
+
+    # assign combined header metadata
+    new_header = combine_headers([c.header for c in collections])
+    collection.header.metadata = new_header.metadata
+
+    return collection
 
 
 @bhom_analytics()
-def to_hourly(
-    collection: MonthlyCollection, method: str = None
-) -> HourlyContinuousCollection:
+def to_hourly(collection: MonthlyCollection, method: str = None) -> HourlyContinuousCollection:
     """
     Resample a Ladybug MonthlyContinuousCollection object into a Ladybug
     HourlyContinuousCollection object.
@@ -439,9 +437,7 @@ def to_hourly(
         )
 
     series = collection_to_series(collection)
-    annual_hourly_index = pd.date_range(
-        f"{series.index[0].year}-01-01", periods=8760, freq="h"
-    )
+    annual_hourly_index = pd.date_range(f"{series.index[0].year}-01-01", periods=8760, freq="H")
     series_annual = series.reindex(annual_hourly_index)
     series_annual[series_annual.index[-1]] = series_annual[series_annual.index[0]]
 
@@ -547,8 +543,8 @@ def create_typical_day(
 
     # get the start and end dates of the sample
     center_date = DateTime(month=centroid.month, day=centroid.day)
-    start_date = center_date - timedelta(days=sample_size / 2)
-    end_date = center_date + timedelta(days=sample_size / 2)
+    start_date = pd.Timestamp(center_date) - pd.Timedelta(days=sample_size / 2)
+    end_date = pd.Timestamp(center_date) + pd.Timedelta(days=sample_size / 2)
     sample = serieses.loc[start_date:end_date]
     _base_col = collection.filter_by_analysis_period(
         analysis_period=AnalysisPeriod(
@@ -562,3 +558,32 @@ def create_typical_day(
     _base_col._values = sample.groupby(sample.index.hour).agg(agg).values
     # pylint: enable=protected-access
     return _base_col
+
+
+def find_typical_day(collection: HourlyContinuousCollection, month: int) -> int:
+    """Determine the "most average" day in a given month."""
+
+    # create weighting based on hour of day. Daytime hours get weighted more than nightime hours
+    weights = np.arange(0, 24, 1)
+    weights = np.where((weights < 6) | (weights > 21), 0.75, 1.25)
+    weights = weights / weights.sum()
+
+    # create the typical day first
+    typical_day = collection_to_series(
+        create_typical_day(
+            collection=collection, centroid=DateTime(month=month, day=15), sample_size=15
+        )
+    )
+
+    # get each day of the collection, and find the day with the minimum difference
+    series = collection_to_series(collection)
+
+    grouped = series.groupby([series.index.day, series.index.hour]).mean()
+
+    rmsd = []
+    for day in grouped.index.get_level_values(0).unique():
+        diff = abs(grouped.loc[day].values - typical_day.values)
+        rmsd.append(diff.sum())
+    x = pd.Series(rmsd, index=grouped.index.get_level_values(0).unique())
+
+    return int(x.sort_values().index[0])
