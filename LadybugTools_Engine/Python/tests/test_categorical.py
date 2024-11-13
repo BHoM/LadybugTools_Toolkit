@@ -1,15 +1,15 @@
-import pandas as pd
-from ladybugtools_toolkit.categorical.categories import (
-    Categorical,
-    UTCI_DEFAULT_CATEGORIES,
-    ComfortClass,
-    CategoricalComfort,
-)
-from matplotlib.legend import Legend
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pytest
-from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.categorical.categories import (
+    BEAUFORT_CATEGORIES, HEAT_INDEX_CATEGORIES, HUMIDEX_CATEGORIES,
+    UTCI_DEFAULT_CATEGORIES, WBGT_CATEGORIES, Categorical, CategoricalComfort,
+    ComfortClass)
+from ladybugtools_toolkit.ladybug_extension.datacollection import \
+    collection_to_series
+from matplotlib.figure import Figure
+from matplotlib.legend import Legend
 
 from . import EPW_OBJ
 
@@ -176,3 +176,16 @@ def test_annual_monthly_histogram():
         plt.Axes,
     )
     plt.close("all")
+
+def test_heatmap_histogram() -> None:
+    """_"""
+    assert isinstance(UTCI_DEFAULT_CATEGORIES.heatmap_histogram(TEST_TIMESERIES_DATA), Figure)
+    plt.close("all")
+
+def test_predefined_categories():
+    """_"""
+    assert isinstance(BEAUFORT_CATEGORIES, Categorical)
+    assert isinstance(WBGT_CATEGORIES, CategoricalComfort)
+    assert isinstance(HEAT_INDEX_CATEGORIES, CategoricalComfort)
+    assert isinstance(HUMIDEX_CATEGORIES, CategoricalComfort)
+    assert isinstance(UTCI_DEFAULT_CATEGORIES, CategoricalComfort)
