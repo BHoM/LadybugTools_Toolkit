@@ -974,6 +974,15 @@ def utci_shade_benefit(
             A figure object.
     """
 
+    vals = {
+        "Comfortable with shade": 0.5,
+        "Comfortable without shade": 1.5,
+        "Shade is beneficial": 2.5,
+        "Shade is detrimental": 3.5,
+        "Undefined": 4.5,
+    }
+
+    # get the utci benefit category
     utci_shade_benefit_categories = shade_benefit_category(
         unshaded_utci=unshaded_utci,
         shaded_utci=shaded_utci,
@@ -987,11 +996,11 @@ def utci_shade_benefit(
             "Comfortable without shade": "#408040",
             "Shade is beneficial": "#ffd280",
             "Shade is detrimental": "#ff8080",
-            "Undefined": "#ffd280",
-            "Sun up": "k",
+            "Undefined": "#a3a2a2",
+            "Sun up": "w",
         }
     else:
-        for i in utci_shade_benefit_categories.unique():
+        for i in vals:
             if i not in color_config:
                 raise ValueError(f"Color for '{i}' not defined in color_config.")
         if "Sun up" not in color_config:
@@ -1002,22 +1011,21 @@ def utci_shade_benefit(
     if "title" in kwargs:
         title = f"{kwargs.pop('title')}\n{title}"
 
-    # factorise the categories for categorization
-    codes, uniques = utci_shade_benefit_categories.factorize()
-    s = pd.Series(codes, index=utci_shade_benefit_categories.index)
+    # map to values
+    usbc = utci_shade_benefit_categories.map(vals)
 
-    # create Categorical object to use it's plotting capabilities
+    # create categorical
     cat = Categorical(
         name="Shade Benefit",
-        bin_names=uniques,
-        bins=range(len(uniques) + 1),
-        colors=[color_config[i] for i in uniques],
+        bin_names=vals.keys(),
+        bins=[0, 1, 2, 3, 4, 5],
+        colors=[color_config[i] for i in vals],
     )
 
     fig, (hmap_ax, legend_ax, bar_ax) = plt.subplots(
         3, 1, figsize=figsize, height_ratios=(7, 0.5, 2)
     )
-    cat.annual_heatmap(s, show_colorbar=False, ax=hmap_ax)
+    cat.annual_heatmap(usbc, show_colorbar=False, ax=hmap_ax)
     legend_ax.set_axis_off()
     handles, labels = cat.create_legend_handles_labels(label_type="name")
     legend_ax.legend(
@@ -1029,11 +1037,12 @@ def utci_shade_benefit(
         ncol=5,
         borderpad=2.5,
     )
-    cat.annual_monthly_histogram(ax=bar_ax, series=s, show_labels=True)
+    cat.annual_monthly_histogram(ax=bar_ax, series=usbc, show_labels=True)
     hmap_ax.set_title(title)
 
     # add sun up indicator lines
     if location is not None:
+        ylimz = hmap_ax.get_ylim()
         xlimz = hmap_ax.get_xlim()
         ymin = min(hmap_ax.get_ylim())
         sun_rise_set = sunrise_sunset(location=location)
@@ -1049,5 +1058,6 @@ def utci_shade_benefit(
         hmap_ax.plot(xx, sunrise, zorder=9, c=color_config["Sun up"], lw=1)
         hmap_ax.plot(xx, sunset, zorder=9, c=color_config["Sun up"], lw=1)
         hmap_ax.set_xlim(xlimz)
+        hmap_ax.set_ylim(ylimz)
 
     return fig
