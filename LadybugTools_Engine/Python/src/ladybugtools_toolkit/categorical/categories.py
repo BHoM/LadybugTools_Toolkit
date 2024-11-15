@@ -134,3 +134,27 @@ BEAUFORT_CATEGORIES = Categorical(
     bins=(0, 0.3, 1.5, 3.3, 5.5, 7.9, 10.7, 13.8, 17.1, 20.7, 24.4, 28.4, 32.6, np.inf),
     name="Beaufort scale",
 )
+
+WBGT_CATEGORIES = CategoricalComfort(
+    name="Wet Bulb Globe Temperature",
+    bin_names=["Any activity", "Very heavy activity", "Heavy activity", "Moderate activity", "Light activity", "Resting only"],
+    bins=[-np.inf, 23, 25, 28, 30, 33, np.inf],
+    colors=["#c1c1c1", "#32cd32", "#ffff00", "#ffa500", "#ff0000", "#000000"],
+    comfort_classes=[ComfortClass.COMFORTABLE, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT]
+)
+
+HUMIDEX_CATEGORIES = CategoricalComfort(
+    name="Humidex",
+    bin_names=["Comfort", "Little to no discomfort", "Some discomfort", "Great discomfort; avoid exertion", "Dangerous; heat stroke quite possible"],
+    bins=[-np.inf, 20, 29, 39, 45, np.inf],
+    colors=["#c1c1c1", "#32cd32", "#ffff00", "#ff8c00", "#ff0000"],
+    comfort_classes=[ComfortClass.COMFORTABLE, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT]
+)
+
+HEAT_INDEX_CATEGORIES = CategoricalComfort(
+    name="Heat Index",
+    bin_names=["Comfort", "Caution", "Extreme caution", "Danger", "Extreme danger"],
+    bins=[-np.inf, 27, 32, 41, 54, np.inf],
+    colors=["#c1c1c1", "#ffff66", "#ffd700", "#ff8c00", "#ff0000"],
+    comfort_classes=[ComfortClass.COMFORTABLE, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT, ComfortClass.TOO_HOT]
+)
