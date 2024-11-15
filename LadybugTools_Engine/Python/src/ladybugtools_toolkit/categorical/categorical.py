@@ -1,7 +1,7 @@
 """Categorical objects for grouping data into bins."""
 
-# pylint: disable=W0212
 # pylint: disable=E0401
+# pylint: disable=W0212
 import calendar
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -16,7 +16,6 @@ from ladybug.legend import Color
 from matplotlib import patches
 from matplotlib import pyplot as plt
 from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap, to_hex, to_rgba
-from matplotlib.legend import Legend
 from python_toolkit.bhom.analytics import bhom_analytics
 
 from ..helpers import rolling_window, validate_timeseries
@@ -570,7 +569,7 @@ class ComfortClass(Enum):
 
     @property
     def color(self) -> str:
-        """Get the associatd color."""
+        """Get the associated color."""
         d = {
             ComfortClass.TOO_COLD: "#3C65AF",
             ComfortClass.COMFORTABLE: "#2EB349",
