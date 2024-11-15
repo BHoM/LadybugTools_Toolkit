@@ -1,30 +1,38 @@
-from datetime import timedelta
 import warnings  # pylint: disable=E0401
-
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
 import pytest
+from ladybug.datatype.area import Area
+from ladybug.datatype.energy import Energy
+from ladybug.datatype.energyintensity import EnergyIntensity
+from ladybug.datatype.volume import Volume
+from ladybug.datatype.volumeflowrate import VolumeFlowRate, VolumeFlowRateIntensity
 from ladybugtools_toolkit.helpers import (
-    air_pressure_at_height,
     AnalysisPeriod,
+    DecayMethod,
+    OpenMeteoVariable,
+    _convert_energy,
+    _convert_people_collection,
+    _convert_volume_flow,
+    air_pressure_at_height,
     angle_from_cardinal,
     angle_from_north,
     cardinality,
     chunks,
     circular_weighted_mean,
     decay_rate_smoother,
-    DecayMethod,
     default_analysis_periods,
     default_combined_analysis_periods,
     default_hour_analysis_periods,
     default_month_analysis_periods,
+    determine_ashrae_climate_zone,
     dry_bulb_temperature_at_height,
     epw_wind_vectors,
-    evaporative_cooling_effect_collection,
     evaporative_cooling_effect,
+    evaporative_cooling_effect_collection,
     month_hour_binned_series,
-    OpenMeteoVariable,
     proximity_decay,
     radiation_at_height,
     remove_leap_days,
@@ -38,8 +46,188 @@ from ladybugtools_toolkit.helpers import (
     validate_timeseries,
     wind_speed_at_height,
 )
+from ladybugtools_toolkit.ladybug_extension.datacollection import (
+    HourlyContinuousCollection,
+    collection_from_series,
+    collection_to_series,
+)
 
-from . import EPW_OBJ
+from .. import EPW_OBJ
+
+
+def test_convert_people_collection() -> None:
+    """_"""
+    inputs = [
+        {"datatype": "People", "unit": "people"},
+        {"datatype": "AreaPerPerson", "unit": "m2/person"},
+        {"datatype": "PersonPerArea", "unit": "person/m2"},
+    ]
+    target_units = ["people", "m2/person", "person/m2"]
+
+    idx = collection_to_series(EPW_OBJ.dry_bulb_temperature).index
+    area = 1
+
+    for inp in inputs:
+        collection = collection_from_series(
+            pd.Series(
+                np.random.randint(0, 10, 8760),
+                name=f"{inp['datatype']} ({inp['unit']})",
+                index=idx,
+            )
+        )
+        for target_unit in target_units:
+            assert isinstance(
+                _convert_people_collection(
+                    collection=collection, target_unit=target_unit, area=area
+                ),
+                HourlyContinuousCollection,
+            )
+
+
+def test_convert_volume_flow() -> None:
+    """_"""
+    inputs = []
+    target_units = []
+    area_units = Area().units
+    volume_units = Volume().units
+    for dtype in [VolumeFlowRate(), VolumeFlowRateIntensity()]:
+        for unit in dtype.units:
+            inputs.append({"datatype": dtype, "unit": unit})
+            target_units.append(unit)
+    inputs.append({"datatype": "AirExchange", "unit": "ach"})
+    target_units.append("ach")
+
+    idx = collection_to_series(EPW_OBJ.dry_bulb_temperature).index
+    area = 1
+    volume = 1
+
+    for inp in inputs:
+        collection = collection_from_series(
+            pd.Series(
+                np.random.randint(0, 10, 8760),
+                name=f"{inp['datatype']} ({inp['unit']})",
+                index=idx,
+            )
+        )
+        for target_unit in target_units:
+            for area_unit in area_units:
+                for volume_unit in volume_units:
+                    assert isinstance(
+                        _convert_volume_flow(
+                            collection=collection,
+                            target_unit=target_unit,
+                            area=area,
+                            area_unit=area_unit,
+                            volume=volume,
+                            volume_unit=volume_unit,
+                        ),
+                        HourlyContinuousCollection,
+                    )
+
+
+def test_determine_ashrae_climate_zone() -> None:
+    """_"""
+    # create two-year dbt and precipiptation dtaa
+    idx = pd.date_range("2017-01-01 00:00:00", freq="60min", periods=8760 * 2)
+
+    dbt_test0 = pd.Series(index=range(len(idx)), data=[0] * len(idx))
+    dbt_test1 = pd.Series(index=idx, data=[0] * len(idx))
+    precip_test1 = pd.Series(index=idx, data=[0.05] * len(idx))
+    lat = 25
+
+    # test for incorrect input types
+    with pytest.raises(ValueError):
+        determine_ashrae_climate_zone(dbt="string")
+    with pytest.raises(ValueError):
+        determine_ashrae_climate_zone(dbt=dbt_test1, rain="string")
+
+    # test for missing latitude if rain provided
+    with pytest.raises(ValueError):
+        determine_ashrae_climate_zone(dbt=dbt_test1, rain=precip_test1)
+
+    # test for incorrect index type
+    with pytest.raises(ValueError):
+        determine_ashrae_climate_zone(dbt=dbt_test0)
+
+    # test for equal length indices that don't match
+    with pytest.raises(ValueError):
+        determine_ashrae_climate_zone(
+            dbt=dbt_test1.iloc[10:], rain=precip_test1.iloc[:-10], latitude=lat
+        )
+
+    # test for warning if precipitation data is not provided
+    with pytest.warns(UserWarning):
+        determine_ashrae_climate_zone(dbt=dbt_test1)
+
+    # test for non-hourly data
+    with pytest.raises(ValueError):
+        determine_ashrae_climate_zone(
+            dbt=dbt_test1.resample("120min").mean(),
+            rain=precip_test1.resample("120min").mean(),
+            latitude=lat,
+        )
+
+    # test for series not covering at least 1 full year
+    with pytest.raises(ValueError):
+        determine_ashrae_climate_zone(
+            dbt=dbt_test1.iloc[8761:], rain=precip_test1.iloc[8761:], latitude=lat
+        )
+
+    # test for warning raised when covering partial year
+    with pytest.warns(UserWarning):
+        determine_ashrae_climate_zone(
+            dbt=dbt_test1.iloc[10:], rain=precip_test1.iloc[10:], latitude=lat
+        )
+
+    # test for correct output
+    # TODO - add in more dummy data here
+    assert (
+        list(
+            determine_ashrae_climate_zone(
+                dbt=collection_to_series(EPW_OBJ.dry_bulb_temperature),
+                rain=collection_to_series(EPW_OBJ.liquid_precipitation_depth),
+                latitude=EPW_OBJ.location.latitude,
+            ).values()
+        )[0]
+        == "4A"
+    )
+
+    # no precipitation
+    # with precipitation
+
+
+def test_convert_energy() -> None:
+    """_"""
+    inputs = []
+    target_units = []
+    area_units = Area().units
+    for dtype in [Energy(), EnergyIntensity()]:
+        for unit in dtype.units:
+            inputs.append({"datatype": dtype, "unit": unit})
+            target_units.append(unit)
+
+    idx = collection_to_series(EPW_OBJ.dry_bulb_temperature).index
+    area = 1
+
+    for inp in inputs:
+        collection = collection_from_series(
+            pd.Series(
+                np.random.randint(0, 10, 8760),
+                name=f"{inp['datatype']} ({inp['unit']})",
+                index=idx,
+            )
+        )
+        for target_unit in target_units:
+            for area_unit in area_units:
+                assert isinstance(
+                    _convert_energy(
+                        collection=collection,
+                        target_unit=target_unit,
+                        area=area,
+                        area_unit=area_unit,
+                    ),
+                    HourlyContinuousCollection,
+                )
 
 
 def test_sunrise_sunset():
@@ -50,20 +238,15 @@ def test_sunrise_sunset():
 def test_openmeteo_variable():
     """_"""
     assert (
-        OpenMeteoVariable.from_string("winddirection_100m")
-        == OpenMeteoVariable.WINDDIRECTION_100M
+        OpenMeteoVariable.from_string("winddirection_100m") == OpenMeteoVariable.WINDDIRECTION_100M
     )
     assert OpenMeteoVariable.TEMPERATURE_2M.openmeteo_unit == "°C"
     assert OpenMeteoVariable.TEMPERATURE_2M.target_name == "Dry Bulb Temperature"
     assert OpenMeteoVariable.TEMPERATURE_2M.target_unit == "C"
     assert OpenMeteoVariable.TEMPERATURE_2M.target_multiplier == 1
     assert OpenMeteoVariable.TEMPERATURE_2M.openmeteo_name == "temperature_2m"
-    assert (
-        OpenMeteoVariable.TEMPERATURE_2M.target_table_name == "Dry Bulb Temperature (C)"
-    )
-    assert (
-        OpenMeteoVariable.TEMPERATURE_2M.openmeteo_table_name == "temperature_2m (°C)"
-    )
+    assert OpenMeteoVariable.TEMPERATURE_2M.target_table_name == "Dry Bulb Temperature (C)"
+    assert OpenMeteoVariable.TEMPERATURE_2M.openmeteo_table_name == "temperature_2m (°C)"
     assert OpenMeteoVariable.TEMPERATURE_2M.convert(1) == 1
 
 
@@ -150,15 +333,9 @@ def test_radiation_at_height():
     assert radiation_at_height(300, 1000, 10) == pytest.approx(323.76, rel=1e-2)
 
     # Test with custom lapse rate
-    assert radiation_at_height(100, 1000, 10, lapse_rate=0.1) == pytest.approx(
-        109.9, rel=1e-2
-    )
-    assert radiation_at_height(200, 2000, 10, lapse_rate=0.2) == pytest.approx(
-        279.6, rel=1e-2
-    )
-    assert radiation_at_height(300, 10000, 10, lapse_rate=0.01) == pytest.approx(
-        329.97, rel=1e-2
-    )
+    assert radiation_at_height(100, 1000, 10, lapse_rate=0.1) == pytest.approx(109.9, rel=1e-2)
+    assert radiation_at_height(200, 2000, 10, lapse_rate=0.2) == pytest.approx(279.6, rel=1e-2)
+    assert radiation_at_height(300, 10000, 10, lapse_rate=0.01) == pytest.approx(329.97, rel=1e-2)
 
 
 def test_temperature_at_height():
@@ -425,9 +602,7 @@ def test_evaporative_cooling_effect():
 
 def test_evaporative_cooling_effect_collection():
     """_"""
-    dbt, rh = evaporative_cooling_effect_collection(
-        EPW_OBJ, evaporative_cooling_effectiveness=0.3
-    )
+    dbt, rh = evaporative_cooling_effect_collection(EPW_OBJ, evaporative_cooling_effectiveness=0.3)
     assert (pytest.approx(dbt.average, rel=0.1) == 9.638794225575671) and (
         pytest.approx(rh.average, rel=0.1) == 85.50440639269416
     )
@@ -436,16 +611,12 @@ def test_evaporative_cooling_effect_collection():
 def test_evaporative_cooling_effect_collection_bad():
     """_"""
     with pytest.raises(ValueError):
-        evaporative_cooling_effect_collection(
-            EPW_OBJ, evaporative_cooling_effectiveness=1.2
-        )
+        evaporative_cooling_effect_collection(EPW_OBJ, evaporative_cooling_effectiveness=1.2)
 
 
 def test_target_wind_speed_collection():
     """_"""
-    assert target_wind_speed_collection(EPW_OBJ, 3, 10).average == pytest.approx(
-        3, rel=0.0001
-    )
+    assert target_wind_speed_collection(EPW_OBJ, 3, 10).average == pytest.approx(3, rel=0.0001)
 
 
 def test_wind_speed_at_height():
@@ -544,9 +715,7 @@ def test_month_hour_binned_series():
     with pytest.raises(ValueError):
         month_hour_binned_series(
             pd.Series(
-                index=pd.date_range(
-                    start="2017-01-01 00:00:00", freq="60min", periods=5000
-                ),
+                index=pd.date_range(start="2017-01-01 00:00:00", freq="60min", periods=5000),
                 data=range(5000),
             )
         )
@@ -555,9 +724,7 @@ def test_month_hour_binned_series():
     with pytest.raises(ValueError):
         month_hour_binned_series(
             pd.Series(
-                index=pd.date_range(
-                    start="2017-01-01 00:00:00", freq="120min", periods=8760 * 3
-                ),
+                index=pd.date_range(start="2017-01-01 00:00:00", freq="120min", periods=8760 * 3),
                 data=range(8760),
             )
         )
@@ -580,9 +747,7 @@ def test_month_hour_binned_series():
 
     # test that the function raises an error if month bins overlap
     with pytest.raises(ValueError):
-        month_hour_binned_series(
-            s, month_bins=[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [10, 11, 12]]
-        )
+        month_hour_binned_series(s, month_bins=[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [10, 11, 12]])
 
     # test that the function raises an error if hour bins overlap
     with pytest.raises(ValueError):

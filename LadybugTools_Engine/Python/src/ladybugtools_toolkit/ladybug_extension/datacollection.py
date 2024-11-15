@@ -60,7 +60,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
     header.metadata["source"] = "From custom pd.Series"
 
     freq = pd.infer_freq(series.index)
-    if freq in ["H", "h"]:
+    if freq in ["H", "h", "60min"]:
         if series.index.is_leap_year.any():
             if len(series.index) != 8784:
                 raise ValueError("The number of values in the series must be 8784 for leap years.")
@@ -70,7 +70,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
 
         return HourlyContinuousCollection(
             header=header,
-            values=series.values,
+            values=series.values.tolist(),
         )
 
     if freq in ["M", "MS"]:

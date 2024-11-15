@@ -34,6 +34,7 @@ from ladybug.skymodel import (
 )
 from ladybug.sunpath import Sunpath
 from ladybug_comfort.clo import schiavon_clo
+from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 from ladybug_geometry.geometry2d import Vector2D
 from meteostat import Hourly, Point
 from python_toolkit.bhom.analytics import bhom_analytics
@@ -2033,3 +2034,207 @@ def synthetic_day_dataframe(
             new_df[col] = synthetic_day_series(df[col], agg=agg)
 
     return new_df
+
+
+def determine_ashrae_climate_zone(
+    dbt: pd.Series, rain: pd.Series = None, latitude: float = None
+) -> dict[int, str]:
+    """Determine the ASHRAE climate zone for a given location based on historic dry bulb temperature and precipitation.
+
+    Args:
+        dbt (pd.Series):
+            A pandas Series of dry bulb temperature values (in degrees C).
+        rain (pd.Series, optional):
+            A pandas Series of precipitation values (in mm).
+        latitude (float, optional):
+            The latitutde of the data being assessed. Must be provided if precipitation provided.
+
+    References:
+        The logic for this method comes from
+        ANSI/ASHRAE Standard 169-2021: Climatic Data for Building Design
+        Standards. ASHRAE Standard, October 2021.
+
+    Returns:
+        dict[int, str]:
+            The ASHRAE climate zone, per year of the input data.
+    """
+
+    if not isinstance(dbt, pd.Series):
+        raise ValueError("'dry_bulb_temperature' is not a pandas Series object.")
+
+    if not isinstance(dbt.index, pd.DatetimeIndex):
+        raise ValueError("Input series must have a datetime index")
+
+    if pd.infer_freq(dbt.index) != "h":
+        raise ValueError("Input series must be hourly")
+
+    if len(dbt) < 8760:
+        raise ValueError("Input series must be at least one year long")
+
+    df = pd.concat([dbt.rename("dbt")], axis=1)
+
+    if rain is not None:
+        if not isinstance(rain, pd.Series):
+            raise ValueError("'precipitation' is not a pandas Series object.")
+
+        if not dbt.index.equals(rain.index):
+            raise ValueError("Input series must have identical datetime-indices")
+
+        if latitude is None:
+            raise ValueError("latitude must also be provided if precipitation is provided")
+
+        if not (-90 <= latitude <= 90):
+            raise ValueError("latitude must be between -90 and 90")
+
+        # determine the cold_season_months based on latitude
+        if latitude > 0:
+            cold_season_months = [10, 11, 12, 1, 2, 3]
+        else:
+            cold_season_months = [4, 5, 6, 7, 8, 9]
+
+        df["rain"] = rain.values
+
+    # create local vectorised functions
+    v_heating_degree_time = np.vectorize(heating_degree_time)
+    v_cooling_degree_time = np.vectorize(cooling_degree_time)
+
+    # get thermal climate zone based on temperature data from Table A3 ASHRAE
+    cd_base = 10
+    hd_base = 18
+
+    # get degree days (from hours)
+    df["cdh"] = v_cooling_degree_time(df["dbt"], t_base=cd_base)
+    df["hdh"] = v_heating_degree_time(df["dbt"], t_base=hd_base)
+    df["cdd"] = df["cdh"] / 24
+    df["hdd"] = df["hdh"] / 24
+
+    # iterate years provided
+    d = {}
+    for year in df.index.year.unique():
+        df_temp = df.loc[str(year)]
+        if len(df_temp) < 8760:
+            warnings.warn(f"skipping {year} as it is incomplete")
+            continue
+
+        annual_hdd = df_temp.sum()["hdd"]
+        annual_cdd = df_temp.sum()["cdd"]
+
+        # determine thermal climate zone
+        if annual_cdd > 5000:
+            thermal_climate_zone = 1
+        elif annual_cdd > 3500:
+            thermal_climate_zone = 2
+        elif annual_cdd > 2500:
+            thermal_climate_zone = 3
+        elif annual_cdd <= 2500 and annual_hdd <= 2000:
+            thermal_climate_zone = 3
+        elif annual_cdd <= 2500 and annual_hdd <= 3000:
+            thermal_climate_zone = 4
+        elif annual_hdd <= 3000:
+            thermal_climate_zone = 4
+        elif annual_hdd <= 4000:
+            thermal_climate_zone = 5
+        elif annual_hdd <= 5000:
+            thermal_climate_zone = 6
+        elif annual_hdd <= 7000:
+            thermal_climate_zone = 7
+        else:
+            thermal_climate_zone = 8
+
+        # determine whether the location is marine, dry or humid
+        if rain is None:
+            warnings.warn(
+                "Precipitation data not provided. ASHRAE climate zone will be determined based on temperature only."
+            )
+            d[year] = str(thermal_climate_zone)
+            continue
+        else:
+            # test moisture calculations
+            # ignore warnings from numpy here, potentialy unsafe, but can't be avoided at this point
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                monthly_rain = df_temp["rain"].resample("MS").sum()
+                monthly_temp = df_temp["dbt"].resample("MS").mean()
+                cold_season_mask = monthly_rain.index.month.isin(cold_season_months)
+
+                ca_test = -3 < monthly_temp.min() < 18.3
+                cb_test = monthly_temp.max() < 22
+                cc_test = sum(monthly_temp > 10) >= 4
+                cd_test = (
+                    monthly_rain[cold_season_mask].max() > monthly_rain[~cold_season_mask].min() * 3
+                )
+                c_test = ca_test and cb_test and cc_test and cd_test
+
+                bb_test = (monthly_rain[~cold_season_mask].sum() / monthly_rain.sum() >= 0.7) and (
+                    monthly_rain.sum() < 20 * (monthly_temp.mean() + 14)
+                )
+                bc_test = (
+                    0.3 < (monthly_rain[~cold_season_mask].sum() / monthly_rain.sum()) < 0.7
+                ) and (monthly_rain.sum() < 20 * (monthly_temp.mean() + 7))
+                bd_test = (monthly_rain[~cold_season_mask].sum() / monthly_rain.sum() <= 0.3) and (
+                    monthly_rain.sum() < 20 * monthly_temp.mean()
+                )
+                b_test = any([bb_test, bc_test, bd_test])
+
+            if c_test:
+                # marine climate
+                moisture_zone = "C"
+            elif b_test:
+                # dry climate
+                moisture_zone = "B"
+            else:
+                # humid climate
+                moisture_zone = "A"
+
+            d[year] = f"{thermal_climate_zone}{moisture_zone}"
+
+    return d
+
+
+def hairdryer_effect(
+    dbt: float,
+    ws: float,
+    rh: float,
+    dbt_threshold: float = 32,
+    ws_threshold: float = 4,
+    rh_threshold: float = 50,
+    bathtub: bool = False,
+) -> bool:
+    """A very rough method to determine whether conditions outside feel a bit
+    "hair-dryer-ey, also known as the blow-dryer effect, where warm air and wind
+    combined with low humidity feels like a hair dryer.
+
+    Notes:
+        This classification is not a recognised classification of thermal
+        conditions are is dependent on the user to understand the limitations of
+        this method.
+
+        Additionally, this method may also be used to estimate the bathtub effect
+        by inverting the test against the rh_threshold.
+
+    Args:
+        dbt (float):
+            The dry bulb temperature in degrees Celsius.
+        ws (float):
+            The wind speed in m/s.
+        rh (float):
+            The relative humidity (0-1).
+        dbt_threshold (float, optional):
+            The dry bulb temperature threshold. Defaults to 32.
+        ws_threshold (float, optional):
+            The wind speed threshold. Defaults to 4.
+        rh_threshold (float, optional):
+            The relative humidity threshold. Defaults to 50.
+        bathtub: (bool, optional):
+            Whether to invert the rh_threshold and ws_threshold - resulting in a
+            "bathtub-effect" instead. Defaults to False.
+
+    Returns:
+        bool: Whether conditions are hair-dryer-ey.
+    """
+
+    return (
+        dbt > dbt_threshold
+        and (ws < ws_threshold if bathtub else ws > ws_threshold)
+        and (rh > rh_threshold if bathtub else rh < rh_threshold)
+    )

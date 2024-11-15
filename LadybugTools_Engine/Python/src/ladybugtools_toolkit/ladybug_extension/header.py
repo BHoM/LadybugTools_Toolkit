@@ -57,16 +57,14 @@ def header_from_string(string: str, is_leap_year: bool = False) -> Header:
         Header:
             A Ladybug header object."""
 
-    str_elements = string.split(" ")
-
-    if (len(str_elements) < 2) or ("(" not in string) or (")" not in string):
+    if "(" not in string or ")" not in string or string.count("(") > 1 or string.count(")") > 1:
         raise ValueError(
             "The string to be converted into a LB Header must be in the format 'variable (unit)'"
         )
 
-    str_elements = string.split(" ")
-    unit = str_elements[-1].replace("(", "").replace(")", "")
-    data_type = " ".join(str_elements[:-1])
+    data_type, unit = string.split("(")
+    data_type = data_type.strip()
+    unit = unit.replace(")", "").strip()
 
     try:
         data_type = TYPESDICT[data_type.replace(" ", "")]()

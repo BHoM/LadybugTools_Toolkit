@@ -1,6 +1,8 @@
+import random
+
+import numpy as np
 import pandas as pd
 import pytest
-from ladybug.epw import EPW
 from ladybugtools_toolkit.ladybug_extension.datacollection import (
     collection_from_series,
     collection_to_series,
@@ -31,12 +33,20 @@ def test_from_series_good_1():
 
 def test_from_series_good_2():
     """_"""
-    assert collection_from_series(
-        SERIES_GOOD.resample("MS").mean()
-    ).average == pytest.approx(EPW_OBJ.dry_bulb_temperature.average, rel=0.01)
+    assert collection_from_series(SERIES_GOOD.resample("MS").mean()).average == pytest.approx(
+        EPW_OBJ.dry_bulb_temperature.average, rel=0.01
+    )
 
 
 def test_from_series_bad_1():
     """_"""
     with pytest.raises(ValueError):
         collection_from_series(SERIES_GOOD.sample(4000))
+
+
+def test_from_series_bad_2():
+    """_"""
+    with pytest.raises(ValueError):
+        collection_from_series(
+            pd.Series([1] * 8760, index=SERIES_GOOD.index, name="Generic (thing) (unit)")
+        )

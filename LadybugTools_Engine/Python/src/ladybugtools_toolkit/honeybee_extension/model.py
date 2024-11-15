@@ -1,12 +1,13 @@
 """Methods for handling honeybee models."""
+
 # pylint: disable=R0911
 from enum import Enum, auto  # pylint: disable=E0401
 
 import matplotlib.pyplot as plt
+import numpy as np
 from honeybee.model import AirBoundary, Face3D, Floor, Model, RoofCeiling, Wall
 from ladybug_geometry.geometry3d import LineSegment3D, Plane
 from matplotlib.collections import PolyCollection
-import numpy as np
 
 
 class HbModelGeometry(Enum):
@@ -28,13 +29,9 @@ class HbModelGeometry(Enum):
             case HbModelGeometry.FLOOR:
                 return [i.geometry for i in model.faces if isinstance(i.type, Floor)]
             case HbModelGeometry.ROOFCEILING:
-                return [
-                    i.geometry for i in model.faces if isinstance(i.type, RoofCeiling)
-                ]
+                return [i.geometry for i in model.faces if isinstance(i.type, RoofCeiling)]
             case HbModelGeometry.AIRBOUNDARY:
-                return [
-                    i.geometry for i in model.faces if isinstance(i.type, AirBoundary)
-                ]
+                return [i.geometry for i in model.faces if isinstance(i.type, AirBoundary)]
             case HbModelGeometry.SHADE:
                 return [i.geometry for i in model.shades]
             case HbModelGeometry.APERTURE:
@@ -257,10 +254,7 @@ def slice_geometry(
         if segments is None:
             continue
         _vertices.extend(
-            [
-                [plane.xyz_to_xy(pt).to_array() for pt in segment.vertices]
-                for segment in segments
-            ]
+            [[plane.xyz_to_xy(pt).to_array() for pt in segment.vertices] for segment in segments]
         )
     _vertices = np.array(_vertices)
     ax.add_artist(
