@@ -1,21 +1,20 @@
 """Miscellaneous plots that don't really fit anywhere else."""
+
 # pylint: disable=line-too-long
 from calendar import month_abbr  # pylint: disable=E0401
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-
 import numpy as np
 import pandas as pd
-
 from ladybug.epw import EPW, Location
 from ladybug.sunpath import Sunpath
 
-from ..ladybug_extension.datacollection import collection_to_series
-from ..helpers import sunrise_sunset
-from ._heatmap import heatmap
 from ..categorical.categories import Categorical
+from ..helpers import sunrise_sunset
+from ..ladybug_extension.datacollection import collection_to_series
+from ._heatmap import heatmap
 
 
 def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
@@ -49,9 +48,7 @@ def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
         9: "overcast",
         10: "overcast",
     }
-    mtx = mtx.T.groupby(mapper).sum()[
-        ["clear", "mostly clear", "partly cloudy", "mostly cloudy", "overcast"]
-    ]
+    mtx = mtx.T.groupby(mapper).sum()[["clear", "mostly clear", "partly cloudy", "mostly cloudy", "overcast"]]
     mtx = (mtx.T / mtx.sum(axis=1)).T
 
     mtx.plot.area(ax=ax, color=["#95B5DF", "#B1C4DD", "#C9D0D9", "#ACB0B6", "#989CA1"])
@@ -95,37 +92,20 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
         index=srss_df.index,
     )
     civil_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (srss_df["civil twilight end"] - srss_df["civil twilight start"])
-        ]
-        - daylight
+        [i.seconds / (60 * 60) for i in (srss_df["civil twilight end"] - srss_df["civil twilight start"])] - daylight
     ).rename("civil twilight")
     nautical_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (
-                srss_df["nautical twilight end"] - srss_df["nautical twilight start"]
-            )
-        ]
+        [i.seconds / (60 * 60) for i in (srss_df["nautical twilight end"] - srss_df["nautical twilight start"])]
         - daylight
         - civil_twilight
     ).rename("nautical twilight")
     astronomical_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (
-                srss_df["astronomical twilight end"]
-                - srss_df["astronomical twilight start"]
-            )
-        ]
+        [i.seconds / (60 * 60) for i in (srss_df["astronomical twilight end"] - srss_df["astronomical twilight start"])]
         - daylight
         - civil_twilight
         - nautical_twilight
     ).rename("astronomical twilight")
-    night = (
-        24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)
-    ).rename("night")
+    night = (24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)).rename("night")
 
     temp = pd.concat(
         [daylight, civil_twilight, nautical_twilight, astronomical_twilight, night],
@@ -223,37 +203,20 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         index=srss_df.index,
     )
     civil_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (srss_df["civil twilight end"] - srss_df["civil twilight start"])
-        ]
-        - daylight
+        [i.seconds / (60 * 60) for i in (srss_df["civil twilight end"] - srss_df["civil twilight start"])] - daylight
     ).rename("civil twilight")
     nautical_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (
-                srss_df["nautical twilight end"] - srss_df["nautical twilight start"]
-            )
-        ]
+        [i.seconds / (60 * 60) for i in (srss_df["nautical twilight end"] - srss_df["nautical twilight start"])]
         - daylight
         - civil_twilight
     ).rename("nautical twilight")
     astronomical_twilight = (
-        [
-            i.seconds / (60 * 60)
-            for i in (
-                srss_df["astronomical twilight end"]
-                - srss_df["astronomical twilight start"]
-            )
-        ]
+        [i.seconds / (60 * 60) for i in (srss_df["astronomical twilight end"] - srss_df["astronomical twilight start"])]
         - daylight
         - civil_twilight
         - nautical_twilight
     ).rename("astronomical twilight")
-    night = (
-        24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)
-    ).rename("night")
+    night = (24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)).rename("night")
 
     temp = pd.concat(
         [daylight, civil_twilight, nautical_twilight, astronomical_twilight, night],
@@ -289,9 +252,7 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         fc="#B9AC86",
         label="Civil twilight",
     )
-    ax.fill_between(
-        hours.index, hours["sunrise"], hours["sunset"], fc="#FCE49D", label="Day"
-    )
+    ax.fill_between(hours.index, hours["sunrise"], hours["sunset"], fc="#FCE49D", label="Day")
     ax.fill_between(
         hours.index,
         hours["sunset"],

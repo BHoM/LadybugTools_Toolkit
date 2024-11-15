@@ -6,28 +6,28 @@ import warnings
 from calendar import month_abbr
 from concurrent.futures import ProcessPoolExecutor
 
-# pylint: enable=E0401
-
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from ladybug.datacollection import HourlyContinuousCollection
-from ladybug.datatype.temperature import (
-    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
-)
+from ladybug.datatype.temperature import \
+    UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex
 from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from ladybug_comfort.collection.utci import UTCI
+from python_toolkit.bhom.analytics import bhom_analytics
 from scipy.interpolate import interp1d, interp2d
 from tqdm import tqdm
 
-from python_toolkit.bhom.analytics import bhom_analytics
-from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoricalComfort
+from ..categorical.categories import (UTCI_DEFAULT_CATEGORIES,
+                                      CategoricalComfort)
 from ..helpers import evaporative_cooling_effect, month_hour_binned_series
-from ..ladybug_extension.datacollection import (
-    collection_from_series,
-    collection_to_series,
-)
+from ..ladybug_extension.datacollection import (collection_from_series,
+                                                collection_to_series)
+
+# pylint: enable=E0401
+
+
 
 
 def _saturated_vapor_pressure_hpa(dry_bulb_temperature: np.ndarray):
