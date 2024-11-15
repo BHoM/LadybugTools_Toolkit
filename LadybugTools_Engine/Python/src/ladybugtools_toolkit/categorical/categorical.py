@@ -1,4 +1,5 @@
 """Categorical objects for grouping data into bins."""
+
 # pylint: disable=W0212
 # pylint: disable=E0401
 import calendar
@@ -6,26 +7,21 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
 
+import matplotlib.ticker as mticker
+
 # pylint: enable=E0401
 import numpy as np
 import pandas as pd
 from ladybug.legend import Color
 from matplotlib import patches
 from matplotlib import pyplot as plt
-from matplotlib.colors import (
-    BoundaryNorm,
-    Colormap,
-    ListedColormap,
-    to_hex,
-    to_rgba,
-)
+from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap, to_hex, to_rgba
 from matplotlib.legend import Legend
-import matplotlib.ticker as mticker
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import rolling_window, validate_timeseries
-from ..plot.utilities import contrasting_color
 from ..plot._heatmap import heatmap
+from ..plot.utilities import contrasting_color
 
 
 @dataclass(init=True, repr=True)
@@ -150,10 +146,7 @@ class Categorical:
     @property
     def bin_names_detailed(self) -> list[str]:
         """The detailed bin names."""
-        return [
-            f"{nom} ({desc})"
-            for desc, nom in list(zip(*[self.descriptions, self.bin_names]))
-        ]
+        return [f"{nom} ({desc})" for desc, nom in list(zip(*[self.descriptions, self.bin_names]))]
 
     @property
     def cmap(self) -> Colormap:
@@ -224,9 +217,7 @@ class Categorical:
         """
         return tuple(
             Color(*i)
-            for i in (np.array([to_rgba(color) for color in self.colors]) * 255).astype(
-                int
-            )
+            for i in (np.array([to_rgba(color) for color in self.colors]) * 255).astype(int)
         )
 
     @property
@@ -340,12 +331,10 @@ class Categorical:
             pd.Categorical:
                 The categorised data.
         """
-        categorical = pd.cut(
-            data, self.bins, labels=self.bin_names_detailed, include_lowest=True
-        )
+        categorical = pd.cut(data, self.bins, labels=self.bin_names_detailed, include_lowest=True)
         if categorical.isna().any():
             raise ValueError(
-                f"The input value/s are outside the range of the categories ({self.bins[0]} <= x <= {self.bins[-1]})."
+                f"The input value/s are outside the range of the categories ({self.bins[0]} <= x < {self.bins[-1]})."
             )
         return categorical
 
@@ -373,9 +362,7 @@ class Categorical:
         return result
 
     @bhom_analytics()
-    def timeseries_summary_monthly(
-        self, series: pd.Series, density: bool = False
-    ) -> pd.DataFrame:
+    def timeseries_summary_monthly(self, series: pd.Series, density: bool = False) -> pd.DataFrame:
         """Return a table summary of the categories.
 
         Args:
@@ -424,48 +411,44 @@ class Categorical:
 
         statements = []
         for desc, (idx, val) in list(zip(*[self.bin_names, result.items()])):
-            statements.append(
-                f'"{desc}" occurs {val} times ({result_density[idx]:0.1%}).'
-            )
+            statements.append(f'"{desc}" occurs {val} times ({result_density[idx]:0.1%}).')
         return "\n".join(statements)
 
     @bhom_analytics()
-    def create_legend(
-        self, ax: plt.Axes = None, verbose: bool = True, **kwargs
-    ) -> Legend:
-        """Create a legend for this categorical.
+    def create_legend_handles_labels(
+        self, label_type: str = "value"
+    ) -> tuple[list[patches.Patch], list[str]]:
+        """Create legend handles and labels for this categorical.
 
         Args:
-            ax (plt.Axes, optional):
-                The axes to add the legend to.
-            verbose (bool, optional):
-                Whether to use the verbose descriptions or the interval index.
-            **kwargs:
-                Additional keyword arguments to pass to the legend.
+            label_type (str, optional):
+                Whether to use the bin "value", "interval" or "name" for the legend labels.
 
         Returns:
-            Legend:
-                The legend.
+            tuple[list[patches.Patch], list[str]]:
+                (handles, labels)
 
         """
 
-        if ax is None:
-            ax = plt.gca()
+        match label_type:
+            case "value":
+                labels = self.bins
+            case "interval":
+                labels = self.descriptions
+            case "name":
+                labels = self.bin_names
+            case _:
+                raise ValueError("The label must be 'value', 'interval' or 'name'.")
 
         handles = []
-        labels = []
-        for color, description, iidx in list(
-            zip(*[self.colors, self.descriptions, self.interval_index])
-        ):
+        for color in self.colors:
             handles.append(
                 patches.Patch(
                     facecolor=color,
                     edgecolor=None,
                 )
             )
-            labels.append(description if verbose else iidx)
-        lgd = ax.legend(handles=handles, labels=labels, **kwargs)
-        return lgd
+        return handles, labels
 
     @bhom_analytics()
     def annual_monthly_histogram(
@@ -533,9 +516,7 @@ class Categorical:
         if show_labels:
             for i, c in enumerate(ax.containers):
                 label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
-                labels = [
-                    f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c
-                ]
+                labels = [f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c]
                 ax.bar_label(
                     c,
                     labels=labels,
@@ -547,9 +528,7 @@ class Categorical:
         return ax
 
     @bhom_analytics()
-    def annual_heatmap(
-        self, series: pd.Series, ax: plt.Axes = None, **kwargs
-    ) -> plt.Axes:
+    def annual_heatmap(self, series: pd.Series, ax: plt.Axes = None, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly categorical assignment for the given series.
 
         Args:
@@ -625,9 +604,7 @@ class CategoricalComfort(Categorical):
         if len(self.comfort_classes) == 0:
             raise ValueError("The comfort classes cannot be empty.")
         if len(self.comfort_classes) != len(self):
-            raise ValueError(
-                "The number of comfort classes must match the number of bins."
-            )
+            raise ValueError("The number of comfort classes must match the number of bins.")
         return super().__post_init__()
 
     @bhom_analytics()
