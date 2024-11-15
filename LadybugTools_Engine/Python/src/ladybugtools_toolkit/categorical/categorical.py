@@ -330,7 +330,9 @@ class Categorical:
             pd.Categorical:
                 The categorised data.
         """
-        categorical = pd.cut(data, self.bins, labels=self.bin_names_detailed, include_lowest=True)
+        categorical = pd.cut(
+            data, self.bins, labels=self.bin_names, include_lowest=True, right=True
+        )
         if categorical.isna().any():
             raise ValueError(
                 f"The input value/s are outside the range of the categories ({self.bins[0]} <= x < {self.bins[-1]})."
@@ -482,12 +484,15 @@ class Categorical:
         if ax is None:
             ax = plt.gca()
 
+        color_lookup = dict(zip(self.bin_names, self.colors))
+
         t = self.timeseries_summary_monthly(series, density=True)
+        print(t.columns)
         t.plot(
             ax=ax,
             kind="bar",
             stacked=True,
-            color=self.colors,
+            color=[color_lookup[i] for i in t.columns],
             width=kwargs.pop("width", 1),
             legend=False,
             **kwargs,
