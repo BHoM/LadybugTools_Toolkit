@@ -1,49 +1,44 @@
 """Methods for handling solar radiation."""
 
 # pylint: disable=E0401
-import itertools
-import textwrap
-from datetime import datetime
-import json
 import concurrent.futures
-from dataclasses import dataclass, field
+import itertools
+import json
+import pickle
+import textwrap
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
-
-# pylint: enable=E0401
 
 import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from honeybee.config import folders as hb_folders
-from ladybug.wea import EPW, AnalysisPeriod, Wea, Location
+from ladybug.sunpath import Sun, Sunpath
+from ladybug.wea import EPW, AnalysisPeriod, Location, Wea
+
+# pylint: enable=E0401
+from ladybug_radiance.skymatrix import SkyMatrix
+from ladybug_radiance.visualize.radrose import RadiationRose
+from ladybugtools_toolkit.helpers import Vector2D, angle_from_north
 from matplotlib import pyplot as plt
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
+from matplotlib.ticker import MultipleLocator
+from matplotlib.tri import Triangulation
+from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from tqdm import tqdm
 
-from .helpers import (
-    OpenMeteoVariable,
-    angle_from_north,
-    angle_to_vector,
-    cardinality,
-    circular_weighted_mean,
-    rolling_window,
-    scrape_meteostat,
-    scrape_openmeteo,
-    wind_speed_at_height,
-    remove_leap_days,
-)
-from python_toolkit.bhom.analytics import bhom_analytics
-from python_toolkit.bhom.logging import CONSOLE_LOGGER
+from .helpers import OpenMeteoVariable, angle_from_north, remove_leap_days, scrape_openmeteo
 from .ladybug_extension.analysisperiod import (
     analysis_period_to_boolean,
     analysis_period_to_datetimes,
     describe_analysis_period,
 )
-from .ladybug_extension.location import location_to_string
-from ladybug.sunpath import Sunpath, Sun
 from .ladybug_extension.datacollection import header_to_string
-
+from .ladybug_extension.location import location_to_string
 from .plot.utilities import contrasting_color, format_polar_plot
 
 
@@ -92,9 +87,7 @@ class Solar:
         # convert to lists
         self.global_horizontal_irradiance = np.array(self.global_horizontal_irradiance)
         self.direct_normal_irradiance = np.array(self.direct_normal_irradiance)
-        self.diffuse_horizontal_irradiance = np.array(
-            self.diffuse_horizontal_irradiance
-        )
+        self.diffuse_horizontal_irradiance = np.array(self.diffuse_horizontal_irradiance)
         self.datetimes = pd.DatetimeIndex(self.datetimes)
 
         # validate
@@ -143,15 +136,9 @@ class Solar:
 
         return {
             "_t": "BH.oM.LadybugTools.Solar",
-            "global_horizontal_irradiance": [
-                float(i) for i in self.global_horizontal_irradiance
-            ],
-            "direct_normal_irradiance": [
-                float(i) for i in self.direct_normal_irradiance
-            ],
-            "diffuse_horizontal_irradiance": [
-                i for i in self.diffuse_horizontal_irradiance
-            ],
+            "global_horizontal_irradiance": [float(i) for i in self.global_horizontal_irradiance],
+            "direct_normal_irradiance": [float(i) for i in self.direct_normal_irradiance],
+            "diffuse_horizontal_irradiance": [i for i in self.diffuse_horizontal_irradiance],
             "datetimes": [i.isoformat() for i in self.datetimes],
             "source": self.source,
         }
@@ -239,9 +226,7 @@ class Solar:
             raise ValueError(f"df must be of type {type(pd.DataFrame)}")
 
         if not isinstance(df.index, pd.DatetimeIndex):
-            raise ValueError(
-                f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}"
-            )
+            raise ValueError(f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}")
 
         # remove NaN values
         df.dropna(axis=0, how="any", inplace=True)
@@ -250,13 +235,9 @@ class Solar:
         df = df.loc[~df.index.duplicated()]
 
         return cls(
-            global_horizontal_irradiance=df[
-                global_horizontal_irradiance_column
-            ].tolist(),
+            global_horizontal_irradiance=df[global_horizontal_irradiance_column].tolist(),
             direct_normal_irradiance=df[direct_normal_irradiance_column].tolist(),
-            diffuse_horizontal_irradiance=df[
-                diffuse_horizontal_irradiance_columns
-            ].tolist(),
+            diffuse_horizontal_irradiance=df[diffuse_horizontal_irradiance_columns].tolist(),
             datetimes=df.index.tolist(),
             source=source,
         )
@@ -288,13 +269,9 @@ class Solar:
         df = pd.read_csv(csv_path, **kwargs)
         return cls.from_dataframe(
             df,
-            global_horizontal_irradiance=df[
-                global_horizontal_irradiance_column
-            ].tolist(),
+            global_horizontal_irradiance=df[global_horizontal_irradiance_column].tolist(),
             direct_normal_irradiance=df[direct_normal_irradiance_column].tolist(),
-            diffuse_horizontal_irradiance=df[
-                diffuse_horizontal_irradiance_columns
-            ].tolist(),
+            diffuse_horizontal_irradiance=df[diffuse_horizontal_irradiance_columns].tolist(),
             datetimes=df.index.tolist(),
             source=csv_path.name,
         )
@@ -358,13 +335,9 @@ class Solar:
 
         df.dropna(how="any", axis=0, inplace=True)
 
-        global_horizontal_irradiance = df[
-            "Global Horizontal Radiation (Wh/m2)"
-        ].tolist()
+        global_horizontal_irradiance = df["Global Horizontal Radiation (Wh/m2)"].tolist()
         direct_normal_irradiance = df["Direct Normal Radiation (Wh/m2)"].tolist()
-        diffuse_horizontal_irradiance = df[
-            "Diffuse Horizontal Radiation (Wh/m2)"
-        ].tolist()
+        diffuse_horizontal_irradiance = df["Diffuse Horizontal Radiation (Wh/m2)"].tolist()
 
         if (
             len(global_horizontal_irradiance) == 0
@@ -443,9 +416,9 @@ class Solar:
         """
 
         # create annual values
-        if max(self.datetimes) - min(self.datetimes) < pd.Timedelta(
-            days=365
-        ) - pd.Timedelta(minutes=60):
+        if max(self.datetimes) - min(self.datetimes) < pd.Timedelta(days=365) - pd.Timedelta(
+            minutes=60
+        ):
             raise ValueError(
                 "The Solar object must contain at least 1 year's worth of data to generate a Wea."
             )
@@ -458,12 +431,8 @@ class Solar:
 
         return Wea.from_annual_values(
             location=location,
-            direct_normal_irradiance=grouped[
-                "Direct Normal Irradiance (Wh/m2)"
-            ].tolist(),
-            diffuse_horizontal_irradiance=grouped[
-                "Diffuse Horizontal Irradiance (Wh/m2)"
-            ].tolist(),
+            direct_normal_irradiance=grouped["Direct Normal Irradiance (Wh/m2)"].tolist(),
+            diffuse_horizontal_irradiance=grouped["Diffuse Horizontal Irradiance (Wh/m2)"].tolist(),
         )
 
     @staticmethod
@@ -532,7 +501,10 @@ class Solar:
         idx = analysis_period_to_datetimes(cols[0].header.analysis_period)
 
         results = []
-        pbar = tqdm(total=len(midpoints), desc="Calculating irradiance", )
+        pbar = tqdm(
+            total=len(midpoints),
+            desc="Calculating irradiance",
+        )
         with concurrent.futures.ProcessPoolExecutor() as executor:
             futures = []
             for _az in midpoints:
@@ -552,17 +524,13 @@ class Solar:
         # convert results into a massive array
         headers = []
         for _az in midpoints:
-            for rad_type, unit in zip(
-                *[["Total", "Direct", "Diffuse", "Reflected"], units]
-            ):
+            for rad_type, unit in zip(*[["Total", "Direct", "Diffuse", "Reflected"], units]):
                 headers.append((altitude, _az, rad_type, unit))
 
         df = pd.DataFrame(
             np.array(results).reshape(len(midpoints) * 4, 8760),
             columns=idx,
-            index=pd.MultiIndex.from_tuples(
-                headers, names=["Altitude", "Azimuth", "Type", "Unit"]
-            ),
+            index=pd.MultiIndex.from_tuples(headers, names=["Altitude", "Azimuth", "Type", "Unit"]),
         ).T
 
         df.to_hdf(sp, key="df", complevel=9, complib="blosc:zlib")
@@ -642,17 +610,13 @@ class Solar:
         # convert results into a massive array
         headers = []
         for _alt, _az in combinations:
-            for rad_type, unit in zip(
-                *[["Total", "Direct", "Diffuse", "Reflected"], units]
-            ):
+            for rad_type, unit in zip(*[["Total", "Direct", "Diffuse", "Reflected"], units]):
                 headers.append((_alt, _az, rad_type, unit))
 
         df = pd.DataFrame(
             np.array(results).reshape(len(combinations) * 4, 8760),
             columns=idx,
-            index=pd.MultiIndex.from_tuples(
-                headers, names=["Altitude", "Azimuth", "Type", "Unit"]
-            ),
+            index=pd.MultiIndex.from_tuples(headers, names=["Altitude", "Azimuth", "Type", "Unit"]),
         ).T
 
         df.to_hdf(sp, key="df", complevel=9, complib="blosc:zlib")
@@ -905,9 +869,7 @@ class Solar:
         # labelling
         if labelling:
             for rect, idx, val, colr in list(
-                zip(
-                    *[bars, data.index.get_level_values("Azimuth"), data.values, colors]
-                )
+                zip(*[bars, data.index.get_level_values("Azimuth"), data.values, colors])
             ):
                 if len(set(data.values)) == 1:
                     ax.text(
@@ -939,7 +901,7 @@ class Solar:
                         ha="right" if idx < 180 else "left",
                         va="center",
                         fontsize="xx-small",
-                        c=contrasting_color(colr)
+                        c=contrasting_color(colr),
                         # bbox=dict(ec="none", fc="w", alpha=0.5, boxstyle="round,pad=0.3"),
                     )
 
@@ -952,3 +914,337 @@ class Solar:
         )
 
         return ax
+
+
+def radiation_rose(
+    epw_file: Path,
+    ax: plt.Axes = None,
+    rad_type: str = "total",
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
+    tilt_angle: float = 0,
+    cmap: str = "YlOrRd",
+    directions: int = 36,
+    label: bool = True,
+    bar_width: float = 1,
+    lims: tuple[float, float] = None,
+) -> plt.Axes:
+    """Create a solar radiation rose
+
+    Args:
+        epw_file (Path):
+            The EPW file representing the weather data/location to be visualised.
+        ax (plt.Axes, optional):
+            A polar axis onto which the radiation rose will be plotted.
+            Defaults to None.
+        rad_type (str, optional):
+            The type of radiation to plot.
+            Defaults to "total", with options of "total", "direct" and "diffuse".
+        analysis_period (AnalysisPeriod, optional):
+            The analysis period over which radiation shall be summarised.
+            Defaults to AnalysisPeriod().
+        tilt_angle (float, optional):
+            The tilt (from 0 at horizon, to 90 facing the sky) to asses.
+            Defaults to 0.
+        cmap (str, optional):
+            The colormap to apply.
+            Defaults to "YlOrRd".
+        directions (int, optional):
+            The number of directions to bin data into.
+            Defaults to 36.
+        label (bool, optional):
+            Set to True to include labels on teh plot.
+            Defaults to True.
+        bar_width (float, optional):
+            Set the bar width for each of the bins.
+            Defaults to 1.
+        lims (tuple[float, float], optional):
+            Set the limits of the plot.
+            Defaults to None.
+
+    Returns:
+        plt.Axes:
+            The matplotlib axes.
+    """
+    if ax is None:
+        _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+
+    if ax.name != "polar":
+        raise ValueError("ax must be a polar axis.")
+
+    # create sky conditions
+    smx = SkyMatrix.from_epw(epw_file=epw_file, high_density=True, hoys=analysis_period.hoys)
+    rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=tilt_angle)
+
+    # get properties to plot
+    angles = np.deg2rad(
+        [angle_from_north(j) for j in [Vector2D(*i[:2]) for i in rr.direction_vectors]]
+    )
+    values = getattr(rr, f"{rad_type}_values")
+    if lims is None:
+        norm = Normalize(vmin=0, vmax=max(values))
+    else:
+        norm = Normalize(vmin=lims[0], vmax=lims[1])
+    cmap = plt.get_cmap(cmap)
+    colors = [cmap(i) for i in [norm(v) for v in values]]
+
+    # generate plot
+    rects = ax.bar(
+        x=angles,
+        height=values,
+        width=((np.pi / directions) * 2) * bar_width,
+        color=colors,
+    )
+    format_polar_plot(ax)
+
+    # add colormap
+    sm = ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(
+        sm,
+        ax=ax,
+        orientation="vertical",
+        label="Cumulative irradiance (W/m$^2$)",
+        fraction=0.046,
+        pad=0.04,
+    )
+    cbar.outline.set_visible(False)
+
+    # add labels
+    if label:
+        offset_distance = max(values) / 10
+        if directions > 36:
+            max_angle = angles[np.argmax(values)]
+            max_val = max(values)
+            ax.text(
+                max_angle,
+                max_val + offset_distance,
+                f"{max_val:0.0f}W/m$^2$\n{np.rad2deg(max_angle):0.0f}°",
+                fontsize="xx-small",
+                ha="center",
+                va="center",
+                rotation=0,
+                rotation_mode="anchor",
+                color="k",
+            )
+        else:
+            for rect, color in list(zip(*[rects, colors])):
+                theta = rect.get_x() + (rect.get_width() / 2)
+                theta_deg = np.rad2deg(theta)
+                val = rect.get_height()
+
+                if theta_deg < 180:
+                    if val < max(values) / 2:
+                        ha = "left"
+                        anchor = val + offset_distance
+                    else:
+                        ha = "right"
+                        anchor = val - offset_distance
+                    ax.text(
+                        theta,
+                        anchor,
+                        f"{val:0.0f}",
+                        fontsize="xx-small",
+                        ha=ha,
+                        va="center",
+                        rotation=90 - theta_deg,
+                        rotation_mode="anchor",
+                        color=contrasting_color(color),
+                    )
+                else:
+                    if val < max(values) / 2:
+                        ha = "right"
+                        anchor = val + offset_distance
+                    else:
+                        ha = "left"
+                        anchor = val - offset_distance
+                    ax.text(
+                        theta,
+                        anchor,
+                        f"{val:0.0f}",
+                        fontsize="xx-small",
+                        ha=ha,
+                        va="center",
+                        rotation=-theta_deg - 90,
+                        rotation_mode="anchor",
+                        color=contrasting_color(color),
+                    )
+
+    ax.set_title(
+        f"{epw_file.name}\n{rad_type.title()} irradiance ({tilt_angle}° altitude)\n{describe_analysis_period(analysis_period)}"
+    )
+
+    plt.tight_layout()
+
+    return ax
+
+
+def tilt_orientation_factor(
+    epw_file: Path,
+    ax: plt.Axes = None,
+    rad_type: str = "total",
+    analysis_period: AnalysisPeriod = AnalysisPeriod(),
+    cmap: str = "YlOrRd",
+    directions: int = 36,
+    tilts: int = 9,
+    quantiles: tuple[float] = (0.05, 0.25, 0.5, 0.75, 0.95),
+    lims: tuple[float, float] = None,
+) -> plt.Axes:
+    """Create a tilt-orientation factor plot.
+
+    Args:
+        epw_file (Path):
+            The EPW file representing the weather data/location to be visualised.
+        ax (plt.Axes, optional):
+            The axes to plot on.
+            Defaults to None.
+        rad_type (str, optional):
+            The type of radiation to plot.
+            Defaults to "total", with options of "total", "direct" and "diffuse".
+        analysis_period (AnalysisPeriod, optional):
+            The analysis period over which radiation shall be summarised.
+            Defaults to AnalysisPeriod().
+        cmap (str, optional):
+            The colormap to apply.
+            Defaults to "YlOrRd".
+        directions (int, optional):
+            The number of directions to bin data into.
+            Defaults to 36.
+        tilts (int, optional):
+            The number of tilts to calculate.
+            Defaults to 9.
+        quantiles (tuple[float], optional):
+            The quantiles to plot.
+            Defaults to (0.05, 0.25, 0.5, 0.75, 0.95).
+        lims (tuple[float, float], optional):
+            The limits of the plot.
+            Defaults to None.
+
+    Returns:
+        plt.Axes:
+            The matplotlib axes.
+    """
+
+    # create dir for cached results
+    _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
+    _dir.mkdir(exist_ok=True, parents=True)
+    ndir = directions
+
+    if ax is None:
+        ax = plt.gca()
+
+    cmap = plt.get_cmap(cmap)
+
+    # create sky matrix
+    smx = SkyMatrix.from_epw(epw_file=epw_file, high_density=True, hoys=analysis_period.hoys)
+
+    # create roses per tilt angle
+    _directions = np.linspace(0, 360, directions + 1)[:-1].tolist()
+    _tilts = np.linspace(0, 90, tilts)[:-1].tolist() + [89.999]
+    rrs: list[RadiationRose] = []
+    for ta in tqdm(_tilts):
+        sp = _dir / f"{epw_file.stem}_{ndir}_{ta:0.4f}.pickle"
+        if sp.exists():
+            rr = pickle.load(open(sp, "rb"))
+        else:
+            rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=ta)
+            pickle.dump(rr, open(sp, "wb"))
+        rrs.append(rr)
+    _directions.append(360)
+
+    # create matrix of values from results
+    values = np.array([getattr(i, f"{rad_type}_values") for i in rrs])
+
+    # repeat first result at end to close the circle
+    values = values.T.tolist()
+    values.append(values[0])
+    values = np.array(values).T
+
+    # create x, y coordinates per result value
+    __directions, __tilts = np.meshgrid(_directions, _tilts)
+
+    # get location of max
+    _max = values.flatten().max()
+    if _max == 0:
+        raise ValueError(f"No solar radiation within {analysis_period}.")
+
+    _max_idx = values.flatten().argmax()
+    _max_alt = __tilts.flatten()[_max_idx]
+    _max_az = __directions.flatten()[_max_idx]
+
+    # create colormap
+    if lims is None:
+        norm = Normalize(vmin=0, vmax=_max)
+    else:
+        norm = Normalize(vmin=lims[0], vmax=lims[1])
+
+    # create triangulation
+    tri = Triangulation(x=__directions.flatten(), y=__tilts.flatten())
+
+    # create quantile lines
+    quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
+    levels = [np.quantile(a=values.flatten(), q=i) for i in quantiles]
+    quant_colors = [cmap(i) for i in [norm(v) for v in levels]]
+    quant_colors_inv = [contrasting_color(i) for i in quant_colors]
+    max_color_inv = contrasting_color(cmap(norm(_max)))
+
+    # plot data
+    tcf = ax.tricontourf(tri, values.flatten(), levels=100, cmap=cmap, norm=norm)
+    tcl = ax.tricontour(
+        tri,
+        values.flatten(),
+        levels=levels,
+        colors=quant_colors_inv,
+        linestyles=":",
+        alpha=0.5,
+    )
+
+    # add contour labels
+    def cl_fmt(x):
+        return f"{x:,.0f}W/m$^2$"
+
+    _ = ax.clabel(tcl, fontsize="small", fmt=cl_fmt)
+
+    # add colorbar
+    cb = plt.colorbar(
+        tcf,
+        ax=ax,
+        orientation="vertical",
+        drawedges=False,
+        fraction=0.05,
+        aspect=25,
+        pad=0.02,
+        label="Cumulative irradiance (W/m$^2$)",
+    )
+    cb.outline.set_visible(False)
+    for quantile_val in levels:
+        cb.ax.plot([0, 1], [quantile_val] * 2, color="k", ls="-", alpha=0.5)
+
+    # add max-location
+    ax.scatter(_max_az, _max_alt, c=max_color_inv, s=10, marker="x")
+    alt_offset = (90 / 100) * 0.5 if _max_alt <= 45 else -(90 / 100) * 0.5
+    az_offset = (360 / 100) * 0.5 if _max_az <= 180 else -(360 / 100) * 0.5
+    ha = "left" if _max_az <= 180 else "right"
+    va = "bottom" if _max_alt <= 45 else "top"
+    ax.text(
+        _max_az + az_offset,
+        _max_alt + alt_offset,
+        f"{_max:,.0f}W/m$^2$\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
+        ha=ha,
+        va=va,
+        c=max_color_inv,
+        weight="bold",
+        size="small",
+    )
+
+    ax.set_xlim(0, 360)
+    ax.set_ylim(0, 90)
+    ax.xaxis.set_major_locator(MultipleLocator(base=30))
+    ax.yaxis.set_major_locator(MultipleLocator(base=10))
+    ax.set_xlabel("Panel orientation (clockwise from North at 0°)")
+    ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
+
+    ax.set_title(
+        f"{epw_file.name}\n{rad_type.title()} irradiance (cumulative)\n{describe_analysis_period(analysis_period)}"
+    )
+
+    return ax

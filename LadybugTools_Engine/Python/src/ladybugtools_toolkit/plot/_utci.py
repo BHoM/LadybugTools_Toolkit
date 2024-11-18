@@ -15,7 +15,6 @@ from ladybug.datatype.temperature import (
     UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
 )
 from ladybug.location import Location
-from matplotlib.colors import ListedColormap
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from python_toolkit.bhom.analytics import bhom_analytics
@@ -1007,7 +1006,7 @@ def utci_shade_benefit(
             color_config["Sun up"] = "k"
             warnings.warn("Color for 'Sun up' not defined in color_config. Using black.")
 
-    title = f"UTCI shade benefit (comfortable between {min(comfort_limits)}°C and {max(comfort_limits)}°C UTCI)"
+    title = f"Comfortable between {min(comfort_limits)}°C and {max(comfort_limits)}°C UTCI"
     if "title" in kwargs:
         title = f"{kwargs.pop('title')}\n{title}"
 
@@ -1022,42 +1021,13 @@ def utci_shade_benefit(
         colors=[color_config[i] for i in vals],
     )
 
-    fig, (hmap_ax, legend_ax, bar_ax) = plt.subplots(
-        3, 1, figsize=figsize, height_ratios=(7, 0.5, 2)
+    fig = cat.annual_heatmap_histogram(
+        series=usbc,
+        location=location,
+        figsize=figsize,
+        title=title,
+        sunrise_color="w",
+        sunset_color="w",
     )
-    cat.annual_heatmap(usbc, show_colorbar=False, ax=hmap_ax)
-    legend_ax.set_axis_off()
-    handles, labels = cat.create_legend_handles_labels(label_type="name")
-    legend_ax.legend(
-        handles,
-        labels,
-        loc="center",
-        bbox_to_anchor=(0.5, 0),
-        fontsize="small",
-        ncol=5,
-        borderpad=2.5,
-    )
-    cat.annual_monthly_histogram(ax=bar_ax, series=usbc, show_labels=True)
-    hmap_ax.set_title(title)
-
-    # add sun up indicator lines
-    if location is not None:
-        ylimz = hmap_ax.get_ylim()
-        xlimz = hmap_ax.get_xlim()
-        ymin = min(hmap_ax.get_ylim())
-        sun_rise_set = sunrise_sunset(location=location)
-        sunrise = [
-            ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
-            for i in sun_rise_set.sunrise
-        ]
-        sunset = [
-            ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
-            for i in sun_rise_set.sunset
-        ]
-        xx = np.arange(min(hmap_ax.get_xlim()), max(hmap_ax.get_xlim()) + 1, 1)
-        hmap_ax.plot(xx, sunrise, zorder=9, c=color_config["Sun up"], lw=1)
-        hmap_ax.plot(xx, sunset, zorder=9, c=color_config["Sun up"], lw=1)
-        hmap_ax.set_xlim(xlimz)
-        hmap_ax.set_ylim(ylimz)
 
     return fig

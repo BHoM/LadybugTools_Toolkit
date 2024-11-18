@@ -10,8 +10,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -33,7 +31,6 @@ from .helpers import (
     angle_to_vector,
     cardinality,
     circular_weighted_mean,
-    rolling_window,
     scrape_meteostat,
     scrape_openmeteo,
     wind_speed_at_height,
@@ -46,6 +43,8 @@ from .ladybug_extension.analysisperiod import (
 )
 from .plot._timeseries import timeseries
 from .plot.utilities import contrasting_color, format_polar_plot
+
+# pylint: enable=E0401
 
 
 @dataclass(init=True, eq=True, repr=True)
@@ -60,9 +59,10 @@ class Wind:
         datetimes (Union[pd.DatetimeIndex, list[Union[datetime, np.datetime64, pd.Timestamp]]]):
             An iterable of datetime-like objects.
         height_above_ground (float, optional):
-            The height above ground (in m) where the input wind speeds and directions were collected. Defaults to 10m.
+            The height above ground (in m) where the input wind speeds and directions were
+            collected. Defaults to 10m.
         source (str, optional):
-                A source string to describe where the input data comes from. Defaults to None.
+            A source string to describe where the input data comes from. Defaults to None.
     """
 
     wind_speeds: list[float]
@@ -75,12 +75,8 @@ class Wind:
         if self.height_above_ground < 0.1:
             raise ValueError("Height above ground must be >= 0.1m.")
 
-        if not (
-            len(self.wind_speeds) == len(self.wind_directions) == len(self.datetimes)
-        ):
-            raise ValueError(
-                "wind_speeds, wind_directions and datetimes must be the same length."
-            )
+        if not len(self.wind_speeds) == len(self.wind_directions) == len(self.datetimes):
+            raise ValueError("wind_speeds, wind_directions and datetimes must be the same length.")
 
         if len(self.wind_speeds) <= 1:
             raise ValueError(
@@ -170,7 +166,7 @@ class Wind:
         if Path(path).suffix != ".json":
             raise ValueError("path must be a JSON file.")
 
-        with open(Path(path), "w") as fp:
+        with open(Path(path), "w", encoding="utf-8") as fp:
             fp.write(self.to_json())
 
         return Path(path)
@@ -178,7 +174,7 @@ class Wind:
     @classmethod
     def from_file(cls, path: Path) -> "Wind":
         """Create this object from a JSON file."""
-        with open(Path(path), "r") as fp:
+        with open(Path(path), "r", encoding="utf-8") as fp:
             return cls.from_json(fp.read())
 
     def to_csv(self, path: Path) -> Path:
@@ -217,16 +213,15 @@ class Wind:
             height_above_ground (float, optional):
                 Defaults to 10m.
             source (str, optional):
-                A source string to describe where the input data comes from. Defaults to "DataFrame"".
+                A source string to describe where the input data comes from.
+                Defaults to "DataFrame"".
         """
 
         if not isinstance(df, pd.DataFrame):
             raise ValueError(f"df must be of type {type(pd.DataFrame)}")
 
         if not isinstance(df.index, pd.DatetimeIndex):
-            raise ValueError(
-                f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}"
-            )
+            raise ValueError(f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}")
 
         # remove NaN values
         df.dropna(axis=0, how="any", inplace=True)
@@ -255,7 +250,8 @@ class Wind:
 
         Args:
             csv_path (Path):
-                The path to the CSV file containing speed and direction columns, and a datetime index.
+                The path to the CSV file containing speed and direction columns,
+                and a datetime index.
             wind_speed_column (str):
                 The name of the column where wind-speed data exists.
             wind_direction_column (str):
@@ -306,7 +302,8 @@ class Wind:
         start_date: datetime | str,
         end_date: datetime | str,
     ) -> "Wind":
-        """Create a Wind object from data obtained from the Open-Meteo database of historic weather station data.
+        """Create a Wind object from data obtained from the Open-Meteo database
+        of historic weather station data.
 
         Args:
             latitude (float):
@@ -357,7 +354,8 @@ class Wind:
         end_date: datetime | str,
         altitude: float = 10,
     ) -> "Wind":
-        """Create a Wind object from data obtained from the Meteostat database of historic weather station data.
+        """Create a Wind object from data obtained from the Meteostat database
+        of historic weather station data.
 
         Args:
             latitude (float):
@@ -392,9 +390,7 @@ class Wind:
         )
 
     @classmethod
-    def from_average(
-        cls, wind_objects: list["Wind"], weights: list[float] = None
-    ) -> "Wind":
+    def from_average(cls, wind_objects: list["Wind"], weights: list[float] = None) -> "Wind":
         """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
 
         # create default weightings if None
@@ -415,9 +411,7 @@ class Wind:
         df_wd = pd.concat([i.wd for i in wind_objects], axis=1).dropna()
 
         # construct the weighted means
-        wd_avg = np.array(
-            [circular_weighted_mean(i, weights) for _, i in df_wd.iterrows()]
-        )
+        wd_avg = np.array([circular_weighted_mean(i, weights) for _, i in df_wd.iterrows()])
         ws_avg = np.average(df_ws, axis=1, weights=weights)
         dts = df_ws.index
 
@@ -451,10 +445,12 @@ class Wind:
             datetimes (list[datetime]):
                 An iterable of datetime-like objects.
             height_above_ground (float, optional):
-                The height above ground (in m) where the input wind speeds and directions were collected.
+                The height above ground (in m) where the input wind speeds and
+                directions were collected.
                 Defaults to 10m.
             source (str, optional):
-                A source string to describe where the input data comes from. Defaults to None.
+                A source string to describe where the input data comes from.
+                Defaults to None.
 
         Returns:
             Wind:
@@ -498,9 +494,9 @@ class Wind:
     @property
     def ws(self) -> pd.Series:
         """Convenience accessor for wind speeds as a time-indexed pd.Series object."""
-        return pd.Series(
-            self.wind_speeds, index=self.index, name="Wind Speed (m/s)"
-        ).sort_index(ascending=True, inplace=False)
+        return pd.Series(self.wind_speeds, index=self.index, name="Wind Speed (m/s)").sort_index(
+            ascending=True, inplace=False
+        )
 
     @property
     def wd(self) -> pd.Series:
@@ -511,7 +507,8 @@ class Wind:
 
     @property
     def df(self) -> pd.DataFrame:
-        """Convenience accessor for wind direction and speed as a time-indexed pd.DataFrame object."""
+        """Convenience accessor for wind direction and speed as a time-indexed
+        pd.DataFrame object."""
         return pd.concat([self.wd, self.ws], axis=1)
 
     @property
@@ -552,9 +549,7 @@ class Wind:
                 Mean wind speed.
 
         """
-        return np.linalg.norm(
-            self.filter_by_speed(min_speed=1e-10 if remove_calm else 0).mean_uv
-        )
+        return np.linalg.norm(self.filter_by_speed(min_speed=1e-10 if remove_calm else 0).mean_uv)
 
     @property
     def mean_direction(self) -> tuple[float, float]:
@@ -603,11 +598,13 @@ class Wind:
         return self.ws.quantile(percentile)
 
     def resample(self, rule: pd.DateOffset | pd.Timedelta | str) -> "Wind":
-        """Resample the wind data collection to a different timestep. This can only be used to downsample.
+        """Resample the wind data collection to a different timestep.
+        This can only be used to downsample.
 
         Args:
             rule (Union[pd.DateOffset, pd.Timedelta, str]):
-                A rule for resampling. This uses the same inputs as a Pandas Series.resample() method.
+                A rule for resampling. This uses the same inputs as a Pandas
+                Series.resample() method.
 
         Returns:
             Wind:
@@ -652,7 +649,8 @@ class Wind:
             target_height (float):
                 Height to translate to (in m).
             terrain_roughness_length (float, optional):
-                Terrain roughness (how big objects are to adjust translation). Defaults to 1.
+                Terrain roughness (how big objects are to adjust translation).
+                Defaults to 1.
             log_function (bool, optional):
                 Whether to use log-function or pow-function. Defaults to True.
 
@@ -675,10 +673,9 @@ class Wind:
             source=f"{self.source} translated to {target_height}m",
         )
 
-    def apply_directional_factors(
-        self, directions: int, factors: tuple[float]
-    ) -> "Wind":
-        """Adjust wind speed values by a set of factors per direction. Factors start at north, and move clockwise.
+    def apply_directional_factors(self, directions: int, factors: tuple[float]) -> "Wind":
+        """Adjust wind speed values by a set of factors per direction.
+        Factors start at north, and move clockwise.
 
         Example:
             >>> wind = Wind.from_epw(epw_path)
@@ -687,8 +684,8 @@ class Wind:
             ...     factors=(0.5, 0.75, 1, 0.75)
             ... )
 
-        Where northern winds would be multiplied by 0.5, eastern winds by 0.75, southern winds by 1, and western winds
-        by 0.75.
+        Where northern winds would be multiplied by 0.5, eastern winds by 0.75,
+        southern winds by 1, and western winds by 0.75.
 
         Args:
             directions (int):
@@ -751,12 +748,8 @@ class Wind:
         df = df[~((df.index.month == 2) & (df.index.day == 29))]
 
         # filter available data
-        possible_datetimes = [
-            DateTime(dt.month, dt.day, dt.hour, dt.minute) for dt in df.index
-        ]
-        lookup = dict(
-            zip(AnalysisPeriod().datetimes, analysis_period_to_boolean(analysis_period))
-        )
+        possible_datetimes = [DateTime(dt.month, dt.day, dt.hour, dt.minute) for dt in df.index]
+        lookup = dict(zip(AnalysisPeriod().datetimes, analysis_period_to_boolean(analysis_period)))
         mask = [lookup[i] for i in possible_datetimes]
         df = df[mask]
 
@@ -854,13 +847,16 @@ class Wind:
     def filter_by_direction(
         self, left_angle: float = 0, right_angle: float = 360, inclusive: bool = True
     ) -> "Wind":
-        """Filter the current object by wind direction, based on the angle as observed from a location.
+        """Filter the current object by wind direction, based on the angle as
+        observed from a location.
 
         Args:
             left_angle (float):
-                The left-most angle, to the left of which wind speeds and directions will be removed.
+                The left-most angle, to the left of which wind speeds and
+                directions will be removed.
             right_angle (float):
-                The right-most angle, to the right of which wind speeds and directions will be removed.
+                The right-most angle, to the right of which wind speeds and
+                directions will be removed.
             inclusive (bool, optional):
                 Include values that are exactly the left or right angle values.
 
@@ -960,16 +956,12 @@ class Wind:
             raise ValueError("directions must be > 2.")
 
         direction_bin_edges = np.unique(
-            (
-                (np.linspace(0, 360, directions + 1) - ((360 / directions) / 2)) % 360
-            ).tolist()
+            ((np.linspace(0, 360, directions + 1) - ((360 / directions) / 2)) % 360).tolist()
             + [0, 360]
         )
         return direction_bin_edges
 
-    def process_direction_data(
-        self, directions: int
-    ) -> tuple[pd.Series, list[tuple[float]]]:
+    def process_direction_data(self, directions: int) -> tuple[pd.Series, list[tuple[float]]]:
         """Process wind direction data for this object.
 
         Args:
@@ -1027,7 +1019,8 @@ class Wind:
                 The bins to sort this data into.
                 Defaults to None, which if other_data is None, uses Beaufort scale bins.
             name (str, optional): A name to be given to the other data.
-                Defaults to None which uses "other", or the name of the input Series if input is a Series.
+                Defaults to None which uses "other", or the name of the input Series
+                if input is a Series.
 
         Returns:
             tuple[pd.Series, list[tuple[float]]]:
@@ -1041,9 +1034,7 @@ class Wind:
                 other_bins = BEAUFORT_CATEGORIES.bins
 
         if len(other_data) != len(self):
-            raise ValueError(
-                f"other_data must be the same length as this {type(self)} object."
-            )
+            raise ValueError(f"other_data must be the same length as this {type(self)} object.")
 
         if isinstance(other_data, list | tuple | np.ndarray):
             other_data = pd.Series(
@@ -1080,9 +1071,7 @@ class Wind:
         # bin the other data
         categories = pd.cut(other_data, bins=other_bins, include_lowest=False)
 
-        bin_tuples = [
-            tuple([i.left, i.right]) for i in categories.cat.categories.tolist()
-        ]
+        bin_tuples = [tuple([i.left, i.right]) for i in categories.cat.categories.tolist()]
 
         mapper = dict(
             zip(
@@ -1109,7 +1098,8 @@ class Wind:
         other_data: list[float] = None,
         other_bins: list[float] = None,
     ) -> pd.DataFrame:
-        """Create categories for wind direction and "other" data. By defualt "other" data is the wind speed associate with the wind direction in this object.
+        """Create categories for wind direction and "other" data. By default "other"
+        data is the wind speed associate with the wind direction in this object.
 
         Args:
             directions (int, optional):
@@ -1121,12 +1111,11 @@ class Wind:
 
         Returns:
             pd.DataFrame:
-                A DataFrame containing the wind direction categories and the "other" data categories.
+                A DataFrame containing the wind direction categories and the "other"
+                data categories.
         """
 
-        other_categories, _ = self.process_other_data(
-            other_data=other_data, other_bins=other_bins
-        )
+        other_categories, _ = self.process_other_data(other_data=other_data, other_bins=other_bins)
         direction_categories, _ = self.process_direction_data(directions=directions)
 
         return pd.concat([direction_categories, other_categories], axis=1)
@@ -1145,17 +1134,22 @@ class Wind:
             directions (int, optional):
                 The number of directions to use. Defaults to 36.
             other_data (list[float], optional):
-                A list of other data to bin by direction. If None, then wind speed will be used.
+                A list of other data to bin by direction.
+                If None, then wind speed will be used.
             other_bins (list[float]):
-                The other data bins to use for the histogram. These bins are right inclusive.
+                The other data bins to use for the histogram.
+                These bins are right inclusive.
             density (bool, optional):
-                If True, then return the probability density function. Defaults to False.
+                If True, then return the probability density function.
+                Defaults to False.
             remove_calm (bool, optional):
-                If True, then remove calm wind speeds from the histogram. Defaults to False.
+                If True, then remove calm wind speeds from the histogram.
+                Defaults to False.
 
         Returns:
             pd.DataFrame:
-                A numpy array, containing the number or probability for each bin, for each direction bin.
+                A numpy array, containing the number or probability for each bin,
+                for each direction bin.
         """
 
         other_categories, other_bin_tuples = self.process_other_data(
@@ -1212,7 +1206,8 @@ class Wind:
             n (int, optional):
                 The number of prevailing directions to return. Default is 1.
             as_cardinal (bool, optional):
-                If True, then return the prevailing directions as cardinal directions. Defaults to False.
+                If True, then return the prevailing directions as cardinal directions.
+                Defaults to False.
 
         Returns:
             list[float] | list[str]:
@@ -1220,7 +1215,7 @@ class Wind:
         """
 
         binned = self.bin_data(directions=directions)
-        
+
         if ignore_calm:
             binned = binned.loc[self.ws > threshold]
 
@@ -1243,15 +1238,18 @@ class Wind:
         percentiles: tuple[float, float] = (0.5, 0.95),
         other_data: list[float] = None,
     ) -> pd.DataFrame:
-        """Calculate the probabilities of wind speeds at the given percentiles, for the direction bins specified.
+        """Calculate the probabilities of wind speeds at the given percentiles,
+        for the direction bins specified.
 
         Args:
             directions (int, optional):
                 The number of wind directions to bin values into.
             percentiles (tuple[float, float], optional):
-                A tuple of floats between 0-1 describing percentiles. Defaults to (0.5, 0.95).
+                A tuple of floats between 0-1 describing percentiles.
+                Defaults to (0.5, 0.95).
             other_data (list[float], optional):
-                A list of other data to bin by direction. If None, then wind speed will be used.
+                A list of other data to bin by direction.
+                If None, then wind speed will be used.
 
         Returns:
             pd.DataFrame:
@@ -1282,7 +1280,8 @@ class Wind:
         other_data: list[float] = None,
         other_bins: list[float] = None,
     ) -> pd.DataFrame:
-        """Create a table with the probability density function for each "other_data" and direction.
+        """Create a table with the probability density function for each
+        "other_data" and direction.
 
         Args:
             directions (int, optional):
@@ -1329,7 +1328,8 @@ class Wind:
         other_data: list[float] = None,
         other_bins: list[float] = None,
     ) -> pd.DataFrame:
-        """Create a table with the cumulative probability density function for each "other_data" and direction.
+        """Create a table with the cumulative probability density function for each
+        "other_data" and direction.
 
         Args:
             directions (int, optional):
@@ -1382,9 +1382,7 @@ class Wind:
                 A table containing exceedance values.
         """
 
-        other_categories, other_bin_tuples = self.process_other_data(
-            other_data=other_data
-        )
+        other_categories, _ = self.process_other_data(other_data=other_data)
         direction_categories, direction_bin_tuples = self.process_direction_data(
             directions=directions
         )
@@ -1414,39 +1412,54 @@ class Wind:
 
         return df.fillna(0)
 
-    def wind_matrix(self) -> pd.DataFrame:
-        """Calculate average wind speed and direction for each month and hour of day in a pandas DataFrame.
+    def wind_matrix(self, other_data: pd.Series = None) -> pd.DataFrame:
+        """Calculate average wind direction and speed (or aligned other data)
+        for each month and hour of in the Wind object.
+
+        Args:
+            other_data (pd.Series, optional):
+                The other data to calculate the matrix for.
+
         Returns:
             pd.DataFrame:
-                A DataFrame containing average wind speed and direction for each month and hour of day.
+                A DataFrame containing average other_data and direction for each
+                month and hour of day.
         """
+
+        if other_data is None:
+            other_data = self.ws
+
+        if not isinstance(other_data, pd.Series):
+            raise ValueError("other_data must be a time indexed pandas Series.")
+
+        if len(other_data) != len(self.wd):
+            raise ValueError(f"other_data must be the same length as this {type(self)} object.")
+
+        if not all(other_data.index == self.wd.index):
+            raise ValueError("other_data must have the same index as this Wind object.")
 
         wind_directions = (
             (
                 (
-                    self.wd.groupby(
-                        [self.wd.index.month, self.wd.index.hour], axis=0
-                    ).apply(circular_weighted_mean)
+                    self.wd.groupby([self.wd.index.month, self.wd.index.hour], axis=0).apply(
+                        circular_weighted_mean
+                    )
                 )
                 % 360
             )
             .unstack()
             .T
         )
-        wind_directions.columns = [
-            calendar.month_abbr[i] for i in wind_directions.columns
-        ]
-        wind_speeds = (
-            self.ws.groupby([self.ws.index.month, self.ws.index.hour], axis=0)
+        wind_directions.columns = [calendar.month_abbr[i] for i in wind_directions.columns]
+        _other_data = (
+            other_data.groupby([other_data.index.month, other_data.index.hour], axis=0)
             .mean()
             .unstack()
             .T
         )
-        wind_speeds.columns = [calendar.month_abbr[i] for i in wind_speeds.columns]
+        _other_data.columns = [calendar.month_abbr[i] for i in _other_data.columns]
 
-        df = pd.concat(
-            [wind_directions, wind_speeds], axis=1, keys=["direction", "speed"]
-        )
+        df = pd.concat([wind_directions, _other_data], axis=1, keys=["direction", "other"])
         df.index.name = "hour"
 
         return df
@@ -1507,39 +1520,46 @@ class Wind:
                 f"Peak wind speeds were observed at {self.ws.idxmax()}, reaching {self.ws.max():.2f}m/s from {self.wd.loc[self.ws.idxmax()]}°.",
             )
 
-        return_strings.append(
-            f"{self.calm():.2%} of the time, wind speeds are calm (≤ 1e-10m/s)."
-        )
+        return_strings.append(f"{self.calm():.2%} of the time, wind speeds are calm (≤ 1e-10m/s).")
         return return_strings
         # pylint: enable=line-too-long
-    
-    def prevailing_wind_speeds(self, n: int=1, directions: int=36, ignore_calm: bool=True, threshold: float=1e-10) -> tuple[list[pd.Series], list[tuple[float, float]]]:
+
+    def prevailing_wind_speeds(
+        self, n: int = 1, directions: int = 36, ignore_calm: bool = True, threshold: float = 1e-10
+    ) -> tuple[list[pd.Series], list[tuple[float, float]]]:
         """Gets the wind speeds for the prevailing directions
-        
+
         Args:
             n (int):
                 Number of prevailing directions to return. Defaults to 1
-            
             directions (int):
-                Number of direction bins to use when calculating the prevailing directions. Defaults to 36
-            
+                Number of direction bins to use when calculating the prevailing directions.
+                Defaults to 36
             ignore_calm (bool):
-                Whether to ignore calm hours when getting the prevailing directions. Defaults to True
-                
+                Whether to ignore calm hours when getting the prevailing directions.
+                Defaults to True
             threshold (float):
                 The threshold for calm hours. Defaults to 1e-10
-        
+
         Returns:
             (list[pandas.Series], list[(float, float)]):
-                Tuple containing a list of time-indexed series containing wind speed data for each prevailing direction, from most to least prevailing,
+                Tuple containing a list of time-indexed series containing wind
+                speed data for each prevailing direction, from most to least prevailing,
                 and a list of wind directions corresponding to the serieses.
         """
-        prevailing_directions = self.prevailing(n=n, directions=directions, ignore_calm=ignore_calm, threshold=threshold)
 
-        prevailing_wind_speeds = [self.ws.loc[self.bin_data(directions=directions)["Wind Direction (degrees)"] == direction] for direction in prevailing_directions]
+        prevailing_directions = self.prevailing(
+            n=n, directions=directions, ignore_calm=ignore_calm, threshold=threshold
+        )
+
+        prevailing_wind_speeds = [
+            self.ws.loc[
+                self.bin_data(directions=directions)["Wind Direction (degrees)"] == direction
+            ]
+            for direction in prevailing_directions
+        ]
 
         return (prevailing_wind_speeds, prevailing_directions)
-
 
     def weibull_pdf(self) -> tuple[float]:
         """Calculate the parameters of an exponentiated Weibull continuous random variable.
@@ -1622,6 +1642,7 @@ class Wind:
         ax: plt.Axes = None,
         show_values: bool = False,
         show_arrows: bool = True,
+        other_data: pd.Series = None,
         **kwargs,
     ) -> plt.Axes:
         """Create a plot showing the annual wind speed and direction bins
@@ -1634,8 +1655,13 @@ class Wind:
                 Whether to show values in the cells. Defaults to False.
             show_arrows (bool, optional):
                 Whether to show the directional arrows on each patch.
+            other_data: (pd.Series, optional):
+                The other data to align with the wind direction and speed.
+                Defaults to None which uses wind speed.
             **kwargs:
                 Additional keyword arguments to pass to the pcolor function.
+                title (str, optional):
+                    A title for the plot. Defaults to None.
 
         Returns:
             plt.Axes:
@@ -1646,43 +1672,52 @@ class Wind:
         if ax is None:
             ax = plt.gca()
 
+        if other_data is None:
+            other_data = self.ws
+
+        title = self.source
+        title += f'\n{kwargs.pop("title", None)}'
         ax.set_title(textwrap.fill(f"{self.source}", 75))
 
-        df = self.wind_matrix()
-        _wind_speeds = df["speed"]
+        df = self.wind_matrix(other_data=other_data)
+        _other_data = df["other"]
         _wind_directions = df["direction"]
 
         if any(
             [
-                _wind_speeds.shape != (24, 12),
+                _other_data.shape != (24, 12),
                 _wind_directions.shape != (24, 12),
-                _wind_directions.shape != _wind_speeds.shape,
-                not np.array_equal(_wind_directions.index, _wind_speeds.index),
-                not np.array_equal(_wind_directions.columns, _wind_speeds.columns),
+                _wind_directions.shape != _other_data.shape,
+                not _wind_directions.index.equals(_other_data.index),
+                not _wind_directions.columns.equals(_other_data.columns),
+                # not np.array_equal(_wind_directions.index, _other_data.index),
+                # not np.array_equal(_wind_directions.columns, _other_data.columns),
             ]
         ):
             raise ValueError(
-                "The wind_speeds and wind_directions must cover all months of the "
+                "The other_data and wind_directions must cover all months of the "
                 "year, and all hours of the day, and align with each other."
             )
 
         cmap = kwargs.pop("cmap", "YlGnBu")
-        vmin = kwargs.pop("vmin", _wind_speeds.values.min())
-        vmax = kwargs.pop("vmax", _wind_speeds.values.max())
-        cbar_title = kwargs.pop("cbar_title", "m/s")
+        vmin = kwargs.pop("vmin", _other_data.values.min())
+        vmax = kwargs.pop("vmax", _other_data.values.max())
+        cbar_title = kwargs.pop("cbar_title", None)
+        unit = kwargs.pop("unit", None)
         norm = kwargs.pop("norm", Normalize(vmin=vmin, vmax=vmax, clip=True))
         mapper = kwargs.pop("mapper", ScalarMappable(norm=norm, cmap=cmap))
 
-        pc = ax.pcolor(_wind_speeds, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+        pc = ax.pcolor(_other_data, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
         _x = -np.sin(np.deg2rad(_wind_directions.values))
         _y = -np.cos(np.deg2rad(_wind_directions.values))
         direction_matrix = angle_from_north([_x, _y])
-        if (show_arrows):
+        if show_arrows:
+            arrow_scale = 0.8
             ax.quiver(
                 np.arange(1, 13, 1) - 0.5,
                 np.arange(0, 24, 1) + 0.5,
-                _x * _wind_speeds.values / 2,
-                _y * _wind_speeds.values / 2,
+                (_x * _other_data.values / 2) * arrow_scale,
+                (_y * _other_data.values / 2) * arrow_scale,
                 pivot="mid",
                 fc="white",
                 ec="black",
@@ -1693,7 +1728,7 @@ class Wind:
         if show_values:
             for _xx, col in enumerate(_wind_directions.values.T):
                 for _yy, _ in enumerate(col.T):
-                    local_value = _wind_speeds.values[_yy, _xx]
+                    local_value = _other_data.values[_yy, _xx]
                     cell_color = mapper.to_rgba(local_value)
                     text_color = contrasting_color(cell_color)
                     # direction text
@@ -1706,16 +1741,17 @@ class Wind:
                         va="bottom",
                         fontsize="xx-small",
                     )
-                    # speed text
+                    # other_data text
                     ax.text(
                         _xx + 1,
                         _yy + 1,
-                        f"{_wind_speeds.values[_yy][_xx]:0.1f}m/s",
+                        f"{_other_data.values[_yy][_xx]:0.1f}{unit}",
                         color=text_color,
                         ha="right",
                         va="top",
                         fontsize="xx-small",
                     )
+
         ax.set_xticks(np.arange(1, 13, 1) - 0.5)
         ax.set_xticklabels([calendar.month_abbr[i] for i in np.arange(1, 13, 1)])
         ax.set_yticks(np.arange(0, 24, 1) + 0.5)
@@ -1817,13 +1853,15 @@ class Wind:
             directions (int, optional):
                 The number of directions to use. Defaults to 36.
             other_data (list[float], optional):
-                A list of other data to bin by direction. If None, then wind speed will be used.
+                A list of other data to bin by direction.
+                If None, then wind speed will be used.
             other_bins (list[float]):
-                The other data bins to use for the histogram. These bins are right inclusive. If other data is None,
-                then the default Beaufort bins will be used, otherwise 11 evenly spaced bins will be used.
+                The other data bins to use for the histogram. These bins are right inclusive.
+                If other data is None, then the default Beaufort bins will be used,
+                otherwise 11 evenly spaced bins will be used.
             colors: (str | tuple[float] | Colormap, optional):
-                A list of colors to use for the other bins. May also be a colormap. Defaults to the colors used for
-                Beaufort wind comfort categories.
+                A list of colors to use for the other bins. May also be a colormap.
+                Defaults to the colors used for Beaufort wind comfort categories.
             title (str, optional):
                 title to display above the plot. Defaults to the source of this wind object.
             legend (bool, optional):
@@ -1871,12 +1909,11 @@ class Wind:
                     f"colors must be a list of length {len(binned.columns)}, or a colormap."
                 )
 
-        # HACK start - a fix introduced here to ensure that bar ends are curved when using a polar plot.
+        # HACK to ensure that bar ends are curved when using a polar plot.
         fig = plt.figure()
         rect = [0.1, 0.1, 0.8, 0.8]
         hist_ax = plt.Axes(fig, rect)
         hist_ax.bar(np.array([1]), np.array([1]))
-        # HACK end
 
         if title is None or title == "":
             ax.set_title(textwrap.fill(f"{self.source}", 75))
