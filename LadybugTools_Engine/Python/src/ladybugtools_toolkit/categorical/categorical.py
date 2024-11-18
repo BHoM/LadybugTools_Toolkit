@@ -13,12 +13,13 @@ import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from ladybug.legend import Color
+from ladybug.location import Location
 from matplotlib import patches
 from matplotlib import pyplot as plt
 from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap, to_hex, to_rgba
 from python_toolkit.bhom.analytics import bhom_analytics
 
-from ..helpers import rolling_window, validate_timeseries
+from ..helpers import rolling_window, sunrise_sunset, validate_timeseries
 from ..plot._heatmap import heatmap
 from ..plot.utilities import contrasting_color
 
@@ -330,7 +331,9 @@ class Categorical:
             pd.Categorical:
                 The categorised data.
         """
-        categorical = pd.cut(data, self.bins, labels=self.bin_names_detailed, include_lowest=True)
+        categorical = pd.cut(
+            data, self.bins, labels=self.bin_names, include_lowest=True, right=True
+        )
         if categorical.isna().any():
             raise ValueError(
                 f"The input value/s are outside the range of the categories ({self.bins[0]} <= x < {self.bins[-1]})."
@@ -355,7 +358,7 @@ class Categorical:
             pd.Series:
                 The number of counts within each categorical bin.
         """
-        result = self.categorise(data).value_counts()[list(self.bin_names_detailed)]
+        result = self.categorise(data).value_counts()[list(self.bin_names)]
         if density:
             return result / len(data)
         return result
@@ -482,12 +485,15 @@ class Categorical:
         if ax is None:
             ax = plt.gca()
 
+        color_lookup = dict(zip(self.bin_names, self.colors))
+
         t = self.timeseries_summary_monthly(series, density=True)
+        # print(t.columns)
         t.plot(
             ax=ax,
             kind="bar",
             stacked=True,
-            color=self.colors,
+            color=[color_lookup[i] for i in t.columns],
             width=kwargs.pop("width", 1),
             legend=False,
             **kwargs,
@@ -558,6 +564,99 @@ class Categorical:
         )
 
         return ax
+
+    @bhom_analytics()
+    def annual_heatmap_histogram(
+        self,
+        series: pd.Series,
+        location: Location = None,
+        figsize: tuple[float] = (15, 5),
+        show_legend: bool = True,
+        **kwargs,
+    ) -> plt.Figure:
+        """Plot the shade benefit category.
+
+        Args:
+            series (pd.Series):
+                A pandas Series object with a datetime index.
+            location (Location, optional):
+                A location object used to plot sun up/down times in the heatmap axis.
+                Defaults to None.
+            figsize (tuple[float], optional):
+                The size of the figure. Defaults to (15, 5).
+            show_legend (bool, optional):
+                Whether to show the legend. Defaults to True.
+            **kwargs:
+                Additional keyword arguments to pass to the plotting function.
+                title (str, optional):
+                    The title of the plot. Defaults to None.
+                sunrise_color (str, optional):
+                    The color of the sunrise line. Defaults to "k" ... if location is also provided.
+                sunset_color (str, optional):
+                    The color of the sunset line. Defaults to "k" ... if location is also provided.
+                ncol (int, optional):
+                    The number of columns in the legend. Defaults to 5.
+                show_labels (bool, optional):
+                    Whether to show the labels on the bars. Defaults to True.
+
+        Returns:
+            plt.Figure:
+                A figure object.
+        """
+
+        sunrise_color = kwargs.pop("sunrise_color", "k")
+        sunset_color = kwargs.pop("sunset_color", "k")
+        ncol = kwargs.pop("ncol", 5)
+        show_labels = kwargs.pop("show_labels", True)
+        title = kwargs.pop("title", None)
+
+        ti = self.name + ("" if title is None else f"\n{title}")
+
+        if show_legend:
+            fig, (hmap_ax, legend_ax, bar_ax) = plt.subplots(
+                3, 1, figsize=figsize, height_ratios=(7, 0.5, 2)
+            )
+            legend_ax.set_axis_off()
+            handles, labels = self.create_legend_handles_labels(label_type="name")
+            legend_ax.legend(
+                handles,
+                labels,
+                loc="center",
+                bbox_to_anchor=(0.5, 0),
+                fontsize="small",
+                ncol=ncol,
+                borderpad=2.5,
+            )
+        else:
+            fig, (hmap_ax, bar_ax) = plt.subplots(2, 1, figsize=figsize, height_ratios=(7, 2))
+
+        self.annual_heatmap(series, show_colorbar=False, ax=hmap_ax)
+
+        self.annual_monthly_histogram(ax=bar_ax, series=series, show_labels=show_labels)
+
+        hmap_ax.set_title(ti)
+
+        # add sun up indicator lines
+        if location is not None:
+            ylimz = hmap_ax.get_ylim()
+            xlimz = hmap_ax.get_xlim()
+            ymin = min(hmap_ax.get_ylim())
+            sun_rise_set = sunrise_sunset(location=location)
+            sunrise = [
+                ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
+                for i in sun_rise_set.sunrise
+            ]
+            sunset = [
+                ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
+                for i in sun_rise_set.sunset
+            ]
+            xx = np.arange(min(hmap_ax.get_xlim()), max(hmap_ax.get_xlim()) + 1, 1)
+            hmap_ax.plot(xx, sunrise, zorder=9, c=sunrise_color, lw=1)
+            hmap_ax.plot(xx, sunset, zorder=9, c=sunset_color, lw=1)
+            hmap_ax.set_xlim(xlimz)
+            hmap_ax.set_ylim(ylimz)
+
+        return fig
 
 
 class ComfortClass(Enum):
