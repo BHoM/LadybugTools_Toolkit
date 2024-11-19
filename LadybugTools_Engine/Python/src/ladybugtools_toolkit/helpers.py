@@ -2209,8 +2209,10 @@ def hairdryer_effect(
         conditions are is dependent on the user to understand the limitations of
         this method.
 
-        Additionally, this method may also be used to estimate the bathtub effect
-        by inverting the test against the rh_threshold.
+        Additionally, this method may also be used to estimate the bathtub effect,
+        which is when air-speed is low with high temperature and humidity,
+        feeling like being sat next to a warm bath. This is achieved by inverting
+        the test against the rh_threshold and ws_threshold.
 
     Args:
         dbt (float):
