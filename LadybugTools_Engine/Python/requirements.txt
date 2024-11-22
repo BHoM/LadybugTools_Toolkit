@@ -1,4 +1,6 @@
 case-converter
+dask
+dask[distributed]
 meteostat
 openpyxl
 pyarrow
