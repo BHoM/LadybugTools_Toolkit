@@ -12,6 +12,7 @@ from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
+from matplotlib.colors import LinearSegmentedColormap
 
 from ..bhom.logging import CONSOLE_LOGGER
 from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
@@ -325,6 +326,84 @@ class ExternalComfort:
             ax=ax,
             title=self.description(),
         )
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def walkability_time_limits(self):
+
+            for utci_val in self.universal_thermal_climate_index.values:
+                utci_str = str(int(round(float(utci_val),0)))
+                csv_file = r"C:\github\LBT TK 2\LadybugTools_Toolkit\LadybugTools_Engine\Python\src\data\walkability.csv"
+                df = pd.read_csv(csv_file)
+            return df.loc[df['UTCI temperature'] == utci_str, 'Time within no thermal stress and moderate thermal stress bands (mins)'].values[0]
+
+
+    
+    def plot_walkability_heatmap(
+            self,
+            ax: plt.Axes = None,
+        ) -> plt.Axes:
+            
+            """Create a walkability heatmap showing 
+            Args:
+                ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
+                utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
+                    UTCI_DEFAULT_CATEGORIES.
+            Returns:
+                plt.Axes: A matplotlib Axes object.
+            """
+            if ax is None:
+                ax = plt.gca()
+
+            cmap_name = "Walkability colours"
+            cmap_colours = ["red","yellow","white"]
+            colourmap = LinearSegmentedColormap.from_list(cmap_name, cmap_colours, N=100)
+
+            return heatmap(
+                series = collection_to_series(self.universal_thermal_climate_index),
+                ax=ax,
+                cmap = colourmap,
+                vmin=0,
+                vmax=15,
+                title=self.description()
+            )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def plot_utci_heatmap_histogram(
         self, utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES, **kwargs
