@@ -1,8 +1,13 @@
 case-converter
+dash
 dask
 dask[distributed]
+geopandas[all]
+ipywidgets
+jupyterlab
 meteostat
 openpyxl
+plotly
 pyarrow
 pyet
 pylint

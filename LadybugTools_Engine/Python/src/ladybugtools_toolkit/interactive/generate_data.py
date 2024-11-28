@@ -4,14 +4,12 @@ indices, and an interactive web-page to play with the data."""
 import inspect
 import itertools
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable
 
 import numpy as np
 import pandas as pd
-from honeybee.config import folders as hb_folders
-from ladybug.epw import EPW, Header
+from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
-from ladybugtools_toolkit.helpers import chunks
 from tqdm import tqdm
 
 from . import DATA_DIR, PERSON_HEIGHT, TERRAIN_ROUGHNESS_LENGTH
