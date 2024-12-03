@@ -38,30 +38,23 @@ from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from .ladybug_extension.dt import lb_datetime_from_datetime
 
+from python_toolkit.helpers import (
+    validate_timeseries,
+    sanitise_string,
+    convert_keys_to_snake_case,
+    DecayMethod,
+    proximity_decay,
+    timedelta_tostring,
+    decay_rate_smoother,
+    cardinality,
+    angle_from_cardinal,
+    angle_from_north,
+    angle_to_vector,
+    remove_leap_days,
+    safe_filename
+)
+
 # pylint: enable=E0401
-
-
-def sanitise_string(string: str) -> str:
-    """Sanitise a string so that only path-safe characters remain."""
-
-    keep_characters = r"[^.A-Za-z0-9_-]"
-
-    return re.sub(keep_characters, "_", string).replace("__", "_").rstrip()
-
-
-def convert_keys_to_snake_case(d: dict):
-    """Given a dictionary, convert all keys to snake_case."""
-    keys_to_skip = ["_t"]
-    if isinstance(d, dict):
-        return {
-            snakecase(k) if k not in keys_to_skip else k: convert_keys_to_snake_case(v)
-            for k, v in d.items()
-        }
-    if isinstance(d, list):
-        return [convert_keys_to_snake_case(x) for x in d]
-
-    return d
-
 
 @bhom_analytics()
 def default_hour_analysis_periods() -> list[AnalysisPeriod]:
@@ -354,7 +347,6 @@ def scrape_weather(
 
     return df
 
-
 @bhom_analytics()
 def rolling_window(array: list[Any], window: int):
     """Throwaway function here to roll a window along a list.
@@ -382,298 +374,6 @@ def rolling_window(array: list[Any], window: int):
     strides = a.strides + (a.strides[-1],)  # pylint: disable=unsubscriptable-object
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
-
-class DecayMethod(Enum):
-    """An enumeration of decay methods."""
-
-    LINEAR = auto()
-    PARABOLIC = auto()
-    SIGMOID = auto()
-
-
-@bhom_analytics()
-def proximity_decay(
-    value: float,
-    distance_to_value: float,
-    max_distance: float,
-    decay_method: DecayMethod = DecayMethod.LINEAR,
-) -> float:
-    """Calculate the "decayed" value based on proximity (up to a maximum distance).
-
-    Args:
-        value (float):
-            The value to be distributed.
-        distance_to_value (float):
-            A distance at which to return the magnitude.
-        max_distance (float):
-            The maximum distance to which magnitude is to be distributed. Beyond this, the input
-            value is 0.
-        decay_method (DecayMethod, optional):
-            A type of distribution (the shape of the distribution profile). Defaults to "DecayMethod.LINEAR".
-
-    Returns:
-        float:
-            The value at the given distance.
-    """
-
-    distance_to_value = np.interp(distance_to_value, [0, max_distance], [0, 1])
-
-    if decay_method == DecayMethod.LINEAR:
-        return (1 - distance_to_value) * value
-    if decay_method == DecayMethod.PARABOLIC:
-        return (-(distance_to_value**2) + 1) * value
-    if decay_method == DecayMethod.SIGMOID:
-        return (1 - (0.5 * (np.sin(distance_to_value * np.pi - np.pi / 2) + 1))) * value
-
-    raise ValueError(f"Unknown curve type: {decay_method}")
-
-
-@bhom_analytics()
-def timedelta_tostring(time_delta: timedelta) -> str:
-    """timedelta objects don't have a nice string representation, so this function converts them.
-
-    Args:
-        time_delta (datetime.timedelta):
-            The timedelta object to convert.
-    Returns:
-        str:
-            A string representation of the timedelta object.
-    """
-    s = time_delta.seconds
-    hours, remainder = divmod(s, 3600)
-    minutes, _ = divmod(remainder, 60)
-    return f"{hours:02d}:{minutes:02d}"
-
-
-@bhom_analytics()
-def decay_rate_smoother(
-    series: pd.Series,
-    difference_threshold: float = -10,
-    transition_window: int = 4,
-    ewm_span: float = 1.25,
-) -> pd.Series:
-    """Helper function that adds a decay rate to a time-series for values dropping significantly
-        below the previous values.
-
-    Args:
-        series (pd.Series):
-            The series to modify
-        difference_threshold (float, optional):
-            The difference between current/previous values which class as a "transition".
-            Defaults to -10.
-        transition_window (int, optional):
-            The number of values after the "transition" within which an exponentially weighted mean
-             should be applied. Defaults to 4.
-        ewm_span (float, optional):
-            The rate of decay. Defaults to 1.25.
-
-    Returns:
-        pd.Series:
-            A modified series
-    """
-
-    # Find periods of major transition (where values vary significantly)
-    transition_index = series.diff() < difference_threshold
-
-    # Get boolean index for all periods within window from the transition indices
-    ewm_mask = []
-    n = 0
-    for i in transition_index:
-        if i:
-            n = 0
-        if n < transition_window:
-            ewm_mask.append(True)
-        else:
-            ewm_mask.append(False)
-        n += 1
-
-    # Run an EWM to get the smoothed values following changes to values
-    ewm_smoothed: pd.Series = series.ewm(span=ewm_span).mean()
-
-    # Choose from ewm or original values based on ewm mask
-    new_series = ewm_smoothed.where(ewm_mask, series)
-
-    return new_series
-
-
-@bhom_analytics()
-def cardinality(direction_angle: float, directions: int = 16):
-    """Returns the cardinal orientation of a given angle, where that angle is related to north at
-        0 degrees.
-    Args:
-        direction_angle (float):
-            The angle to north in degrees (+Ve is interpreted as clockwise from north at 0.0
-            degrees).
-        directions (int):
-            The number of cardinal directions into which angles shall be binned (This value should
-            be one of 4, 8, 16 or 32, and is centred about "north").
-    Returns:
-        int:
-            The cardinal direction the angle represents.
-    """
-
-    if direction_angle > 360 or direction_angle < 0:
-        raise ValueError(
-            "The angle entered is beyond the normally expected range for an orientation in degrees."
-        )
-
-    cardinal_directions = {
-        4: ["N", "E", "S", "W"],
-        8: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
-        16: [
-            "N",
-            "NNE",
-            "NE",
-            "ENE",
-            "E",
-            "ESE",
-            "SE",
-            "SSE",
-            "S",
-            "SSW",
-            "SW",
-            "WSW",
-            "W",
-            "WNW",
-            "NW",
-            "NNW",
-        ],
-        32: [
-            "N",
-            "NbE",
-            "NNE",
-            "NEbN",
-            "NE",
-            "NEbE",
-            "ENE",
-            "EbN",
-            "E",
-            "EbS",
-            "ESE",
-            "SEbE",
-            "SE",
-            "SEbS",
-            "SSE",
-            "SbE",
-            "S",
-            "SbW",
-            "SSW",
-            "SWbS",
-            "SW",
-            "SWbW",
-            "WSW",
-            "WbS",
-            "W",
-            "WbN",
-            "WNW",
-            "NWbW",
-            "NW",
-            "NWbN",
-            "NNW",
-            "NbW",
-        ],
-    }
-
-    if directions not in cardinal_directions:
-        raise ValueError(
-            f'The input "directions" must be one of {list(cardinal_directions.keys())}.'
-        )
-
-    val = int((direction_angle / (360 / directions)) + 0.5)
-
-    arr = cardinal_directions[directions]
-
-    return arr[(val % directions)]
-
-
-@bhom_analytics()
-def angle_from_cardinal(cardinal_direction: str) -> float:
-    """
-    For a given cardinal direction, return the corresponding angle in degrees.
-
-    Args:
-        cardinal_direction (str):
-            The cardinal direction.
-    Returns:
-        float:
-            The angle associated with the cardinal direction.
-    """
-    cardinal_directions = [
-        "N",
-        "NbE",
-        "NNE",
-        "NEbN",
-        "NE",
-        "NEbE",
-        "ENE",
-        "EbN",
-        "E",
-        "EbS",
-        "ESE",
-        "SEbE",
-        "SE",
-        "SEbS",
-        "SSE",
-        "SbE",
-        "S",
-        "SbW",
-        "SSW",
-        "SWbS",
-        "SW",
-        "SWbW",
-        "WSW",
-        "WbS",
-        "W",
-        "WbN",
-        "WNW",
-        "NWbW",
-        "NW",
-        "NWbN",
-        "NNW",
-        "NbW",
-    ]
-    if cardinal_direction not in cardinal_directions:
-        raise ValueError(f"{cardinal_direction} is not a known cardinal_direction.")
-    angles = np.arange(0, 360, 11.25)
-
-    lookup = dict(zip(cardinal_directions, angles))
-
-    return lookup[cardinal_direction]
-
-
-def angle_from_north(vector: list[float]) -> float:
-    """For an X, Y vector, determine the clockwise angle to north at [0, 1].
-
-    Args:
-        vector (list[float]):
-            A vector of length 2.
-
-    Returns:
-        float:
-            The angle between vector and north in degrees clockwise from [0, 1].
-    """
-    north = [0, 1]
-    angle1 = np.arctan2(*north[::-1])
-    angle2 = np.arctan2(*vector[::-1])
-    return np.rad2deg((angle1 - angle2) % (2 * np.pi))
-
-
-def angle_to_vector(clockwise_angle_from_north: float) -> list[float]:
-    """Return the X, Y vector from of an angle from north at 0-degrees.
-
-    Args:
-        clockwise_angle_from_north (float):
-            The angle from north in degrees clockwise from [0, 360], though
-            any number can be input here for angles greater than a full circle.
-
-    Returns:
-        list[float]:
-            A vector of length 2.
-    """
-
-    clockwise_angle_from_north = np.radians(clockwise_angle_from_north)
-
-    return np.sin(clockwise_angle_from_north), np.cos(clockwise_angle_from_north)
 
 
 def epw_wind_vectors(epw: EPW, normalise: bool = False) -> list[Vector2D]:
@@ -1615,50 +1315,6 @@ def dry_bulb_temperature_at_height(
     ]
     return dbt_collection
 
-
-@bhom_analytics()
-def validate_timeseries(
-    obj: Any,
-    is_annual: bool = False,
-    is_hourly: bool = False,
-    is_contiguous: bool = False,
-) -> None:
-    """Check if the input object is a pandas Series, and has a datetime index.
-
-    Args:
-        obj (Any):
-            The object to check.
-        is_annual (bool, optional):
-            If True, check that the series is annual. Defaults to False.
-        is_hourly (bool, optional):
-            If True, check that the series is hourly. Defaults to False.
-        is_contiguous (bool, optional):
-            If True, check that the series is contiguous. Defaults to False.
-
-    Raises:
-        TypeError: If the object is not a pandas Series.
-        TypeError: If the series does not have a datetime index.
-        ValueError: If the series is not annual.
-        ValueError: If the series is not hourly.
-        ValueError: If the series is not contiguous.
-    """
-    if not isinstance(obj, pd.Series):
-        raise TypeError("series must be a pandas Series")
-    if not isinstance(obj.index, pd.DatetimeIndex):
-        raise TypeError("series must have a datetime index")
-    if is_annual:
-        if (obj.index.day_of_year.nunique() != 365) or (
-            obj.index.day_of_year.nunique() != 366
-        ):
-            raise ValueError("series is not annual")
-    if is_hourly:
-        if obj.index.hour.nunique() != 24:
-            raise ValueError("series is not hourly")
-    if is_contiguous:
-        if not obj.index.is_monotonic_increasing:
-            raise ValueError("series is not contiguous")
-
-
 def evaporative_cooling_effect(
     dry_bulb_temperature: float,
     relative_humidity: float,
@@ -1756,20 +1412,6 @@ def evaporative_cooling_effect_collection(
     ] = f"{evaporative_cooling_effectiveness:0.0%}"
 
     return [dbt, rh]
-
-
-@bhom_analytics()
-def remove_leap_days(pd_object: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
-    """A removal of all timesteps within a time-indexed pandas
-    object where the day is the 29th of February."""
-
-    if not isinstance(pd_object.index, pd.DatetimeIndex):
-        raise ValueError("The object provided should be datetime-indexed.")
-
-    mask = (pd_object.index.month == 2) & (pd_object.index.day == 29)
-
-    return pd_object[~mask]
-
 
 @bhom_analytics()
 def month_hour_binned_series(
@@ -1964,11 +1606,3 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
             "astronomical twilight end",
         ]
     ]
-
-
-@bhom_analytics()
-def safe_filename(filename: str) -> str:
-    """Remove all non-alphanumeric characters from a filename."""
-    return "".join(
-        [c for c in filename if c.isalpha() or c.isdigit() or c == " "]
-    ).strip()
