@@ -6,11 +6,12 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug_comfort.collection.utci import UTCI
 from ladybugtools_toolkit.ladybug_extension.datacollection import \
     collection_to_series
+from python_toolkit.plot.diurnal import diurnal, stacked_diurnals
+from python_toolkit.plot.heatmap import heatmap
+from ladybugtools_toolkit.plot._sunpath import sunpath
 from ladybugtools_toolkit.plot._degree_days import (cooling_degree_days,
                                                     degree_days,
                                                     heating_degree_days)
-from ladybugtools_toolkit.plot._diurnal import diurnal, stacked_diurnals
-from ladybugtools_toolkit.plot._heatmap import heatmap
 from ladybugtools_toolkit.plot._psychrometric import psychrometric
 from ladybugtools_toolkit.plot._radiant_cooling_potential import \
     radiant_cooling_potential
@@ -28,7 +29,8 @@ from ladybugtools_toolkit.plot.spatial_heatmap import spatial_heatmap
 from ladybugtools_toolkit.plot.utilities import (contrasting_color,
                                                  create_triangulation,
                                                  lighten_color,
-                                                 relative_luminance)
+                                                 relative_luminance,
+                                                 colormap_sequential)
 from matplotlib.figure import Figure
 
 from . import EPW_OBJ

@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from ladybug.epw import EPW
 
+from python_toolkit.plot.heatmap import heatmap
+
 from ..ladybug_extension.datacollection import collection_to_series
-from ._heatmap import heatmap
 
 
 def evaporative_cooling_potential(

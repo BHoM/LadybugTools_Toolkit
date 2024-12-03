@@ -13,8 +13,11 @@ from ladybug.sunpath import Sunpath
 
 from ..categorical.categories import Categorical
 from ..helpers import sunrise_sunset
+
 from ..ladybug_extension.datacollection import collection_to_series
-from ._heatmap import heatmap
+
+from python_toolkit.plot.heatmap import heatmap
+
 
 
 def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:

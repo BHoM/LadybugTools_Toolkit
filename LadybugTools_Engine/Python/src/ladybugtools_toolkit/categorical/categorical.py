@@ -20,8 +20,9 @@ from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap, to_hex, to
 from python_toolkit.bhom.analytics import bhom_analytics
 
 from ..helpers import rolling_window, sunrise_sunset, validate_timeseries
-from ..plot._heatmap import heatmap
+
 from ..plot.utilities import contrasting_color
+from python_toolkit.plot.heatmap import heatmap
 
 
 @dataclass(init=True, repr=True)

@@ -24,7 +24,7 @@ from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical, Categ
 from ..external_comfort.utci import shade_benefit_category
 from ..helpers import sunrise_sunset
 from ..ladybug_extension.datacollection import collection_to_series
-from ._heatmap import heatmap
+from python_toolkit.plot.heatmap import heatmap
 from .colormaps import UTCI_DIFFERENCE_COLORMAP
 from .utilities import contrasting_color, lighten_color
 

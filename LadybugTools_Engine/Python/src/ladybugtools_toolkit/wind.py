@@ -41,7 +41,7 @@ from .ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
     describe_analysis_period,
 )
-from .plot._timeseries import timeseries
+from python_toolkit.plot.timeseries import timeseries
 from .plot.utilities import contrasting_color, format_polar_plot
 
 # pylint: enable=E0401
