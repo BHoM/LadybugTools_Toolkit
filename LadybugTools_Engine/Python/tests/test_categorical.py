@@ -3,11 +3,16 @@ import numpy as np
 import pandas as pd
 import pytest
 from ladybugtools_toolkit.categorical.categories import (
-    BEAUFORT_CATEGORIES, HEAT_INDEX_CATEGORIES, HUMIDEX_CATEGORIES,
-    UTCI_DEFAULT_CATEGORIES, WBGT_CATEGORIES, Categorical, CategoricalComfort,
-    ComfortClass)
-from ladybugtools_toolkit.ladybug_extension.datacollection import \
-    collection_to_series
+    BEAUFORT_CATEGORIES,
+    HEAT_INDEX_CATEGORIES,
+    HUMIDEX_CATEGORIES,
+    UTCI_DEFAULT_CATEGORIES,
+    WBGT_CATEGORIES,
+    Categorical,
+    CategoricalComfort,
+    ComfortClass,
+)
+from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 
@@ -58,9 +63,7 @@ def test_categorical_computed_properties():
     with pytest.raises(ValueError):
         TEST_CATEGORICAL_UNBOUNDED.get_color(value=3)
     assert TEST_CATEGORICAL_BOUNDED.get_color(value=3) == "#ff0000ff"
-    assert isinstance(
-        TEST_CATEGORICAL_BOUNDED.interval_from_bin_name("(0, 100]"), pd.Interval
-    )
+    assert isinstance(TEST_CATEGORICAL_BOUNDED.interval_from_bin_name("(0, 100]"), pd.Interval)
 
     assert isinstance(TEST_CATEGORICAL_BOUNDED.categorise([3]), pd.Categorical)
     assert (
@@ -147,9 +150,7 @@ def test_timeseries_summary_monthly():
 
 def test_annual_heatmap():
     """_"""
-    assert isinstance(
-        TEST_CATEGORICAL_BOUNDED.annual_heatmap(TEST_TIMESERIES_DATA), plt.Axes
-    )
+    assert isinstance(TEST_CATEGORICAL_BOUNDED.annual_heatmap(TEST_TIMESERIES_DATA), plt.Axes)
     plt.close("all")
 
 
@@ -162,25 +163,25 @@ def test_annual_monthly_histogram():
     plt.close("all")
 
     assert isinstance(
-        TEST_CATEGORICAL_BOUNDED.annual_monthly_histogram(
-            TEST_TIMESERIES_DATA, show_labels=True
-        ),
+        TEST_CATEGORICAL_BOUNDED.annual_monthly_histogram(TEST_TIMESERIES_DATA, show_labels=True),
         plt.Axes,
     )
     plt.close("all")
 
     assert isinstance(
-        TEST_CATEGORICAL_BOUNDED.annual_monthly_histogram(
-            TEST_TIMESERIES_DATA, show_legend=True
-        ),
+        TEST_CATEGORICAL_BOUNDED.annual_monthly_histogram(TEST_TIMESERIES_DATA, show_legend=True),
         plt.Axes,
     )
     plt.close("all")
 
-def test_heatmap_histogram() -> None:
+
+def test_annual_heatmap_histogram() -> None:
     """_"""
-    assert isinstance(UTCI_DEFAULT_CATEGORIES.heatmap_histogram(TEST_TIMESERIES_DATA), Figure)
+    assert isinstance(
+        UTCI_DEFAULT_CATEGORIES.annual_heatmap_histogram(TEST_TIMESERIES_DATA), Figure
+    )
     plt.close("all")
+
 
 def test_predefined_categories():
     """_"""

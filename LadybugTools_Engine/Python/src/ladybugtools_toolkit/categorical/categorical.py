@@ -8,22 +8,23 @@ from enum import Enum, auto
 from typing import Any
 
 import matplotlib.ticker as mticker
+
 # pylint: enable=E0401
 import numpy as np
 import pandas as pd
 from ladybug.legend import Color
+from ladybug.location import Location
 from matplotlib import patches
 from matplotlib import pyplot as plt
-from matplotlib.colors import (BoundaryNorm, Colormap, ListedColormap, to_hex,
-                               to_rgba)
+from matplotlib.colors import BoundaryNorm, Colormap, ListedColormap, to_hex, to_rgba
 from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from python_toolkit.bhom.analytics import bhom_analytics
-
-from ..helpers import rolling_window, validate_timeseries
-from ..plot.utilities import contrasting_color
 from python_toolkit.plot.heatmap import heatmap
+
+from ..helpers import rolling_window, sunrise_sunset, validate_timeseries
+from ..plot.utilities import contrasting_color
 
 
 @dataclass(init=True, repr=True)
@@ -196,7 +197,9 @@ class Categorical:
         else:
             pass
         if len(boundaries) == 1:
-            raise ValueError("The current Categorical object has unbounded edges and cannot be used to create a BoundaryNorm.")
+            raise ValueError(
+                "The current Categorical object has unbounded edges and cannot be used to create a BoundaryNorm."
+            )
         return BoundaryNorm(boundaries=boundaries, ncolors=self.cmap.N)
 
     @property
@@ -217,7 +220,10 @@ class Categorical:
             tuple[Color]:
                 The ladybug color objects.
         """
-        return tuple(Color(*i) for i in (np.array([to_rgba(color) for color in self.colors]) * 255).astype(int))
+        return tuple(
+            Color(*i)
+            for i in (np.array([to_rgba(color) for color in self.colors]) * 255).astype(int)
+        )
 
     @property
     def _bin_name_interval(self) -> dict[str, pd.Interval]:
@@ -309,7 +315,9 @@ class Categorical:
                 The color as a hex string.
         """
         if value <= self.bins[0] or value > self.bins[-1]:
-            raise ValueError(f"The input value/s are outside the range of the categories ({min(self).left} < x <= {max(self).right}).")
+            raise ValueError(
+                f"The input value/s are outside the range of the categories ({min(self).left} < x <= {max(self).right})."
+            )
         color = self.cmap(self.norm(value))
         if not as_array:
             return to_hex(color, keep_alpha=True)
@@ -327,9 +335,13 @@ class Categorical:
             pd.Categorical:
                 The categorised data.
         """
-        categorical = pd.cut(data, self.bins, labels=self.bin_names_detailed, include_lowest=True)
+        categorical = pd.cut(
+            data, self.bins, labels=self.bin_names, include_lowest=True, right=True
+        )
         if categorical.isna().any():
-            raise ValueError(f"The input value/s are outside the range of the categories ({self.bins[0]} <= x <= {self.bins[-1]}).")
+            raise ValueError(
+                f"The input value/s are outside the range of the categories ({self.bins[0]} <= x < {self.bins[-1]})."
+            )
         return categorical
 
     @bhom_analytics()
@@ -350,7 +362,7 @@ class Categorical:
             pd.Series:
                 The number of counts within each categorical bin.
         """
-        result = self.categorise(data).value_counts()[list(self.bin_names_detailed)]
+        result = self.categorise(data).value_counts()[list(self.bin_names)]
         if density:
             return result / len(data)
         return result
@@ -376,7 +388,9 @@ class Categorical:
         if not isinstance(series.index, pd.DatetimeIndex):
             raise ValueError("The series must have a time series.")
 
-        counts = (self.categorise(series).groupby(series.index.month).value_counts().unstack()).sort_index(axis=0)
+        counts = (
+            self.categorise(series).groupby(series.index.month).value_counts().unstack()
+        ).sort_index(axis=0)
         counts.columns.name = None
         counts.index.name = "Month"
         if density:
@@ -407,38 +421,56 @@ class Categorical:
         return "\n".join(statements)
 
     @bhom_analytics()
-    def create_legend(self, ax: plt.Axes = None, verbose: bool = True, **kwargs) -> Legend:
-        """Create a legend for this categorical.
+    def create_legend_handles_labels(
+        self, label_type: str = "value"
+    ) -> tuple[list[patches.Patch], list[str]]:
+        """Create legend handles and labels for this categorical.
 
         Args:
-            ax (plt.Axes, optional):
-                The axes to add the legend to.
-            verbose (bool, optional):
-                Whether to use the verbose descriptions or the interval index.
-            **kwargs:
-                Additional keyword arguments to pass to the legend.
+            label_type (str, optional):
+                Whether to use the bin "value", "interval" or "name" for the legend labels.
 
         Returns:
-            Legend:
-                The legend.
+            tuple[list[patches.Patch], list[str]]:
+                (handles, labels)
 
         """
 
-        if ax is None:
-            ax = plt.gca()
+        match label_type:
+            case "value":
+                labels = self.bins
+            case "interval":
+                labels = self.descriptions
+            case "name":
+                labels = self.bin_names
+            case _:
+                raise ValueError("The label must be 'value', 'interval' or 'name'.")
 
         handles = []
-        labels = []
-        for color, description, iidx in list(zip(*[self.colors, self.descriptions, self.interval_index])):
+        for color in self.colors:
             handles.append(
                 patches.Patch(
                     facecolor=color,
                     edgecolor=None,
                 )
             )
-            labels.append(description if verbose else iidx)
-        lgd = ax.legend(handles=handles, labels=labels, **kwargs)
-        return lgd
+        return handles, labels
+
+    def create_legend(self, label_type: str = "value", **kwargs) -> Legend:
+        """Create a legend for this categorical.
+
+        Args:
+            label_type (str, optional):
+                Whether to use the bin "value", "interval" or "name" for the legend labels.
+            **kwargs:
+                Additional keyword arguments to pass to plt.legend.
+
+        Returns:
+            plt.Legend:
+                The legend object.
+        """
+        handles, labels = self.create_legend_handles_labels(label_type=label_type)
+        return plt.legend(handles, labels, **kwargs)
 
     @bhom_analytics()
     def annual_monthly_histogram(
@@ -474,12 +506,15 @@ class Categorical:
         if ax is None:
             ax = plt.gca()
 
+        color_lookup = dict(zip(self.bin_names, self.colors))
+
         t = self.timeseries_summary_monthly(series, density=True)
+
         t.plot(
             ax=ax,
             kind="bar",
             stacked=True,
-            color=self.colors,
+            color=[color_lookup[i] for i in t.columns],
             width=kwargs.pop("width", 1),
             legend=False,
             **kwargs,
@@ -551,6 +586,99 @@ class Categorical:
 
         return ax
 
+    @bhom_analytics()
+    def annual_heatmap_histogram(
+        self,
+        series: pd.Series,
+        location: Location = None,
+        figsize: tuple[float] = (15, 5),
+        show_legend: bool = True,
+        **kwargs,
+    ) -> plt.Figure:
+        """Plot the shade benefit category.
+
+        Args:
+            series (pd.Series):
+                A pandas Series object with a datetime index.
+            location (Location, optional):
+                A location object used to plot sun up/down times in the heatmap axis.
+                Defaults to None.
+            figsize (tuple[float], optional):
+                The size of the figure. Defaults to (15, 5).
+            show_legend (bool, optional):
+                Whether to show the legend. Defaults to True.
+            **kwargs:
+                Additional keyword arguments to pass to the plotting function.
+                title (str, optional):
+                    The title of the plot. Defaults to None.
+                sunrise_color (str, optional):
+                    The color of the sunrise line. Defaults to "k" ... if location is also provided.
+                sunset_color (str, optional):
+                    The color of the sunset line. Defaults to "k" ... if location is also provided.
+                ncol (int, optional):
+                    The number of columns in the legend. Defaults to 5.
+                show_labels (bool, optional):
+                    Whether to show the labels on the bars. Defaults to True.
+
+        Returns:
+            plt.Figure:
+                A figure object.
+        """
+
+        sunrise_color = kwargs.pop("sunrise_color", "k")
+        sunset_color = kwargs.pop("sunset_color", "k")
+        ncol = kwargs.pop("ncol", 5)
+        show_labels = kwargs.pop("show_labels", True)
+        title = kwargs.pop("title", None)
+
+        ti = self.name + ("" if title is None else f"\n{title}")
+
+        if show_legend:
+            fig, (hmap_ax, legend_ax, bar_ax) = plt.subplots(
+                3, 1, figsize=figsize, height_ratios=(7, 0.5, 2)
+            )
+            legend_ax.set_axis_off()
+            handles, labels = self.create_legend_handles_labels(label_type="name")
+            legend_ax.legend(
+                handles,
+                labels,
+                loc="center",
+                bbox_to_anchor=(0.5, 0),
+                fontsize="small",
+                ncol=ncol,
+                borderpad=2.5,
+            )
+        else:
+            fig, (hmap_ax, bar_ax) = plt.subplots(2, 1, figsize=figsize, height_ratios=(7, 2))
+
+        self.annual_heatmap(series, show_colorbar=False, ax=hmap_ax)
+
+        self.annual_monthly_histogram(ax=bar_ax, series=series, show_labels=show_labels)
+
+        hmap_ax.set_title(ti)
+
+        # add sun up indicator lines
+        if location is not None:
+            ylimz = hmap_ax.get_ylim()
+            xlimz = hmap_ax.get_xlim()
+            ymin = min(hmap_ax.get_ylim())
+            sun_rise_set = sunrise_sunset(location=location)
+            sunrise = [
+                ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
+                for i in sun_rise_set.sunrise
+            ]
+            sunset = [
+                ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
+                for i in sun_rise_set.sunset
+            ]
+            xx = np.arange(min(hmap_ax.get_xlim()), max(hmap_ax.get_xlim()) + 1, 1)
+            hmap_ax.plot(xx, sunrise, zorder=9, c=sunrise_color, lw=1)
+            hmap_ax.plot(xx, sunset, zorder=9, c=sunset_color, lw=1)
+            hmap_ax.set_xlim(xlimz)
+            hmap_ax.set_ylim(ylimz)
+
+        return fig
+
 
 class ComfortClass(Enum):
     """Thermal comfort categories."""
@@ -561,7 +689,7 @@ class ComfortClass(Enum):
 
     @property
     def color(self) -> str:
-        """Get the associatd color."""
+        """Get the associated color."""
         d = {
             ComfortClass.TOO_COLD: "#3C65AF",
             ComfortClass.COMFORTABLE: "#2EB349",
@@ -612,7 +740,9 @@ class CategoricalComfort(Categorical):
                 continue
             d[comfort_class] = bin_left
         if len(d.keys()) != len(ComfortClass):
-            raise ValueError(f"The comfort classes must include all comfort classes {[i.name for i in ComfortClass]}.")
+            raise ValueError(
+                f"The comfort classes must include all comfort classes {[i.name for i in ComfortClass]}."
+            )
 
         return CategoricalComfort(
             bins=list(d.values()) + [self.bins[-1]],
@@ -622,7 +752,9 @@ class CategoricalComfort(Categorical):
             comfort_classes=list(ComfortClass),
         )
 
-    def heatmap_histogram(self, series: pd.Series, show_colorbar: bool = True, figsize: tuple[float] = (15, 5)) -> Figure:
+    def heatmap_histogram(
+        self, series: pd.Series, show_colorbar: bool = True, figsize: tuple[float] = (15, 5)
+    ) -> Figure:
         """Create a heatmap histogram. This combines the heatmap and histogram.
 
         Args:
@@ -639,7 +771,9 @@ class CategoricalComfort(Categorical):
         """
 
         fig = plt.figure(figsize=figsize, constrained_layout=True)
-        spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0)
+        spec = fig.add_gridspec(
+            ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0
+        )
         heatmap_ax = fig.add_subplot(spec[0, 0])
         histogram_ax = fig.add_subplot(spec[1, 0])
 

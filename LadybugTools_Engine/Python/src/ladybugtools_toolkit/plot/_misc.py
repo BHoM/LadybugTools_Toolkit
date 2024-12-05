@@ -1,21 +1,20 @@
 """Miscellaneous plots that don't really fit anywhere else."""
+
 # pylint: disable=line-too-long
 from calendar import month_abbr  # pylint: disable=E0401
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-
 import numpy as np
 import pandas as pd
-
 from ladybug.epw import EPW, Location
 from ladybug.sunpath import Sunpath
-
-from ..ladybug_extension.datacollection import collection_to_series
-from ..helpers import sunrise_sunset
 from python_toolkit.plot.heatmap import heatmap
+
 from ..categorical.categories import Categorical
+from ..helpers import sunrise_sunset
+from ..ladybug_extension.datacollection import collection_to_series
 
 
 def cloud_cover_categories(epw: EPW, ax: plt.Axes = None) -> plt.Axes:
@@ -104,9 +103,7 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
     nautical_twilight = (
         [
             i.seconds / (60 * 60)
-            for i in (
-                srss_df["nautical twilight end"] - srss_df["nautical twilight start"]
-            )
+            for i in (srss_df["nautical twilight end"] - srss_df["nautical twilight start"])
         ]
         - daylight
         - civil_twilight
@@ -114,18 +111,15 @@ def hours_sunlight(location: Location, ax: plt.Axes = None) -> plt.Axes:
     astronomical_twilight = (
         [
             i.seconds / (60 * 60)
-            for i in (
-                srss_df["astronomical twilight end"]
-                - srss_df["astronomical twilight start"]
-            )
+            for i in (srss_df["astronomical twilight end"] - srss_df["astronomical twilight start"])
         ]
         - daylight
         - civil_twilight
         - nautical_twilight
     ).rename("astronomical twilight")
-    night = (
-        24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)
-    ).rename("night")
+    night = (24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)).rename(
+        "night"
+    )
 
     temp = pd.concat(
         [daylight, civil_twilight, nautical_twilight, astronomical_twilight, night],
@@ -232,9 +226,7 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
     nautical_twilight = (
         [
             i.seconds / (60 * 60)
-            for i in (
-                srss_df["nautical twilight end"] - srss_df["nautical twilight start"]
-            )
+            for i in (srss_df["nautical twilight end"] - srss_df["nautical twilight start"])
         ]
         - daylight
         - civil_twilight
@@ -242,18 +234,15 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
     astronomical_twilight = (
         [
             i.seconds / (60 * 60)
-            for i in (
-                srss_df["astronomical twilight end"]
-                - srss_df["astronomical twilight start"]
-            )
+            for i in (srss_df["astronomical twilight end"] - srss_df["astronomical twilight start"])
         ]
         - daylight
         - civil_twilight
         - nautical_twilight
     ).rename("astronomical twilight")
-    night = (
-        24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)
-    ).rename("night")
+    night = (24 - (daylight + civil_twilight + nautical_twilight + astronomical_twilight)).rename(
+        "night"
+    )
 
     temp = pd.concat(
         [daylight, civil_twilight, nautical_twilight, astronomical_twilight, night],
@@ -289,9 +278,7 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None) -> plt.Axes:
         fc="#B9AC86",
         label="Civil twilight",
     )
-    ax.fill_between(
-        hours.index, hours["sunrise"], hours["sunset"], fc="#FCE49D", label="Day"
-    )
+    ax.fill_between(hours.index, hours["sunrise"], hours["sunset"], fc="#FCE49D", label="Day")
     ax.fill_between(
         hours.index,
         hours["sunset"],
