@@ -25,7 +25,7 @@ from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.futil import nukedir
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal, SolarCalParameter
 
-from python_toolkit.bhom.logging import CONSOLE_LOGGER
+from ..bhom.logging import CONSOLE_LOGGER
 from ..bhom.to_bhom import (
     hourlycontinuouscollection_to_bhom,
     material_to_bhom,
