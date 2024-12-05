@@ -1,28 +1,25 @@
 """Methods for manipulating Ladybug data collections."""
 
 # pylint: disable=E0401
+import calendar
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datacollection import (
-    BaseCollection,
-    HourlyContinuousCollection,
-    MonthlyCollection,
-)
+from ladybug.datacollection import BaseCollection, HourlyContinuousCollection, MonthlyCollection
 from ladybug.datatype.angle import Angle
 from ladybug.dt import DateTime
 from python_toolkit.bhom.analytics import bhom_analytics
+
 from ..helpers import circular_weighted_mean
-from .analysisperiod import analysis_period_to_datetimes
-from .analysisperiod import describe_analysis_period
+from .analysisperiod import analysis_period_to_datetimes, describe_analysis_period
 from .header import header_from_string, header_to_string
+
+# pylint: enable=E0401
 
 
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
@@ -61,18 +58,14 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
         BaseCollection: A Ladybug BaseCollection-like object.
     """
 
-    header = header_from_string(
-        series.name, is_leap_year=series.index.is_leap_year.any()
-    )
+    header = header_from_string(series.name, is_leap_year=series.index.is_leap_year.any())
     header.metadata["source"] = "From custom pd.Series"
 
     freq = pd.infer_freq(series.index)
     if freq in ["H", "h"]:
         if series.index.is_leap_year.any():
             if len(series.index) != 8784:
-                raise ValueError(
-                    "The number of values in the series must be 8784 for leap years."
-                )
+                raise ValueError("The number of values in the series must be 8784 for leap years.")
         else:
             if len(series.index) != 8760:
                 raise ValueError("The series must have 8760 rows for non-leap years.")
@@ -96,9 +89,7 @@ def collection_from_series(series: pd.Series) -> BaseCollection:
 
 
 @bhom_analytics()
-def percentile(
-    collections: list[BaseCollection], nth_percentile: float
-) -> BaseCollection:
+def percentile(collections: list[BaseCollection], nth_percentile: float) -> BaseCollection:
     """Create an nth percentile of the given data collections.
 
     Args:
@@ -117,17 +108,13 @@ def percentile(
 
     series_name = df.columns[0]
     if len(np.unique(df.columns)) != 1:
-        raise ValueError(
-            'You cannot get the "nth percentile" across non-alike datatypes.'
-        )
+        raise ValueError('You cannot get the "nth percentile" across non-alike datatypes.')
 
     # check if any collections input are angular, in which case, fail
     if ("angle" in series_name.lower()) or ("direction" in series_name.lower()):
         raise ValueError("This method cannot be applied to Angular datatypes.")
 
-    return collection_from_series(
-        df.quantile(nth_percentile, axis=1).rename(series_name)
-    )
+    return collection_from_series(df.quantile(nth_percentile, axis=1).rename(series_name))
 
 
 @bhom_analytics()
@@ -183,6 +170,140 @@ def maximum(collections: list[BaseCollection]) -> BaseCollection:
 
 
 @bhom_analytics()
+def summarise_series(
+    series: pd.Series, _n_common: int = 3, name: str = None, unit: str = None
+) -> list[str]:
+    """Describe a series."""
+    # pylint: disable=C0301
+    descriptions = []
+
+    if name is None:
+        name = series.name
+
+    if unit is None:
+        unit = ""
+
+    # get the time period and frequency of the series
+    freq = pd.infer_freq(series.index)
+    if freq in ["H", "h"]:
+        frequency = "hourly"
+    else:
+        raise NotImplementedError("Only hourly data is currently supported.")
+
+    period_ts = f"{series.index.min()} to {series.index.max()}"
+    period = period_ts
+
+    # summarise data title and time period
+    descriptions.append(
+        f"{name}, for {period_ts} (representing {len(series)} values, each in units of {unit})."
+    )
+
+    # minimum value (number of times it occurs, and when)
+    _min = series.min()
+    _n_min = len(series[series == _min])
+    _min_mean_time = series.groupby(series.index.time).mean().idxmin()
+    descriptions.append(
+        f"Minimum {name} is {_min:,.01f}{unit}, occurring {'once' if _n_min == 1 else f'{_n_min} times'}{f' and typically at {_min_mean_time:%H:%M}' if _n_min > 1 else f' on {series.idxmin():%b %d at %H:%M}'}."
+    )
+
+    # 25%ile
+    _lower = series.quantile(0.25)
+    _n_less = len(series[series < _lower])
+    descriptions.append(
+        f"25%-ile {name} is {_lower:,.01f}{unit}, with {_n_less} occurrences below that value."
+    )
+
+    # mean value
+    _mean = series.mean()
+    _std = series.std()
+    descriptions.append(
+        f"Mean {name} is {_mean:,.01f}{unit}, with a standard deviation of {_std:0.1f}{unit}."
+    )
+
+    # median value
+    _median = series.median()
+    _n_median = len(series[series == _median])
+    descriptions.append(f"Median {name} is {_median:,.01f}{unit}.")
+
+    # 75%ile
+    _upper = series.quantile(0.75)
+    _n_more = len(series[series > _upper])
+    descriptions.append(
+        f"75%-ile {name} is {_upper:,.01f}{unit}, with {_n_more} occurrences above that value."
+    )
+
+    # maximum value (number of times it occurs, and when)
+    _max = series.max()
+    _n_max = len(series[series == _max])
+    _max_mean_time = series.groupby(series.index.time).mean().idxmax()
+    descriptions.append(
+        f"Maximum {name} is {_max:,.01f}{unit}, "
+        f"occurring {_n_max} time"
+        f"{f's and typically at {_max_mean_time:%H:%M}' if _n_max > 1 else f' on {series.idxmax():%b %d at %H:%M}'}."
+    )
+
+    # common values
+    _most_common, _most_common_counts = series.value_counts().reset_index().values.T
+    _most_common_str = (
+        " and ".join(
+            f"{unit}, ".join([f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(", ", 1)
+        )
+        + unit
+    )
+    _most_common_counts_str = (
+        " and ".join(
+            ", ".join(_most_common_counts[:_n_common].astype(int).astype(str)).rsplit(", ", 1)
+        )
+        + " times respectively"
+    )
+    descriptions.append(
+        f"The {_n_common} most common {name} values are {_most_common_str}, occurring {_most_common_counts_str}."
+    )
+
+    # agg months
+    _month_mean = series.resample("MS").mean()
+    descriptions.append(
+        f"The month with the lowest mean {name} is "
+        f"{_month_mean.idxmin():%B}, with a value of {_month_mean.min():,.1f}{unit}."
+    )
+    descriptions.append(
+        f"The month with the highest mean {name} is "
+        f"{_month_mean.idxmax():%B}, with a value of {_month_mean.max():,.1f}{unit}."
+    )
+
+    # agg times
+    _time_mean = series.groupby(series.index.time).mean()
+    descriptions.append(
+        f"The time when the highest mean {name} typically occurs "
+        f"is {_time_mean.idxmax():%H:%M}, with a value of {_time_mean.max():,.1f}{unit}."
+    )
+    descriptions.append(
+        f"The time when the lowest mean {name} typically occurs "
+        f"is {_time_mean.idxmin():%H:%M}, with a mean value of {_time_mean.min():,.1f}{unit}."
+    )
+
+    # diurnal
+    _month_grp = series.resample("MS")
+    _month_grp_min = _month_grp.min()
+    _month_grp_max = _month_grp.max()
+    _month_range_month_avg = _month_grp_max - _month_grp_min
+    descriptions.append(
+        f"The month when the largest range of {name} typically occurs "
+        f"is {_month_range_month_avg.idxmax():%B}, with values between "
+        f"{_month_grp_min.loc[_month_range_month_avg.idxmax()]:,.1f}{unit} "
+        f"and {_month_grp_max.loc[_month_range_month_avg.idxmax()]:,.1f}{unit}."
+    )
+    descriptions.append(
+        f"The month when the smallest range of {name} typically occurs "
+        f"is {_month_range_month_avg.idxmin():%B}, with values between "
+        f"{_month_grp_min.loc[_month_range_month_avg.idxmin()]:,.1f}{unit} "
+        f"and {_month_grp_max.loc[_month_range_month_avg.idxmin()]:,.1f}{unit}."
+    )
+    # pylint: enable=C0301
+    return descriptions
+
+
+@bhom_analytics()
 def summarise_collection(
     collection: BaseCollection,
     _n_common: int = 3,
@@ -203,12 +324,8 @@ def summarise_collection(
 
     name = " ".join(series.name.split(" ")[:-1])
     unit = series.name.split(" ")[-1].replace("(", "").replace(")", "")
-    period_ts = describe_analysis_period(
-        collection.header.analysis_period, include_timestep=True
-    )
-    period = describe_analysis_period(
-        collection.header.analysis_period, include_timestep=False
-    )
+    period_ts = describe_analysis_period(collection.header.analysis_period, include_timestep=True)
+    period = describe_analysis_period(collection.header.analysis_period, include_timestep=False)
 
     if (collection.header.analysis_period.st_month != 1) or (
         collection.header.analysis_period.end_month != 12
@@ -284,17 +401,13 @@ def summarise_collection(
     _most_common, _most_common_counts = series.value_counts().reset_index().values.T
     _most_common_str = (
         " and ".join(
-            f"{unit}, ".join([f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(
-                ", ", 1
-            )
+            f"{unit}, ".join([f"{i:,.0f}" for i in _most_common[:_n_common]]).rsplit(", ", 1)
         )
         + unit
     )
     _most_common_counts_str = (
         " and ".join(
-            ", ".join(_most_common_counts[:_n_common].astype(int).astype(str)).rsplit(
-                ", ", 1
-            )
+            ", ".join(_most_common_counts[:_n_common].astype(int).astype(str)).rsplit(", ", 1)
         )
         + " times respectively"
     )
@@ -354,9 +467,7 @@ def summarise_collection(
 
 
 @bhom_analytics()
-def average(
-    collections: list[BaseCollection], weights: list[float] = None
-) -> BaseCollection:
+def average(collections: list[BaseCollection], weights: list[float] = None) -> BaseCollection:
     """Create an Average of the given data collections.
 
     Args:
@@ -407,9 +518,7 @@ def average(
 
 
 @bhom_analytics()
-def to_hourly(
-    collection: MonthlyCollection, method: str = None
-) -> HourlyContinuousCollection:
+def to_hourly(collection: MonthlyCollection, method: str = None) -> HourlyContinuousCollection:
     """
     Resample a Ladybug MonthlyContinuousCollection object into a Ladybug
     HourlyContinuousCollection object.
@@ -439,9 +548,7 @@ def to_hourly(
         )
 
     series = collection_to_series(collection)
-    annual_hourly_index = pd.date_range(
-        f"{series.index[0].year}-01-01", periods=8760, freq="h"
-    )
+    annual_hourly_index = pd.date_range(f"{series.index[0].year}-01-01", periods=8760, freq="h")
     series_annual = series.reindex(annual_hourly_index)
     series_annual[series_annual.index[-1]] = series_annual[series_annual.index[0]]
 

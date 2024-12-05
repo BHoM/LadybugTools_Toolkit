@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
+from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from tqdm import tqdm
 
 from . import DATA_DIR, PERSON_HEIGHT, TERRAIN_ROUGHNESS_LENGTH
@@ -178,7 +179,7 @@ def calculate_metrics_for_epw(
     metabolic_rate: float = 1,
     clo_value: float = 1,
     metrics_to_calculate: list[Callable] = None,
-) -> Path:
+) -> pd.DataFrame:
     """Create a dataset of possible values based on the content of an EPW file.
 
     Note:
@@ -210,7 +211,7 @@ def calculate_metrics_for_epw(
         DATA_DIR / f"{Path(epw.file_path).stem}_{metabolic_rate:0.1f}_{clo_value:0.1f}.parquet"
     )
     if dataset.exists():
-        print(f"Reloading from {dataset}.")
+        CONSOLE_LOGGER.info(f"Reloading from {dataset}.")
         return pd.read_parquet(dataset)
 
     # calculate MRT for all hours of the EPW
@@ -260,31 +261,8 @@ def calculate_metrics_for_epw(
     # process!
     df = calculate_metrics(dataframe=df, metrics_to_calculate=metrics_to_calculate)
 
-    # try:
-    #     with ProcessPoolExecutor() as executor:
-    #         results = []
-    #         for _, row in tqdm(
-    #             df.iterrows(),
-    #             total=df.shape[0],
-    #             desc=f"Calculating thermal comfort indices for {Path(epw.file_path).name}",
-    #         ):
-    #             results.append(
-    #                 executor.submit(
-    #                     calculate_all_metrics,
-    #                     **row.to_dict(),
-    #                 ).result()
-    #             )
-    # except Exception as e:
-    #     warnings.warn(f"Failed to run in parallel. Running in series. Error: {e}")
-    #     results = []
-    #     for _, row in tqdm(df.iterrows(), total=df.shape[0], desc="Running in series"):
-    #         results.append(calculate_all_metrics(**row.to_dict()))
-
-    # # convert results into dataframe and return
-    # df = pd.DataFrame.from_dict(results)
-
     # save to dataset
-    print(f"Writing results to {dataset}.")
+    CONSOLE_LOGGER.info(f"Writing results to {dataset}.")
     df.to_parquet(dataset, compression="brotli", index=False)
 
     return df

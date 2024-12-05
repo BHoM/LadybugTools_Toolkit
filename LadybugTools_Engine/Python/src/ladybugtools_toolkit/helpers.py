@@ -1,15 +1,18 @@
 """Helper methods used throughout the ladybugtools_toolkit."""
+
 # pylint: disable=C0302
 # pylint: disable=E0401
 import calendar
 import contextlib
 import copy
 import io
+import itertools
 import json
 import math
 import re
 import urllib.request
 import warnings
+from collections import defaultdict
 from datetime import datetime, timedelta
 from enum import Enum, auto
 from pathlib import Path
@@ -20,20 +23,29 @@ import pandas as pd
 from caseconverter import snakecase
 from honeybee.config import folders as hb_folders
 from ladybug.datatype.temperature import WetBulbTemperature
-from ladybug.epw import (EPW, AnalysisPeriod, HourlyContinuousCollection,
-                         Location)
+from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection, Location
 from ladybug.psychrometrics import wet_bulb_from_db_rh
-from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
-                              estimate_illuminance_from_irradiance,
-                              get_extra_radiation, zhang_huang_solar,
-                              zhang_huang_solar_split)
+from ladybug.skymodel import (
+    calc_horizontal_infrared,
+    calc_sky_temperature,
+    estimate_illuminance_from_irradiance,
+    get_extra_radiation,
+    zhang_huang_solar,
+    zhang_huang_solar_split,
+)
 from ladybug.sunpath import Sunpath
+from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 from ladybug_geometry.geometry2d import Vector2D
+from matplotlib.colors import hex2color, rgb2hex
 from meteostat import Hourly, Point
+from PIL import Image, ImageColor, ImageDraw
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
+from scipy.spatial import KDTree
+from tqdm import tqdm
 
 from .ladybug_extension.dt import lb_datetime_from_datetime
+from .plot.utilities import average_color
 
 # pylint: enable=E0401
 
@@ -267,9 +279,7 @@ def scrape_weather(
         for row in df.itertuples()
     ]
     df["sky_temperature"] = [
-        calc_sky_temperature(
-            row.horizontal_infrared_radiation_intensity, source_emissivity=1
-        )
+        calc_sky_temperature(row.horizontal_infrared_radiation_intensity, source_emissivity=1)
         for row in df.itertuples()
     ]
 
@@ -318,9 +328,9 @@ def scrape_weather(
     df["extraterrestrial_horizontal_radiation"] = [
         get_extra_radiation(i) for i in df.index.day_of_year
     ]
-    df["extraterrestrial_horizontal_radiation"] = df[
-        "extraterrestrial_horizontal_radiation"
-    ].where(df.global_horizontal_radiation != 0, 0)
+    df["extraterrestrial_horizontal_radiation"] = df["extraterrestrial_horizontal_radiation"].where(
+        df.global_horizontal_radiation != 0, 0
+    )
     df["direct_normal_radiation"].fillna(0, inplace=True)
     df["diffuse_horizontal_radiation"].fillna(0, inplace=True)
     df["global_horizontal_radiation"].fillna(0, inplace=True)
@@ -1086,7 +1096,7 @@ def scrape_openmeteo(
     if variables is None:
         variables = tuple(OpenMeteoVariable)
     # else:
-        # TODO fix error that happens here
+    # TODO fix error that happens here
     #     if not all(isinstance(val, OpenMeteoVariable) for val in variables):
     #         raise ValueError(
     #             "All values in the variables tuple must be of type OpenMeteoVariable."
@@ -1100,17 +1110,14 @@ def scrape_openmeteo(
     available_data = []
     for var in variables:
         # TODO - add check in here for whether data exists as subset of longer time period within cache
-        sp = (
-            _dir
-            / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
-        )
+        sp = _dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{var.name}.csv"
         if sp.exists() and (
             (datetime.now() - datetime.fromtimestamp(sp.stat().st_mtime)).days <= 100
         ):
-            CONSOLE_LOGGER.info(f"Reloading cached data for {var.name}")
+            CONSOLE_LOGGER.info("Reloading cached data for %s", var.name)
             available_data.append(pd.read_csv(sp, index_col=0, parse_dates=True))
         else:
-            CONSOLE_LOGGER.info(f"Querying data for {var.name}")
+            CONSOLE_LOGGER.info("Querying data for %s", var.name)
             missing_variables.append(var)
 
     if len(missing_variables) != 0:
@@ -1135,7 +1142,7 @@ def scrape_openmeteo(
 
         # write to cache
         for col in df.columns:
-            sp = (_dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv")
+            sp = _dir / f"{latitude}_{longitude}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{col}.csv"
             df[col].to_csv(sp)
             available_data.append(df[col])
 
@@ -1257,15 +1264,9 @@ def scrape_meteostat(
         temp = []
         for col_name, col_values in data.items():
             if col_name == "coco":
-                temp.append(
-                    pd.Series(
-                        col_values.map(weather_codes), name=converter[col_name][1]
-                    )
-                )
+                temp.append(pd.Series(col_values.map(weather_codes), name=converter[col_name][1]))
             else:
-                temp.append(
-                    (col_values * converter[col_name][0]).rename(converter[col_name][1])
-                )
+                temp.append((col_values * converter[col_name][0]).rename(converter[col_name][1]))
         return pd.concat(temp, axis=1)
 
     return data
@@ -1440,9 +1441,7 @@ def wind_speed_at_height(
             / np.log(reference_height / terrain_roughness_length)
         )
     wind_shear_exponent = 1 / 7
-    return reference_value * (
-        np.power((target_height / reference_height), wind_shear_exponent)
-    )
+    return reference_value * (np.power((target_height / reference_height), wind_shear_exponent))
 
 
 def temperature_at_height(
@@ -1550,10 +1549,7 @@ def air_pressure_at_height(
         float:
             The pressure at the given height.
     """
-    return (
-        reference_value
-        * (1 - 0.0065 * (target_height - reference_height) / 288.15) ** 5.255
-    )
+    return reference_value * (1 - 0.0065 * (target_height - reference_height) / 288.15) ** 5.255
 
 
 @bhom_analytics()
@@ -1593,9 +1589,7 @@ def target_wind_speed_collection(
 
 
 @bhom_analytics()
-def dry_bulb_temperature_at_height(
-    epw: EPW, target_height: float
-) -> HourlyContinuousCollection:
+def dry_bulb_temperature_at_height(epw: EPW, target_height: float) -> HourlyContinuousCollection:
     """Translate DBT values from an EPW into
 
     Args:
@@ -1607,8 +1601,7 @@ def dry_bulb_temperature_at_height(
     """
     dbt_collection = copy.copy(epw.dry_bulb_temperature)
     dbt_collection.values = [
-        temperature_at_height(i, 10, target_height)
-        for i in epw.dry_bulb_temperature.values
+        temperature_at_height(i, 10, target_height) for i in epw.dry_bulb_temperature.values
     ]
     return dbt_collection
 
@@ -1644,9 +1637,7 @@ def validate_timeseries(
     if not isinstance(obj.index, pd.DatetimeIndex):
         raise TypeError("series must have a datetime index")
     if is_annual:
-        if (obj.index.day_of_year.nunique() != 365) or (
-            obj.index.day_of_year.nunique() != 366
-        ):
+        if (obj.index.day_of_year.nunique() != 365) or (obj.index.day_of_year.nunique() != 366):
             raise ValueError("series is not annual")
     if is_hourly:
         if obj.index.hour.nunique() != 24:
@@ -1690,8 +1681,7 @@ def evaporative_cooling_effect(
     )
 
     new_dbt = dry_bulb_temperature - (
-        (dry_bulb_temperature - wet_bulb_temperature)
-        * evaporative_cooling_effectiveness
+        (dry_bulb_temperature - wet_bulb_temperature) * evaporative_cooling_effectiveness
     )
     new_rh = (
         relative_humidity * (1 - evaporative_cooling_effectiveness)
@@ -1723,9 +1713,7 @@ def evaporative_cooling_effect_collection(
             evaporative cooling effect.
     """
 
-    if (evaporative_cooling_effectiveness > 1) or (
-        evaporative_cooling_effectiveness < 0
-    ):
+    if (evaporative_cooling_effectiveness > 1) or (evaporative_cooling_effectiveness < 0):
         raise ValueError("evaporative_cooling_effectiveness must be between 0 and 1.")
 
     wbt = HourlyContinuousCollection.compute_function_aligned(
@@ -1740,17 +1728,11 @@ def evaporative_cooling_effect_collection(
     )
     dbt = epw.dry_bulb_temperature.duplicate()
     dbt = dbt - ((dbt - wbt) * evaporative_cooling_effectiveness)
-    dbt.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+    dbt.header.metadata["evaporative_cooling"] = f"{evaporative_cooling_effectiveness:0.0%}"
 
     rh = epw.relative_humidity.duplicate()
-    rh = (rh * (1 - evaporative_cooling_effectiveness)) + (
-        evaporative_cooling_effectiveness * 100
-    )
-    rh.header.metadata[
-        "evaporative_cooling"
-    ] = f"{evaporative_cooling_effectiveness:0.0%}"
+    rh = (rh * (1 - evaporative_cooling_effectiveness)) + (evaporative_cooling_effectiveness * 100)
+    rh.header.metadata["evaporative_cooling"] = f"{evaporative_cooling_effectiveness:0.0%}"
 
     return [dbt, rh]
 
@@ -1856,9 +1838,7 @@ def month_hour_binned_series(
         raise ValueError("month_bins hours must not contain duplicates")
     if (set(flat_hours) != set(list(range(24)))) or (len(set(flat_hours)) != 24):
         raise ValueError("Input hour_bins does not contain all hours of the day")
-    if (set(flat_months) != set(list(range(1, 13, 1)))) or (
-        len(set(flat_months)) != 12
-    ):
+    if (set(flat_months) != set(list(range(1, 13, 1)))) or (len(set(flat_months)) != 12):
         raise ValueError("Input month_bins does not contain all months of the year")
 
     # create index/column labels
@@ -1897,7 +1877,7 @@ def month_hour_binned_series(
     return df
 
 
-def sunrise_sunset(location: Location) -> pd.DataFrame():
+def sunrise_sunset(location: Location) -> pd.DataFrame:
     """Calculate sunrise and sunset times for a given location and year. Includes
     civil, nautical and astronomical twilight.
 
@@ -1966,6 +1946,406 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
 @bhom_analytics()
 def safe_filename(filename: str) -> str:
     """Remove all non-alphanumeric characters from a filename."""
-    return "".join(
-        [c for c in filename if c.isalpha() or c.isdigit() or c == " "]
-    ).strip()
+    return "".join([c for c in filename if c.isalpha() or c.isdigit() or c == " "]).strip()
+
+
+def determine_ashrae_climate_zone(
+    dbt: pd.Series, rain: pd.Series = None, latitude: float = None
+) -> dict[int, str]:
+    """Determine the ASHRAE climate zone for a given location based on historic dry bulb temperature and precipitation.
+
+    Args:
+        dbt (pd.Series):
+            A pandas Series of dry bulb temperature values (in degrees C).
+        rain (pd.Series, optional):
+            A pandas Series of precipitation values (in mm).
+        latitude (float, optional):
+            The latitutde of the data being assessed. Must be provided if precipitation provided.
+
+    References:
+        The logic for this method comes from
+        ANSI/ASHRAE Standard 169-2021: Climatic Data for Building Design
+        Standards. ASHRAE Standard, October 2021.
+
+    Returns:
+        dict[int, str]:
+            The ASHRAE climate zone, per year of the input data.
+    """
+
+    if not isinstance(dbt, pd.Series):
+        raise ValueError("'dry_bulb_temperature' is not a pandas Series object.")
+
+    if not isinstance(dbt.index, pd.DatetimeIndex):
+        raise ValueError("Input series must have a datetime index")
+
+    if pd.infer_freq(dbt.index) != "h":
+        raise ValueError("Input series must be hourly")
+
+    if len(dbt) < 8760:
+        raise ValueError("Input series must be at least one year long")
+
+    df = pd.concat([dbt.rename("dbt")], axis=1)
+
+    if rain is not None:
+        if not isinstance(rain, pd.Series):
+            raise ValueError("'precipitation' is not a pandas Series object.")
+
+        if not dbt.index.equals(rain.index):
+            raise ValueError("Input series must have identical datetime-indices")
+
+        if latitude is None:
+            raise ValueError("latitude must also be provided if precipitation is provided")
+
+        if not (-90 <= latitude <= 90):
+            raise ValueError("latitude must be between -90 and 90")
+
+        # determine the cold_season_months based on latitude
+        if latitude > 0:
+            cold_season_months = [10, 11, 12, 1, 2, 3]
+        else:
+            cold_season_months = [4, 5, 6, 7, 8, 9]
+
+        df["rain"] = rain.values
+
+    # create local vectorised functions
+    v_heating_degree_time = np.vectorize(heating_degree_time)
+    v_cooling_degree_time = np.vectorize(cooling_degree_time)
+
+    # get thermal climate zone based on temperature data from Table A3 ASHRAE
+    cd_base = 10
+    hd_base = 18
+
+    # get degree days (from hours)
+    df["cdh"] = v_cooling_degree_time(df["dbt"], t_base=cd_base)
+    df["hdh"] = v_heating_degree_time(df["dbt"], t_base=hd_base)
+    df["cdd"] = df["cdh"] / 24
+    df["hdd"] = df["hdh"] / 24
+
+    # iterate years provided
+    d = {}
+    for year in df.index.year.unique():
+        df_temp = df.loc[str(year)]
+        if len(df_temp) < 8760:
+            warnings.warn(f"skipping {year} as it is incomplete")
+            continue
+
+        annual_hdd = df_temp.sum()["hdd"]
+        annual_cdd = df_temp.sum()["cdd"]
+
+        # determine thermal climate zone
+        if annual_cdd > 5000:
+            thermal_climate_zone = 1
+        elif annual_cdd > 3500:
+            thermal_climate_zone = 2
+        elif annual_cdd > 2500:
+            thermal_climate_zone = 3
+        elif annual_cdd <= 2500 and annual_hdd <= 2000:
+            thermal_climate_zone = 3
+        elif annual_cdd <= 2500 and annual_hdd <= 3000:
+            thermal_climate_zone = 4
+        elif annual_hdd <= 3000:
+            thermal_climate_zone = 4
+        elif annual_hdd <= 4000:
+            thermal_climate_zone = 5
+        elif annual_hdd <= 5000:
+            thermal_climate_zone = 6
+        elif annual_hdd <= 7000:
+            thermal_climate_zone = 7
+        else:
+            thermal_climate_zone = 8
+
+        # determine whether the location is marine, dry or humid
+        if rain is None:
+            warnings.warn(
+                "Precipitation data not provided. ASHRAE climate zone will be determined based on temperature only."
+            )
+            d[year] = str(thermal_climate_zone)
+            continue
+        else:
+            # test moisture calculations
+            # ignore warnings from numpy here, potentialy unsafe, but can't be avoided at this point
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                monthly_rain = df_temp["rain"].resample("MS").sum()
+                monthly_temp = df_temp["dbt"].resample("MS").mean()
+                cold_season_mask = monthly_rain.index.month.isin(cold_season_months)
+
+                ca_test = -3 < monthly_temp.min() < 18.3
+                cb_test = monthly_temp.max() < 22
+                cc_test = sum(monthly_temp > 10) >= 4
+                cd_test = (
+                    monthly_rain[cold_season_mask].max() > monthly_rain[~cold_season_mask].min() * 3
+                )
+                c_test = ca_test and cb_test and cc_test and cd_test
+
+                bb_test = (monthly_rain[~cold_season_mask].sum() / monthly_rain.sum() >= 0.7) and (
+                    monthly_rain.sum() < 20 * (monthly_temp.mean() + 14)
+                )
+                bc_test = (
+                    0.3 < (monthly_rain[~cold_season_mask].sum() / monthly_rain.sum()) < 0.7
+                ) and (monthly_rain.sum() < 20 * (monthly_temp.mean() + 7))
+                bd_test = (monthly_rain[~cold_season_mask].sum() / monthly_rain.sum() <= 0.3) and (
+                    monthly_rain.sum() < 20 * monthly_temp.mean()
+                )
+                b_test = any([bb_test, bc_test, bd_test])
+
+            if c_test:
+                # marine climate
+                moisture_zone = "C"
+            elif b_test:
+                # dry climate
+                moisture_zone = "B"
+            else:
+                # humid climate
+                moisture_zone = "A"
+
+            d[year] = f"{thermal_climate_zone}{moisture_zone}"
+
+    return d
+
+
+def point_group(points: list[list[float]], threshold: float) -> list[list[float]]:
+    """Cluster 2D points based on proximity.
+
+    Args:
+        points (list[list[float]]):
+            A list of 2D points.
+        threshold (float):
+            The maximum distance between points to be considered neighbors.
+
+    Returns:
+        list[list[float]]:
+            A list of points, each being average of the generated clusters.
+    """
+
+    class UnionFind:
+        def __init__(self, n):
+            self.parent = list(range(n))
+
+        def find(self, i):
+            if self.parent[i] != i:
+                self.parent[i] = self.find(self.parent[i])
+            return self.parent[i]
+
+        def union(self, i, j):
+            root_i = self.find(i)
+            root_j = self.find(j)
+            if root_i != root_j:
+                self.parent[root_i] = root_j
+
+    tree = KDTree(points)
+
+    # Initialize Union-Find
+    uf = UnionFind(len(points))
+
+    # Find neighboring points within radius and union them
+    for i, point in tqdm(list(enumerate(points)), desc="Clustering points ..."):
+        neighbor_indices = tree.query_ball_point(point, threshold)
+        for neighbor_index in neighbor_indices:
+            uf.union(i, neighbor_index)
+
+    # Collect fused points and assign labels
+    label_groups = defaultdict(list)
+
+    for i in range(len(points)):
+        root = uf.find(i)
+        label_groups[root].append(i)
+
+    clusters = []
+    for _, points_indices in label_groups.items():
+        clusters.append(np.mean([points[i] for i in points_indices], axis=0).tolist())
+
+    return clusters
+
+
+def similar_colors(
+    color_str: str, color_threshold: int | tuple[int], return_type: str = "hex"
+) -> list[str] | list[tuple[int]] | list[tuple[float]]:
+    """Return a list of similar colors based on proximity in RGB space.
+
+    Args:
+        color_str (str):
+            A color string in hex format.
+        color_threshold (int | tuple[int]):
+            The threshold for color matching, added to and subtracted from the
+            input colors RGB channels. This is in the range 0-255, and can be
+            either a single value or a tuple of values for each RGB channel.
+        return_type (str, optional):
+            The type of color to return. Can be either "hex" or "rgb_int" or rgb_float. Defaults
+            to "hex".
+
+    Returns:
+        list[str] | list[tuple[int]] | list[tuple[float]]:
+            A list of similar colors, in hex format.
+    """
+
+    # validation #
+    if return_type not in ["hex", "rgb_int", "rgb_float"]:
+        raise ValueError("return_type must be either 'hex' or 'rgb_int' or 'rgb_float'")
+
+    # check that color_str is a valid hex color
+    if not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", color_str):
+        raise ValueError("color_str is not a valid hex color")
+
+    # check color_threshold is either an integer or a tuple of 3-integers
+    if not isinstance(color_threshold, (int, tuple)):
+        raise ValueError("color_threshold must be either an integer or a tuple of 3-integers")
+
+    # convert single color_threshold to tuple
+    if isinstance(color_threshold, int):
+        color_threshold = (color_threshold, color_threshold, color_threshold)
+
+    # ensure color_threshold is 3-long
+    if len(color_threshold) != 3:
+        raise ValueError("color_threshold must be a tuple of 3 integers")
+
+    # ensure color_threshold values are between 0 and 255
+    if not all(0 <= i <= 255 for i in color_threshold):
+        raise ValueError("color_threshold values must be between 0 and 255")
+
+    # convert color_threshold to 0-1 scale
+    _color_threshold = color_threshold
+    color_threshold = tuple([i / 255 for i in color_threshold])
+
+    # convert the input HEX to RGB
+    original_rgb_float = np.array(hex2color(color_str))
+
+    # create list of similar colors
+    r_low = max(original_rgb_float[0] - color_threshold[0], 0)
+    r_high = min(original_rgb_float[0] + color_threshold[0], 1)
+    rs = np.unique(np.linspace(r_low, r_high, _color_threshold[0]))
+
+    g_low = max(original_rgb_float[1] - color_threshold[1], 0)
+    g_high = min(original_rgb_float[1] + color_threshold[1], 1)
+    gs = np.unique(np.linspace(g_low, g_high, _color_threshold[1]))
+
+    b_low = max(original_rgb_float[2] - color_threshold[2], 0)
+    b_high = min(original_rgb_float[2] + color_threshold[2], 1)
+    bs = np.unique(np.linspace(b_low, b_high, _color_threshold[2]))
+
+    # create new list of rgb_floats
+    rgb_floats = []
+    for r, g, b in itertools.product(rs, gs, bs):
+        rgb_floats.append([r, g, b])
+    rgb_floats = [tuple(i) for i in np.unique(rgb_floats, axis=0).tolist()]
+
+    match return_type:
+        case "rgb_float":
+            return rgb_floats
+        case "rgb_int":
+            return [
+                tuple(i)
+                for i in (np.array(rgb_floats) * 255)
+                .round(0)
+                .astype(int)
+                .clip(min=0, max=255)
+                .tolist()
+            ]
+        case "hex":
+            return [rgb2hex(i) for i in rgb_floats]
+        case _:
+            raise ValueError("return_type must be either 'hex' or 'rgb_int' or 'rgb_float'")
+
+
+def pixels_to_points(
+    image_file: Path | str,
+    color_keys: dict[str, list[str]],
+    proximity_grouping: float,
+    color_threshold: int = 5,
+) -> Image:
+    """Create a file containing pt-pixel location coordinates based on color keys.
+
+    Args:
+        image_file (Path | str):
+            The path to the image file.
+        color_keys (dict[str, list[str]]):
+            A dictionary of color keys and their respective RGB values.
+        proximity_grouping (float):
+            The maximum distance between points to be considered neighbors.
+        color_threshold (int, optional):
+            The threshold for color matching. Defaults to 5.
+
+    Notes:
+        The color_keys dictionary should be in the following format:
+        {
+            "key1": ["#FFFFFF", "#000000"],
+            "key2": ["#FF0000", "#00FF00"],
+            ...
+        }
+
+    Returns:
+        Image:
+            An image with points representing the color keys.
+    """
+
+    image_file = Path(image_file)
+
+    # create a mapping in the form {(r, g, b): "key", }, including similar colors
+    target_colors_hex = {}
+    for k, v in color_keys.items():
+        for hexcol in v:
+            target_colors_hex[hexcol] = k
+    target_colors_rgb = {}
+    for k, v in target_colors_hex.items():
+        for rgb in similar_colors(
+            color_str=k, color_threshold=color_threshold, return_type="rgb_int"
+        ):
+            target_colors_rgb[tuple(rgb)] = v
+
+    # create average colour for each color group
+    clrs = {}
+    for k, v in color_keys.items():
+        clrs[k] = average_color(colors=v, keep_alpha=False)
+
+    # load the image
+    img = Image.open(image_file)
+    pixels = img.load()
+    width, height = img.size
+
+    # iterate pixels, and find those where target_colors_rgb are present
+    coords = {}
+    for x in range(width):
+        for y in range(height):
+            try:
+                k = target_colors_rgb[pixels[x, y][:-1]]
+                if k not in coords:
+                    coords[k] = [(x, y)]
+                else:
+                    coords[k].append((x, y))
+            except KeyError:
+                pass
+
+    # cluster the points and group by proximity
+    _temp = {}
+    for k, points in coords.items():
+        _temp[k] = [tuple(i) for i in point_group(points=points, threshold=proximity_grouping)]
+    coords = _temp
+
+    # convert coords into a more typical x, y, starting from bottom left of the image, cos that's easier to understand!
+    normal_coords = {}
+    for k, v in coords.items():
+        normal_coords[k] = [(i, height - j) for i, j in v]
+
+    # create new img with pts indicated
+    new_im = img.copy().convert("LA").convert("RGB")
+    draw = ImageDraw.Draw(new_im)
+    s = 5
+    for k, v in coords.items():
+        for coord in v:
+            draw.ellipse(
+                (coord[0] - (s / 2), coord[1] - (s / 2), coord[0] + (s / 2), coord[1] + (s / 2)),
+                outline="black",
+                fill=clrs[k],
+            )
+
+    # write image to file
+    _dir = image_file.absolute().parent / f"{image_file.stem}"
+    _dir.mkdir(exist_ok=True, parents=True)
+    new_im.save(_dir / f"{image_file.stem}.png")
+
+    # write normalised coords to file
+    for k, v in normal_coords.items():
+        with open(_dir / f"{k}.dat", "w", encoding="utf-8") as fp:
+            fp.write("\n".join([",".join([str(j) for j in i]) for i in v]))
+
+    return new_im
