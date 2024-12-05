@@ -5,14 +5,18 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 from ladybug.epw import EPW
-
 from python_toolkit.plot.heatmap import heatmap
 
 from ..ladybug_extension.datacollection import collection_to_series
 
 
 def evaporative_cooling_potential(
-    dbt: pd.Series, dpt: pd.Series, ax: plt.Axes = None, agg_year: bool = False, agg: str = "mean", **kwargs
+    dbt: pd.Series,
+    dpt: pd.Series,
+    ax: plt.Axes = None,
+    agg_year: bool = False,
+    agg: str = "mean",
+    **kwargs
 ) -> plt.Axes:
     """Plot evaporative cooling potential (DBT - DPT).
 
@@ -87,7 +91,10 @@ def evaporative_cooling_potential_epw(epw: EPW, ax: plt.Axes = None, **kwargs) -
         ax = plt.gca()
 
     evaporative_cooling_potential(
-        dbt=collection_to_series(epw.dry_bulb_temperature), dpt=collection_to_series(epw.dew_point_temperature), ax=ax, **kwargs
+        dbt=collection_to_series(epw.dry_bulb_temperature),
+        dpt=collection_to_series(epw.dew_point_temperature),
+        ax=ax,
+        **kwargs
     )
 
     ax.set_title(Path(epw.file_path).name)

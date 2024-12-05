@@ -434,7 +434,7 @@ def thermal_comfort_datas(
                                             "clo_value": cv,
                                         }
                                     )
-    # shuffle the iterations
+    # shuffle the iterations ... it's not necessary but it can't hurt
     np.random.shuffle(target_iterations)
 
     df = []

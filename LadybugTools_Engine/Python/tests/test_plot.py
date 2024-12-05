@@ -4,34 +4,39 @@ import pandas as pd
 import pytest
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug_comfort.collection.utci import UTCI
-from ladybugtools_toolkit.ladybug_extension.datacollection import \
-    collection_to_series
-from python_toolkit.plot.diurnal import diurnal, stacked_diurnals
-from python_toolkit.plot.heatmap import heatmap
-from ladybugtools_toolkit.plot._sunpath import sunpath
-from ladybugtools_toolkit.plot._degree_days import (cooling_degree_days,
-                                                    degree_days,
-                                                    heating_degree_days)
+from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.plot._degree_days import (
+    cooling_degree_days,
+    degree_days,
+    heating_degree_days,
+)
 from ladybugtools_toolkit.plot._psychrometric import psychrometric
-from ladybugtools_toolkit.plot._radiant_cooling_potential import \
-    radiant_cooling_potential
+from ladybugtools_toolkit.plot._radiant_cooling_potential import radiant_cooling_potential
 from ladybugtools_toolkit.plot._seasonality import seasonality_comparison
 from ladybugtools_toolkit.plot._sunpath import sunpath
-from ladybugtools_toolkit.plot._utci import (utci_comfort_band_comparison,
-                                             utci_comparison_diurnal_day,
-                                             utci_day_comfort_metrics,
-                                             utci_heatmap_difference,
-                                             utci_heatmap_histogram,
-                                             utci_histogram, utci_journey,
-                                             utci_pie, utci_shade_benefit)
+from ladybugtools_toolkit.plot._utci import (
+    utci_comfort_band_comparison,
+    utci_comparison_diurnal_day,
+    utci_day_comfort_metrics,
+    utci_heatmap_difference,
+    utci_heatmap_histogram,
+    utci_histogram,
+    utci_journey,
+    utci_pie,
+    utci_shade_benefit,
+)
 from ladybugtools_toolkit.plot.colormaps import colormap_sequential
-from ladybugtools_toolkit.plot.spatial_heatmap import spatial_heatmap
-from ladybugtools_toolkit.plot.utilities import (contrasting_color,
-                                                 create_triangulation,
-                                                 lighten_color,
-                                                 relative_luminance,
-                                                 colormap_sequential)
+from ladybugtools_toolkit.plot.utilities import (
+    colormap_sequential,
+    contrasting_color,
+    create_triangulation,
+    lighten_color,
+    relative_luminance,
+)
 from matplotlib.figure import Figure
+from python_toolkit.plot.diurnal import diurnal, stacked_diurnals
+from python_toolkit.plot.heatmap import heatmap
+from python_toolkit.plot.spatial_heatmap import spatial_heatmap
 
 from . import EPW_OBJ
 
@@ -41,6 +46,7 @@ LB_UTCI_COLLECTION = UTCI(
     EPW_OBJ.dry_bulb_temperature,
     EPW_OBJ.wind_speed,
 ).universal_thermal_climate_index
+
 
 def test_cooling_degree_days():
     """_"""
@@ -122,7 +128,9 @@ def test_lighten_color():
 
 def test_colormap_sequential():
     """_"""
-    assert sum(colormap_sequential("red", "green", "blue")(0.25)) == pytest.approx(1.750003844675125, rel=0.01)
+    assert sum(colormap_sequential("red", "green", "blue")(0.25)) == pytest.approx(
+        1.750003844675125, rel=0.01
+    )
 
 
 def test_spatial_heatmap():
@@ -222,7 +230,9 @@ def test_heatmap():
     plt.close("all")
 
     mask = np.random.random(8760) > 0.5
-    assert isinstance(heatmap(collection_to_series(EPW_OBJ.dry_bulb_temperature), mask=mask), plt.Axes)
+    assert isinstance(
+        heatmap(collection_to_series(EPW_OBJ.dry_bulb_temperature), mask=mask), plt.Axes
+    )
     plt.close("all")
 
     mask_bad = np.random.random(10) > 0.5
@@ -346,8 +356,11 @@ def test_shade_benefit_plot() -> None:
     unshaded_utci = collection_to_series(LB_UTCI_COLLECTION)
     shaded_utci = unshaded_utci + np.random.randint(-5, 5, len(unshaded_utci))
 
-    assert isinstance(utci_shade_benefit(unshaded_utci=unshaded_utci, shaded_utci=shaded_utci), Figure)
+    assert isinstance(
+        utci_shade_benefit(unshaded_utci=unshaded_utci, shaded_utci=shaded_utci), Figure
+    )
     plt.close("all")
+
 
 def test_seasonality_plot() -> None:
     """_"""
