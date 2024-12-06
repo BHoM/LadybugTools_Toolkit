@@ -68,7 +68,7 @@ class Wind:
     wind_speeds: list[float]
     wind_directions: list[float]
     datetimes: list[datetime] | pd.DatetimeIndex
-    height_above_ground: float
+    height_above_ground: float = 10.0
     source: str = None
 
     def __post_init__(self):
