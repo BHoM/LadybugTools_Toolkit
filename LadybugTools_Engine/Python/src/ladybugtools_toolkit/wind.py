@@ -1675,7 +1675,7 @@ class Wind:
         if other_data is None:
             other_data = self.ws
 
-        title = self.source
+        title = self.source if self.source is not None else "title"
         title += f'\n{kwargs.pop("title", None)}'
         ax.set_title(textwrap.fill(f"{self.source}", 75))
 
