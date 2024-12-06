@@ -326,10 +326,6 @@ class ExternalComfort:
             ax=ax,
             title=self.description(),
         )
-    
-
-
-
 
 
 
@@ -345,7 +341,7 @@ class ExternalComfort:
 
             for utci_val in self.universal_thermal_climate_index.values:
                 utci_str = str(int(round(float(utci_val),0)))
-                csv_file = r"C:\github\LBT TK 2\LadybugTools_Toolkit\LadybugTools_Engine\Python\src\data\walkability.csv"
+                csv_file = r"C:\github\LadybugTools_Toolkit\LadybugTools_Toolkit\LadybugTools_Engine\Python\src\data\walkability.csv"
                 df = pd.read_csv(csv_file)
             return df.loc[df['UTCI temperature'] == utci_str, 'Time within no thermal stress and moderate thermal stress bands (mins)'].values[0]
 
@@ -379,21 +375,6 @@ class ExternalComfort:
                 vmax=15,
                 title=self.description()
             )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
