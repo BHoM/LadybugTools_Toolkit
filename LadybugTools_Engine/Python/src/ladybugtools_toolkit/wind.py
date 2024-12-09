@@ -1677,7 +1677,7 @@ class Wind:
 
         title = self.source if self.source is not None else ""
         title += f'\n{kwargs.pop("title", None)}'
-        ax.set_title(textwrap.fill(f"{self.source}", 75))
+        ax.set_title(textwrap.fill(f"{title}", 75))
 
         df = self.wind_matrix(other_data=other_data)
         _other_data = df["other"]
