@@ -9,8 +9,6 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import numpy as np
 import pandas as pd
 from ladybug.analysisperiod import AnalysisPeriod
@@ -24,31 +22,27 @@ from ladybug.datatype.time import Time
 from ladybug.epw import EPW, EPWFields, MonthlyCollection
 from ladybug.header import Header
 from ladybug.location import Location
-from ladybug.psychrometrics import (
-    dew_point_from_db_wb,
-    enthalpy_from_db_hr,
-    humid_ratio_from_db_rh,
-    rel_humid_from_db_wb,
-    wet_bulb_from_db_rh,
-)
+from ladybug.psychrometrics import (dew_point_from_db_wb, enthalpy_from_db_hr,
+                                    humid_ratio_from_db_rh,
+                                    rel_humid_from_db_wb, wet_bulb_from_db_rh)
 from ladybug.skymodel import clearness_index as lb_ci
 from ladybug.sunpath import Sun, Sunpath
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
+from python_toolkit.bhom.analytics import bhom_analytics
 
-from ..bhom.analytics import bhom_analytics
-from ..helpers import (
-    air_pressure_at_height,
-    radiation_at_height,
-    temperature_at_height,
-    timedelta_tostring,
-    wind_speed_at_height,
-)
+from ..helpers import (air_pressure_at_height, radiation_at_height,
+                       temperature_at_height, timedelta_tostring,
+                       wind_speed_at_height)
 from .analysisperiod import analysis_period_to_datetimes
 from .datacollection import average as average_collection
 from .datacollection import collection_to_series
 from .groundtemperature import hourly_ground_temperature
 from .header import header_to_string
 from .location import average_location, location_to_string
+
+# pylint: enable=E0401
+
+
 
 
 @bhom_analytics()
@@ -1054,7 +1048,7 @@ def seasonality_from_temperature_timeseries(
     series = series.loc[~series.index.duplicated()]
 
     # check that series is long enough
-    if max(series.index) - min(series.index) < pd.Timedelta(hours=364):
+    if max(series.index) - min(series.index) < pd.Timedelta(hours=364*24):
         raise ValueError(
             "Input dataset must be at least 365 days long to determine seasonality."
         )
@@ -1217,7 +1211,7 @@ def seasonality_from_temperature_timeseries(
             ).date()
 
     temp = dbt.to_frame()
-    s = pd.Series(index=dbt.index, data=np.nan)
+    s = pd.Series(index=dbt.index, data=np.nan, dtype=str)
     s.loc[spring_start] = "Spring"
     s.loc[summer_start] = "Summer"
     s.loc[autumn_start] = "Autumn"

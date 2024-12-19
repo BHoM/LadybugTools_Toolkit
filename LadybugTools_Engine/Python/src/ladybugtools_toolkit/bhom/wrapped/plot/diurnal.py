@@ -11,7 +11,7 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
         from ladybug.epw import EPW, AnalysisPeriod
         from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
         from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
-        from ladybugtools_toolkit.plot._diurnal import diurnal
+        from python_toolkit.plot.diurnal import diurnal
         from ladybug.datacollection import HourlyContinuousCollection
         from ladybugtools_toolkit.plot.utilities import figure_to_base64
         from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata

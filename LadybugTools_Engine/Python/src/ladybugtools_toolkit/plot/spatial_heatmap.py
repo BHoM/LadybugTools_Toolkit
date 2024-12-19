@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 
 
 @bhom_analytics()

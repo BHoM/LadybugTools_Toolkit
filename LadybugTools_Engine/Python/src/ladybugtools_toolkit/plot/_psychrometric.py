@@ -1,12 +1,9 @@
 """Methods for plotting psychrometric charts."""
-# pylint: disable=E1101
-# pylint: disable=E0401
+# pylint: disable=E1101,E0401
 import textwrap
 from dataclasses import dataclass, field
 from enum import Enum
 from warnings import warn
-
-# pylint: disable=E0401
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,14 +15,16 @@ from ladybug_geometry.geometry2d import LineSegment2D, Mesh2D, Polyline2D
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import Colormap
 from matplotlib.patches import Polygon
+from python_toolkit.bhom.analytics import bhom_analytics
 
-from ..bhom.analytics import bhom_analytics
-from ..ladybug_extension.analysisperiod import (
-    analysis_period_to_datetimes,
-    describe_analysis_period,
-)
+from ..ladybug_extension.analysisperiod import (analysis_period_to_datetimes,
+                                                describe_analysis_period)
 from ..ladybug_extension.epw import EPW, epw_to_dataframe
 from ..ladybug_extension.location import location_to_string
+
+# pylint: disable=E0401
+
+
 
 
 @bhom_analytics()
@@ -151,6 +150,7 @@ def psychrometric(
     analysis_period: AnalysisPeriod = None,
     wet_bulb: bool = False,
     psychro_polygons: PsychrometricPolygons = None,
+    figsize: tuple[float, float] = (10, 7),
 ) -> plt.Figure:
     """Create a psychrometric chart using a LB backend.
 
@@ -158,13 +158,20 @@ def psychrometric(
         epw (EPW):
             An EPW object.
         cmap (Colormap, optional):
-            A colormap to color things with!. Defaults to "viridis".
+            A colormap to color things with!. 
+            Default is "viridis".
         analysis_period (AnalysisPeriod, optional):
-            An analysis period to filter values by. Default is whole year.
+            An analysis period to filter values by. 
+            Default is whole year.
         wet_bulb (bool, optional):
-            Plot wet-bulb temperature constant lines instead of enthalpy. Default is False.
+            Plot wet-bulb temperature constant lines instead of enthalpy. 
+            Default is False.
         psychro_polygons (PsychrometricPolygons, optional):
-            A PsychrometricPolygons object to use for plotting comfort polygons.
+            A PsychrometricPolygons object to use for plotting comfort polygons. 
+            Default is None.
+        figsize (tuple[float, float], optional):
+            A tuple of floats for the figure size. 
+            Default is (10, 7).
 
     Returns:
         plt.Figure:
@@ -202,7 +209,7 @@ def psychrometric(
         return patch_collection
 
     p = lb_mesh_to_patch_collection(psychart.colored_mesh, psychart.hour_values)
-    fig, ax = plt.subplots(1, 1, figsize=(10, 7))
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
     collections = ax.add_collection(p)
 
     if wet_bulb:

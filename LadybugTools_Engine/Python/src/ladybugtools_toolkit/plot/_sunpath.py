@@ -9,7 +9,7 @@ from ladybug.location import Location
 from ladybug.sunpath import Sunpath
 from matplotlib.colors import BoundaryNorm, Colormap
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ..ladybug_extension.analysisperiod import (
     analysis_period_to_datetimes,
     describe_analysis_period,

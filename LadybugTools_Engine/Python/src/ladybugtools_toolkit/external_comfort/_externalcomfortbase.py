@@ -13,13 +13,13 @@ from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
 
-from ..bhom.logging import CONSOLE_LOGGER
+from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case
 from ..ladybug_extension.analysisperiod import describe_analysis_period
 from ..ladybug_extension.datacollection import collection_to_series
-from ..plot._heatmap import heatmap
+from python_toolkit.plot.heatmap import heatmap
 from ..plot._utci import utci_day_comfort_metrics, utci_heatmap_histogram
 from ..plot.colormaps import (
     DBT_COLORMAP,

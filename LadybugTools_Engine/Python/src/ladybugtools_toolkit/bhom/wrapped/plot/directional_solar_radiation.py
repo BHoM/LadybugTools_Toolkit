@@ -7,6 +7,7 @@ import os
 import matplotlib
 
 def directional_solar_radiation(epw_file, azimuths, altitudes, ground_reflectance, irradiance_type, isotropic, analysis_period, title, save_path):
+    raise NotImplementedError("The underlying functions that this call uses have been modified or removed. This will be updated in a future alpha to work properly.")
     try:
         from ladybugtools_toolkit.solar import Solar, IrradianceType
         from ladybug.wea import EPW, AnalysisPeriod

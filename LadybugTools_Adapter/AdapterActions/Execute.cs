@@ -585,6 +585,7 @@ namespace BH.Adapter.LadybugTools
 
         private List<object> RunCommand(SolarPanelTiltOptimisationCommand command, ActionConfig actionConfig)
         {
+            throw new NotImplementedException("The underlying python functions for this method are unfinished, and so executing this will not produce results. This will be updated in a future alpha so that it does work and with the same signature as other execute actions.");
             if (command.EPWFile == null)
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");

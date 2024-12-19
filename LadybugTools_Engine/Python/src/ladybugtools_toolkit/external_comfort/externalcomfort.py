@@ -8,7 +8,7 @@ import warnings
 
 import numpy as np
 
-from ..bhom.analytics import bhom_analytics
+from python_toolkit.bhom.analytics import bhom_analytics
 from ._externalcomfortbase import ExternalComfort
 from ._shelterbase import Shelter
 from ._typologybase import Typology
