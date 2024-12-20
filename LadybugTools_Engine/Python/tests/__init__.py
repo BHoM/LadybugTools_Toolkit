@@ -44,3 +44,5 @@ ILL_FILE = Path(__file__).parent / "assets" / "example.ill"
 NPY_FILE = Path(__file__).parent / "assets" / "example.npy"
 PTS_FILE = Path(__file__).parent / "assets" / "example.pts"
 CFD_DIRECTORY = Path(__file__).parent / "assets" / "cfd"
+
+ABC_MODEL_FILE = Path(__file__).parent / "assets" / "example_abc_phases.csv"
