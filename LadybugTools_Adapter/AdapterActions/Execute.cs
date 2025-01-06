@@ -38,7 +38,6 @@ using BH.Engine.Base;
 using System.Drawing;
 using BH.Engine.Serialiser;
 using System.Reflection;
-using BH.Adapter.LadybugTools.Objects;
 
 namespace BH.Adapter.LadybugTools
 {
