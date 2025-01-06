@@ -8,6 +8,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+TOOLKIT_NAME = "LadybugTools_Toolkit"
+
 # override "HOME" in case IT has set this to something other than default
 os.environ["HOME"] = (Path("C:/Users/") / getpass.getuser()).as_posix()
 
