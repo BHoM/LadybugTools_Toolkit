@@ -350,6 +350,37 @@ namespace BH.Adapter.LadybugTools
         }
 
         /**************************************************/
+
+        private static SolarRadiationData ToSimulationData(this Dictionary<string, object> oldData, SolarRadiationData toUpdate)
+        {
+            if (!double.TryParse(oldData["max_value"].ToString(), out double result))
+                result = double.NaN;
+            toUpdate.MaxValue = result;
+
+            if (!double.TryParse(oldData["min_value"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MinValue = result;
+
+            if (!double.TryParse(oldData["max_direction"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MaxDirection = result;
+
+            if (!double.TryParse(oldData["min_direction"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MinDirection = result;
+
+            if (!double.TryParse(oldData["max_tilt"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MaxTilt = result;
+
+            if (!double.TryParse(oldData["min_tilt"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MinTilt = result;
+
+            return toUpdate;
+        }
+
+        /**************************************************/
         /**** Private Methods: Fallback                ****/
         /**************************************************/
 

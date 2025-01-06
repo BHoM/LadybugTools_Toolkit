@@ -29,28 +29,25 @@ using System.Text;
 namespace BH.oM.LadybugTools
 {
     [Description("Command to use in conjunction with the LadybugToolsAdapter, that simulates a range of angles that a PV panel could rest at, and measures the amount of radiation (and by extension the energy that the panels create) at that angle.")]
-    public class SolarPanelTiltOptimisationCommand : ISimulationCommand
+    public class SolarRadiationPlotCommand : ISimulationCommand
     {
         [Description("The EPW file to use for simulation.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
         [Description("The number of different azimuthal angles to simulate.")]
-        public virtual int Azimuths { get; set; } = 3;
+        public virtual int Directions { get; set; } = 3;
 
         [Description("The number of different altitudinal angles to simulate.")]
-        public virtual int Altitudes { get; set; } = 3;
-
-        [Description("The reflectance of the ground.")]
-        public virtual double GroundReflectance { get; set; } = 0.2;
+        public virtual int Tilts { get; set; } = 3;
 
         [Description("The irradiance type to plot. Total for all.")]
         public virtual IrradianceType IrradianceType { get; set; } = IrradianceType.Total;
 
-        [Description("Whether to calculate isotropic values during simulation.")]
-        public virtual bool Isotropic { get; set; } = true;
-
         [Description("The analysis period to simulate/plot.")]
         public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
+
+        [Description("A Matplotlib colour map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'viridis'.")]
+        public virtual string ColourMap { get; set; } = "YlOrRd";
 
         [Description("The title of the plot. Will appear above any information at the top of the plot.")]
         public virtual string Title { get; set; } = "";

@@ -4,6 +4,7 @@
 import pickle
 from enum import Enum, auto
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 from honeybee.config import folders as hb_folders
@@ -1078,6 +1079,62 @@ def radiation_rose(
 
     return ax
 
+def create_radiation_matrix(
+    epw_file:Path,
+    rad_type:IrradianceType = IrradianceType.TOTAL,
+    analysis_period:AnalysisPeriod = AnalysisPeriod(),
+    directions:int = 36,
+    tilts:int = 9
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    match rad_type:
+        case IrradianceType.TOTAL:
+            rad_type = "total"
+        case IrradianceType.DIRECT:
+            rad_type = "direct"
+        case IrradianceType.DIFFUSE:
+            rad_type = "diffuse"
+        case IrradianceType.REFLECTED:
+            raise NotImplementedError("Reflected irradiance not yet supported.")
+        case _:
+            raise ValueError("rad_type must be IrradianceType.")
+
+    # create dir for cached results
+    _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
+    _dir.mkdir(exist_ok=True, parents=True)
+    ndir = directions
+
+    # create sky matrix
+    smx = SkyMatrix.from_epw(epw_file=epw_file, high_density=True, hoys=analysis_period.hoys)
+
+    # create roses per tilt angle
+    _directions = np.linspace(0, 360, directions + 1)[:-1].tolist()
+    _tilts = np.linspace(0, 90, tilts)[:-1].tolist() + [89.999]
+    rrs: list[RadiationRose] = []
+    pbar = tqdm(_tilts)
+    for ta in pbar:
+        sp = (
+            _dir
+            / f"{epw_file.stem}_{ndir}_{ta:0.4f}_{describe_analysis_period(analysis_period=analysis_period, save_path=True, include_timestep=True)}.pickle"
+        )
+        if sp.exists():
+            pbar.set_description(r"Reloading cached results for $%s°$ tilt." % ta)
+            rr = pickle.load(open(sp, "rb"))
+        else:
+            pbar.set_description(r"Generating results for $%s°$ tilt." % ta)
+            rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=ta)
+            pickle.dump(rr, open(sp, "wb"))
+        rrs.append(rr)
+    _directions.append(360)
+    
+    # create matrix of values from results
+    values = np.array([getattr(i, f"{rad_type}_values") for i in rrs])
+
+    # repeat first result at end to close the circle
+    values = values.T.tolist()
+    values.append(values[0])
+    values = np.array(values).T
+
+    return values, _directions, _tilts
 
 def tilt_orientation_factor(
     epw_file: Path,
@@ -1125,58 +1182,12 @@ def tilt_orientation_factor(
             The matplotlib axes.
     """
 
-    match rad_type:
-        case IrradianceType.TOTAL:
-            rad_type = "total"
-        case IrradianceType.DIRECT:
-            rad_type = "direct"
-        case IrradianceType.DIFFUSE:
-            rad_type = "diffuse"
-        case IrradianceType.REFLECTED:
-            raise NotImplementedError("Reflected irradiance not yet supported.")
-        case _:
-            raise ValueError("rad_type must be IrradianceType.")
-
-    # create dir for cached results
-    _dir = Path(hb_folders.default_simulation_folder) / "_lbt_tk_solar"
-    _dir.mkdir(exist_ok=True, parents=True)
-    ndir = directions
-
     if ax is None:
         ax = plt.gca()
 
     cmap = plt.get_cmap(cmap)
 
-    # create sky matrix
-    smx = SkyMatrix.from_epw(epw_file=epw_file, high_density=True, hoys=analysis_period.hoys)
-
-    # create roses per tilt angle
-    _directions = np.linspace(0, 360, directions + 1)[:-1].tolist()
-    _tilts = np.linspace(0, 90, tilts)[:-1].tolist() + [89.999]
-    rrs: list[RadiationRose] = []
-    pbar = tqdm(_tilts)
-    for ta in pbar:
-        sp = (
-            _dir
-            / f"{epw_file.stem}_{ndir}_{ta:0.4f}_{describe_analysis_period(analysis_period=analysis_period, save_path=True, include_timestep=True)}.pickle"
-        )
-        if sp.exists():
-            pbar.set_description(r"Reloading cached results for $%s°$ tilt." % ta)
-            rr = pickle.load(open(sp, "rb"))
-        else:
-            pbar.set_description(r"Generating results for $%s°$ tilt." % ta)
-            rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=ta)
-            pickle.dump(rr, open(sp, "wb"))
-        rrs.append(rr)
-    _directions.append(360)
-
-    # create matrix of values from results
-    values = np.array([getattr(i, f"{rad_type}_values") for i in rrs])
-
-    # repeat first result at end to close the circle
-    values = values.T.tolist()
-    values.append(values[0])
-    values = np.array(values).T
+    values, _directions, _tilts = create_radiation_matrix(epw_file=epw_file, rad_type=rad_type, analysis_period=analysis_period, directions=directions, tilts=tilts)
 
     # create x, y coordinates per result value
     __directions, __tilts = np.meshgrid(_directions, _tilts)
@@ -1263,7 +1274,7 @@ def tilt_orientation_factor(
     ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
 
     ax.set_title(
-        f"{epw_file.name}\n{rad_type.title()} irradiance (cumulative)\n{describe_analysis_period(analysis_period)}"
+        f"{epw_file.name}\n{rad_type.to_string()} irradiance (cumulative)\n{describe_analysis_period(analysis_period)}"
     )
 
     return ax
