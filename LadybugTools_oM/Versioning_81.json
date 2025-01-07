@@ -1,0 +1,10 @@
+﻿{
+  "Type": {
+    "ToNew": {
+      "BH.oM.LadybugTools.SolarPanelTiltOptimisationCommand": "BH.oM.LadybugTools.SolarRadiationPlotCommand"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.SolarRadiationPlotCommand": "BH.oM.LadybugTools.SolarPanelTiltOptimisationCommand"
+    }
+  }
+}
