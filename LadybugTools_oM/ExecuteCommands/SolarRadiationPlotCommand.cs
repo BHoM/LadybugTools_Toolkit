@@ -46,7 +46,7 @@ namespace BH.oM.LadybugTools
         [Description("The analysis period to simulate/plot.")]
         public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
 
-        [Description("A Matplotlib colour map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'viridis'.")]
+        [Description("A Matplotlib colour map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'YlOrRd'.")]
         public virtual string ColourMap { get; set; } = "YlOrRd";
 
         [Description("The title of the plot. Will appear above any information at the top of the plot.")]
