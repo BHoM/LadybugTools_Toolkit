@@ -1,0 +1,21 @@
+﻿{
+  "Type": {
+    "ToNew": {
+      "BH.oM.LadybugTools.SolarPanelTiltOptimisationCommand": "BH.oM.LadybugTools.SolarRadiationPlotCommand"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.SolarRadiationPlotCommand": "BH.oM.LadybugTools.SolarPanelTiltOptimisationCommand"
+    }
+  },
+  "Property": {
+    "ToNew": {
+      "BH.oM.LadybugTools.SolarRadiationPlotCommand.Azimuths": "Directions",
+      "BH.oM.LadybugTools.SolarRadiationPlotCommand.Altitudes": "Tilts"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.SolarRadiationPlotCommand.Directions": "Azimuths",
+      "BH.oM.LadybugTools.SolarRadiationPlotCommand.Tilts": "Altitudes"
+    }
+
+  }
+}

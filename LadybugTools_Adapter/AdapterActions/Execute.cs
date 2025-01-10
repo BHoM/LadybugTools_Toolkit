@@ -583,9 +583,8 @@ namespace BH.Adapter.LadybugTools
 
         /**************************************************/
 
-        private List<object> RunCommand(SolarPanelTiltOptimisationCommand command, ActionConfig actionConfig)
+        private List<object> RunCommand(SolarRadiationPlotCommand command, ActionConfig actionConfig)
         {
-            throw new NotImplementedException("The underlying python functions for this method are unfinished, and so executing this will not produce results. This will be updated in a future alpha so that it does work and with the same signature as other execute actions.");
             if (command.EPWFile == null)
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
@@ -598,21 +597,15 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (command.Azimuths < 3)
+            if (command.Directions < 3)
             {
                 BH.Engine.Base.Compute.RecordError($"Azimuths must be greater than or equal to 1.");
                 return null;
             }
 
-            if (command.Altitudes < 3)
+            if (command.Tilts < 3)
             {
                 BH.Engine.Base.Compute.RecordError($"Altitudes must be greater than or equal to 1");
-                return null;
-            }
-
-            if (command.GroundReflectance < 0 || command.GroundReflectance > 1)
-            {
-                BH.Engine.Base.Compute.RecordError($"Ground reflectance must be between 0 and 1 inclusive.");
                 return null;
             }
 
@@ -628,15 +621,34 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
+            string colourMap = command.ColourMap;
+            if (colourMap.ColourMapValidity())
+                colourMap = colourMap.ToColourMap().FromColourMap();
+
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+            string returnFile = Path.GetTempFileName();
 
             string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
 
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -az {command.Azimuths} -al {command.Altitudes} -gr {command.GroundReflectance} -ir {command.IrradianceType} {(command.Isotropic ? "-iso" : "")} -t \"{command.Title}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -d {command.Directions} -ti {command.Tilts} -ir {command.IrradianceType} -cmap \"{colourMap}\" -t \"{command.Title}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\" -r \"{returnFile.Replace('\\', '/')}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
+            string resultFile = result.Split('\n').Last();
+
+            if (!File.Exists(resultFile))
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
+                File.Delete(returnFile);
+                return new List<object>();
+            }
+
+            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
+            File.Delete(returnFile);
+            PlotInformation info = Convert.ToPlotInformation(obj, new SolarRadiationData());
+
             m_executeSuccess = true;
-            return new List<object>() { result.Split('\n').Last() };
+            return new List<object>() { info };
         }
 
         /**************************************************/
