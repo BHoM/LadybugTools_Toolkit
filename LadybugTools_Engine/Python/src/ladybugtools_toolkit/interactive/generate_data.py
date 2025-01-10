@@ -3,11 +3,13 @@ indices, and an interactive web-page to play with the data."""
 
 import inspect
 import itertools
+import textwrap
 from pathlib import Path
 from typing import Callable
 
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 from ladybug.epw import EPW
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
@@ -15,6 +17,7 @@ from tqdm import tqdm
 
 from . import DATA_DIR, PERSON_HEIGHT, TERRAIN_ROUGHNESS_LENGTH
 from .wrapped_methods import (
+    UPSTREAM_VARIABLES,
     _actual_sensation_vote,
     _apparent_temperature,
     _discomfort_index,
@@ -211,7 +214,7 @@ def calculate_metrics_for_epw(
         DATA_DIR / f"{Path(epw.file_path).stem}_{metabolic_rate:0.1f}_{clo_value:0.1f}.parquet"
     )
     if dataset.exists():
-        CONSOLE_LOGGER.info(f"Reloading from {dataset}.")
+        CONSOLE_LOGGER.info("Reloading from %s.", dataset)
         return pd.read_parquet(dataset)
 
     # calculate MRT for all hours of the EPW
@@ -262,10 +265,69 @@ def calculate_metrics_for_epw(
     df = calculate_metrics(dataframe=df, metrics_to_calculate=metrics_to_calculate)
 
     # save to dataset
-    CONSOLE_LOGGER.info(f"Writing results to {dataset}.")
+    CONSOLE_LOGGER.info("Writing results to %s.", dataset)
     df.to_parquet(dataset, compression="brotli", index=False)
 
     return df
+
+
+def create_plotly_parcoord_from_epw(
+    epw: Path | EPW,
+    metrics_to_calculate: list[Callable] = None,
+) -> Path:
+    """Create a Plotly parcoord plot from an EPW file.
+
+    Returns:
+    """
+
+    if isinstance(epw, Path):
+        epw = EPW(epw)
+    if not isinstance(epw, EPW):
+        raise ValueError("The epw should be a path or an EPW object.")
+
+    if metrics_to_calculate is None:
+        metrics_to_calculate = [k for k, _ in UPSTREAM_VARIABLES.items()]
+
+    # define the upstream "input" metrics to show
+    input_variables = []
+    output_variables = []
+    for callable in metrics_to_calculate:
+        input_variables.extend(UPSTREAM_VARIABLES[callable])
+        output_variables.append(getattr(callable, "__name__", repr(callable))[1:])
+    input_variables = list(set(input_variables))
+    output_variables = list(set(output_variables))
+
+    df = calculate_metrics_for_epw(epw=epw, metrics_to_calculate=metrics_to_calculate)
+
+    variables_to_show = input_variables + output_variables
+
+    # create the dimensions to plot
+    dims = []
+    for v in variables_to_show:
+        dims.append(
+            {
+                "range": [min(df[v]), max(df[v])],
+                "label": " ".join(v.split("_")).title().replace(" ", "<br>") + "<br>",
+                "values": df[v],
+            }
+        )
+    # create the parcoord plot
+    fig = go.Figure(
+        data=go.Parcoords(
+            # # format the lines - colorscale is a pain to format, so you can use built-ins
+            # line=dict(
+            #     color=df[output_variables[0]],
+            #     colorscale="Spectral_r",
+            # ),
+            # add the data to the plot
+            dimensions=dims,
+        ),
+    )
+    fig.update_layout(title_text=Path(epw.file_path).stem, font_size=12)
+    pth = DATA_DIR / f"{Path(epw.file_path).stem}_metrics.html"
+    with open(pth, "w", encoding="utf-8") as fp:
+        fp.write(fig.to_html(config={"displaylogo": False}))
+    return pth
 
 
 # def calculate_all_metrics(

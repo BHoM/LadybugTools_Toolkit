@@ -1,4 +1,5 @@
 """Color handling utilities"""
+
 # pylint: disable=E0401
 import base64
 import colorsys
@@ -6,8 +7,6 @@ import copy
 import io
 from pathlib import Path
 from typing import Any
-
-# pylint: enable=E0401
 
 import matplotlib.image as mimage
 import matplotlib.pyplot as plt
@@ -26,8 +25,9 @@ from matplotlib.colors import (
 )
 from matplotlib.tri import Triangulation
 from PIL import Image
-
 from python_toolkit.bhom.analytics import bhom_analytics
+
+# pylint: enable=E0401
 
 
 @bhom_analytics()
@@ -318,7 +318,7 @@ def create_title(text: str, plot_type: str) -> str:
 
 
 @bhom_analytics()
-def average_color(colors: Any, keep_alpha: bool = False) -> str:
+def average_color(colors: Any, keep_alpha: bool = False, weights: list[float] = None) -> str:
     """Return the average color from a list of colors.
 
     Args:
@@ -326,6 +326,8 @@ def average_color(colors: Any, keep_alpha: bool = False) -> str:
             A list of colors.
         keep_alpha (bool, optional):
             If True, the alpha value of the color is kept. Defaults to False.
+        weights (list[float], optional):
+            A list of weights for each color. Defaults to None.
 
     Returns:
         color: str
@@ -337,14 +339,14 @@ def average_color(colors: Any, keep_alpha: bool = False) -> str:
 
     for i in colors:
         if not is_color_like(i):
-            raise ValueError(
-                f"colors must be a list of valid colors - '{i}' is not valid."
-            )
+            raise ValueError(f"colors must be a list of valid colors - '{i}' is not valid.")
 
     if len(colors) == 1:
         return colors[0]
 
-    return rgb2hex(to_rgba_array(colors).mean(axis=0), keep_alpha=keep_alpha)
+    return rgb2hex(
+        np.average(to_rgba_array(colors), axis=0, weights=weights), keep_alpha=keep_alpha
+    )
 
 
 @bhom_analytics()
@@ -463,9 +465,7 @@ def figure_to_image(fig: plt.Figure) -> Image:
 
 
 @bhom_analytics()
-def tile_images(
-    imgs: list[Path] | list[Image.Image], rows: int, cols: int
-) -> Image.Image:
+def tile_images(imgs: list[Path] | list[Image.Image], rows: int, cols: int) -> Image.Image:
     """Tile a set of images into a grid.
 
     Args:
@@ -487,9 +487,7 @@ def tile_images(
     imgs = [Image.open(img) if isinstance(img, Path) else img for img in imgs]
 
     if len(imgs) != rows * cols:
-        raise ValueError(
-            f"The number of images given ({len(imgs)}) does not equal ({rows}*{cols})"
-        )
+        raise ValueError(f"The number of images given ({len(imgs)}) does not equal ({rows}*{cols})")
 
     # ensure each image has the same dimensions
     w, h = imgs[0].size
@@ -602,9 +600,7 @@ def create_triangulation(
             break
         if count > max_iterations:
             plt.close(fig)
-            raise ValueError(
-                f"Could not create a valid triangulation mask within {max_iterations}"
-            )
+            raise ValueError(f"Could not create a valid triangulation mask within {max_iterations}")
     plt.close(fig)
     triang.set_mask(maxi > alpha)
     return triang
@@ -624,9 +620,7 @@ def format_polar_plot(ax: plt.Axes, yticklabels: bool = True) -> plt.Axes:
     ax.set_xticks(np.radians((0, 90, 180, 270)), minor=False)
     ax.set_xticklabels(("N", "E", "S", "W"), minor=False, **{"fontsize": "medium"})
     ax.set_xticks(
-        np.radians(
-            (22.5, 45, 67.5, 112.5, 135, 157.5, 202.5, 225, 247.5, 292.5, 315, 337.5)
-        ),
+        np.radians((22.5, 45, 67.5, 112.5, 135, 157.5, 202.5, 225, 247.5, 292.5, 315, 337.5)),
         minor=True,
     )
     ax.set_xticklabels(

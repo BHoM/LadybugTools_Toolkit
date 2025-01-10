@@ -2,7 +2,8 @@
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from matplotlib.colors import Colormap
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoricalComfort
 
@@ -11,7 +12,7 @@ class MissingVariableException(Exception):
     """Custom exception raised when a required variable is missing."""
 
 
-class Config(BaseModel):
+class SummariseClimateConfig(BaseModel):
     """Configuration options for the processing of climatic data from a pandas DataFrame"""
 
     # plot configurations
@@ -56,5 +57,15 @@ class Config(BaseModel):
     utci_categories: Optional[CategoricalComfort] = Field(
         description="The UTCI categories to use.", default=UTCI_DEFAULT_CATEGORIES
     )
+    # windrose
+    windrose_cmap: Optional[str | Colormap] = Field(
+        description="The colormap to use for the windrose plot.", default="YlGnBu"
+    )
+    windrose_directions: Optional[int] = Field(
+        description="The number of directions to use for the windrose plot.", default=16
+    )
     # file configurations
     overwrite: bool = Field(description="Overwrite existing outputs.", default=True)
+
+    class Config:
+        arbitrary_types_allowed = True

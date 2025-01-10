@@ -1,0 +1,13 @@
+# Formulae for CEL expressions
+# Build 17.0 2015.11.13-23.37-135321
+
+LIBRARY : 
+    CEL : 
+        EXPRESSIONS : 
+            Re = 4.29E6 [ ] 
+            Vel = 60 [m s^-1] 
+            L=1.044[m] 
+            Visc = areaAve(density)@in*Vel*L/Re 
+        END # EXPRESSIONS
+    END # CEL
+END # LIBRARY

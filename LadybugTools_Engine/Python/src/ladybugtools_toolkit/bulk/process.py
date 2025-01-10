@@ -114,8 +114,7 @@ from ..plot.spatial_heatmap import spatial_heatmap
 from ..plot.utilities import colormap_sequential, create_triangulation
 from ..solar import radiation_rose, tilt_orientation_factor
 from ..wind import Wind
-from .config import Config as OutputConfig
-from .config import MissingVariableException
+from .config import MissingVariableException, SummariseClimateConfig
 
 humidex_v = np.vectorize(humidex)
 wbgt_v = np.vectorize(wet_bulb_globe_temperature)
@@ -137,8 +136,8 @@ class SummariseClimate(BaseModel):
     df: pd.DataFrame = Field(description="The dataframe to summarize.", repr=False)
     target_directory: str | Path = Field(description="The directory to save the summary data into.")
     location: Optional[Location] = Field(description="The location of the data.", repr=False)
-    config: Optional[OutputConfig] = Field(
-        description="The configuration for the plots.", default=OutputConfig()
+    config: Optional[SummariseClimateConfig] = Field(
+        description="The configuration for the plots.", default=SummariseClimateConfig()
     )
 
     class Config:
@@ -168,8 +167,8 @@ class SummariseClimate(BaseModel):
     @validator("config")
     def config_validator(cls, v):  # pylint: disable=no-self-argument
         """Validate the configuration."""
-        if not isinstance(v, OutputConfig):
-            raise ValueError("Config must be an instance of OutputConfig.")
+        if not isinstance(v, SummariseClimateConfig):
+            raise ValueError("Config must be an instance of SummariseClimateConfig.")
         return v
 
     @validator("target_directory")
@@ -186,7 +185,9 @@ class SummariseClimate(BaseModel):
 
     # region: CLASSMETHODS
     @classmethod
-    def from_epw(cls, epw: EPW, target_directory: str | Path, config: OutputConfig = None):
+    def from_epw(
+        cls, epw: EPW, target_directory: str | Path, config: SummariseClimateConfig = None
+    ):
         """Create this object from an EPW object."""
 
         # copy the EPW file to the target directory
@@ -223,7 +224,7 @@ class SummariseClimate(BaseModel):
         target_directory: str | Path,
         start: str = "2015-01-01",
         end: str = "2024-06-01",
-        config: OutputConfig = None,
+        config: SummariseClimateConfig = None,
     ):
         """Create this object from an online dataset."""
 
@@ -598,7 +599,7 @@ class SummariseClimate(BaseModel):
                 1, 1, figsize=self.config.windrose_figsize, subplot_kw={"projection": "polar"}
             )
             wind.filter_by_analysis_period(ap).plot_windrose(
-                ax=ax, directions=16, colors=plt.get_cmap("YlGnBu")
+                ax=ax, directions=self.config.windrose_directions, colors=self.config.windrose_cmap
             )
             ax.set_title(f"{self.identifier}\n{describe_analysis_period(ap)}")
             fig.savefig(sp, dpi=self.config.dpi, transparent=True)

@@ -36,7 +36,7 @@ from ladybug.skymodel import (
 from ladybug.sunpath import Sunpath
 from ladybug_comfort.degreetime import cooling_degree_time, heating_degree_time
 from ladybug_geometry.geometry2d import Vector2D
-from matplotlib.colors import hex2color, rgb2hex
+from matplotlib.colors import hex2color, rgb2hex, to_hex, to_rgba
 from meteostat import Hourly, Point
 from PIL import Image, ImageColor, ImageDraw
 from python_toolkit.bhom.analytics import bhom_analytics
@@ -48,6 +48,57 @@ from .ladybug_extension.dt import lb_datetime_from_datetime
 from .plot.utilities import average_color
 
 # pylint: enable=E0401
+
+
+def color_to_format(
+    color: Any, return_type: str, include_alpha: bool = False
+) -> str | list[int] | list[float]:
+    """Convert a color-like object to a target format.
+
+    Args:
+        color (Any):
+            The color-like object to convert.
+        return_type (str):
+            The type of color to return. Options are:
+             - hex
+             - rgb_int
+             - rgb_float
+             - plotly
+        include_alpha (bool, optional):
+            Include the alpha channel in the output. Defaults to False.
+
+    Returns:
+        Any:
+            The color in the target format.
+    """
+
+    # convert color to hex
+    c_rgba = to_rgba(color)
+
+    match return_type:
+        case "hex":
+            temp = to_hex(c_rgba, keep_alpha=True)
+            if include_alpha:
+                return temp
+            return temp[:-2]
+        case "rgb_int":
+            temp = (np.array(c_rgba) * 255).round(0).astype(int)
+            if include_alpha:
+                return temp
+            return temp[:-1]
+        case "rgb_float":
+            temp = np.array([float(i) for i in c_rgba])
+            if include_alpha:
+                return temp
+            return temp[:-1]
+        case "plotly":
+            r, g, b = (np.array(c_rgba)[:3] * 255).round(0).astype(int)
+            if include_alpha:
+                a = float(c_rgba[3])
+                return f"rgba({r},{g},{b},{a})"
+            return f"rgb({r},{g},{b})"
+        case _:
+            raise ValueError("return_type must be either 'hex', 'rgb_int', 'rgb_float or 'plotly'.")
 
 
 def sanitise_string(string: str) -> str:

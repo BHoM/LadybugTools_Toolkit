@@ -249,3 +249,50 @@ def _windchill_temp(
 ) -> float:
     """Wrapped version of Windchill Temperature."""
     return np.float16(windchill_temp(ta=air_temperature, ws=air_velocity))
+
+
+UPSTREAM_VARIABLES = {
+    _actual_sensation_vote: [
+        "air_temperature",
+        "solar_radiation",
+        "air_velocity",
+        "relative_humidity",
+    ],
+    _apparent_temperature: ["air_temperature", "air_velocity", "relative_humidity"],
+    _discomfort_index: ["air_temperature", "relative_humidity"],
+    _heat_index: ["air_temperature", "relative_humidity"],
+    _humidex: ["air_temperature", "relative_humidity"],
+    _physiologic_equivalent_temperature: [
+        "air_temperature",
+        "mean_radiant_temperature",
+        "air_velocity",
+        "relative_humidity",
+        "metabolic_rate",
+        "clo_value",
+    ],
+    _standard_effective_temperature: [
+        "air_temperature",
+        "mean_radiant_temperature",
+        "air_velocity",
+        "relative_humidity",
+        "metabolic_rate",
+        "clo_value",
+    ],
+    _thermal_sensation: ["air_temperature", "solar_radiation", "air_velocity", "relative_humidity"],
+    _universal_thermal_climate_index: [
+        "air_temperature",
+        "mean_radiant_temperature",
+        "air_velocity",
+        "relative_humidity",
+    ],
+    _wet_bulb_globe_temperature: [
+        "air_temperature",
+        "mean_radiant_temperature",
+        "air_velocity",
+        "relative_humidity",
+    ],
+    _windchill_temp: [
+        "air_temperature",
+        "air_velocity",
+    ],
+}

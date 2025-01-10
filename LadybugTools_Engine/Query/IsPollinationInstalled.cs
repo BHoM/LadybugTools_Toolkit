@@ -37,7 +37,7 @@ namespace BH.Engine.LadybugTools
         [Description("Return True if Pollination is installed to the currently supported version.")]
         [Input("targetPollinationVersion", "The target Pollination version that BHoM currently supports.")]
         [Output("bool", "True if Pollination is installed to the currently supported version.")]
-        public static bool IsPollinationInstalled(string targetPollinationVersion = "1.46.0")
+        public static bool IsPollinationInstalled(string targetPollinationVersion = "1.50.1")
         {
             // check if referenced Python is installed
             string referencedExecutable = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles) + @"\ladybug_tools\python\python.exe";

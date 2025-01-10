@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from ladybug.epw import EPW, Location
 from ladybug.header import Header
+from ladybug_comfort.collection.utci import UTCI
 from matplotlib.axes import Axes
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
 from tqdm import tqdm
@@ -20,45 +21,49 @@ from ..ladybug_extension.epw import (
     average_collection,
     average_epw,
     average_location,
+    collection_to_series,
     degree_time,
     epw_to_dataframe,
 )
 from ..ladybug_extension.header import header_from_string, header_to_string
-from .process import OutputConfig, SummariseClimate
+from .process import SummariseClimate, SummariseClimateConfig
 
 MAX_DISTANCE = 25  # km, between EPWs before warning raised
-VARIABLES = [
-    "aerosol_optical_depth",
-    "albedo",
-    "atmospheric_station_pressure",
-    "ceiling_height",
-    "days_since_last_snowfall",
-    "dew_point_temperature",
-    "diffuse_horizontal_illuminance",
-    "diffuse_horizontal_radiation",
-    "direct_normal_illuminance",
-    "direct_normal_radiation",
-    "dry_bulb_temperature",
-    "extraterrestrial_direct_normal_radiation",
-    "extraterrestrial_horizontal_radiation",
-    "global_horizontal_illuminance",
-    "global_horizontal_radiation",
-    "horizontal_infrared_radiation_intensity",
-    "liquid_precipitation_depth",
-    "liquid_precipitation_quantity",
-    "opaque_sky_cover",
-    "precipitable_water",
-    "present_weather_codes",
-    "present_weather_observation",
-    "relative_humidity",
-    "snow_depth",
-    "total_sky_cover",
-    "visibility",
-    "wind_direction",
-    "wind_speed",
-    "years",
-    "zenith_luminance",
-]
+VARIABLES = {
+    "albedo": "Albedo (fraction)",
+    "atmospheric_station_pressure": "Atmospheric Station Pressure (Pa)",
+    "ceiling_height": "Ceiling Height (m)",
+    "days_since_last_snowfall": "Days Since Last Snowfall (day)",
+    "dew_point_temperature": "Dew Point Temperature (C)",
+    "diffuse_horizontal_illuminance": "Diffuse Horizontal Illuminance (lux)",
+    "diffuse_horizontal_radiation": "Diffuse Horizontal Radiation (Wh/m2)",
+    "direct_normal_illuminance": "Direct Normal Illuminance (lux)",
+    "direct_normal_radiation": "Direct Normal Radiation (Wh/m2)",
+    "dry_bulb_temperature": "Dry Bulb Temperature (C)",
+    "extraterrestrial_direct_normal_radiation": "Extraterrestrial Direct Normal Radiation (Wh/m2)",
+    "extraterrestrial_horizontal_radiation": "Extraterrestrial Horizontal Radiation (Wh/m2)",
+    "global_horizontal_illuminance": "Global Horizontal Illuminance (lux)",
+    "global_horizontal_radiation": "Global Horizontal Radiation (Wh/m2)",
+    "horizontal_infrared_radiation_intensity": "Horizontal Infrared Radiation Intensity (W/m2)",
+    "liquid_precipitation_depth": "Liquid Precipitation Depth (mm)",
+    "liquid_precipitation_quantity": "Liquid Precipitation Quantity (fraction)",
+    "opaque_sky_cover": "Opaque Sky Cover (tenths)",
+    "precipitable_water": "Precipitable Water (mm)",
+    "present_weather_codes": "Present Weather Codes (codes)",
+    "present_weather_observation": "Present Weather Observation (observation)",
+    "relative_humidity": "Relative Humidity (%)",
+    "snow_depth": "Snow Depth (cm)",
+    "total_sky_cover": "Total Sky Cover (tenths)",
+    "visibility": "Visibility (km)",
+    "wind_direction": "Wind Direction (degrees)",
+    "wind_speed": "Wind Speed (m/s)",
+    "years": "Year (yr)",
+    "zenith_luminance": "Zenith Luminance (cd/m2)",
+    "wet_bulb_temperature": "Wet Bulb Temperature (C)",
+    "universal_thermal_climate_index_shaded": "Universal Thermal Climate Index [Shaded] (C)",
+    "universal_thermal_climate_index_unshaded": "Universal Thermal Climate Index [Unshaded] (C)",
+    "universal_thermal_climate_index_unshaded_nowind": "Universal Thermal Climate Index [Unshaded+NoWind] (C)",
+}
 
 
 def location_distance(location1: Location, location2: Location) -> float:
@@ -158,8 +163,30 @@ class EPWComparison:
     def df(self) -> pd.DataFrame:
         """A DataFrame of the EPW data."""
         dfs = []
-        for i in self.epws:
-            dfs.append(epw_to_dataframe(i, include_additional=True))
+        pbar = tqdm(self.epws)
+        for i in pbar:
+            pbar.set_description(f"Processing {Path(i.file_path).stem}")
+            df = epw_to_dataframe(i, include_additional=True)
+
+            # add comfort metrics
+            df["Universal Thermal Climate Index [Shaded] (C)"] = collection_to_series(
+                UTCI.from_epw(
+                    epw=i, include_wind=True, include_sun=False
+                ).universal_thermal_climate_index
+            )
+            df["Universal Thermal Climate Index [Unshaded] (C)"] = collection_to_series(
+                UTCI.from_epw(
+                    epw=i, include_wind=True, include_sun=True
+                ).universal_thermal_climate_index
+            )
+            df["Universal Thermal Climate Index [Unshaded+NoWind] (C)"] = collection_to_series(
+                UTCI.from_epw(
+                    epw=i, include_wind=False, include_sun=True
+                ).universal_thermal_climate_index
+            )
+
+            dfs.append(df)
+
         return pd.concat(dfs, axis=1, keys=self.epw_ids)
 
     def _assign_properties(self) -> None:
@@ -168,13 +195,28 @@ class EPWComparison:
         df = self.df.swaplevel(axis=1)
 
         # get the attribute from the EPW objects
-        pbar = tqdm(VARIABLES)
-        for prop in pbar:
-            pbar.set_description(f"Processing {prop}")
-            setattr(self, prop, df[header_to_string(getattr(self.epws[0], prop).header)])
+        for prop in VARIABLES.keys():
+            setattr(self, prop, df[VARIABLES[prop]])
 
         # add wet-bulb temperature
         setattr(self, "wet_bulb_temperature", df["Wet Bulb Temperature (C)"])
+
+        # add utci (shaded) and utci (unshaded)
+        setattr(
+            self,
+            "universal_thermal_climate_index_shaded",
+            df["Universal Thermal Climate Index [Shaded] (C)"],
+        )
+        setattr(
+            self,
+            "universal_thermal_climate_index_unshaded",
+            df["Universal Thermal Climate Index [Unshaded] (C)"],
+        )
+        setattr(
+            self,
+            "universal_thermal_climate_index_unshaded_nowind",
+            df["Universal Thermal Climate Index [Unshaded+NoWind] (C)"],
+        )
 
     def _get_collections(self, variable: str) -> list[HourlyContinuousCollection]:
         """Get a list of collections of a variable from the EPWs."""
@@ -182,12 +224,20 @@ class EPWComparison:
 
     def _get_series(self, variable: str) -> list[pd.Series]:
         """Get a list of series of a variable from the EPWs."""
-        if variable not in VARIABLES + ["wet_bulb_temperature"]:
-            raise ValueError(f"{variable} is not a valid variable. Must be one of {VARIABLES}")
+        if variable not in VARIABLES.keys():
+            raise ValueError(
+                f"{variable} is not a valid variable. Must be one of {VARIABLES.keys()}"
+            )
         df = self.df.swaplevel(axis=1)
 
         if variable == "wet_bulb_temperature":
             return df["Wet Bulb Temperature (C)"]
+        if variable == "universal_thermal_climate_index_shaded":
+            return df["Universal Thermal Climate Index [Shaded] (C)"]
+        if variable == "universal_thermal_climate_index_unshaded":
+            return df["Universal Thermal Climate Index [Unshaded] (C)"]
+        if variable == "universal_thermal_climate_index_unshaded_nowind":
+            return df["Universal Thermal Climate Index [Unshaded+NoWind] (C)"]
 
         return df[header_to_string(getattr(self.epws[0], variable).header)]
 
@@ -227,8 +277,10 @@ class EPWComparison:
             DataFrame: A DataFrame of the summary for the variable.
 
         """
-        if variable not in VARIABLES:
-            raise ValueError(f"{variable} is not a valid variable. Must be one of {VARIABLES}")
+        if variable not in VARIABLES.keys():
+            raise ValueError(
+                f"{variable} is not a valid variable. Must be one of {VARIABLES.keys()}"
+            )
 
         summaries = []
         for collection, epw_id in zip(*[self._get_collections(variable=variable), self.epw_ids]):
@@ -298,6 +350,7 @@ class EPWComparison:
     def diurnal_annual_monthly(
         self,
         variable: str,
+        agg: str = "mean",
         ax: Axes = None,
         comparable_series: pd.Series = None,
         show_legend: bool = True,
@@ -319,6 +372,11 @@ class EPWComparison:
             Axes: The matplotlib axes object.
         """
 
+        if variable == "wind_direction":
+            raise ValueError(
+                "wind_direction comparison is not supported for diurnal_annual_monthly plots"
+            )
+
         if ax is None:
             ax = plt.gca()
 
@@ -338,10 +396,10 @@ class EPWComparison:
             elif i[1] == 12:
                 major_ticklabels.append("")
 
-        mean = group.mean()
+        aggregated = group.agg(agg)
 
         # create df for re-indexing
-        df = mean.reindex(target_idx)
+        df = aggregated.reindex(target_idx)
         # populate plot
         for n, i in enumerate(range(len(df) + 1)[::24]):
             if n == len(range(len(df) + 1)[::24]) - 1:
@@ -397,7 +455,8 @@ class EPWComparison:
                 ncol=1,
                 borderaxespad=0,
             )
-        ax.set_ylabel(header_to_string(getattr(self.epws[0], variable).header))
+        ax.set_title(f"{agg.title()}")
+        ax.set_ylabel(VARIABLES[variable])
 
         return ax
 
@@ -471,9 +530,10 @@ class EPWComparison:
             _, edges, _ = ax.hist(
                 data.values, label=data.columns, color=color, bins=bins, density=density, **kwargs
             )
-            # ax.set_xticks((edges[1:] + edges[:-1]) / 2)
             ax.set_xticks(edges)
-        # return _
+
+        # format x axis
+        ax.xaxis.set_major_locator(mtick.AutoLocator())
 
         ax.set_xlim(xlim)
         ax.set_xlabel(header_to_string(getattr(self.epws[0], variable).header))
@@ -556,6 +616,9 @@ class EPWComparison:
         if month < 1 or month > 12:
             raise ValueError("month must be between 1 and 12")
 
+        if variable == "wind_direction":
+            raise ValueError("wind_direction comparison is not supported for diurnal plots")
+
         if ax is None:
             ax = plt.gca()
 
@@ -566,11 +629,12 @@ class EPWComparison:
 
         color = kwargs.pop("colors", None)
         if color is None:
-            color = plt.rcParams["axes.prop_cycle"].by_key()["color"][: len(self.epws)]
+            color = plt.rcParams["axes.prop_cycle"].by_key()["color"][: len(data)]
         if len(color) < len(self.epws):
             raise ValueError("color must have a color for each EPW")
 
-        ax.plot(data.index, data.values, color=color, **kwargs)
+        for n, (k, v) in enumerate(data.items()):
+            ax.plot(v.index, v.values, color=color[n], label=k, **kwargs)
 
         if comparable_series is not None:
             if not isinstance(comparable_series, pd.Series):
@@ -588,8 +652,8 @@ class EPWComparison:
             )
 
         ax.set_xlabel("Hour of Day")
-        ax.set_ylabel(header_to_string(getattr(self.epws[0], variable).header))
-        ax.set_title(f"{calendar.month_name[month]} ({agg})")
+        ax.set_ylabel(VARIABLES[variable])
+        ax.set_title(f'"{agg.title()}" across all days in {calendar.month_name[month]}')
         if show_legend:
             ax.legend(bbox_to_anchor=(1, 1), loc="upper left", ncol=1)
         ax.set_xlim(0, 24)
@@ -610,37 +674,38 @@ def process_epws(epw_files: list[str], target_directory: Path) -> EPWComparison:
 
     epws = [EPW(epw_file) for epw_file in epw_files]
     ecomp = EPWComparison(epws)
-    cfg = OutputConfig()
+    cfg = SummariseClimateConfig()
 
     # create the target directory if it does not exist
     target_directory.mkdir(parents=True, exist_ok=True)
 
     # process each EPW file
     for epw in epws:
-        CONSOLE_LOGGER.info(f"Processing {Path(epw.file_path).name}")
-        sc = SummariseClimate.from_epw(
-            epw, target_directory=target_directory / Path(epw.file_path).stem
-        )
-        ov = False
-        # frun ec methods to precalcualte typologyes
-        sc._default_external_comforts()
-        # run plotting methods
-        sc.plot_windroses(overwrite=ov)
-        sc.plot_windmatrices(overwrite=ov)
-        sc.plot_evaporative_cooling_potential(overwrite=ov)
-        sc.plot_sunriseset(overwrite=ov)
-        sc.plot_seasonality(overwrite=ov)
-        sc.plot_radiationrose(overwrite=ov)
-        sc.plot_radiationmatrix(overwrite=ov)
-        sc.plot_utci_shadebenefit(overwrite=ov)
-        sc.plot_material_temperatures(overwrite=ov)
-        sc.plot_utci_typologies(overwrite=ov)
-        sc.plot_utci_limits(overwrite=ov)
-        sc.plot_diurnals(overwrite=ov)
-        sc.plot_utci_shadebenefit(overwrite=ov)
-        sc.plot_utci_typologies(overwrite=ov)
-        sc.plot_utci_limits(overwrite=ov)
-        sc.plot_other_comfort_metrics(overwrite=ov)
+        pass
+        # CONSOLE_LOGGER.info(f"Processing {Path(epw.file_path).name}")
+        # sc = SummariseClimate.from_epw(
+        #     epw, target_directory=target_directory / Path(epw.file_path).stem
+        # )
+        # ov = False
+        # # frun ec methods to precalcualte typologyes
+        # sc._default_external_comforts()
+        # # run plotting methods
+        # sc.plot_windroses(overwrite=ov)
+        # sc.plot_windmatrices(overwrite=ov)
+        # sc.plot_evaporative_cooling_potential(overwrite=ov)
+        # sc.plot_sunriseset(overwrite=ov)
+        # sc.plot_seasonality(overwrite=ov)
+        # sc.plot_radiationrose(overwrite=ov)
+        # sc.plot_radiationmatrix(overwrite=ov)
+        # sc.plot_utci_shadebenefit(overwrite=ov)
+        # sc.plot_material_temperatures(overwrite=ov)
+        # sc.plot_utci_typologies(overwrite=ov)
+        # sc.plot_utci_limits(overwrite=ov)
+        # sc.plot_diurnals(overwrite=ov)
+        # sc.plot_utci_shadebenefit(overwrite=ov)
+        # sc.plot_utci_typologies(overwrite=ov)
+        # sc.plot_utci_limits(overwrite=ov)
+        # sc.plot_other_comfort_metrics(overwrite=ov)
 
     # create geojson of EPW locations
     gis_dir = target_directory
