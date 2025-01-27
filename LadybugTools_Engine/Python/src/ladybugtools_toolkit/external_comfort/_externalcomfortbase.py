@@ -12,6 +12,7 @@ from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybug_comfort.collection.pmv import PMV
 from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
+from matplotlib.colors import LinearSegmentedColormap
 
 from ..bhom.logging import CONSOLE_LOGGER
 from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
@@ -31,6 +32,7 @@ from ..plot.colormaps import (
 from ._simulatebase import SimulationResult
 from .typology import Typology, Typologies
 from .utci import distance_to_comfortable
+from ..ladybug_extension.header import header_from_string
 
 
 _ATTRIBUTES = [
@@ -324,6 +326,61 @@ class ExternalComfort:
             series=collection_to_series(self.universal_thermal_climate_index),
             ax=ax,
             title=self.description(),
+        )
+
+    def walkability_time_limits(self):
+
+        """Calculate walkability time limiits
+        Returns:
+            HourlyContinuousCollection: An object containing walkability values for each hour. 
+        """
+        csv_file = r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\data\walkability.csv"
+        df = pd.read_csv(csv_file)
+        walkability_vals = []
+
+        for utci_val in self.universal_thermal_climate_index.values:
+            utci_int = int(round(utci_val,0))
+            utci_str = str(utci_int)
+
+            val = df.loc[df["UTCI temperature"] == utci_str, 'Time within no thermal stress and moderate thermal stress bands (mins)'].values
+            if utci_int < 20:
+                val = df.loc[df["UTCI temperature"] == "defaultlower", 'Time within no thermal stress and moderate thermal stress bands (mins)'].values
+            elif utci_int > 60:
+                val = df.loc[df["UTCI temperature"] == "defaultupper", 'Time within no thermal stress and moderate thermal stress bands (mins)'].values
+
+            walkability_vals.append(val[0])
+
+        header = header_from_string("Walkability Time (minutes)")
+
+        return HourlyContinuousCollection(header=header, values=walkability_vals)
+
+    def plot_walkability_heatmap( 
+            self,
+            ax: plt.Axes = None,
+            **kwargs
+        ) -> plt.Axes:
+            
+        """Create a walkability heatmap showing 
+        Args:
+            ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
+            utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
+                UTCI_DEFAULT_CATEGORIES.
+        Returns:
+            plt.Axes: A matplotlib Axes object.
+        """
+
+        cmap_name = "Walkability colours"
+        cmap_colours = ["red","yellow","white"]
+        colourmap = LinearSegmentedColormap.from_list(cmap_name, cmap_colours, N=100)
+
+        return heatmap(
+            series = collection_to_series(self.walkability_time_limits()),
+            ax=ax,
+            cmap = colourmap,
+            vmin=0,
+            vmax=15,
+            title=kwargs.pop("title", self.description()),
+            **kwargs
         )
 
     def plot_utci_heatmap_histogram(
