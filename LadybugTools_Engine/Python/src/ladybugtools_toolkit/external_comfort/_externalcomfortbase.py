@@ -14,7 +14,7 @@ from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
 from matplotlib.colors import LinearSegmentedColormap
 
-from python_toolkit.bhom.logging import CONSOLE_LOGGER
+from ..bhom.logging import CONSOLE_LOGGER
 from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case
@@ -357,6 +357,7 @@ class ExternalComfort:
     def plot_walkability_heatmap( 
             self,
             ax: plt.Axes = None,
+            **kwargs
         ) -> plt.Axes:
             
         """Create a walkability heatmap showing 
@@ -378,7 +379,8 @@ class ExternalComfort:
             cmap = colourmap,
             vmin=0,
             vmax=15,
-            title=self.description()
+            title=kwargs.pop("title", self.description()),
+            **kwargs
         )
 
     def plot_utci_heatmap_histogram(
