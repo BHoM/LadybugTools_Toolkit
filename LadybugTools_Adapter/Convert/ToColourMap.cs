@@ -42,7 +42,7 @@ namespace BH.Adapter.LadybugTools
 
             foreach (ColourMap item in Enum.GetValues(typeof(ColourMap)))
             {
-                if (item.FromColourMap() == colourMap)
+                if (item.FromColourMap().ToLower() == colourMap.ToLower())
                     return item;
 
                 if (item.ToString().ToLower() == colourMap.ToLower())
