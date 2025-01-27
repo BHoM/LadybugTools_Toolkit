@@ -51,7 +51,7 @@ namespace BH.Adapter.LadybugTools
                 FieldInfo field = item.GetType().GetField(item.ToString());
                 DisplayTextAttribute[] array = field.GetCustomAttributes(typeof(DisplayTextAttribute), inherit: false) as DisplayTextAttribute[];
                 if (array != null && array.Length > 0)
-                    if (array.First().ToString().ToLower() == colourMap.ToLower())
+                    if (array.First().Text.ToLower() == colourMap.ToLower())
                         return item;
             }
             BH.Engine.Base.Compute.RecordError($"Could not convert the input string: {colourMap} to a colourmap.");
