@@ -11,10 +11,9 @@ from sklearn.linear_model import LinearRegression
 
 from .. import SRI_DATA
 from python_toolkit.bhom.analytics import bhom_analytics
-<<<<<<< HEAD
-=======
+
 from python_toolkit.bhom.logging import CONSOLE_LOGGER
->>>>>>> e86ae4c (updated bhom.analytics import reference)
+
 
 
 @bhom_analytics()
