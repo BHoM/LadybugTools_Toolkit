@@ -16,3 +16,4 @@ sphinxcontrib-napoleon
 tables
 tqdm
 xlrd
+dataframe-image
