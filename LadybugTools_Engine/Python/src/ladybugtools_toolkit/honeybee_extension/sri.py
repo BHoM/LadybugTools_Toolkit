@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 from .. import SRI_DATA
 from python_toolkit.bhom.analytics import bhom_analytics
 
-from python_toolkit.bhom.logging import CONSOLE_LOGGER
+from ladybugtools_toolkit.bhom.logging import CONSOLE_LOGGER
 
 
 
