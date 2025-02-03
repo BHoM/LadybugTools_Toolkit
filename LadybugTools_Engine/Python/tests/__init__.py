@@ -47,4 +47,4 @@ PTS_FILE = Path(__file__).parent / "assets" / "example.pts"
 CFD_DIRECTORY = Path(__file__).parent / "assets" / "cfd"
 
 #use 'agg' for testing plot methods, as tkinter occasionally throws strange errors (missing component/library when component isn't missing) when the default backend is used only when using pytest
-mpl.Use("agg")
+mpl.use("agg")
