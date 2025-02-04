@@ -387,7 +387,7 @@ def run_abc(
     input_json_file: Path,
     output_json_file: Path,
     output_csv_file: Path,
-    api_url="https://fastabc-57h9n.ondigitalocean.app/abc",
+    api_url="https://backend-384255928646.us-west1.run.app/abc",
 ):
     """
     Function to run ABC model with your input json file.
