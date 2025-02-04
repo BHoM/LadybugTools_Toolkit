@@ -18,8 +18,9 @@ TOOLKIT_NAME = "LadybugTools_Toolkit"
 # override "HOME" in case IT has set this to something other than default
 os.environ["HOME"] = (Path("C:/Users/") / getpass.getuser()).as_posix()
 
+import python_toolkit
 # set plotting style for modules within this toolkit
-plt.style.use(Path("C:/ProgramData/BHoM/Extensions/PythonCode/Python_Toolkit/src/python_toolkit/bhom/bhom.mplstyle"))
+plt.style.use(Path(python_toolkit.__file__).absolute() / "bhom" / "bhom.mplstyle")
 
 # get dataset paths
 SRI_DATA = DATA_DIRECTORY / "sri_data.csv"
