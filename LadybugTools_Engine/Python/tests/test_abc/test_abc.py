@@ -4,7 +4,7 @@ import pandas as pd
 from ladybugtools_toolkit.abc.abc_model import ABCModel, Clothing, Phase
 from pytest import approx
 
-from LadybugTools_Engine.Python.src.ladybugtools_toolkit.abc.util import \
+from ladybugtools_toolkit.abc.util import \
     run_abc
 
 from .. import ABC_MODEL_FILE
