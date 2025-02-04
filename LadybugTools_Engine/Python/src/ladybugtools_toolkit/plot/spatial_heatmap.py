@@ -6,7 +6,6 @@ from matplotlib.colors import BoundaryNorm, Colormap
 from matplotlib.figure import Figure
 from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from python_toolkit.bhom.analytics import bhom_analytics
 
 
@@ -28,6 +27,7 @@ def spatial_heatmap(
     highlight_pts: dict[str, tuple[int]] = None,
     show_legend_title: bool = True,
     clabels: bool = False,
+    figsize: tuple[float, float] = (8, 8),
 ) -> Figure:
     """Plot a spatial map of a variable using a triangulation and associated values.
 
@@ -73,14 +73,10 @@ def spatial_heatmap(
     """
     for tri, zs in list(zip(*[triangulations, values])):
         if len(tri.x) != len(zs):
-            raise ValueError(
-                "The shape of the triangulations and values given do not match."
-            )
+            raise ValueError("The shape of the triangulations and values given do not match.")
 
     if levels is None:
-        levels = np.linspace(
-            min(np.amin(i) for i in values), max(np.amax(i) for i in values), 10
-        )
+        levels = np.linspace(min(np.amin(i) for i in values), max(np.amax(i) for i in values), 10)
 
     if xlims is None:
         xlims = [
@@ -94,7 +90,7 @@ def spatial_heatmap(
             max(i.y.max() for i in triangulations),
         ]
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
 
     ax.set_aspect("equal")
     ax.axis("off")
@@ -104,14 +100,11 @@ def spatial_heatmap(
 
     tcls = []
     for tri, zs in list(zip(*[triangulations, values])):
-        tcf = ax.tricontourf(
-            tri, zs, extend=extend, cmap=cmap, levels=levels, norm=norm
-        )
+        tcf = ax.tricontourf(tri, zs, extend=extend, cmap=cmap, levels=levels, norm=norm)
         # add contour lines
         if contours is not None:
             if not (
-                all(i < np.amin(zs) for i in contours)
-                or all(i > np.amax(zs) for i in contours)
+                all(i < np.amin(zs) for i in contours) or all(i > np.amax(zs) for i in contours)
             ):
                 if contour_widths is None:
                     contour_widths = [1.5] * len(contours)
@@ -132,14 +125,10 @@ def spatial_heatmap(
 
     if highlight_pts is not None:
         if len(triangulations) > 1:
-            raise ValueError(
-                "Point highlighting is only possible for 1-length triangulations."
-            )
+            raise ValueError("Point highlighting is only possible for 1-length triangulations.")
         pt_size = (xlims[1] - xlims[0]) / 5
         for k, v in highlight_pts.items():
-            ax.scatter(
-                triangulations[0].x[v], triangulations[0].y[v], s=pt_size, c="red"
-            )
+            ax.scatter(triangulations[0].x[v], triangulations[0].y[v], s=pt_size, c="red")
             ax.text(
                 triangulations[0].x[v] + (pt_size / 10),
                 triangulations[0].y[v],
@@ -153,9 +142,7 @@ def spatial_heatmap(
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.1, aspect=20)
 
-        cbar = plt.colorbar(
-            tcf, cax=cax  # , format=mticker.StrMethodFormatter("{x:04.1f}")
-        )
+        cbar = plt.colorbar(tcf, cax=cax)  # , format=mticker.StrMethodFormatter("{x:04.1f}")
         cbar.outline.set_visible(False)
         cbar.set_label(colorbar_label)
 

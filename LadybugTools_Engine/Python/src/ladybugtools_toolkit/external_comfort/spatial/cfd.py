@@ -172,9 +172,7 @@ def load_cfd_extract(file: Path, velocity_col: str = "VELOCITY") -> pd.DataFrame
             .drop(columns=["level_0"])
         )
     except pd.errors.ParserError:
-        df = pd.read_csv(
-            StringIO(dat.split("\n\n")[1]), sep=",", skiprows=1, index_col=0
-        )
+        df = pd.read_csv(StringIO(dat.split("\n\n")[1]), sep=",", skiprows=1, index_col=0)
     if len(df.columns) != 4:
         raise ValueError("Columns should be of length 4 (x, y, z, velocity)")
 

@@ -13,10 +13,11 @@ import re
 import urllib.request
 import warnings
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -1726,6 +1727,8 @@ def evaporative_cooling_effect(
 
     if atmospheric_pressure is None:
         atmospheric_pressure = 101325
+    if relative_humidity == 100:
+        return [dry_bulb_temperature, 100]
 
     wet_bulb_temperature = wet_bulb_from_db_rh(
         dry_bulb_temperature, relative_humidity, atmospheric_pressure
@@ -2400,3 +2403,19 @@ def pixels_to_points(
             fp.write("\n".join([",".join([str(j) for j in i]) for i in v]))
 
     return new_im
+
+
+def run_in_parallel(func: Callable, inputs: Any, max_workers=None):
+    """
+    Run a function in parallel using ThreadPoolExecutor.
+
+    :param func: The function to run in parallel.
+    :param inputs: A list of inputs to pass to the function.
+    :param max_workers: The maximum number of threads to use.
+    :return: A list of results from the function.
+    """
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Use map to ensure results are in the same order as inputs
+        results = list(executor.map(func, inputs))
+
+    return results

@@ -2,6 +2,8 @@
 
 from typing import Literal, Optional
 
+from ladybug.datatype.base import DataTypeBase, _DataTypeEnumeration
+from ladybug.datatype.temperature import DryBulbTemperature
 from matplotlib.colors import Colormap
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -10,6 +12,24 @@ from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, CategoricalComfort
 
 class MissingVariableException(Exception):
     """Custom exception raised when a required variable is missing."""
+
+
+class ClimateVariable(BaseDataType):
+    """A class containing configuration options for differnet variable types.
+    This extends the already useful Ladybug datatype with additinal features
+    such as default color, colormapping and variable name.
+    """
+
+    name: str = None
+
+    @classmethod
+    def from_ladybug(cls, dadybug_datatype: BaseDataType):
+        """Create a ClimateVariable from a Ladybug variable."""
+        return cls(
+            name=ladybug_variable.name,
+            color=ladybug_variable.color,
+            cmap=ladybug_variable.cmap,
+        )
 
 
 class SummariseClimateConfig(BaseModel):

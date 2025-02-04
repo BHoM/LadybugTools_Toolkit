@@ -1,15 +1,17 @@
 """Methods for handling SpatialMetric results for spatial comfort assessments."""
+
 # pylint: disable=E0401
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
 
-# pylint: enable=E0401
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 from ...categorical.categories import UTCI_DEFAULT_CATEGORIES
+
+# pylint: enable=E0401
+
 
 UTCI_BOUNDARYNORM = UTCI_DEFAULT_CATEGORIES.norm
 UTCI_COLORMAP = UTCI_DEFAULT_CATEGORIES.cmap
@@ -23,6 +25,7 @@ class SpatialMetric(Enum):
 
     DBT_EPW = auto()
     DBT_EVAP = auto()
+    DIRECT_SUN_HOURS = auto()  # single value - not tabular
     EVAP_CLG = auto()
     MRT_INTERPOLATED = auto()
     POINTS = auto()  # single value - not tabular
@@ -37,7 +40,6 @@ class SpatialMetric(Enum):
     WD_EPW = auto()
     WS_CFD = auto()
     WS_EPW = auto()
-    DIRECT_SUN_HOURS = auto()  # single value - not tabular
 
     def filepath(self, simulation_directory: Path) -> Path:
         """Return the expected filepath for a given SpatialMetric.
@@ -72,7 +74,11 @@ class SpatialMetric(Enum):
             },
             SpatialMetric.RH_EPW.value: {
                 "levels": np.linspace(0, 100, 101),
-                "cmap": plt.get_cmap("YlGnBu"),
+                "cmap": plt.get_cmap("PuBu"),
+            },
+            SpatialMetric.RH_EVAP.value: {
+                "levels": np.linspace(0, 100, 101),
+                "cmap": plt.get_cmap("PuBu"),
             },
             SpatialMetric.SKY_VIEW.value: {
                 "levels": np.linspace(0, 100, 11),
@@ -134,6 +140,9 @@ class SpatialMetric(Enum):
             SpatialMetric.RH_EPW.value: {
                 "levels": [],
             },
+            SpatialMetric.RH_EVAP.value: {
+                "levels": [],
+            },
             SpatialMetric.SKY_VIEW.value: {
                 "levels": [25, 50, 75],
                 "colors": "k",
@@ -171,23 +180,23 @@ class SpatialMetric(Enum):
     def description(self) -> str:
         """Return the human readable description of this metric."""
         cases = {
+            SpatialMetric.DBT_EPW.value: "Dry-Bulb Temperature (°C) - from EPW",
+            SpatialMetric.DBT_EVAP.value: "Dry-Bulb Temperature (°C) - inc. moisture effects",
+            SpatialMetric.DIRECT_SUN_HOURS.value: "Direct Sun Hours (hours)",
+            SpatialMetric.EVAP_CLG.value: "Evaporative Cooling Magnitude (0-1)",
+            SpatialMetric.MRT_INTERPOLATED.value: "Mean Radiant Temperature (°C) - interpolated",
+            SpatialMetric.POINTS.value: "Points (x, y, z)",
             SpatialMetric.RAD_DIFFUSE.value: "Diffuse Radiation (W/m²)",
             SpatialMetric.RAD_DIRECT.value: "Direct Radiation (W/m²)",
             SpatialMetric.RAD_TOTAL.value: "Total Radiation (W/m²)",
-            SpatialMetric.DBT_EPW.value: "Dry-Bulb Temperature (°C) - from EPW",
             SpatialMetric.RH_EPW.value: "Relative Humidity (%) - from EPW",
-            SpatialMetric.WD_EPW.value: "Wind Direction (deg) - from EPW",
-            SpatialMetric.WS_EPW.value: "Wind Speed (m/s) - from EPW",
-            SpatialMetric.WS_CFD.value: "Wind Speed (m/s) - from CFD",
-            SpatialMetric.EVAP_CLG.value: "Evaporative Cooling Magnitude (0-1)",
-            SpatialMetric.DBT_EVAP.value: "Dry-Bulb Temperature (°C) - inc. moisture effects",
             SpatialMetric.RH_EVAP.value: "Relative Humidity (%) - inc. moisture effects",
-            SpatialMetric.MRT_INTERPOLATED.value: "Mean Radiant Temperature (°C) - interpolated",
+            SpatialMetric.SKY_VIEW.value: "Sky View (%)",
             SpatialMetric.UTCI_CALCULATED.value: "Universal Thermal Climate Index (°C) - calculated",
             SpatialMetric.UTCI_INTERPOLATED.value: "Universal Thermal Climate Index (°C) - interpolated",
-            SpatialMetric.SKY_VIEW.value: "Sky View (%)",
-            SpatialMetric.POINTS.value: "Points (x, y, z)",
-            SpatialMetric.DIRECT_SUN_HOURS.value: "Direct Sun Hours (hours)",
+            SpatialMetric.WD_EPW.value: "Wind Direction (deg) - from EPW",
+            SpatialMetric.WS_CFD.value: "Wind Speed (m/s) - from CFD",
+            SpatialMetric.WS_EPW.value: "Wind Speed (m/s) - from EPW",
         }
 
         try:
@@ -200,6 +209,7 @@ class SpatialMetric(Enum):
         cases = {
             SpatialMetric.DBT_EPW.value: True,
             SpatialMetric.DBT_EVAP.value: True,
+            SpatialMetric.DIRECT_SUN_HOURS.value: False,
             SpatialMetric.EVAP_CLG.value: True,
             SpatialMetric.MRT_INTERPOLATED.value: True,
             SpatialMetric.POINTS.value: False,
@@ -214,7 +224,6 @@ class SpatialMetric(Enum):
             SpatialMetric.WD_EPW.value: True,
             SpatialMetric.WS_CFD.value: True,
             SpatialMetric.WS_EPW.value: True,
-            SpatialMetric.DIRECT_SUN_HOURS.value: False,
         }
         try:
             return cases[self.value]
