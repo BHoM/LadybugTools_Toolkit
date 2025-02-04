@@ -6,6 +6,7 @@ from honeybee.config import folders as hb_folders
 from honeybee.model import Model
 from ladybug.epw import EPW
 from ladybug.wea import Wea
+import matplotlib as mpl
 
 # identifier for all downstream processes
 BASE_IDENTIFIER = "LBTBHoM_pytest"
@@ -44,3 +45,6 @@ ILL_FILE = Path(__file__).parent / "assets" / "example.ill"
 NPY_FILE = Path(__file__).parent / "assets" / "example.npy"
 PTS_FILE = Path(__file__).parent / "assets" / "example.pts"
 CFD_DIRECTORY = Path(__file__).parent / "assets" / "cfd"
+
+#use 'agg' for testing plot methods, as tkinter occasionally throws strange errors (missing component/library when component isn't missing) when the default backend is used only when using pytest
+mpl.use("agg")
