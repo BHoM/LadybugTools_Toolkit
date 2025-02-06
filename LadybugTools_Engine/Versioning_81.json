@@ -1,0 +1,22 @@
+﻿{
+  "Type": {
+    "ToNew": {
+
+    },
+    "ToOld": {
+
+    }
+  },
+  "Property": {
+    "ToNew": {
+
+    },
+    "ToOld": {
+
+    }
+
+  },
+  "MessageForDeleted": {
+    "BH.Engine.LadybugTools.Create.Location(System.String, System.String, System.String, System.Double, System.Double, System.Double, System.Double, System.String, System.String)": "The Location class was removed. Please refer to the BH.oM.Environment.Climate.Location object instead."
+  }
+}

@@ -82,9 +82,6 @@ namespace BH.Adapter.LadybugTools
                         case "EnergyMaterialVegetation":
                             returnObjects.Add(ToEnergyMaterialVegetation(lbtObject));
                             break;
-                        case "EPW":
-                            returnObjects.Add(ToEPW(lbtObject));
-                            break;
                         case "ExternalComfort":
                             returnObjects.Add(ToExternalComfort(lbtObject));
                             break;
@@ -93,9 +90,6 @@ namespace BH.Adapter.LadybugTools
                             break;
                         case "HourlyContinuous":
                             returnObjects.Add(ToHourlyContinuousCollection(lbtObject));
-                            break;
-                        case "Location":
-                            returnObjects.Add(ToLocation(lbtObject));
                             break;
                         case "Shelter":
                             returnObjects.Add(ToShelter(lbtObject));
