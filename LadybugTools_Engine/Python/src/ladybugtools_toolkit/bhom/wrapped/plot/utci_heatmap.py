@@ -6,6 +6,50 @@ from pathlib import Path
 from unittest.util import _MIN_COMMON_LEN
 import matplotlib
 
+def utci_heatmap_no_sim(json_file:str, return_file:str, save_path = None) -> None:
+    from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
+    from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metadata
+    from ladybugtools_toolkit.plot.utilities import figure_to_base64
+    from ladybug.datacollection import HourlyContinuousCollection
+    from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import json
+
+    with open(json_file, "r") as args:
+        argsDict = json.loads(args.read())
+
+    utci_collection = HourlyContinuousCollection.from_dict(argsDict["collection"])
+
+    custom_bins = UTCI_DEFAULT_CATEGORIES
+    bin_colours = json.loads(argsDict["bin_colours"])
+
+    if len(bin_colours) == 10:
+        custom_bins = Categorical(
+            bins=(-np.inf, -40, -27, -13, 0, 9, 26, 32, 38, 46, np.inf),
+            colors=(bin_colours),
+            name="UTCI")
+    
+        fig, ax = plt.subplots(1, 1, figsize = (10, 4))
+    custom_bins.annual_heatmap(collection_to_series(utci_collection), title = argsDict["description"])
+
+    return_dict = {"data": utci_metadata(utci_collection)}
+
+    plt.tight_layout()
+    
+    if save_path == None or save_path == "":
+        base64 = figure_to_base64(fig,html=False)
+        return_dict["figure"] = base64
+    else:
+        fig.savefig(save_path, dpi=150, transparent=True)
+        return_dict["figure"] = save_path
+    
+    with open(return_file, "w") as rtn:
+        rtn.write(json.dumps(return_dict, default=str))
+    
+    print(return_file)
+
+
 def utci_heatmap(epw_file:str,
             json_file:str,
             return_file: str,
@@ -111,8 +155,20 @@ if __name__ == "__main__":
         type=str,
         required=False,
     )
+    parser.add_argument(
+        "-ns",
+        "--no_sim",
+        help="do not run a simulation for this",
+        type=bool,
+        action="store_true",
+        required=False
+    )
 
 
     args = parser.parse_args()
     matplotlib.use("Agg")
-    utci_heatmap(args.epw_path, args.json_args, args.return_file, args.wind_speed_multiplier, args.save_path)
+
+    if args.no_sim:
+        utci_heatmap_no_sim(args.json_args, args.return_file, args.save_path)
+    else:
+        utci_heatmap(args.epw_path, args.json_args, args.return_file, args.wind_speed_multiplier, args.save_path)
