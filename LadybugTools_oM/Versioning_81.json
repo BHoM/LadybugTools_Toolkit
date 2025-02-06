@@ -16,4 +16,8 @@
     }
 
   }
+  "MessageForDeleted": {
+    "BH.oM.LadybugTools.EPW": "This class was provided to allow EPW objects to be pulled from python workflows, but this functionality duplicated functionality in Environment_Engine, for future work involving EPWs please use BH.oM.Environment.Climate.WeatherFile with BH.Engine.Environment.Compute.ImportEPW",
+    "BH.oM.LadybugTools.Location": "This class was required for the EPW class, which now that it is removed, has no use anymore. Please refer to the BH.oM.Environment.Climate.Location object instead."
+  }
 }
