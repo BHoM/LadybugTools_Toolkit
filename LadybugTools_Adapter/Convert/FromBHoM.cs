@@ -62,11 +62,6 @@ namespace BH.Adapter.LadybugTools
             return FromEnergyMaterialVegetation(energyMaterial).ToJson();
         }
 
-        private static string Jsonify(this EPW epw)
-        {
-            return FromEPW(epw);
-        }
-
         private static string Jsonify(this ExternalComfort externalComfort)
         {
             return FromExternalComfort(externalComfort);
@@ -80,11 +75,6 @@ namespace BH.Adapter.LadybugTools
         private static string Jsonify(this HourlyContinuousCollection collection)
         {
             return FromHourlyContinuousCollection(collection);
-        }
-
-        private static string Jsonify(this Location location)
-        {
-            return FromLocation(location).ToJson();
         }
 
         private static string Jsonify(this Shelter shelter)
