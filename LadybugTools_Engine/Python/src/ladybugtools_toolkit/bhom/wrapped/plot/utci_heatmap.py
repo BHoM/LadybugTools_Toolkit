@@ -19,7 +19,7 @@ def utci_heatmap_no_sim(json_file:str, return_file:str, save_path = None) -> Non
     with open(json_file, "r") as args:
         argsDict = json.loads(args.read())
 
-    utci_collection = HourlyContinuousCollection.from_dict(argsDict["collection"])
+    utci_collection = HourlyContinuousCollection.from_dict(argsDict["utci"])
 
     custom_bins = UTCI_DEFAULT_CATEGORIES
     bin_colours = json.loads(argsDict["bin_colours"])
@@ -121,25 +121,11 @@ if __name__ == "__main__":
         )
     )
     parser.add_argument(
-        "-e",
-        "--epw_path",
-        help="helptext",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
         "-in",
         "--json_args",
         help="helptext",
         type=str,
         required=True,
-    )
-    parser.add_argument(
-        "-ws",
-        "--wind_speed_multiplier",
-        help="helptext",
-        type=float,
-        required=False,
     )
     parser.add_argument(
         "-r",
@@ -155,20 +141,7 @@ if __name__ == "__main__":
         type=str,
         required=False,
     )
-    parser.add_argument(
-        "-ns",
-        "--no_sim",
-        help="do not run a simulation for this",
-        type=bool,
-        action="store_true",
-        required=False
-    )
-
 
     args = parser.parse_args()
     matplotlib.use("Agg")
-
-    if args.no_sim:
-        utci_heatmap_no_sim(args.json_args, args.return_file, args.save_path)
-    else:
-        utci_heatmap(args.epw_path, args.json_args, args.return_file, args.wind_speed_multiplier, args.save_path)
+    utci_heatmap_no_sim(args.json_args, args.return_file, args.save_path)
