@@ -54,12 +54,6 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
-            if (!System.IO.File.Exists(epwFile))
-            {
-                BH.Engine.Base.Compute.RecordError($"{epwFile} doesn't appear to exist!");
-                return null;
-            }
-
             string epwId = Convert.SanitiseString(Path.GetFileNameWithoutExtension(epwFile));
             string groundMaterialId = Convert.SanitiseString(groundMaterial.Name);
             string shadeMaterialId = Convert.SanitiseString(shadeMaterial.Name);

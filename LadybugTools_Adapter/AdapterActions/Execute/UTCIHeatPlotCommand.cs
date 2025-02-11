@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Adapter;
+using BH.Engine.Base;
 using BH.Engine.LadybugTools;
 using BH.Engine.Serialiser;
 using BH.oM.Adapter;
@@ -50,21 +51,25 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (command.GroundMaterial == null)
+            if (command.ExternalComfort.UniversalThermalClimateIndex?.Values.IsNullOrEmpty() ?? false)
             {
-                BH.Engine.Base.Compute.RecordError($"Please input a valid ground material to run this command.");
-                return null;
-            }
+                if (command.ExternalComfort.SimulationResult.GroundMaterial == null)
+                {
+                    BH.Engine.Base.Compute.RecordError($"Please input a valid ground material to the simulation result in external comfort to run this command.");
+                    return null;
+                }
 
-            if (command.ShadeMaterial == null)
-            {
-                BH.Engine.Base.Compute.RecordError($"Please input a valid shade material to run this command.");
-                return null;
-            }
+                if (command.ExternalComfort.SimulationResult.ShadeMaterial == null)
+                {
+                    BH.Engine.Base.Compute.RecordError($"Please input a valid shade material to the simulation result in external comfort to run this command.");
+                    return null;
+                }
 
-            if (command.Typology == null)
-            {
-                BH.Engine.Base.Compute.RecordError($"Please input a valid Typology to run this command.");
+                if (command.ExternalComfort.Typology == null)
+                {
+                    BH.Engine.Base.Compute.RecordError($"Please input a valid Typology to the external comfort to run this command.");
+                    return null;
+                }
             }
 
             if (!(command.BinColours.Count == 10 || command.BinColours.Count == 0))
@@ -81,9 +86,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, string> inputObjects = new Dictionary<string, string>()
             {
-                { "ground_material",  command.GroundMaterial.FromBHoM() },
-                { "shade_material", command.ShadeMaterial.FromBHoM() },
-                { "typology", command.Typology.FromBHoM() },
+                { "external_comfort", command.ExternalComfort.FromBHoM() },
                 { "bin_colours", hexColours }
             };
 
@@ -97,7 +100,7 @@ namespace BH.Adapter.LadybugTools
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -in \"{argFile}\" -ws \"{command.WindSpeedMultiplier}\" -r \"{returnFile.Replace('\\', '/')}\" -sp \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" -in \"{argFile}\" -r \"{returnFile.Replace('\\', '/')}\" -sp \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             string resultFile = result.Split('\n').Last();
@@ -114,9 +117,10 @@ namespace BH.Adapter.LadybugTools
             File.Delete(returnFile);
             File.Delete(argFile);
             PlotInformation info = Convert.ToPlotInformation(obj, new UTCIData());
+            ExternalComfort ec = Convert.ToExternalComfort((obj.CustomData["external_comfort"] as CustomObject).CustomData);
 
             m_executeSuccess = true;
-            return new List<object> { info };
+            return new List<object> { info, ec };
         }
     }
 }

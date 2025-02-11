@@ -74,7 +74,7 @@ namespace BH.Adapter.LadybugTools
             // construct the base object and file to be passed to Python for simulation
             SimulationResult simulationResult = new SimulationResult()
             {
-                EpwFile = Path.GetFullPath(command.EPWFile.GetFullFileName()).Replace(@"\", "/"),
+                EpwFile = command.EPWFile,
                 GroundMaterial = command.GroundMaterial,
                 ShadeMaterial = command.ShadeMaterial,
                 Name = Engine.LadybugTools.Compute.SimulationID(command.EPWFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
@@ -88,7 +88,7 @@ namespace BH.Adapter.LadybugTools
 
             // run the simulation
             string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
-            Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            string s = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             // reload from Python results
             List<object> simulationResultPopulated = Pull(new FilterRequest(), actionConfig: config).ToList();

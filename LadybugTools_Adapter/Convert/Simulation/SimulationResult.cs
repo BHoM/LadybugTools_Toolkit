@@ -20,11 +20,14 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.Engine.Adapter;
 using BH.Engine.Base;
+using BH.oM.Adapter;
 using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -144,7 +147,7 @@ namespace BH.Adapter.LadybugTools
 
             return new SimulationResult()
             {
-                EpwFile = epwFile,
+                EpwFile = new FileSettings() { FileName = System.IO.Path.GetFileName(epwFile), Directory = System.IO.Path.GetDirectoryName(epwFile) },
                 GroundMaterial = groundMaterial,
                 ShadeMaterial = shadeMaterial,
                 Name = name,
@@ -166,7 +169,7 @@ namespace BH.Adapter.LadybugTools
         public static string FromSimulationResult(SimulationResult simulationResult)
         {
             string type = $"\"type\": \"SimulationResult\", ";
-            string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile}\", ";
+            string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile.GetFullFileName().Replace("\\", "\\\\")}\", ";
             string groundMaterial = $"\"ground_material\": {FromBHoM(simulationResult.GroundMaterial)}, ";
             string shadeMaterial = $"\"shade_material\": {FromBHoM(simulationResult.ShadeMaterial)}, ";
             string name = $"\"identifier\": \"{simulationResult.Name}\"";

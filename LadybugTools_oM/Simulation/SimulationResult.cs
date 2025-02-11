@@ -21,6 +21,7 @@
  */
 
 
+using BH.oM.Adapter;
 using BH.oM.Base;
 using BH.oM.Base.Attributes;
 using System.ComponentModel;
@@ -31,7 +32,7 @@ namespace BH.oM.LadybugTools
     public class SimulationResult : BHoMObject, ILadybugTools
     {
         [Description("The EPW file associated with this object.")]
-        public virtual string EpwFile { get; set; }
+        public virtual FileSettings EpwFile { get; set; }
 
         [Description("The ground material used in the processing of this object.")]
         public virtual IEnergyMaterialOpaque GroundMaterial { get; set; }
