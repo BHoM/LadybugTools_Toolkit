@@ -28,8 +28,7 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    [NoAutoConstructor]
-    public class SimulationResult : BHoMObject, ILadybugTools
+    public class SimulationResult : BHoMObject, ILadybugTools, IImmutable
     {
         [Description("The EPW file associated with this object.")]
         public virtual FileSettings EpwFile { get; set; }
@@ -46,40 +45,60 @@ namespace BH.oM.LadybugTools
         // simulated properties
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedDownTemperature { get; set; } = null;
+        public virtual HourlyContinuousCollection ShadedDownTemperature { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedUpTemperature { get; set; } = null;
+        public virtual HourlyContinuousCollection ShadedUpTemperature { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedRadiantTemperature { get; set; } = null;     
+        public virtual HourlyContinuousCollection ShadedRadiantTemperature { get; } = null;     
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedLongwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        public virtual HourlyContinuousCollection ShadedLongwaveMeanRadiantTemperatureDelta { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedShortwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        public virtual HourlyContinuousCollection ShadedShortwaveMeanRadiantTemperatureDelta { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedMeanRadiantTemperature { get; set; } = null;
+        public virtual HourlyContinuousCollection ShadedMeanRadiantTemperature { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedDownTemperature { get; set; } = null;
+        public virtual HourlyContinuousCollection UnshadedDownTemperature { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedUpTemperature { get; set; } = null;
+        public virtual HourlyContinuousCollection UnshadedUpTemperature { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedRadiantTemperature { get; set; } = null;
+        public virtual HourlyContinuousCollection UnshadedRadiantTemperature { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedLongwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        public virtual HourlyContinuousCollection UnshadedLongwaveMeanRadiantTemperatureDelta { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedShortwaveMeanRadiantTemperatureDelta { get; set; } = null;
+        public virtual HourlyContinuousCollection UnshadedShortwaveMeanRadiantTemperatureDelta { get; } = null;
 
         [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection UnshadedMeanRadiantTemperature { get; set; } = null;
+        public virtual HourlyContinuousCollection UnshadedMeanRadiantTemperature { get; } = null;
+
+        public SimulationResult(FileSettings epwFile = null, IEnergyMaterialOpaque groundMaterial = null, IEnergyMaterialOpaque shadeMaterial = null, string name = null, HourlyContinuousCollection shadedDownTemperature = null, HourlyContinuousCollection shadedUpTemperature = null, HourlyContinuousCollection shadedRadiantTemperature = null, HourlyContinuousCollection shadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedMeanRadiantTemperature = null, HourlyContinuousCollection unshadedDownTemperature = null, HourlyContinuousCollection unshadedUpTemperature = null, HourlyContinuousCollection unshadedRadiantTemperature = null, HourlyContinuousCollection unshadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedMeanRadiantTemperature = null)
+        {
+            EpwFile = epwFile;
+            GroundMaterial = groundMaterial;
+            ShadeMaterial = shadeMaterial;
+            Name = name;
+            ShadedDownTemperature = shadedDownTemperature;
+            ShadedUpTemperature = shadedUpTemperature;
+            ShadedRadiantTemperature = shadedRadiantTemperature;
+            ShadedLongwaveMeanRadiantTemperatureDelta = shadedLongwaveMeanRadiantTemperatureDelta;
+            ShadedShortwaveMeanRadiantTemperatureDelta = shadedShortwaveMeanRadiantTemperatureDelta;
+            ShadedMeanRadiantTemperature = shadedMeanRadiantTemperature;
+            UnshadedDownTemperature = unshadedDownTemperature;
+            UnshadedUpTemperature = unshadedUpTemperature;
+            UnshadedRadiantTemperature = unshadedRadiantTemperature;
+            UnshadedLongwaveMeanRadiantTemperatureDelta = unshadedLongwaveMeanRadiantTemperatureDelta;
+            UnshadedShortwaveMeanRadiantTemperatureDelta = unshadedShortwaveMeanRadiantTemperatureDelta;
+            UnshadedMeanRadiantTemperature = unshadedMeanRadiantTemperature;
+        }
     }
 }
 

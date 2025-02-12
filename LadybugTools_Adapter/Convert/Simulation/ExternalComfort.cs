@@ -91,16 +91,7 @@ namespace BH.Adapter.LadybugTools
                 }
             }
 
-            return new ExternalComfort()
-            {
-                SimulationResult = simulationResult,
-                Typology = typology,
-                DryBulbTemperature = simulatedProperties[0],
-                RelativeHumidity = simulatedProperties[1],
-                WindSpeed = simulatedProperties[2],
-                MeanRadiantTemperature = simulatedProperties[3],
-                UniversalThermalClimateIndex = simulatedProperties[4]
-            };
+            return new ExternalComfort(simulationResult, typology, simulatedProperties[0], simulatedProperties[1], simulatedProperties[2], simulatedProperties[3], simulatedProperties[4]);
         }
 
         public static string FromExternalComfort(ExternalComfort externalComfort)

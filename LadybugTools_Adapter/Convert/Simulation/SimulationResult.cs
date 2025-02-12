@@ -145,25 +145,19 @@ namespace BH.Adapter.LadybugTools
                 }
             }
 
-            return new SimulationResult()
-            {
-                EpwFile = new FileSettings() { FileName = System.IO.Path.GetFileName(epwFile), Directory = System.IO.Path.GetDirectoryName(epwFile) },
-                GroundMaterial = groundMaterial,
-                ShadeMaterial = shadeMaterial,
-                Name = name,
-                ShadedDownTemperature = simulatedProperties[0],
-                ShadedUpTemperature = simulatedProperties[1],
-                ShadedRadiantTemperature = simulatedProperties[2],
-                ShadedLongwaveMeanRadiantTemperatureDelta = simulatedProperties[3],
-                ShadedShortwaveMeanRadiantTemperatureDelta = simulatedProperties[4],
-                ShadedMeanRadiantTemperature = simulatedProperties[5],
-                UnshadedDownTemperature = simulatedProperties[6],
-                UnshadedUpTemperature = simulatedProperties[7],
-                UnshadedRadiantTemperature = simulatedProperties[8],
-                UnshadedLongwaveMeanRadiantTemperatureDelta = simulatedProperties[9],
-                UnshadedShortwaveMeanRadiantTemperatureDelta = simulatedProperties[10],
-                UnshadedMeanRadiantTemperature = simulatedProperties[11]
-            };
+            return new SimulationResult(new FileSettings() { FileName = System.IO.Path.GetFileName(epwFile), Directory = System.IO.Path.GetDirectoryName(epwFile) }, groundMaterial, shadeMaterial, name,
+                shadedDownTemperature:simulatedProperties[0],
+                shadedUpTemperature:simulatedProperties[1],
+                shadedRadiantTemperature:simulatedProperties[2],
+                shadedLongwaveMeanRadiantTemperatureDelta:simulatedProperties[3],
+                shadedShortwaveMeanRadiantTemperatureDelta:simulatedProperties[4],
+                shadedMeanRadiantTemperature:simulatedProperties[5],
+                unshadedDownTemperature:simulatedProperties[6],
+                unshadedUpTemperature:simulatedProperties[7],
+                unshadedRadiantTemperature:simulatedProperties[8],
+                unshadedLongwaveMeanRadiantTemperatureDelta:simulatedProperties[9],
+                unshadedShortwaveMeanRadiantTemperatureDelta:simulatedProperties[10],
+                unshadedMeanRadiantTemperature:simulatedProperties[11]);
         }
 
         public static string FromSimulationResult(SimulationResult simulationResult)

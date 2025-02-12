@@ -38,9 +38,6 @@ namespace BH.oM.LadybugTools
         [Description("The external comfort object containing the UTCI data to plot. If the UTCI collection is null or empty, then a simulation will be run before plotting to get these values.")]
         public virtual ExternalComfort ExternalComfort { get; set; } = new ExternalComfort();
 
-        [Description("A wind speed multiplier to modify the wind speed by. Default is 1.")]
-        public virtual double WindSpeedMultiplier { get; set; } = 1;
-
         [Description("A list of 10 colours to use for each UTCI category, leave empty to use the default UTCI colours.")]
         public virtual List<Color> BinColours { get; set; } = new List<Color>();
 

@@ -9,7 +9,7 @@ namespace BH.oM.LadybugTools
     {
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
-        public virtual ExternalComfort ExternalComfort { get; set; } = new ExternalComfort();
+        public virtual ExternalComfort ExternalComfort { get; set; } = null;
 
         public virtual string OutputLocation { get; set; } = "";
     }

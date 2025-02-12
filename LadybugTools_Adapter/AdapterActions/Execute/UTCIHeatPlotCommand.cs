@@ -51,25 +51,15 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (command.ExternalComfort.UniversalThermalClimateIndex?.Values.IsNullOrEmpty() ?? false)
+            if (!Query.ValidateExternalComfort(command.ExternalComfort))
             {
-                if (command.ExternalComfort.SimulationResult.GroundMaterial == null)
-                {
-                    BH.Engine.Base.Compute.RecordError($"Please input a valid ground material to the simulation result in external comfort to run this command.");
-                    return null;
-                }
+                return null;
+            }
 
-                if (command.ExternalComfort.SimulationResult.ShadeMaterial == null)
-                {
-                    BH.Engine.Base.Compute.RecordError($"Please input a valid shade material to the simulation result in external comfort to run this command.");
-                    return null;
-                }
-
-                if (command.ExternalComfort.Typology == null)
-                {
-                    BH.Engine.Base.Compute.RecordError($"Please input a valid Typology to the external comfort to run this command.");
-                    return null;
-                }
+            if (command.EPWFile.GetFullFileName() != command.ExternalComfort.SimulationResult.EpwFile.GetFullFileName())
+            {
+                BH.Engine.Base.Compute.RecordError($"The EPW file path for the command ({command.EPWFile.GetFullFileName()}) is different to the epw file path contained within the ExteralComfort's SimulationResult ({command.ExternalComfort.SimulationResult.EpwFile.GetFullFileName()}). Ensure these are the same and try again.");
+                return null;
             }
 
             if (!(command.BinColours.Count == 10 || command.BinColours.Count == 0))

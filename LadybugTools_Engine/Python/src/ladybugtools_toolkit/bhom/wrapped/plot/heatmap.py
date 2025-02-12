@@ -50,7 +50,7 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
             
 
     except Exception as e:
-        print(e)
+        print(traceback.format_exc())
 
 
 

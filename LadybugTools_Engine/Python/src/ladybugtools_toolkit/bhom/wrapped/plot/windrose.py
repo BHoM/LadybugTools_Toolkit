@@ -45,7 +45,7 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
         print(return_file)
             
     except Exception as e:
-        print(e)
+        print(traceback.format_exc())
 
 
 if __name__ == "__main__":
