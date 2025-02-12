@@ -56,12 +56,6 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (command.EPWFile.GetFullFileName() != command.ExternalComfort.SimulationResult.EpwFile.GetFullFileName())
-            {
-                BH.Engine.Base.Compute.RecordError($"The EPW file path for the command ({command.EPWFile.GetFullFileName()}) is different to the epw file path contained within the ExteralComfort's SimulationResult ({command.ExternalComfort.SimulationResult.EpwFile.GetFullFileName()}). Ensure these are the same and try again.");
-                return null;
-            }
-
             if (!(command.BinColours.Count == 10 || command.BinColours.Count == 0))
             {
                 BH.Engine.Base.Compute.RecordError($"When overriding bin colours 10 colours must be provided, but {command.BinColours.Count} colours were provided instead.");

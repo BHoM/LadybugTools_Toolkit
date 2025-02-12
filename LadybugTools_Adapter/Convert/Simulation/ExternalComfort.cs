@@ -81,13 +81,13 @@ namespace BH.Adapter.LadybugTools
                     catch (Exception ex)
                     {
                         BH.Engine.Base.Compute.RecordError($"An error occurred while parsing the collection {property} of the ExternalComfort. Returning an empty collection in its place.\n The error: {ex}");
-                        simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                        simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<double?>(null, 8760).ToList() });
                     }
                 }
                 else
                 {
                     BH.Engine.Base.Compute.RecordError($"The incoming json for ExternalComfort does not contain the key: {property}. Returning an empty collection in its place.");
-                    simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                    simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<double?>(null, 8760).ToList() });
                 }
             }
 

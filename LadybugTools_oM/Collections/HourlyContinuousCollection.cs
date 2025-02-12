@@ -34,7 +34,7 @@ namespace BH.oM.LadybugTools
         public virtual Header Header { get; set; } = new Header();
 
         [Description("A list of values.")]
-        public virtual List<string> Values { get; set; } = Enumerable.Repeat("0.0", 8760).ToList();
+        public virtual List<double?> Values { get; set; } = Enumerable.Repeat<double?>(null, 8760).ToList();
     }
 }
 
