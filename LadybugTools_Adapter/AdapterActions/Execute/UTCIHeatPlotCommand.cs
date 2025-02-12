@@ -77,8 +77,6 @@ namespace BH.Adapter.LadybugTools
             string argFile = Path.GetTempFileName();
             File.WriteAllText(argFile, inputObjects.ToJson());
 
-            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
-
             string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
 
             string returnFile = Path.GetTempFileName();
