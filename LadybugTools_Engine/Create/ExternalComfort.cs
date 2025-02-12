@@ -10,17 +10,11 @@ namespace BH.Engine.LadyBugTools
 {
     public static partial class Create
     {
-        public static ExternalComfort ExternalComfort(FileSettings epwFile, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial, Typology typology)
+        public static ExternalComfort ExternalComfort(FileSettings epwFile, string identifier, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial, Typology typology)
         {
             return new ExternalComfort()
             {
-                SimulationResult = new SimulationResult()
-                {
-                    EpwFile = epwFile,
-                    GroundMaterial = groundMaterial,
-                    ShadeMaterial = shadeMaterial,
-                    Name = Compute.SimulationID(epwFile.FileName, groundMaterial, shadeMaterial)
-                },
+                SimulationResult = SimulationResult(epwFile, identifier, groundMaterial, shadeMaterial),
                 Typology = typology
             };
         }
