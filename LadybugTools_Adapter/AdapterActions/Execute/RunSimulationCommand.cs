@@ -88,7 +88,7 @@ namespace BH.Adapter.LadybugTools
 
             // run the simulation
             string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
-            string s = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             // reload from Python results
             List<object> simulationResultPopulated = Pull(new FilterRequest(), actionConfig: config).ToList();
