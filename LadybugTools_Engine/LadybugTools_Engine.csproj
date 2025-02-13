@@ -20,7 +20,9 @@
 	  <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Adapter_oM">
-      <HintPath>..\..\..\ProgramData\BHoM\Assemblies\Adapter_oM.dll</HintPath>
+      <HintPath>$(ProgramData)\BHoM\Assemblies\Adapter_oM.dll</HintPath>
+		<Private>False</Private>
+		<SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Analytical_oM">
       <HintPath>$(ProgramData)\BHoM\Assemblies\Analytical_oM.dll</HintPath>
