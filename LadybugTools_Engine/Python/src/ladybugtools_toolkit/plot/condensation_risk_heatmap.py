@@ -13,34 +13,60 @@ from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
 
 thresholds = [
-    (0, 4.4),
-    (1,1.7),
-    (2,0),
-    (3,-1.1),
-    (4,-3.9),
-    (5,-6.7),
-    (6,-9.4),
-    (7,-12.2),
-    (8,-13.5),
-    (9,-15),
-    (10,-17.8),
-    (11, -999)
+    (0,0),
+    (1,3),
+    (2,6),
+    (3,12),
+    (4,15),
+    (5,18),
+    (6,21),
+    (7,24),
+    (8,27),
+    (9,30),
+    (10,33),
+    (11,999)
 ]
 
-def get_threshold(dbt):
-    matches = [a for a in thresholds if a[1] <= dbt]
+def get_threshold(dbt_delta):
+    matches = [a for a in thresholds if a[1] >= dbt_delta]
     return min([a[0] for a in matches])
 
-def dbt_to_condensation_risk(dbt_series):
-    con_risk = dbt_series.apply(get_threshold)
+def dbt_to_condensation_risk(dbt_series, internal_rh, internal_temp):
+    """Calculate condensation risk based on external temperature and internal dew point, using Mark G. Lawrence's DPT approximation for RH>50%.
+
+    Args:
+        dbt_series (list[float]):
+            List of Dry Bulb Temperatures
+        internal_rh (int):
+            Internal Relative Humidity, as a percentage
+        internal_temp (float):
+            Internal Temperature of the building
+    """
+    dew_point_temp = internal_temp-((100-internal_rh)/5)
+    dbt_delta = dew_point_temp - dbt_series
+    con_risk = dbt_delta.apply(get_threshold)
     header = header_from_string("Condensation risk (Index)")
     hcc = HourlyContinuousCollection(header = header, values = con_risk.values)
     return hcc
 
 def condensation_risk_heatmap(epw_file: str, return_file: str, save_path: str = None) -> None:
+    """Create a heatmap of the condensation potential for a given set of
+    timeseries dry bulb temperatures from an EPW.
+
+    Args:
+        epw_file (string):
+            The input EPW file.
+        return_file (string):
+            The filepath to write the resulting JSON to.
+        save_path (string):
+            The filepath to save the resulting image file of the heatmap to.
+    """
     epw = EPW(epw_file)
+    internal_temp = 21 #default value for internal temp
+    internal_rh = 40 #default value for internal rh
     dbt_series = collection_to_series(epw.dry_bulb_temperature)
-    con_risk = dbt_to_condensation_risk(dbt_series)
+    dpt_series = collection_to_series(epw.dew_point_temperature)
+    con_risk = dbt_to_condensation_risk(dbt_series, internal_rh, internal_temp)
     cmap = LinearSegmentedColormap.from_list("condensation", ["white","blue","purple","black"], N=100)
     fig = heatmap(collection_to_series(con_risk), vmin=0, vmax=11, cmap=cmap, ).get_figure()
 
