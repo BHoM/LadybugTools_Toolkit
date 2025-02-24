@@ -123,7 +123,9 @@ class Categorical:
         if np.isinf(_bins[-1]):
             _bins[-1] = bins[-2]
 
-        normalised = np.interp(_bins, [min(bins), max(bins)], [0, 1])
+        _bins_finite = [x for x in bins if ( x != np.inf and x != -np.inf)]
+
+        normalised = np.interp(_bins, [min(_bins_finite), max(_bins_finite)], [0, 1])
         colors = [cmap(i) for i in normalised]
 
         return cls(bins=bins, bin_names=bin_names, colors=colors, name=name)

@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import matplotlib
 import json
+import numpy as np
 from ladybug.epw import EPW
 from python_toolkit.plot.heatmap import heatmap
 from matplotlib.colors import LinearSegmentedColormap
@@ -11,66 +12,58 @@ from ladybugtools_toolkit.ladybug_extension.header import header_from_string
 from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 
-thresholds = [
-    (0,0),
-    (1,3),
-    (2,6),
-    (3,12),
-    (4,15),
-    (5,18),
-    (6,21),
-    (7,24),
-    (8,27),
-    (9,30),
-    (10,33),
-    (11,999)
-]
-
-def get_threshold(dbt_delta):
-    matches = [a for a in thresholds if a[1] >= dbt_delta]
-    return min([a[0] for a in matches])
-
-def dbt_to_condensation_risk(dbt_series, internal_rh, internal_temp):
-    """Calculate condensation risk based on external temperature and internal dew point, using Mark G. Lawrence's DPT approximation for RH>50%.
+def condensation_categories_from_thresholds(
+    thresholds: tuple[float],
+):
+    """Create a categorical from provided threshold temperatures.
 
     Args:
-        dbt_series (list[float]):
-            List of Dry Bulb Temperatures
-        internal_rh (int):
-            Internal Relative Humidity, as a percentage
-        internal_temp (float):
-            Internal Temperature of the building
-    """
-    dew_point_temp = internal_temp-((100-internal_rh)/5)
-    dbt_delta = dew_point_temp - dbt_series
-    con_risk = dbt_delta.apply(get_threshold)
-    header = header_from_string("Condensation risk (Index)")
-    hcc = HourlyContinuousCollection(header = header, values = con_risk.values)
-    return hcc
+        thresholds (tuple[float]):
+            The temperature thresholds to be used.
 
-def condensation_risk_heatmap(epw_file: str, return_file: str, save_path: str = None) -> None:
+    Returns:
+        Categories: The resulting categories object.
+    """
+    cmap = LinearSegmentedColormap.from_list("condensation", ["black","purple","blue","white"], N=100)
+    return Categorical.from_cmap(thresholds, cmap)
+
+
+def condensation_risk_heatmap(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
     """Create a heatmap of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
     Args:
         epw_file (string):
             The input EPW file.
+        thresholds (list[float]):
+            The temperature thresholds to use.
         return_file (string):
             The filepath to write the resulting JSON to.
         save_path (string):
             The filepath to save the resulting image file of the heatmap to.
     """
     epw = EPW(epw_file)
-    internal_temp = 21 #default value for internal temp
-    internal_rh = 40 #default value for internal rh
     dbt_series = collection_to_series(epw.dry_bulb_temperature)
-    dpt_series = collection_to_series(epw.dew_point_temperature)
-    con_risk = dbt_to_condensation_risk(dbt_series, internal_rh, internal_temp)
-    cmap = LinearSegmentedColormap.from_list("condensation", ["white","blue","purple","black"], N=100)
-    fig = heatmap(collection_to_series(con_risk), vmin=0, vmax=11, cmap=cmap, ).get_figure()
 
-    return_dict = {"data": collection_metadata(con_risk)}
+    header = header_from_string("Condensation Thresholds (C)")
+    hcc = HourlyContinuousCollection(header = header, values = dbt_series.values)
+    
+    thresholds = [-20, -15, -10, -5, 0]
+    thresholds.insert(0,-np.inf)
+    thresholds.append(np.inf)
+
+    CATEGORIES = condensation_categories_from_thresholds(thresholds)
+
+    fig =   CATEGORIES.annual_heatmap(
+            series=collection_to_series(epw.dew_point_temperature),
+            ax=None,
+            title="Condensation Risk Heatmap",
+        ).get_figure()
+
+    return_dict = {"data": collection_metadata(hcc)}
 
     if save_path == None or save_path == "":
         base64 = figure_to_base64(fig,html=False)
