@@ -32,12 +32,15 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class Shelter : BHoMObject, ILadybugTools
     {
+        [DisplayText("Wind Porosity")]
         [Description("Hourly wind porosity (0-1).")]
         public virtual List<double> WindPorosity { get; set; }
 
+        [DisplayText("Radiation Porosity")]
         [Description("Hourly radiation porosity (0-1).")]
         public virtual List<double> RadiationPorosity { get; set; }
 
+        [DisplayText("Vertices")]
         [Description("The vertices of this shelter object.")]
         public virtual List<Point> Vertices { get; set; }
     }

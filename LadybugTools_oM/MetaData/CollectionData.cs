@@ -32,24 +32,31 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class CollectionData : ISimulationData
     {
+        [DisplayText("Highest Value")]
         [Description("The maximum value in the collection.")]
         public virtual double HighestValue { get; set; } = double.NaN;
 
+        [DisplayText("Lowest Value")]
         [Description("The minimum value in the collection.")]
         public virtual double LowestValue { get; set; } = double.NaN;
 
+        [DisplayText("Highest Index")]
         [Description("The date and time at which the maximum value occurs.")]
         public virtual DateTime HighestIndex { get; set; } = DateTime.MinValue;
 
+        [DisplayText("Lowest Index")]
         [Description("The date and time at which the minimum value occurs.")]
         public virtual DateTime LowestIndex { get; set; } = DateTime.MinValue;
 
+        [DisplayText("Median Value")]
         [Description("The median (50 percentile) value in the collection.")]
         public virtual double MedianValue { get; set; } = double.NaN;
 
+        [DisplayText("Mean Value")]
         [Description("The mean value of the collection.")]
         public virtual double MeanValue { get; set; } = double.NaN;
 
+        [DisplayText("Monthly Means")]
         [Description("The mean values for each month.")]
         public virtual List<double> MonthlyMeans { get; set; } = Enumerable.Repeat<double>(double.NaN, 12).ToList();
     }

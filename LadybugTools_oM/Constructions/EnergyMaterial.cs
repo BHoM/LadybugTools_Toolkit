@@ -31,32 +31,41 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class EnergyMaterial : BHoMObject, IEnergyMaterialOpaque
     {
+        [DisplayText("Name")]
         [Description("The name of this EnergyMaterial.")]
         public override string Name { get; set; } = string.Empty;
 
+        [DisplayText("Thickness")]
         [Description("Thickness of material (m).")]
         [Length]
         public virtual double Thickness { get; set; }
 
+        [DisplayText("Conductivity")]
         [Description("Conductivity of material (W/mK).")]
         public virtual double Conductivity { get; set; }
 
+        [DisplayText("Density")]
         [Description("Density of material (kg/m3).")]
         [Density]
         public virtual double Density { get; set; }
 
+        [DisplayText("Specific Heat Capacity")]
         [Description("Specific heat capacity of material (J/kgK).")]
         public virtual double SpecificHeat { get; set; }
 
+        [DisplayText("Roughness")]
         [Description("The roughness of the material.")]
         public virtual Roughness Roughness { get; set; }
 
+        [DisplayText("Thermal Absorptance")]
         [Description("Thermal absorptivity (emissivity) of material (0-1).")]
         public virtual double ThermalAbsorptance { get; set; }
 
+        [DisplayText("Solar Absorptance")]
         [Description("Solar absorptivity of material (0-1).")]
         public virtual double SolarAbsorptance { get; set; }
 
+        [DisplayText("Visible Absorptance")]
         [Description("Light absorptivity (1 - albedo) of material (0-1).")]
         public virtual double VisibleAbsorptance { get; set; }
     }

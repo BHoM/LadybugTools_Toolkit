@@ -22,6 +22,7 @@
 
 using BH.oM.Adapter;
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
@@ -33,12 +34,15 @@ namespace BH.oM.LadybugTools
     [Description("Command that when executed with the LadybugTools Adapter, runs a simulation and return a SimulationResult containing hourly data.")]
     public class RunSimulationCommand : ISimulationCommand, IObject
     {
+        [DisplayText("EPW File")]
         [Description("FileSettings for an EPW file to run the simulation with.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
+        [DisplayText("Ground Material")]
         [Description("The ground material for the simulation to use.")]
         public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = null;
 
+        [DisplayText("Shade Material")]
         [Description("The shade material for the simulation to use.")]
         public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; } = null;
     }
