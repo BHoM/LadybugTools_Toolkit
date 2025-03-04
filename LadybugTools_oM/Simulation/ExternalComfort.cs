@@ -27,8 +27,7 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    [NoAutoConstructor]
-    public class ExternalComfort : BHoMObject, ILadybugTools
+    public class ExternalComfort : BHoMObject, ILadybugTools, IImmutable
     {
         [Description("The SimulationResult associated with this object.")]
         public virtual SimulationResult SimulationResult { get; set; }
@@ -38,20 +37,31 @@ namespace BH.oM.LadybugTools
 
         // simulated properties
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection DryBulbTemperature { get; set; }
+        [Description("The calculated dry bulb temperature.")]
+        public virtual HourlyContinuousCollection DryBulbTemperature { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection RelativeHumidity { get; set; }
+        [Description("The calculated relative humidity.")]
+        public virtual HourlyContinuousCollection RelativeHumidity { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection WindSpeed { get; set; }
+        [Description("The calculated wind speed.")]
+        public virtual HourlyContinuousCollection WindSpeed { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection MeanRadiantTemperature { get; set; }
+        [Description("The calculated mean radiant temperature.")]
+        public virtual HourlyContinuousCollection MeanRadiantTemperature { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; set; }
+        [Description("The calculated universal thermal climate index.")]
+        public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; }
+
+        public ExternalComfort(SimulationResult simulationResult = null, Typology typology = null, HourlyContinuousCollection dryBulbTemperature = null, HourlyContinuousCollection relativeHumidity = null, HourlyContinuousCollection windSpeed = null, HourlyContinuousCollection meanRadiantTemperature = null, HourlyContinuousCollection universalThermalClimateIndex = null)
+        {
+            SimulationResult = simulationResult;
+            Typology = typology;
+            DryBulbTemperature = dryBulbTemperature;
+            RelativeHumidity = relativeHumidity;
+            WindSpeed = windSpeed;
+            MeanRadiantTemperature = meanRadiantTemperature;
+            UniversalThermalClimateIndex = universalThermalClimateIndex;
+        }
     }
 }
 

@@ -117,39 +117,3 @@ def hourlycontinuouscollection_to_bhom(obj: HourlyContinuousCollection) -> dict:
         "Header": header_to_bhom(obj.header),
         "Values": obj.values,
     }
-
-
-def location_to_bhom(obj: Location) -> dict:
-    """Convert this object into a BHOM deserialisable dictionary."""
-    return {
-        "_t": "BH.oM.LadybugTools.Location",
-        "Type": "Location",
-        "City": obj.city,
-        "State": obj.state,
-        "Country": obj.country,
-        "Latitude": obj.latitude,
-        "Longitude": obj.longitude,
-        "TimeZone": obj.time_zone,
-        "Elevation": obj.elevation,
-        "StationID": obj.station_id,
-        "Source": obj.source,
-    }
-
-
-def epw_to_bhom(obj: EPW) -> dict:
-    """Convert this object into a BHOM deserialisable dictionary."""
-
-    # call to property required to populate slots
-    obj.dry_bulb_temperature  # pylint: disable=pointless-statement
-
-    collections = []
-    for collection in obj._data:  # pylint: disable=protected-access
-        if isinstance(collection[0], (int, float)):
-            collections.append(hourlycontinuouscollection_to_bhom(collection))
-    return {
-        "_t": "BH.oM.LadybugTools.EPW",
-        "Type": "EPW",
-        "Location": location_to_bhom(obj.location),
-        "Metadata": obj.metadata,
-        "DataCollections": collections,
-    }

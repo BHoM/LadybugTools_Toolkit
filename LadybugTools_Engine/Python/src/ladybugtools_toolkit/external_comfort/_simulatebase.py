@@ -320,7 +320,7 @@ class SimulationResult:
         # validation
         if not isinstance(self.epw_file, (Path, str)):
             raise ValueError("epw_file must be a Path or str.")
-        self.epw_file = Path(self.epw_file).resolve()
+        self.epw_file = Path(self.epw_file).absolute()
         if not self.epw_file.exists():
             raise ValueError("epw_file does not exist.")
 

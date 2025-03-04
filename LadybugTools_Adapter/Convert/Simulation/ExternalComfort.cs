@@ -81,26 +81,17 @@ namespace BH.Adapter.LadybugTools
                     catch (Exception ex)
                     {
                         BH.Engine.Base.Compute.RecordError($"An error occurred while parsing the collection {property} of the ExternalComfort. Returning an empty collection in its place.\n The error: {ex}");
-                        simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                        simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<double?>(null, 8760).ToList() });
                     }
                 }
                 else
                 {
                     BH.Engine.Base.Compute.RecordError($"The incoming json for ExternalComfort does not contain the key: {property}. Returning an empty collection in its place.");
-                    simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                    simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<double?>(null, 8760).ToList() });
                 }
             }
 
-            return new ExternalComfort()
-            {
-                SimulationResult = simulationResult,
-                Typology = typology,
-                DryBulbTemperature = simulatedProperties[0],
-                RelativeHumidity = simulatedProperties[1],
-                WindSpeed = simulatedProperties[2],
-                MeanRadiantTemperature = simulatedProperties[3],
-                UniversalThermalClimateIndex = simulatedProperties[4]
-            };
+            return new ExternalComfort(simulationResult, typology, simulatedProperties[0], simulatedProperties[1], simulatedProperties[2], simulatedProperties[3], simulatedProperties[4]);
         }
 
         public static string FromExternalComfort(ExternalComfort externalComfort)

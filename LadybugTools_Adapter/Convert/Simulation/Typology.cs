@@ -38,6 +38,7 @@ namespace BH.Adapter.LadybugTools
             List<Shelter> shelters = new List<Shelter>();
             List<double> evaporativeCoolingEffect = Enumerable.Repeat(0.0, 8760).ToList();
             List<double?> targetWindSpeed = Enumerable.Repeat<double?>(null, 8760).ToList();
+            double windSpeedMultiplier;
             List<double> radiantTemperatureAdjustment = Enumerable.Repeat(0.0, 8760).ToList();
 
             try
@@ -95,6 +96,11 @@ namespace BH.Adapter.LadybugTools
                 BH.Engine.Base.Compute.RecordError($"An error occurred while parsing the target wind speed of the typology. Returning a list of nulls of length 8760.\n The error: {ex}");
             }
 
+            if (!double.TryParse(oldObject["wind_speed_multiplier"].ToString(), out windSpeedMultiplier))
+            {
+                BH.Engine.Base.Compute.RecordError($"An error occurred while parsing the wind speed multiplier of the typology. Returning default of 1 instead.");
+            }
+
             try
             {
                 List<double> values = new List<double>();
@@ -114,6 +120,7 @@ namespace BH.Adapter.LadybugTools
                 Shelters = shelters,
                 EvaporativeCoolingEffect = evaporativeCoolingEffect,
                 TargetWindSpeed = targetWindSpeed,
+                WindSpeedMultiplier = windSpeedMultiplier,
                 RadiantTemperatureAdjustment = radiantTemperatureAdjustment
             };
         }
@@ -130,6 +137,7 @@ namespace BH.Adapter.LadybugTools
                 $@"""shelters"": {shelters}, " + 
                 $@"""evaporative_cooling_effect"": {evaporativeCoolingEffect}, " + 
                 $@"""target_wind_speed"": {targetWindSpeed}, " + 
+                $@"""wind_speed_multiplier"": {typology.WindSpeedMultiplier}, " +
                 $@"""radiant_temperature_adjustment"": {radiantTemperatureAdjustment}" + "}";
         }
     }

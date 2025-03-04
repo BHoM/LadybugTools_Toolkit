@@ -22,7 +22,6 @@
 
 using BH.Engine.Adapter;
 using BH.Engine.Base;
-using BH.Engine.LadybugTools;
 using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Base;
@@ -35,9 +34,9 @@ using System.Text;
 
 namespace BH.Adapter.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public partial class LadybugToolsAdapter
     {
-        private List<object> RunCommand(UTCIHeatPlotCommand command, ActionConfig actionConfig)
+        private List<object> RunCommand(WalkabilityPlotCommand command, ActionConfig config)
         {
             if (command.EPWFile == null)
             {
@@ -56,28 +55,15 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (!(command.BinColours.Count == 10 || command.BinColours.Count == 0))
-            {
-                BH.Engine.Base.Compute.RecordError($"When overriding bin colours 10 colours must be provided, but {command.BinColours.Count} colours were provided instead.");
-                return null;
-            }
-
-            List<string> colours = command.BinColours.Select(x => x.ToHexCode()).ToList();
-
-            string hexColours = $"[\"{string.Join("\",\"", colours)}\"]";
-            if (hexColours == "[\"\"]")
-                hexColours = "[]";
-
             Dictionary<string, string> inputObjects = new Dictionary<string, string>()
             {
-                { "external_comfort", command.ExternalComfort.FromBHoM() },
-                { "bin_colours", hexColours }
+                { "external_comfort", command.ExternalComfort.FromBHoM() }
             };
 
             string argFile = Path.GetTempFileName();
             File.WriteAllText(argFile, inputObjects.ToJson());
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "walkability_heatmap.py");
 
             string returnFile = Path.GetTempFileName();
 

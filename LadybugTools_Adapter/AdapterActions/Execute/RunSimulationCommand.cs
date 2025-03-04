@@ -74,7 +74,7 @@ namespace BH.Adapter.LadybugTools
             // construct the base object and file to be passed to Python for simulation
             SimulationResult simulationResult = new SimulationResult()
             {
-                EpwFile = Path.GetFullPath(command.EPWFile.GetFullFileName()).Replace(@"\", "/"),
+                EpwFile = command.EPWFile,
                 GroundMaterial = command.GroundMaterial,
                 ShadeMaterial = command.ShadeMaterial,
                 Name = Engine.LadybugTools.Compute.SimulationID(command.EPWFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
