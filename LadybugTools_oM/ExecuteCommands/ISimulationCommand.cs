@@ -22,14 +22,18 @@
 
 using BH.oM.Adapter;
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace BH.oM.LadybugTools
 {
     public interface ISimulationCommand : IExecuteCommand, IObject
     {
+        [DisplayText("EPW File")]
+        [Description("The path to an EPW file.")]
         FileSettings EPWFile { get; set; }
     }
 }

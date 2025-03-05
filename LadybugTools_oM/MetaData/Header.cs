@@ -22,6 +22,7 @@
 
 
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -29,15 +30,19 @@ namespace BH.oM.LadybugTools
 {
     public class Header : BHoMObject, ILadybugTools
     {
+        [DisplayText("Data Type")]
         [Description("The data type the data associated with this header object represents.")]
         public virtual DataType DataType { get; set; } = new DataType();
-        
+
+        [DisplayText("Unit")]
         [Description("The unit for this header object.")]
         public virtual string Unit { get; set; } = string.Empty;
-        
+
+        [DisplayText("Analysis Period")]
         [Description("The analysis period associated with this header object.")]
         public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
 
+        [DisplayText("Metadata")]
         [Description("The metadata associated with this header object.")]
         public virtual Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
