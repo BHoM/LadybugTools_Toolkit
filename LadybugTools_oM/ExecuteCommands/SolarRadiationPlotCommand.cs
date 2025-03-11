@@ -36,11 +36,9 @@ namespace BH.oM.LadybugTools
         [Description("The EPW file to use for simulation.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
-        [DisplayText("Directions")]
         [Description("The number of different azimuthal angles to simulate.")]
         public virtual int Directions { get; set; } = 3;
 
-        [DisplayText("Tilts")]
         [Description("The number of different altitudinal angles to simulate.")]
         public virtual int Tilts { get; set; } = 3;
 
@@ -56,7 +54,6 @@ namespace BH.oM.LadybugTools
         [Description("A Matplotlib colour map. Corresponds to the 'cmap' parameter of plot methods. See https://matplotlib.org/stable/users/explain/colors/colormaps.html for examples of valid keys. Default of 'YlOrRd'.")]
         public virtual string ColourMap { get; set; } = "YlOrRd";
 
-        [DisplayText("Title")]
         [Description("The title of the plot. Will appear above any information at the top of the plot.")]
         public virtual string Title { get; set; } = "";
 

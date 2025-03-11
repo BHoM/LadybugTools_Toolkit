@@ -43,7 +43,6 @@ namespace BH.oM.LadybugTools
         [Description("The key in the EPW file to analyse.")]
         public virtual EPWKey EPWKey { get; set; } = EPWKey.Undefined;
 
-        [DisplayText("Colour")]
         [Description("The colour of the average line on the plot.")]
         public virtual Color Colour { get; set; }
 
@@ -51,7 +50,6 @@ namespace BH.oM.LadybugTools
         [Description("The directory to output the file. Leave empty to return a base64 string representation of that image.")]
         public virtual string OutputLocation { get; set; } = "";
 
-        [DisplayText("Title")]
         [Description("Title of the plot, will appear above any information on the top of the plot.")]
         public virtual string Title { get; set; } = "";
 

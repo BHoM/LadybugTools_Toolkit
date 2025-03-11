@@ -34,7 +34,6 @@ namespace BH.oM.LadybugTools
         [Description("The data type the data associated with this header object represents.")]
         public virtual DataType DataType { get; set; } = new DataType();
 
-        [DisplayText("Unit")]
         [Description("The unit for this header object.")]
         public virtual string Unit { get; set; } = string.Empty;
 
@@ -42,7 +41,6 @@ namespace BH.oM.LadybugTools
         [Description("The analysis period associated with this header object.")]
         public virtual AnalysisPeriod AnalysisPeriod { get; set; } = new AnalysisPeriod();
 
-        [DisplayText("Metadata")]
         [Description("The metadata associated with this header object.")]
         public virtual Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }

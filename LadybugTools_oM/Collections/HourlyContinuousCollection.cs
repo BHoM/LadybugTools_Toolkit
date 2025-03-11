@@ -31,11 +31,9 @@ namespace BH.oM.LadybugTools
 {
     public class HourlyContinuousCollection : BHoMObject, ILadybugTools
     {
-        [DisplayText("Header")]
         [Description("An approximation of a Ladybug Header object.")]
         public virtual Header Header { get; set; } = new Header();
 
-        [DisplayText("Values")]
         [Description("A list of values.")]
         public virtual List<double?> Values { get; set; } = Enumerable.Repeat<double?>(null, 8760).ToList();
     }

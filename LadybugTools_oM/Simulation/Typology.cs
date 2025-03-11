@@ -32,11 +32,9 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class Typology : BHoMObject, ILadybugTools
     {
-        [DisplayText("Name")]
         [Description("The name of this Typology.")]
         public override string Name { get; set; } = string.Empty;
 
-        [DisplayText("Shelters")]
         [Description("The shelters for this Typology.")]
         public virtual List<Shelter> Shelters { get; set; } = new List<Shelter>();
 

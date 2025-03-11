@@ -31,20 +31,16 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class EnergyMaterialVegetation : BHoMObject, IEnergyMaterialOpaque
     {
-        [DisplayText("Name")]
         [Description("The name of this EnergyMaterialVegetation.")]
         public override string Name { get; set; } = string.Empty;
 
-        [DisplayText("Thickness")]
         [Description("Thickness of material (m).")]
         [Length]
         public virtual double Thickness { get; set; }
 
-        [DisplayText("Conductivity")]
         [Description("Conductivity of material (W/mK).")]
         public virtual double Conductivity { get; set; }
 
-        [DisplayText("Density")]
         [Description("Density of material (kg/m3).")]
         [Density]
         public virtual double Density { get; set; }
@@ -53,7 +49,6 @@ namespace BH.oM.LadybugTools
         [Description("Specific heat capacity of material (J/kgK).")]
         public virtual double SpecificHeat { get; set; }
 
-        [DisplayText("Roughness")]
         [Description("The roughness of the material.")]
         public virtual Roughness Roughness { get; set; }
 

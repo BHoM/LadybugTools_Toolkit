@@ -40,7 +40,6 @@ namespace BH.oM.LadybugTools
         [Description("Hourly radiation porosity (0-1).")]
         public virtual List<double> RadiationPorosity { get; set; }
 
-        [DisplayText("Vertices")]
         [Description("The vertices of this shelter object.")]
         public virtual List<Point> Vertices { get; set; }
     }

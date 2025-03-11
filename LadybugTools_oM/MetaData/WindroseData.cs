@@ -36,19 +36,19 @@ namespace BH.oM.LadybugTools
         [Description("The direction bin of the prevailing wind, defined as two values (in degrees) for the lower and upper values for the bin, where 0 degrees is north.")]
         public virtual List<double> PrevailingDirection { get; set; } = Enumerable.Repeat<double>(double.NaN, 2).ToList();
 
-        [DisplayText("Prevailing Percentile 95")]
+        [DisplayText("Prevailing 95th Percentile")]
         [Description("The 95th percentile wind speed value in the prevailing direction.")]
         public virtual double PrevailingPercentile95 { get; set; } = double.NaN;
 
-        [DisplayText("Prevailing Percentile 50")]
+        [DisplayText("Prevailing 50th Percentile")]
         [Description("The median (50th percentile) wind speed value in the prevailing direction.")]
         public virtual double PrevailingPercentile50 { get; set; } = double.NaN;
 
-        [DisplayText("Percentile 95")]
+        [DisplayText("95th Percentile")]
         [Description("The 95th percentile wind speed value.")]
         public virtual double Percentile95 { get; set; } = double.NaN;
 
-        [DisplayText("Percentile 50")]
+        [DisplayText("50th Percentile")]
         [Description("The median (50th percentile) wind speed value.")]
         public virtual double Percentile50 { get; set; } = double.NaN;
 

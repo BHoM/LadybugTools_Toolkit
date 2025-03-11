@@ -33,7 +33,6 @@ namespace BH.oM.LadybugTools
         [Description("The SimulationResult associated with this object.")]
         public virtual SimulationResult SimulationResult { get; set; }
 
-        [DisplayText("Typology")]
         [Description("The typology in the processing of this object.")]
         public virtual Typology Typology { get; set; }
 

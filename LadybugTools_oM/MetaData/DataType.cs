@@ -29,7 +29,6 @@ namespace BH.oM.LadybugTools
 {
     public class DataType : BHoMObject, ILadybugTools
     {
-        [DisplayText("Name")]
         [Description("The name of this data type.")]
         public override string Name { get; set; } = string.Empty;
 

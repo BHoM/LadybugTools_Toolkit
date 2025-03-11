@@ -42,7 +42,6 @@ namespace BH.oM.LadybugTools
         [Description("The shade material used in the processing of this object.")]
         public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; }
 
-        [DisplayText("Name")]
         [Description("The identifier used to distinguish existing results for this object.")]
         public override string Name { get; set; }
 
