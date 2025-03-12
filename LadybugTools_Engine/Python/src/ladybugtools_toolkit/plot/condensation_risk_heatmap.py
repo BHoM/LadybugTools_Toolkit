@@ -1,8 +1,13 @@
 """Plotting methods for condensation risk."""
 
 import argparse
+import textwrap
+
 from pathlib import Path
 import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import json
 import numpy as np
 from ladybug.epw import EPW
@@ -14,6 +19,12 @@ from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
+
+thresholds = [-20, 
+              -15, 
+              -10, 
+              -5, 
+              0]
 
 def condensation_categories_from_thresholds(
     thresholds: tuple[float],
@@ -30,9 +41,8 @@ def condensation_categories_from_thresholds(
     cmap = LinearSegmentedColormap.from_list("condensation", ["black","purple","blue","white"], N=100)
     return Categorical.from_cmap(thresholds, cmap)
 
-
-def condensation_risk_heatmap(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
-    """Create a heatmap of the condensation potential for a given set of
+def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> None:
+    """Create a histogram of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
     Args:
@@ -44,32 +54,48 @@ def condensation_risk_heatmap(epw_file: str, thresholds: list[float], return_fil
             The filepath to write the resulting JSON to.
         save_path (string):
             The filepath to save the resulting image file of the heatmap to.
+        **kwargs:
+            Additional keyword arguments to pass to the heatmap function.
     """
     epw = EPW(epw_file)
-    dbt_series = collection_to_series(epw.dry_bulb_temperature)
+    series = collection_to_series(epw.dry_bulb_temperature)
 
-    header = header_from_string("Condensation Thresholds (C)")
-    hcc = HourlyContinuousCollection(header = header, values = dbt_series.values)
+    hcc = epw.dry_bulb_temperature
     
-    thresholds = [-20, -15, -10, -5, 0]
     thresholds.insert(0,-np.inf)
     thresholds.append(np.inf)
 
     CATEGORIES = condensation_categories_from_thresholds(thresholds)
 
-    fig =   CATEGORIES.annual_heatmap(
-            series=collection_to_series(epw.dew_point_temperature),
-            ax=None,
-            title="Condensation Risk Heatmap",
-        ).get_figure()
+    title = kwargs.pop("title", None)
+    figsize = kwargs.pop("figsize", (15, 10))
 
-    return_dict = {"data": collection_metadata(hcc)}
+    # Instantiate figure
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
+    spec = fig.add_gridspec(ncols=1, nrows=3, width_ratios=[1], height_ratios=[5, 2, 5], hspace=0.0)
+    heatmap_ax = fig.add_subplot(spec[0, 0])
+    histogram_ax = fig.add_subplot(spec[1, 0])
+    chart_ax = fig.add_subplot(spec[2, 0])
+
+    # Add heatmap
+    CATEGORIES.annual_heatmap(series, heatmap_ax)
+
+    # Add stacked plot
+    CATEGORIES.annual_monthly_histogram(series, histogram_ax, False, True)
+
+    # Add Thresholds Chart
+    CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey')
+
+    title = f"{series.name} - {title}" if title is not None else series.name
+    heatmap_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
+
+    return_dict = {"data": hcc}
 
     if save_path == None or save_path == "":
         base64 = figure_to_base64(fig,html=False)
         return_dict["figure"] = base64
     else:
-        fig.savefig(save_path, dpi=150, transparent=True)
+        fig.savefig(save_path, dpi=300, transparent=True)
         return_dict["figure"] = save_path
     
     with open(return_file, "w") as rtn:
@@ -92,6 +118,13 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
+        "-t",
+        "--thresholds",
+        help="thresholds to use.",
+        type=list[float],
+        required=True,
+    )
+    parser.add_argument(
         "-r",
         "--return_file",
         help="json file to write return data to.",
@@ -108,4 +141,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     matplotlib.use("Agg")
-    condensation_risk_heatmap(args.epw_file, args.return_file, args.save_path)
+    condensation_risk_heatmap_histogram(args.epw_file, args.thresholds, args.return_file, args.save_path)

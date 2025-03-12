@@ -22,6 +22,8 @@ from matplotlib.legend import Legend
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.plot.heatmap import heatmap
+from python_toolkit.plot.timeseries import timeseries
+
 
 from ..helpers import rolling_window, sunrise_sunset, validate_timeseries
 from ..plot.utilities import contrasting_color
@@ -123,7 +125,7 @@ class Categorical:
         if np.isinf(_bins[-1]):
             _bins[-1] = bins[-2]
 
-        _bins_finite = [x for x in bins if ( x != np.inf and x != -np.inf)]
+        _bins_finite = [x for x in bins if not (np.isinf(x))]
 
         normalised = np.interp(_bins, [min(_bins_finite), max(_bins_finite)], [0, 1])
         colors = [cmap(i) for i in normalised]
@@ -680,6 +682,39 @@ class Categorical:
             hmap_ax.set_ylim(ylimz)
 
         return fig
+
+    @bhom_analytics()
+    def annual_threshold_chart(self, series: pd.Series, ax: plt.Axes = None, **kwargs) -> plt.Axes:
+        """Create an annual chart annotated with lines at the category's cutoff values for the given series.
+
+        Args:
+            series (pd.Series):
+                A time-indexed pandas Series object.
+            ax (plt.Axes, optional):
+                A matplotlib Axes object to plot on. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
+
+        Returns:
+            plt.Axes:
+                A matplotlib Axes object.
+        """
+
+        validate_timeseries(series)
+
+        if ax is None:
+            ax = plt.gca()
+
+        plt = timeseries(
+            series,
+            ax=ax,
+            **kwargs,
+        )
+        
+        for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
+            ax.axhline(interval.right, 0, 1, color = self.color_from_bin_name(bin_name), ls="--", lw=2)
+
+        return ax
 
 
 class ComfortClass(Enum):
