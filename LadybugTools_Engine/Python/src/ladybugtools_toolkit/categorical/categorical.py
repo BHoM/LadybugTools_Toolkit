@@ -694,6 +694,8 @@ class Categorical:
                 A matplotlib Axes object to plot on. Defaults to None.
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+            show_legend (bool, optional):
+                Whether to show the legend. Defaults to True.
 
         Returns:
             plt.Axes:
@@ -710,10 +712,13 @@ class Categorical:
             ax=ax,
             **kwargs,
         )
-        
-        for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
-            ax.axhline(interval.right, 0, 1, color = self.color_from_bin_name(bin_name), ls="--", lw=2)
 
+        for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
+            val = interval.right
+            if np.isfinite(val) and val>ax.get_ylim()[0]:
+                col = self.color_from_bin_name(bin_name)
+                ax.axhline(val, 0, 1, color = col, ls="--", lw=2)
+                ax.text(0.5, val, val, va='center', ha='center', backgroundcolor='w', color = col, transform=ax.get_yaxis_transform())
         return ax
 
 

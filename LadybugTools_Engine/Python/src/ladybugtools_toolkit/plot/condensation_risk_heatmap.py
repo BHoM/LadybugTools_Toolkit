@@ -41,7 +41,57 @@ def condensation_categories_from_thresholds(
     cmap = LinearSegmentedColormap.from_list("condensation", ["black","purple","blue","white"], N=100)
     return Categorical.from_cmap(thresholds, cmap)
 
-def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> None:
+def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> Figure:
+    """Create a chart with thresholds of the condensation potential for a given set of
+    timeseries dry bulb temperatures from an EPW.
+
+    Args:
+        epw_file (string):
+            The input EPW file.
+        thresholds (list[float]):
+            The temperature thresholds to use.
+        return_file (string):
+            The filepath to write the resulting JSON to.
+        save_path (string):
+            The filepath to save the resulting image file of the heatmap to.
+        **kwargs:
+            Additional keyword arguments to pass to the heatmap function.
+
+    Returns:
+        Figure: A matplotlib Figure object.
+    """
+    epw = EPW(epw_file)
+    series = collection_to_series(epw.dry_bulb_temperature)
+
+    hcc = epw.dry_bulb_temperature
+    
+    thresholds.insert(0,-np.inf)
+    thresholds.append(np.inf)
+
+    CATEGORIES = condensation_categories_from_thresholds(thresholds)
+
+    title = kwargs.pop("title", None)
+    figsize = kwargs.pop("figsize", (15, 8))
+
+    # Instantiate figure
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
+    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[7,3], hspace=0.0)
+    chart_ax = fig.add_subplot(spec[0, 0])
+    table_ax = fig.add_subplot(spec[1, 0])
+
+    # Add Thresholds Chart
+    CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey')
+   
+    # Add table
+    CATEGORIES.annual_heatmap(series, table_ax)
+
+    title = f"{title}" if title is not None else series.name
+    chart_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
+
+    return fig
+
+
+def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> Figure:
     """Create a histogram of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
@@ -56,6 +106,9 @@ def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], 
             The filepath to save the resulting image file of the heatmap to.
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+
+    Returns:
+        Figure: A matplotlib Figure object.
     """
     epw = EPW(epw_file)
     series = collection_to_series(epw.dry_bulb_temperature)
@@ -68,23 +121,19 @@ def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], 
     CATEGORIES = condensation_categories_from_thresholds(thresholds)
 
     title = kwargs.pop("title", None)
-    figsize = kwargs.pop("figsize", (15, 10))
+    figsize = kwargs.pop("figsize", (15, 8))
 
     # Instantiate figure
     fig = plt.figure(figsize=figsize, constrained_layout=True)
-    spec = fig.add_gridspec(ncols=1, nrows=3, width_ratios=[1], height_ratios=[5, 2, 5], hspace=0.0)
+    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 3], hspace=0.0)
     heatmap_ax = fig.add_subplot(spec[0, 0])
     histogram_ax = fig.add_subplot(spec[1, 0])
-    chart_ax = fig.add_subplot(spec[2, 0])
 
     # Add heatmap
     CATEGORIES.annual_heatmap(series, heatmap_ax)
 
     # Add stacked plot
     CATEGORIES.annual_monthly_histogram(series, histogram_ax, False, True)
-
-    # Add Thresholds Chart
-    CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey')
 
     title = f"{series.name} - {title}" if title is not None else series.name
     heatmap_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
