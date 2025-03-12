@@ -30,27 +30,35 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class AnalysisPeriod : BHoMObject, ILadybugTools
     {
+        [DisplayText("Start Month")]
         [Description("The start month.")]
         public virtual int StartMonth { get; set; } = 1;
 
+        [DisplayText("Start Day")]
         [Description("The start day.")]
         public virtual int StartDay { get; set; } = 1;
 
+        [DisplayText("Start Hour")]
         [Description("The start hour.")]
         public virtual int StartHour { get; set; } = 0;
 
+        [DisplayText("End Month")]
         [Description("The end month.")]
         public virtual int EndMonth { get; set; } = 12;
 
+        [DisplayText("End Day")]
         [Description("The end day.")]
         public virtual int EndDay { get; set; } = 31;
 
+        [DisplayText("End Hour")]
         [Description("The end hour.")]
         public virtual int EndHour { get; set; } = 23;
 
+        [DisplayText("Is Leap Year")]
         [Description("Boolean flag for whether this represents a leap year.")]
         public virtual bool IsLeapYear { get; set; } = false;
 
+        [DisplayText("Time Step")]
         [Description("The number of timesteps per hour.")]
         public virtual int TimeStep { get; set; } = 1;
     }

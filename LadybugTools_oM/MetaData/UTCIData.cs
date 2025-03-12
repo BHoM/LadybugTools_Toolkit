@@ -31,21 +31,27 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class UTCIData : ISimulationData
     {
+        [DisplayText("Comfort Ratio")]
         [Description("The ratio of comfortable hours to total hours. Comfortable hours are hours between 9 and 26�C.")]
         public virtual double ComfortableRatio { get; set; } = double.NaN;
 
+        [DisplayText("Heat Stress Ratio")]
         [Description("The ratio of heat stress hours to total hours. Heat stress hours are hours greater than 26�C.")]
         public virtual double HeatStressRatio { get; set; } = double.NaN;
 
+        [DisplayText("Cold Stress Ratio")]
         [Description("The ratio of cold stress hours to total hours. Cold stress hours are hours less than 9�C.")]
         public virtual double ColdStressRatio { get; set; } = double.NaN;
 
+        [DisplayText("Daytime Comfort Ratio")]
         [Description("The ratio of daytime comfortable hours to daytime hours. Daytime comfortable hours are hours between 9 and 26�C and between 07:00-22:59.")]
         public virtual double DaytimeComfortableRatio { get; set; } = double.NaN;
 
+        [DisplayText("Daytime Heat Stress Ratio")]
         [Description("The ratio of daytime heat stress hours to daytime hours. Daytime heat stress hours are hours greater than 26�C and between 07:00-22:59.")]
         public virtual double DaytimeHeatStressRatio { get; set; } = double.NaN;
 
+        [DisplayText("Daytime Cold Stress Ratio")]
         [Description("The ratio of daytime cold stress hours to daytime hours. Daytime cold stress hours are hours less than 9�C and between 07:00-22:59.")]
         public virtual double DaytimeColdStressRatio { get; set; } = double.NaN;
     }

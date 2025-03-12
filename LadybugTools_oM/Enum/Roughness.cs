@@ -20,6 +20,7 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base.Attributes;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
@@ -28,11 +29,15 @@ namespace BH.oM.LadybugTools
     public enum Roughness
     {
         Undefined,
+        [DisplayText("Very Rough")]
         VeryRough,
         Rough,
+        [DisplayText("Medium Rough")]
         MediumRough,
+        [DisplayText("Medium Smooth")]
         MediumSmooth,
         Smooth,
+        [DisplayText("Very Smooth")]
         VerySmooth
     };
 }

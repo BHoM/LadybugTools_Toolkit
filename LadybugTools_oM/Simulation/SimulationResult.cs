@@ -30,12 +30,15 @@ namespace BH.oM.LadybugTools
 {
     public class SimulationResult : BHoMObject, ILadybugTools, IImmutable
     {
+        [DisplayText("EPW File")]
         [Description("The EPW file associated with this object.")]
         public virtual FileSettings EpwFile { get; set; }
 
+        [DisplayText("Ground Material")]
         [Description("The ground material used in the processing of this object.")]
         public virtual IEnergyMaterialOpaque GroundMaterial { get; set; }
 
+        [DisplayText("Shade Material")]
         [Description("The shade material used in the processing of this object.")]
         public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; }
 
@@ -44,40 +47,52 @@ namespace BH.oM.LadybugTools
 
         // simulated properties
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Shaded Down Temperature")]
+        [Description("The Shaded Down Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection ShadedDownTemperature { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Shaded Up Temperature")]
+        [Description("The Shaded Up Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection ShadedUpTemperature { get; } = null;
 
-        [Description("The simulated property from this object.")]
-        public virtual HourlyContinuousCollection ShadedRadiantTemperature { get; } = null;     
+        [DisplayText("Shaded Radiant Temperature")]
+        [Description("The Shaded Radiant Temperature used in the processing of this object")]
+        public virtual HourlyContinuousCollection ShadedRadiantTemperature { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Shaded Longwave Mean Radiant Temperature Delta")]
+        [Description("The Shaded Longwave Mean Radiant Temperature Delta used in the processing of this object")]
         public virtual HourlyContinuousCollection ShadedLongwaveMeanRadiantTemperatureDelta { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Shaded Shortwave Mean Radiant Temperature Delta")]
+        [Description("The Shaded Shortwave Mean Radiant Temperature Delta used in the processing of this object")]
         public virtual HourlyContinuousCollection ShadedShortwaveMeanRadiantTemperatureDelta { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Shaded Mean Radiant Temperature")]
+        [Description("The Shaded Mean Radiant Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection ShadedMeanRadiantTemperature { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Unshaded Down Temperature")]
+        [Description("The Unshaded Down Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection UnshadedDownTemperature { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Unshaded Up Temperature")]
+        [Description("The Unshaded Up Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection UnshadedUpTemperature { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Unshaded Radiant Temperature")]
+        [Description("The Unshaded Radiant Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection UnshadedRadiantTemperature { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Unshaded Longwave Mean Radiant Temperature Delta")]
+        [Description("The Unshaded Longwave Mean Radiant Temperature Delta used in the processing of this object")]
         public virtual HourlyContinuousCollection UnshadedLongwaveMeanRadiantTemperatureDelta { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Unshaded Shortwave Mean Radiant Temperature Delta")]
+        [Description("The Unshaded Shortwave Mean Radiant Temperature Delta used in the processing of this object")]
         public virtual HourlyContinuousCollection UnshadedShortwaveMeanRadiantTemperatureDelta { get; } = null;
 
-        [Description("The simulated property from this object.")]
+        [DisplayText("Unshaded Mean Radiant Temperature")]
+        [Description("The Unshaded Mean Radiant Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection UnshadedMeanRadiantTemperature { get; } = null;
 
         public SimulationResult(FileSettings epwFile = null, IEnergyMaterialOpaque groundMaterial = null, IEnergyMaterialOpaque shadeMaterial = null, string name = null, HourlyContinuousCollection shadedDownTemperature = null, HourlyContinuousCollection shadedUpTemperature = null, HourlyContinuousCollection shadedRadiantTemperature = null, HourlyContinuousCollection shadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedMeanRadiantTemperature = null, HourlyContinuousCollection unshadedDownTemperature = null, HourlyContinuousCollection unshadedUpTemperature = null, HourlyContinuousCollection unshadedRadiantTemperature = null, HourlyContinuousCollection unshadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedMeanRadiantTemperature = null)

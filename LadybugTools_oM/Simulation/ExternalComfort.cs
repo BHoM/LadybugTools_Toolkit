@@ -29,6 +29,7 @@ namespace BH.oM.LadybugTools
 {
     public class ExternalComfort : BHoMObject, ILadybugTools, IImmutable
     {
+        [DisplayText("Simulation Result")]
         [Description("The SimulationResult associated with this object.")]
         public virtual SimulationResult SimulationResult { get; set; }
 
@@ -37,18 +38,23 @@ namespace BH.oM.LadybugTools
 
         // simulated properties
 
+        [DisplayText("Dry Bulb Temperature")]
         [Description("The calculated dry bulb temperature.")]
         public virtual HourlyContinuousCollection DryBulbTemperature { get; }
 
+        [DisplayText("Relative Humidity")]
         [Description("The calculated relative humidity.")]
         public virtual HourlyContinuousCollection RelativeHumidity { get; }
 
+        [DisplayText("Wind Speed")]
         [Description("The calculated wind speed.")]
         public virtual HourlyContinuousCollection WindSpeed { get; }
 
+        [DisplayText("Mean Radiant Temperature")]
         [Description("The calculated mean radiant temperature.")]
         public virtual HourlyContinuousCollection MeanRadiantTemperature { get; }
 
+        [DisplayText("Universal Thermal Climate Index")]
         [Description("The calculated universal thermal climate index.")]
         public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; }
 
