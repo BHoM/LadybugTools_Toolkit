@@ -73,7 +73,7 @@ def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], **kwa
     CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey', **kwargs)
    
     # Add table
-    CATEGORIES.annual_monthly_table(series, table_ax, False, True, **kwargs)
+    CATEGORIES.annual_monthly_table(series, table_ax, **kwargs)
 
     title = f"{title}" if title is not None else series.name
     chart_ax.set_title(title, y=1, ha="left", va="bottom", x=0)

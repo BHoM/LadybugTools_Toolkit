@@ -587,14 +587,14 @@ class Categorical:
             ax = plt.gca()
 
         t = self.timeseries_summary_monthly(series, density=False)
-        t = t.iloc[:,:-1]
+        #t = t.iloc[:,:-1]
         t = t.transpose().iloc[::-1]
 
         # Hide axes
         ax.axis('off')
 
         # Create table
-        colors = self.colors[::-1][1:]
+        colors = self.colors[::-1]
         table = ax.table(cellText=t.values,  rowLabels = t.index, colLabels = t.columns, rowColours = colors, loc='center', **kwargs)
         for (row, col), cell in table.get_celld().items():
             if (row == 0) or (col == -1):
