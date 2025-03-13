@@ -30,7 +30,7 @@ def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categor
     Returns:
         Categorical: The resulting categorical object with condensation risk colouring.
     """
-    cmap = LinearSegmentedColormap.from_list("condensation", ["indigo", "royalblue", "white"], N=100)
+    cmap = LinearSegmentedColormap.from_list("condensation", ["mediumvioletred", "indigo" , "blue", "white"], N=100)
     return Categorical.from_cmap(thresholds, cmap)
 
 def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], **kwargs) -> Figure:
