@@ -21,32 +21,14 @@ from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.plot.facades.condensation_risk.heatmap import *
 
 
-def condensation_risk_heatmap(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> Figure:
-    """Create a histogram of the condensation potential for a given set of
-    timeseries dry bulb temperatures from an EPW.
-
-    Args:
-        epw_file (string):
-            The input EPW file.
-        thresholds (list[float]):
-            The temperature thresholds to use.
-        return_file (string):
-            The filepath to write the resulting JSON to.
-        save_path (string):
-            The filepath to save the resulting image file of the heatmap to.
-        **kwargs:
-            Additional keyword arguments to pass to the heatmap function.
-
-    Returns:
-        Figure: A matplotlib Figure object.
-    """
+def facade_condensation_risk_heatmap(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
 
     epw = EPW(epw_file)
     hcc = epw.dry_bulb_temperature
 
-    fig = condensation_risk_heatmap_histogram(epw_file, thresholds, return_file, save_path).get_figure()
+    fig = condensation_risk_heatmap_histogram(epw_file, thresholds).get_figure()
 
-    return_dict = {"data": hcc}
+    return_dict = {"data": collection_metadata(hcc)}
 
     if save_path == None or save_path == "":
         base64 = figure_to_base64(fig,html=False)
@@ -98,4 +80,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     matplotlib.use("Agg")
-    condensation_risk_heatmap_histogram(args.epw_file, args.thresholds, args.return_file, args.save_path)
+    facade_condensation_risk_heatmap(args.epw_file, args.thresholds, args.return_file, args.save_path)

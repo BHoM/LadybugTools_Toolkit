@@ -20,9 +20,7 @@ from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_met
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 
-def condensation_categories_from_thresholds(
-    thresholds: tuple[float],
-):
+def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categorical:
     """Create a categorical from provided threshold temperatures.
 
     Args:
@@ -30,12 +28,12 @@ def condensation_categories_from_thresholds(
             The temperature thresholds to be used.
 
     Returns:
-        Categories: The resulting categories object.
+        Categorical: The resulting categorical object with condensation risk colouring.
     """
     cmap = LinearSegmentedColormap.from_list("condensation", ["indigo", "royalblue", "white"], N=100)
     return Categorical.from_cmap(thresholds, cmap)
 
-def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> Figure:
+def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], **kwargs) -> Figure:
     """Create a chart with thresholds of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
@@ -72,10 +70,10 @@ def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file:
     table_ax = fig.add_subplot(spec[1, 0])
 
     # Add Thresholds Chart
-    CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey')
+    CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey', **kwargs)
    
     # Add table
-    CATEGORIES.annual_monthly_table(series, table_ax, False, True)
+    CATEGORIES.annual_monthly_table(series, table_ax, False, True, **kwargs)
 
     title = f"{title}" if title is not None else series.name
     chart_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
@@ -84,7 +82,7 @@ def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file:
     return fig
 
 
-def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> Figure:
+def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], **kwargs) -> Figure:
     """Create a histogram of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
@@ -121,10 +119,10 @@ def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], 
     histogram_ax = fig.add_subplot(spec[1, 0])
 
     # Add heatmap
-    CATEGORIES.annual_heatmap(series, heatmap_ax)
+    CATEGORIES.annual_heatmap(series, heatmap_ax, **kwargs)
 
     # Add stacked plot
-    CATEGORIES.annual_monthly_histogram(series, histogram_ax, False, True)
+    CATEGORIES.annual_monthly_histogram(series, histogram_ax, False, True, **kwargs)
 
     title = f"{series.name} - {title}" if title is not None else series.name
     heatmap_ax.set_title(title, y=1, ha="left", va="bottom", x=0)

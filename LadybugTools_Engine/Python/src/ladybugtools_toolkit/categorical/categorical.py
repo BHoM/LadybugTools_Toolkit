@@ -563,11 +563,9 @@ class Categorical:
         self,
         series: pd.Series,
         ax: plt.Axes = None,
-        show_legend: bool = False,
-        show_labels: bool = False,
         **kwargs,
     ) -> plt.Axes:
-        """Create a monthly histogram of a pandas Series.
+        """Create a monthly table from a pandas Series.
 
         Args:
             series (pd.Series):
@@ -575,10 +573,6 @@ class Categorical:
             ax (plt.Axes, optional):
                 An optional plt.Axes object to populate. Defaults to None,
                 which creates a new plt.Axes object.
-            show_legend (bool, optional):
-                Whether to show the legend. Defaults to False.
-            show_labels (bool, optional):
-                Whether to show the labels on the bars. Defaults to False.
             **kwargs:
                 Additional keyword arguments to pass to plt.bar.
 
@@ -592,8 +586,6 @@ class Categorical:
         if ax is None:
             ax = plt.gca()
 
-        color_lookup = dict(zip(self.bin_names, self.colors))
-
         t = self.timeseries_summary_monthly(series, density=False)
         t = t.iloc[:,:-1]
         t = t.transpose().iloc[::-1]
@@ -603,7 +595,7 @@ class Categorical:
 
         # Create table
         colors = self.colors[::-1][1:]
-        table = ax.table(cellText=t.values,  rowLabels = t.index, colLabels = t.columns, rowColours = colors, loc='center')
+        table = ax.table(cellText=t.values,  rowLabels = t.index, colLabels = t.columns, rowColours = colors, loc='center', **kwargs)
         for (row, col), cell in table.get_celld().items():
             if (row == 0) or (col == -1):
                 cell.set_text_props(fontproperties=FontProperties(weight='bold'))
