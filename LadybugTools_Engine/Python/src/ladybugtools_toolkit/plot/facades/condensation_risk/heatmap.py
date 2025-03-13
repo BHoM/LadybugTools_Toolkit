@@ -33,7 +33,9 @@ def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categor
     Returns:
         Categorical: The resulting categorical object with condensation risk colouring.
     """
-    
+    if len(thresholds) < 1:
+        thresholds = default_thresholds;
+
     thresholds.insert(0,-np.inf)
     thresholds.append(np.inf)
     thresholds_sorted = sorted(thresholds)
