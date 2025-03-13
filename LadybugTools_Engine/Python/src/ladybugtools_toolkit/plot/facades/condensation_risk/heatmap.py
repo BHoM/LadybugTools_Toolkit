@@ -42,7 +42,7 @@ def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categor
     cmap = LinearSegmentedColormap.from_list("condensation", ["mediumvioletred", "indigo" , "blue", "white"], N=100)
     return Categorical.from_cmap(thresholds_sorted, cmap)
 
-def facade_condensation_risk_chart(epw_file: str, thresholds: list[float] = default_thresholds, **kwargs) -> Figure:
+def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] = default_thresholds, **kwargs) -> Figure:
     """Create a chart with thresholds of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
@@ -109,9 +109,6 @@ def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[f
     """
     epw = EPW(epw_file)
     series = collection_to_series(epw.dry_bulb_temperature)
-    
-    thresholds.insert(0,-np.inf)
-    thresholds.append(np.inf)
 
     CATEGORIES = condensation_categories_from_thresholds(thresholds)
 
