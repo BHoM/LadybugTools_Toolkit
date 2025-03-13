@@ -30,10 +30,16 @@ using System.ComponentModel;
 namespace BH.oM.LadybugTools
 {
     [Description("Command that, when executed with the LadybugToolsAdapter, simulates Condensation Risk and outputs a heatmap.\nOutput is a string of either the path to the image (if OutputLocation is not set) or the base 64 string representation of it.")]
-    public class CondensationRiskCommand : ISimulationCommand
+    public class FacadeCondensationRiskCommand : ISimulationCommand
     {
         [Description("The path to an EPW file.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
+
+        [Description("The list of thresholds to use.")]
+        public virtual List<double> Thresholds { get; set; } = new List<double>();
+
+        [Description("Boolean indicating whether to return heatmap or just the chart and table.")]
+        public virtual bool Heatmap { get; set; } = true;
 
         [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]
         public virtual string OutputLocation { get; set; } = "";

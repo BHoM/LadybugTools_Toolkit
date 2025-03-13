@@ -36,7 +36,7 @@ namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
-        private List<object> RunCommand(CondensationRiskCommand command, ActionConfig actionConfig)
+        private List<object> RunCommand(FacadeCondensationRiskCommand command, ActionConfig actionConfig)
         {
             if (command.EPWFile == null)
             {
@@ -50,14 +50,34 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
+            List<double> thresholds;
+            if (command.Thresholds == null)
+            {
+                BH.Engine.Base.Compute.RecordWarning($"{nameof(command.Thresholds)} input was null, and has been replaced with default values.");
+                thresholds = new List<double> { -10, -5, 0, 5, 10};
+            }
+            else
+            {
+                thresholds = command.Thresholds;
+            }
+            string thresholdsStr = string.Join(" ",  thresholds);  
+
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+            string script;
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\plot", "condensation_risk_heatmap.py");
-
+            if (command.Heatmap)
+            {
+                script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "facade_condensation_risk_heatmap.py");
+            }              
+            else
+            {
+                script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "facade_condensation_risk_chart.py");
+            }
+                
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -t {thresholdsStr} -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             string resultFile = result.Split('\n').Last();

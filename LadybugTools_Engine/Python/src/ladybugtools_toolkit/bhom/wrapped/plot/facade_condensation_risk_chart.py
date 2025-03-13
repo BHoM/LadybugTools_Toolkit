@@ -21,15 +21,13 @@ from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.plot.facades.condensation_risk.heatmap import *
 
 
-def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
+def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
 
     epw = EPW(epw_file)
-    CATEGORIES = condensation_categories_from_thresholds(thresholds)
-    series = collection_to_series(epw.dry_bulb_temperature)
 
     hcc = epw.dry_bulb_temperature
 
-    fig = condensation_risk_chart(epw_file, thresholds).get_figure()
+    fig = facade_condensation_risk_chart(epw_file, thresholds).get_figure()
 
     return_dict = {"data": collection_metadata(hcc)}
 
@@ -63,7 +61,8 @@ if __name__ == "__main__":
         "-t",
         "--thresholds",
         help="thresholds to use.",
-        type=list[float],
+        type = float,
+        nargs='*',
         required=True,
     )
     parser.add_argument(
@@ -83,4 +82,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     matplotlib.use("Agg")
-    facade_condensation_risk_chart(args.epw_file, args.thresholds, args.return_file, args.save_path)
+    facade_condensation_risk_chart_table(args.epw_file, args.thresholds, args.return_file, args.save_path)

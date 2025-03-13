@@ -26,7 +26,7 @@ def facade_condensation_risk_heatmap(epw_file: str, thresholds: list[float], ret
     epw = EPW(epw_file)
     hcc = epw.dry_bulb_temperature
 
-    fig = condensation_risk_heatmap_histogram(epw_file, thresholds).get_figure()
+    fig = facade_condensation_risk_heatmap_histogram(epw_file, thresholds).get_figure()
 
     return_dict = {"data": collection_metadata(hcc)}
 
@@ -60,7 +60,8 @@ if __name__ == "__main__":
         "-t",
         "--thresholds",
         help="thresholds to use.",
-        type=list[float],
+        type = float,
+        nargs='*',
         required=True,
     )
     parser.add_argument(
