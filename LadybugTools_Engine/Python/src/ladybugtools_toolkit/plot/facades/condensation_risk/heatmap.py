@@ -20,6 +20,9 @@ from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_met
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 
+
+default_thresholds = [10,7,4,1,-2,-5]
+
 def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categorical:
     """Create a categorical from provided threshold temperatures.
 
@@ -30,10 +33,14 @@ def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categor
     Returns:
         Categorical: The resulting categorical object with condensation risk colouring.
     """
+    
+    thresholds.insert(0,-np.inf)
+    thresholds.append(np.inf)
+    thresholds_sorted = sorted(thresholds)
     cmap = LinearSegmentedColormap.from_list("condensation", ["mediumvioletred", "indigo" , "blue", "white"], N=100)
-    return Categorical.from_cmap(thresholds, cmap)
+    return Categorical.from_cmap(thresholds_sorted, cmap)
 
-def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], **kwargs) -> Figure:
+def facade_condensation_risk_chart(epw_file: str, thresholds: list[float] = default_thresholds, **kwargs) -> Figure:
     """Create a chart with thresholds of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
@@ -54,9 +61,6 @@ def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], **kwa
     """
     epw = EPW(epw_file)
     series = collection_to_series(epw.dry_bulb_temperature)
-    
-    thresholds.insert(0,-np.inf)
-    thresholds.append(np.inf)
 
     CATEGORIES = condensation_categories_from_thresholds(thresholds)
 
@@ -82,7 +86,7 @@ def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], **kwa
     return fig
 
 
-def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], **kwargs) -> Figure:
+def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float] = default_thresholds, **kwargs) -> Figure:
     """Create a histogram of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
