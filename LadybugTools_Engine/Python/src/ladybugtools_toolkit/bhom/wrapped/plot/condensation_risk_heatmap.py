@@ -18,7 +18,7 @@ from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
-from ladybugtools_toolkit.plot.condensation_risk_heatmap import *
+from ladybugtools_toolkit.plot.facades.condensation_risk.heatmap import *
 
 
 def condensation_risk_heatmap(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> Figure:

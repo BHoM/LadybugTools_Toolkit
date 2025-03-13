@@ -18,7 +18,7 @@ from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
-from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
+from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 
 def condensation_categories_from_thresholds(
     thresholds: tuple[float],
@@ -56,8 +56,6 @@ def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file:
     """
     epw = EPW(epw_file)
     series = collection_to_series(epw.dry_bulb_temperature)
-
-    hcc = epw.dry_bulb_temperature
     
     thresholds.insert(0,-np.inf)
     thresholds.append(np.inf)
@@ -107,8 +105,6 @@ def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], 
     """
     epw = EPW(epw_file)
     series = collection_to_series(epw.dry_bulb_temperature)
-
-    hcc = epw.dry_bulb_temperature
     
     thresholds.insert(0,-np.inf)
     thresholds.append(np.inf)
