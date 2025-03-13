@@ -20,12 +20,6 @@ from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_met
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 
-thresholds = [-20, 
-              -15, 
-              -10, 
-              -5, 
-              0]
-
 def condensation_categories_from_thresholds(
     thresholds: tuple[float],
 ):
@@ -38,7 +32,7 @@ def condensation_categories_from_thresholds(
     Returns:
         Categories: The resulting categories object.
     """
-    cmap = LinearSegmentedColormap.from_list("condensation", ["black","purple","blue","white"], N=100)
+    cmap = LinearSegmentedColormap.from_list("condensation", ["indigo", "royalblue", "white"], N=100)
     return Categorical.from_cmap(thresholds, cmap)
 
 def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None, **kwargs) -> Figure:
@@ -75,7 +69,7 @@ def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file:
 
     # Instantiate figure
     fig = plt.figure(figsize=figsize, constrained_layout=True)
-    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[7,3], hspace=0.0)
+    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[6, 5], hspace=0)
     chart_ax = fig.add_subplot(spec[0, 0])
     table_ax = fig.add_subplot(spec[1, 0])
 
@@ -83,10 +77,11 @@ def condensation_risk_chart(epw_file: str, thresholds: list[float], return_file:
     CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey')
    
     # Add table
-    CATEGORIES.annual_heatmap(series, table_ax)
+    CATEGORIES.annual_monthly_table(series, table_ax, False, True)
 
     title = f"{title}" if title is not None else series.name
     chart_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
+    chart_ax.set_anchor('W')
 
     return fig
 
@@ -138,56 +133,4 @@ def condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float], 
     title = f"{series.name} - {title}" if title is not None else series.name
     heatmap_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
 
-    return_dict = {"data": hcc}
-
-    if save_path == None or save_path == "":
-        base64 = figure_to_base64(fig,html=False)
-        return_dict["figure"] = base64
-    else:
-        fig.savefig(save_path, dpi=300, transparent=True)
-        return_dict["figure"] = save_path
-    
-    with open(return_file, "w") as rtn:
-        rtn.write(json.dumps(return_dict, default=str))
-    
-    print(return_file)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, extract a heatmap of condensation risk"
-        )
-    )
-    parser.add_argument(
-        "-e",
-        "--epw_file",
-        help="The EPW file to extract a heatmap from",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-t",
-        "--thresholds",
-        help="thresholds to use.",
-        type=list[float],
-        required=True,
-    )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-p",
-        "--save_path",
-        help="Path where to save the output image.",
-        type=str,
-        required=False,
-        )
-
-    args = parser.parse_args()
-    matplotlib.use("Agg")
-    condensation_risk_heatmap_histogram(args.epw_file, args.thresholds, args.return_file, args.save_path)
+    return fig
