@@ -23,7 +23,7 @@ from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES,
 
 default_thresholds = [10,7,4,1,-2,-5]
 
-def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categorical:
+def condensation_categories_from_thresholds(thresholds: list[float]) -> Categorical:
     """Create a categorical from provided threshold temperatures.
 
     Args:
@@ -33,12 +33,14 @@ def condensation_categories_from_thresholds(thresholds: tuple[float]) -> Categor
     Returns:
         Categorical: The resulting categorical object with condensation risk colouring.
     """
-    if len(thresholds) < 1:
-        thresholds = default_thresholds;
 
+    thresholds = [i for i in thresholds if not np.isinf(i)]
+    if len(thresholds) < 2:
+        thresholds = default_thresholds;
     thresholds.insert(0,-np.inf)
     thresholds.append(np.inf)
-    thresholds_sorted = sorted(thresholds)
+    thresholds_sorted = sorted(set(thresholds))
+
     cmap = LinearSegmentedColormap.from_list("condensation", ["mediumvioletred", "indigo" , "blue", "white"], N=100)
     return Categorical.from_cmap(thresholds_sorted, cmap)
 
@@ -50,7 +52,7 @@ def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] 
         epw_file (string):
             The input EPW file.
         thresholds (list[float]):
-            The temperature thresholds to use.
+            The temperature thresholds to use. This must be at least two values, and will revert to default values otherwise.
         return_file (string):
             The filepath to write the resulting JSON to.
         save_path (string):
@@ -96,7 +98,7 @@ def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[f
         epw_file (string):
             The input EPW file.
         thresholds (list[float]):
-            The temperature thresholds to use.
+            The temperature thresholds to use. This must be at least two values, and will revert to default values otherwise.
         return_file (string):
             The filepath to write the resulting JSON to.
         save_path (string):
