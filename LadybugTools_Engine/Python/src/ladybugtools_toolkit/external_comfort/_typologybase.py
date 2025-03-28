@@ -37,6 +37,7 @@ class Typology:
     shelters: tuple[Shelter] = ()
     evaporative_cooling_effect: tuple[float] = (0,) * 8760
     target_wind_speed: tuple[float] = (None,) * 8760
+    wind_speed_multiplier: float = 1
     radiant_temperature_adjustment: tuple[float] = (0,) * 8760
 
     def __post_init__(self):
@@ -94,6 +95,7 @@ class Typology:
             "shelters": shelter_dicts,
             "evaporative_cooling_effect": self.evaporative_cooling_effect,
             "target_wind_speed": self.target_wind_speed,
+            "wind_speed_multiplier": self.wind_speed_multiplier,
             "radiant_temperature_adjustment": self.radiant_temperature_adjustment,
         }
         return d
@@ -112,6 +114,7 @@ class Typology:
             shelters=d["shelters"],
             evaporative_cooling_effect=d["evaporative_cooling_effect"],
             target_wind_speed=d["target_wind_speed"],
+            wind_speed_multiplier=d["wind_speed_multiplier"],
             radiant_temperature_adjustment=d["radiant_temperature_adjustment"],
         )
 
@@ -168,7 +171,14 @@ class Typology:
     @bhom_analytics()
     def wind_speed(self, epw: EPW) -> list[float]:
         """Direct access to "wind_speed" method for this typology object."""
+        #multiply wind speed by multiplier
+        wind_speed = epw._data[21]
+        epw._data[21] = epw.wind_speed * self.wind_speed_multiplier
+
         shelter_wind_speed = annual_wind_speed(self.shelters, epw)
+
+        #reset the epw object to original state
+        epw._data[21] = wind_speed
 
         ws = []
         for sh_ws, tgt_ws in list(zip(shelter_wind_speed, self.target_wind_speed)):

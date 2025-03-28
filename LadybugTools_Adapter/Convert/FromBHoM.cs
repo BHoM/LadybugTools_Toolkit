@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -62,11 +62,6 @@ namespace BH.Adapter.LadybugTools
             return FromEnergyMaterialVegetation(energyMaterial).ToJson();
         }
 
-        private static string Jsonify(this EPW epw)
-        {
-            return FromEPW(epw);
-        }
-
         private static string Jsonify(this ExternalComfort externalComfort)
         {
             return FromExternalComfort(externalComfort);
@@ -80,11 +75,6 @@ namespace BH.Adapter.LadybugTools
         private static string Jsonify(this HourlyContinuousCollection collection)
         {
             return FromHourlyContinuousCollection(collection);
-        }
-
-        private static string Jsonify(this Location location)
-        {
-            return FromLocation(location).ToJson();
         }
 
         private static string Jsonify(this Shelter shelter)
@@ -109,4 +99,5 @@ namespace BH.Adapter.LadybugTools
         }
     }
 }
+
 

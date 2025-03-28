@@ -25,7 +25,7 @@ from ladybug.epw import EPW, HourlyContinuousCollection
 from ladybug.futil import nukedir
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal, SolarCalParameter
 
-from python_toolkit.bhom.logging import CONSOLE_LOGGER
+from ..bhom.logging import CONSOLE_LOGGER
 from ..bhom.to_bhom import (
     hourlycontinuouscollection_to_bhom,
     material_to_bhom,
@@ -320,7 +320,7 @@ class SimulationResult:
         # validation
         if not isinstance(self.epw_file, (Path, str)):
             raise ValueError("epw_file must be a Path or str.")
-        self.epw_file = Path(self.epw_file).resolve()
+        self.epw_file = Path(self.epw_file).absolute()
         if not self.epw_file.exists():
             raise ValueError("epw_file does not exist.")
 

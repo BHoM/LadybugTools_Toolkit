@@ -1,6 +1,6 @@
-/*
+﻿/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -20,24 +20,40 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-
-using BH.oM.Base;
+using BH.Engine.Base;
+using BH.oM.LadybugTools;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Text;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    public class EPW : BHoMObject, ILadybugTools
+    public static partial class Query
     {
-        [Description("The Location of this EPW.")]
-        public virtual Location Location { get; set; } = new Location();
+        public static bool ValidateExternalComfort(ExternalComfort externalComfort)
+        {
+            if (externalComfort.UniversalThermalClimateIndex?.Values.IsNullOrEmpty() ?? false)
+            {
+                if (externalComfort.SimulationResult.GroundMaterial == null)
+                {
+                    BH.Engine.Base.Compute.RecordError($"Please provide a valid ground material to the simulation result in external comfort to run this command.");
+                    return false;
+                }
 
-        [Description("The data collections within this EPW.")]
-        public virtual List<HourlyContinuousCollection> DataCollections { get; set; } = new List<HourlyContinuousCollection>();
+                if (externalComfort.SimulationResult.ShadeMaterial == null)
+                {
+                    BH.Engine.Base.Compute.RecordError($"Please provide a valid shade material to the simulation result in external comfort to run this command.");
+                    return false;
+                }
 
-        [Description("Metadata associated with this EPW.")]
-        public virtual Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+                if (externalComfort.Typology == null)
+                {
+                    BH.Engine.Base.Compute.RecordError($"Please provide a valid Typology to the external comfort to run this command.");
+                    return false;
+                }
+            }
 
+            return true;
+        }
     }
 }
-

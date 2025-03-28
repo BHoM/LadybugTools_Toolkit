@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -31,22 +31,29 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class UTCIData : ISimulationData
     {
-        [Description("The ratio of comfortable hours to total hours. Comfortable hours are hours between 9 and 26°C.")]
+        [DisplayText("Comfort Ratio")]
+        [Description("The ratio of comfortable hours to total hours. Comfortable hours are hours between 9 and 26ï¿½C.")]
         public virtual double ComfortableRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of heat stress hours to total hours. Heat stress hours are hours greater than 26°C.")]
+        [DisplayText("Heat Stress Ratio")]
+        [Description("The ratio of heat stress hours to total hours. Heat stress hours are hours greater than 26ï¿½C.")]
         public virtual double HeatStressRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of cold stress hours to total hours. Cold stress hours are hours less than 9°C.")]
+        [DisplayText("Cold Stress Ratio")]
+        [Description("The ratio of cold stress hours to total hours. Cold stress hours are hours less than 9ï¿½C.")]
         public virtual double ColdStressRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of daytime comfortable hours to daytime hours. Daytime comfortable hours are hours between 9 and 26°C and between 07:00-22:59.")]
+        [DisplayText("Daytime Comfort Ratio")]
+        [Description("The ratio of daytime comfortable hours to daytime hours. Daytime comfortable hours are hours between 9 and 26ï¿½C and between 07:00-22:59.")]
         public virtual double DaytimeComfortableRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of daytime heat stress hours to daytime hours. Daytime heat stress hours are hours greater than 26°C and between 07:00-22:59.")]
+        [DisplayText("Daytime Heat Stress Ratio")]
+        [Description("The ratio of daytime heat stress hours to daytime hours. Daytime heat stress hours are hours greater than 26ï¿½C and between 07:00-22:59.")]
         public virtual double DaytimeHeatStressRatio { get; set; } = double.NaN;
 
-        [Description("The ratio of daytime cold stress hours to daytime hours. Daytime cold stress hours are hours less than 9°C and between 07:00-22:59.")]
+        [DisplayText("Daytime Cold Stress Ratio")]
+        [Description("The ratio of daytime cold stress hours to daytime hours. Daytime cold stress hours are hours less than 9ï¿½C and between 07:00-22:59.")]
         public virtual double DaytimeColdStressRatio { get; set; } = double.NaN;
     }
 }
+

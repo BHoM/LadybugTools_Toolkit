@@ -1,6 +1,6 @@
-/*
+﻿/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -20,41 +20,25 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Adapter;
+using BH.oM.LadybugTools;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-using System.ComponentModel;
-using BH.oM.Base;
-using BH.oM.Base.Attributes;
-
-namespace BH.oM.LadybugTools
+namespace BH.Engine.LadyBugTools
 {
-    public class Location : BHoMObject, ILadybugTools
+    public static partial class Create
     {
-        [Description("The City of this object.")]
-        public virtual string City { get; set; } = "";
-
-        [Description("The State of this object.")]
-        public virtual string State { get; set; } = "";
-
-        [Description("The Country of this object.")]
-        public virtual string Country { get; set; } = "";
-
-        [Description("The Latitude of this object.")]
-        public virtual double Latitude { get; set; } = 0;
-
-        [Description("The Longitude of this object.")]
-        public virtual double Longitude { get; set; } = 0;
-
-        [Description("The Time Zone of this object.")]
-        public virtual double TimeZone { get; set; } = 0;
-
-        [Description("The Elevation (in m) of this object.")]
-        public virtual double Elevation { get; set; } = 0;
-
-        [Description("The Station ID of this object.")]
-        public virtual string StationId { get; set; } = "";
-
-        [Description("The Source of this object.")]
-        public virtual string Source { get; set; } = "";
+        public static SimulationResult SimulationResult(FileSettings epwFile, string identifier, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial)
+        {
+            return new SimulationResult()
+            {
+                EpwFile = epwFile,
+                Name = identifier,
+                GroundMaterial = groundMaterial,
+                ShadeMaterial = shadeMaterial
+            };
+        }
     }
 }
-

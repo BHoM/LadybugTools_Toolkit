@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -20,11 +20,14 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.Engine.Adapter;
 using BH.Engine.Base;
+using BH.oM.Adapter;
 using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -132,41 +135,35 @@ namespace BH.Adapter.LadybugTools
                     catch (Exception ex)
                     {
                         BH.Engine.Base.Compute.RecordError($"An error occurred while parsing the collection {property} of the SimulationResult. Returning an empty collection in its place.\n The error: {ex}");
-                        simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                        simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<double?>(null, 8760).ToList() });
                     }
                 }
                 else
                 {
                     BH.Engine.Base.Compute.RecordError($"The incoming json does not contain the key: {property}. Returning an empty collection in its place.");
-                    simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<string>(null, 8760).ToList() });
+                    simulatedProperties.Add(new HourlyContinuousCollection() { Values = Enumerable.Repeat<double?>(null, 8760).ToList() });
                 }
             }
 
-            return new SimulationResult()
-            {
-                EpwFile = epwFile,
-                GroundMaterial = groundMaterial,
-                ShadeMaterial = shadeMaterial,
-                Name = name,
-                ShadedDownTemperature = simulatedProperties[0],
-                ShadedUpTemperature = simulatedProperties[1],
-                ShadedRadiantTemperature = simulatedProperties[2],
-                ShadedLongwaveMeanRadiantTemperatureDelta = simulatedProperties[3],
-                ShadedShortwaveMeanRadiantTemperatureDelta = simulatedProperties[4],
-                ShadedMeanRadiantTemperature = simulatedProperties[5],
-                UnshadedDownTemperature = simulatedProperties[6],
-                UnshadedUpTemperature = simulatedProperties[7],
-                UnshadedRadiantTemperature = simulatedProperties[8],
-                UnshadedLongwaveMeanRadiantTemperatureDelta = simulatedProperties[9],
-                UnshadedShortwaveMeanRadiantTemperatureDelta = simulatedProperties[10],
-                UnshadedMeanRadiantTemperature = simulatedProperties[11]
-            };
+            return new SimulationResult(new FileSettings() { FileName = System.IO.Path.GetFileName(epwFile), Directory = System.IO.Path.GetDirectoryName(epwFile) }, groundMaterial, shadeMaterial, name,
+                shadedDownTemperature:simulatedProperties[0],
+                shadedUpTemperature:simulatedProperties[1],
+                shadedRadiantTemperature:simulatedProperties[2],
+                shadedLongwaveMeanRadiantTemperatureDelta:simulatedProperties[3],
+                shadedShortwaveMeanRadiantTemperatureDelta:simulatedProperties[4],
+                shadedMeanRadiantTemperature:simulatedProperties[5],
+                unshadedDownTemperature:simulatedProperties[6],
+                unshadedUpTemperature:simulatedProperties[7],
+                unshadedRadiantTemperature:simulatedProperties[8],
+                unshadedLongwaveMeanRadiantTemperatureDelta:simulatedProperties[9],
+                unshadedShortwaveMeanRadiantTemperatureDelta:simulatedProperties[10],
+                unshadedMeanRadiantTemperature:simulatedProperties[11]);
         }
 
         public static string FromSimulationResult(SimulationResult simulationResult)
         {
             string type = $"\"type\": \"SimulationResult\", ";
-            string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile}\", ";
+            string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile.GetFullFileName().Replace("\\", "\\\\")}\", ";
             string groundMaterial = $"\"ground_material\": {FromBHoM(simulationResult.GroundMaterial)}, ";
             string shadeMaterial = $"\"shade_material\": {FromBHoM(simulationResult.ShadeMaterial)}, ";
             string name = $"\"identifier\": \"{simulationResult.Name}\"";
@@ -217,4 +214,5 @@ namespace BH.Adapter.LadybugTools
         }
     }
 }
+
 

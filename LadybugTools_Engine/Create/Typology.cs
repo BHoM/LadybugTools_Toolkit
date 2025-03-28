@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -48,6 +48,7 @@ namespace BH.Engine.LadybugTools
             List<Shelter> shelters = null,
             List<double> evaporativeCoolingEffect = null,
             List<double?> targetWindSpeed = null,
+            double windSpeedMultiplier = 1,
             List<double> radiantTemperatureAdjustment = null
         )
         {
@@ -80,6 +81,12 @@ namespace BH.Engine.LadybugTools
             if (targetWindSpeed.Where(x => x != null && x.Value < 0).Any())
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(targetWindSpeed)} values must be greater than or equal to 0, or null if not relevant for that hour of the year.");
+                return null;
+            }
+
+            if (windSpeedMultiplier < 0)
+            {
+                BH.Engine.Base.Compute.RecordWarning($"{nameof(windSpeedMultiplier)} value must be greater than or equal to 0.");
                 return null;
             }
 
@@ -120,6 +127,7 @@ namespace BH.Engine.LadybugTools
                 Shelters = shelters,
                 EvaporativeCoolingEffect = evaporativeCoolingEffect,
                 TargetWindSpeed = targetWindSpeed,
+                WindSpeedMultiplier = windSpeedMultiplier,
                 RadiantTemperatureAdjustment = radiantTemperatureAdjustment
             };
         }
@@ -162,7 +170,8 @@ namespace BH.Engine.LadybugTools
             double shelterRadiationPorosity = 0,
             double evaporativeCoolingEffect = 0,
             double radiantTemperatureAdjustment = 0,
-            double? targetWindSpeed = null
+            double? targetWindSpeed = null,
+            double windSpeedMultiplier = 1
         )
         {
             if (hasSkyShelter && skyShelterRadius < 0)
@@ -225,6 +234,12 @@ namespace BH.Engine.LadybugTools
                 return null;
             }
 
+            if (windSpeedMultiplier < 0)
+            {
+                BH.Engine.Base.Compute.RecordError("The wind speed multiplier must be greater than or equal to 0.");
+                return null;
+            }
+
             Polyline perimeter = Geometry.Create.Polyline(new List<Point>() { Geometry.Create.Point(x: 1, y: 1), Geometry.Create.Point(x: 1, y: -1), Geometry.Create.Point(x: -1, y: -1), Geometry.Create.Point(x: -1, y: 1), Geometry.Create.Point(x: 1, y: 1) });
             List<Panel> panels = Environment.Compute.ExtrudeToVolume(perimeter, "temp", 2).Where(x => x.Type == PanelType.Wall).ToList();
 
@@ -255,7 +270,7 @@ namespace BH.Engine.LadybugTools
                     );
             }
 
-            return Create.Typology(name, shelters, evaporativeCooling, windSpeed, radiantTemperature);
+            return Create.Typology(name, shelters, evaporativeCooling, windSpeed, windSpeedMultiplier, radiantTemperature);
         }
 
         private static Panel ChangeHeight(this Panel panel, double height)

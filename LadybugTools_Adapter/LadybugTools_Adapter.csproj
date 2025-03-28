@@ -8,7 +8,7 @@
     <Authors>BHoM</Authors>
     <Copyright>Copyright © https://github.com/BHoM</Copyright>
     <RootNamespace>BH.Adapter.LadybugTools</RootNamespace>
-    <FileVersion>8.0.0.0</FileVersion>
+    <FileVersion>8.1.0.0</FileVersion>
     <OutputPath>..\Build\</OutputPath>
   </PropertyGroup>
 
@@ -82,10 +82,6 @@
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Objects\" />
-  </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy &quot;$(TargetDir)$(TargetFileName)&quot;  &quot;C:\ProgramData\BHoM\Assemblies&quot; /C /Y" />

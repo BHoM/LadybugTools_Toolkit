@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -345,6 +345,37 @@ namespace BH.Adapter.LadybugTools
             if (!double.TryParse(oldData["daytime_cold"].ToString(), out result))
                 result = double.NaN;
             toUpdate.DaytimeColdStressRatio = result;
+
+            return toUpdate;
+        }
+
+        /**************************************************/
+
+        private static SolarRadiationData ToSimulationData(this Dictionary<string, object> oldData, SolarRadiationData toUpdate)
+        {
+            if (!double.TryParse(oldData["max_value"].ToString(), out double result))
+                result = double.NaN;
+            toUpdate.MaxValue = result;
+
+            if (!double.TryParse(oldData["min_value"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MinValue = result;
+
+            if (!double.TryParse(oldData["max_direction"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MaxDirection = result;
+
+            if (!double.TryParse(oldData["min_direction"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MinDirection = result;
+
+            if (!double.TryParse(oldData["max_tilt"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MaxTilt = result;
+
+            if (!double.TryParse(oldData["min_tilt"].ToString(), out result))
+                result = double.NaN;
+            toUpdate.MinTilt = result;
 
             return toUpdate;
         }

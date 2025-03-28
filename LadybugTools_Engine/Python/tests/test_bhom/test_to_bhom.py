@@ -14,8 +14,6 @@ from ladybugtools_toolkit.bhom.to_bhom import (
     hourlycontinuouscollection_to_bhom,
     header_to_bhom,
     datatype_to_bhom,
-    location_to_bhom,
-    epw_to_bhom,
     material_to_bhom,
 )
 from .. import EPW_OBJ
@@ -180,23 +178,3 @@ def test_hourlycontinuouscollection_to_bhom():
     assert result["_t"] == "BH.oM.LadybugTools.HourlyContinuousCollection"
     assert result["Type"] == "HourlyContinuous"
     assert sum(result["Values"]) == 0
-
-
-def test_location_to_bhom():
-    """_"""
-    result = location_to_bhom(EPW_OBJ.location)
-
-    assert len(result) == 11
-    assert result["_t"] == "BH.oM.LadybugTools.Location"
-    assert result["Type"] == "Location"
-    assert result["City"] == "LONDON GATWICK"
-
-
-def test_epw_to_bhom():
-    """_"""
-    result = epw_to_bhom(EPW_OBJ)
-
-    assert len(result) == 5
-    assert result["_t"] == "BH.oM.LadybugTools.EPW"
-    assert result["Type"] == "EPW"
-    assert len(result["DataCollections"]) == 34

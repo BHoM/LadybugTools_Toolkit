@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -27,9 +27,9 @@ using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
-    [NoAutoConstructor]
-    public class ExternalComfort : BHoMObject, ILadybugTools
+    public class ExternalComfort : BHoMObject, ILadybugTools, IImmutable
     {
+        [DisplayText("Simulation Result")]
         [Description("The SimulationResult associated with this object.")]
         public virtual SimulationResult SimulationResult { get; set; }
 
@@ -38,20 +38,37 @@ namespace BH.oM.LadybugTools
 
         // simulated properties
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection DryBulbTemperature { get; set; }
+        [DisplayText("Dry Bulb Temperature")]
+        [Description("The calculated dry bulb temperature.")]
+        public virtual HourlyContinuousCollection DryBulbTemperature { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection RelativeHumidity { get; set; }
+        [DisplayText("Relative Humidity")]
+        [Description("The calculated relative humidity.")]
+        public virtual HourlyContinuousCollection RelativeHumidity { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection WindSpeed { get; set; }
+        [DisplayText("Wind Speed")]
+        [Description("The calculated wind speed.")]
+        public virtual HourlyContinuousCollection WindSpeed { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection MeanRadiantTemperature { get; set; }
+        [DisplayText("Mean Radiant Temperature")]
+        [Description("The calculated mean radiant temperature.")]
+        public virtual HourlyContinuousCollection MeanRadiantTemperature { get; }
 
-        [Description("The calculated property from this object.")]
-        public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; set; }
+        [DisplayText("Universal Thermal Climate Index")]
+        [Description("The calculated universal thermal climate index.")]
+        public virtual HourlyContinuousCollection UniversalThermalClimateIndex { get; }
+
+        public ExternalComfort(SimulationResult simulationResult = null, Typology typology = null, HourlyContinuousCollection dryBulbTemperature = null, HourlyContinuousCollection relativeHumidity = null, HourlyContinuousCollection windSpeed = null, HourlyContinuousCollection meanRadiantTemperature = null, HourlyContinuousCollection universalThermalClimateIndex = null)
+        {
+            SimulationResult = simulationResult;
+            Typology = typology;
+            DryBulbTemperature = dryBulbTemperature;
+            RelativeHumidity = relativeHumidity;
+            WindSpeed = windSpeed;
+            MeanRadiantTemperature = meanRadiantTemperature;
+            UniversalThermalClimateIndex = universalThermalClimateIndex;
+        }
     }
 }
+
 

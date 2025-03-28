@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -25,6 +25,7 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.Linq;
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 
 namespace BH.oM.LadybugTools
 {
@@ -34,7 +35,8 @@ namespace BH.oM.LadybugTools
         public virtual Header Header { get; set; } = new Header();
 
         [Description("A list of values.")]
-        public virtual List<string> Values { get; set; } = Enumerable.Repeat("0.0", 8760).ToList();
+        public virtual List<double?> Values { get; set; } = Enumerable.Repeat<double?>(null, 8760).ToList();
     }
 }
+
 

@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from python_toolkit.bhom.logging import CONSOLE_LOGGER
+from ...bhom.logging import CONSOLE_LOGGER
 from ...ladybug_extension.analysisperiod import describe_analysis_period
 from ..model import HbModelGeometry
 from ..results import load_ill, load_npy, load_res

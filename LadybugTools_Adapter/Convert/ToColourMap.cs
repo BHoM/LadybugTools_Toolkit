@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -42,18 +42,21 @@ namespace BH.Adapter.LadybugTools
 
             foreach (ColourMap item in Enum.GetValues(typeof(ColourMap)))
             {
-                List<string> possibleValues = new List<string>();
-                possibleValues.Add(item.ToString().ToLower());
+                if (item.FromColourMap().ToLower() == colourMap.ToLower())
+                    return item;
+
+                if (item.ToString().ToLower() == colourMap.ToLower())
+                    return item;
+
                 FieldInfo field = item.GetType().GetField(item.ToString());
                 DisplayTextAttribute[] array = field.GetCustomAttributes(typeof(DisplayTextAttribute), inherit: false) as DisplayTextAttribute[];
                 if (array != null && array.Length > 0)
-                    possibleValues.Add(array.First().Text.ToLower());
-
-                if (possibleValues.Any(x => x == colourMap.ToLower()))
-                    return item;
+                    if (array.First().Text.ToLower() == colourMap.ToLower())
+                        return item;
             }
             BH.Engine.Base.Compute.RecordError($"Could not convert the input string: {colourMap} to a colourmap.");
             return ColourMap.Undefined;
         }
     }
 }
+

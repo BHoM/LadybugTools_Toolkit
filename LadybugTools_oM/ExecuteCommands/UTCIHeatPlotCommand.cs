@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -26,31 +26,28 @@ using System.Text;
 using System.Drawing;
 using BH.oM.Adapter;
 using System.ComponentModel;
+using BH.oM.Base.Attributes;
 
 namespace BH.oM.LadybugTools
 {
-    [Description("Command that, when executed with the LadybugToolsAdapter, simulates UTCI values and outputs a heatmap.\nOutput is a string of either the path to the image (if OutputLocation is not set) or the base 64 string representation of it.")]
+    [Description("Command that, when executed with the LadybugToolsAdapter, simulates UTCI values and outputs a heatmap. Output is a BH.oM.LadybugTools.PlotInformation containing the plot and extra information about the collection, and the ExternalComfort object that was used to get the UTCI values (whether the simulation ran or not).")]
     public class UTCIHeatPlotCommand : ISimulationCommand
     {
+        [DisplayText("EPW File")]
         [Description("The path to an EPW file.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
-        [Description("An opaque energy material to use as the ground material in the simulation.")]
-        public virtual IEnergyMaterialOpaque GroundMaterial { get; set; } = null;
+        [DisplayText("External Comfort")]
+        [Description("The external comfort object containing the UTCI data to plot. If the UTCI collection is null or empty, then a simulation will be run before plotting to get these values.")]
+        public virtual ExternalComfort ExternalComfort { get; set; } = new ExternalComfort();
 
-        [Description("An opaque energy material to use as the shade material in the simulation.")]
-        public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; } = null;
-
-        [Description("A typology to use in the simulation containing any shelters and evaporative cooling effects. TargetWindSpeed is not used in this simulation")]
-        public virtual Typology Typology { get; set; } = null;
-
-        [Description("A wind speed multiplier to modify the wind speed by. Default is 1.")]
-        public virtual double WindSpeedMultiplier { get; set; } = 1;
-
+        [DisplayText("Bin Colours")]
         [Description("A list of 10 colours to use for each UTCI category, leave empty to use the default UTCI colours.")]
         public virtual List<Color> BinColours { get; set; } = new List<Color>();
 
+        [DisplayText("Output Location")]
         [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]
         public virtual string OutputLocation { get; set; } = "";
     }
 }
+

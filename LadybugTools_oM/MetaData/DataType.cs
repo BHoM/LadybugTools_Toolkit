@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -22,21 +22,24 @@
 
 
 using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
     public class DataType : BHoMObject, ILadybugTools
     {
-        
         [Description("The name of this data type.")]
         public override string Name { get; set; } = string.Empty;
-        
+
+        [DisplayText("Data Type")]
         [Description("The data type of this data type.")]
         public virtual string Data_Type { get; set; } = string.Empty;
 
+        [DisplayText("Base Unit")]
         [Description(@"The base type of this data type. This is used if Data_Type is set to ""GenericDataType"".")]
         public virtual string BaseUnit { get; set; } = string.Empty;
     }
 }
+
 

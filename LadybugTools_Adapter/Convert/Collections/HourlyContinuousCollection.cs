@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -36,7 +36,7 @@ namespace BH.Adapter.LadybugTools
         public static BH.oM.LadybugTools.HourlyContinuousCollection ToHourlyContinuousCollection(Dictionary<string, object> oldObject)
         {
             Header header = new Header();
-            List<string> hourlyValues = new List<string>();
+            List<double?> hourlyValues = new List<double?>();
             try
             {
                 if (oldObject["header"].GetType() == typeof(CustomObject))
@@ -50,7 +50,7 @@ namespace BH.Adapter.LadybugTools
 
             try
             {
-               hourlyValues = (oldObject["values"] as List<object>).Select(x => x.ToString()).ToList();
+                hourlyValues = (oldObject["values"] as List<object>).Select(x => x == null ? null : System.Convert.ToDouble(x) as double?).ToList();
             }
             catch (Exception ex)
             {
@@ -66,11 +66,7 @@ namespace BH.Adapter.LadybugTools
 
         public static string FromHourlyContinuousCollection(BH.oM.LadybugTools.HourlyContinuousCollection collection)
         {
-            string valuesAsString = null;
-            if (double.TryParse(collection.Values[0], out double result))
-                valuesAsString = string.Join(", ", collection.Values);
-            else
-                valuesAsString = "\"" + string.Join("\", \"", collection.Values) + "\"";
+            string valuesAsString = string.Join(", ", collection.Values);
 
             string type = @"""type"" : ""HourlyContinuous""";
             string values = $@"""values"" : [{valuesAsString}]";
@@ -80,4 +76,5 @@ namespace BH.Adapter.LadybugTools
         }
     }
 }
+
 

@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -32,9 +32,11 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class Shelter : BHoMObject, ILadybugTools
     {
+        [DisplayText("Wind Porosity")]
         [Description("Hourly wind porosity (0-1).")]
         public virtual List<double> WindPorosity { get; set; }
 
+        [DisplayText("Radiation Porosity")]
         [Description("Hourly radiation porosity (0-1).")]
         public virtual List<double> RadiationPorosity { get; set; }
 
@@ -42,4 +44,5 @@ namespace BH.oM.LadybugTools
         public virtual List<Point> Vertices { get; set; }
     }
 }
+
 

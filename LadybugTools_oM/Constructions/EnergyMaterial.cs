@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -45,20 +45,25 @@ namespace BH.oM.LadybugTools
         [Density]
         public virtual double Density { get; set; }
 
+        [DisplayText("Specific Heat Capacity")]
         [Description("Specific heat capacity of material (J/kgK).")]
         public virtual double SpecificHeat { get; set; }
 
         [Description("The roughness of the material.")]
         public virtual Roughness Roughness { get; set; }
 
+        [DisplayText("Thermal Absorptance")]
         [Description("Thermal absorptivity (emissivity) of material (0-1).")]
         public virtual double ThermalAbsorptance { get; set; }
 
+        [DisplayText("Solar Absorptance")]
         [Description("Solar absorptivity of material (0-1).")]
         public virtual double SolarAbsorptance { get; set; }
 
+        [DisplayText("Visible Absorptance")]
         [Description("Light absorptivity (1 - albedo) of material (0-1).")]
         public virtual double VisibleAbsorptance { get; set; }
     }
 }
+
 

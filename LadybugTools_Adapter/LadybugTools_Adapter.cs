@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -37,12 +37,16 @@ namespace BH.Adapter.LadybugTools
             m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
 
             //get the base python environment first, as LBT is dependant on it.
-            BH.Engine.Python.Compute.BasePythonEnvironment(run: true);
             m_environment = BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(run: true);
         }
 
         public LadybugToolsAdapter(PythonEnvironment environment)
         {
+            if (!File.Exists(environment.Executable))
+            {
+                BH.Engine.Base.Compute.RecordError("The executable for the given python environment does not exist, maybe the PythonEnvironment was created incorrectly?\nAny actions that use the python environment will not work.");
+                return;
+            }
             m_AdapterSettings.DefaultPushType = oM.Adapter.PushType.CreateOnly;
             m_environment = environment;
         }

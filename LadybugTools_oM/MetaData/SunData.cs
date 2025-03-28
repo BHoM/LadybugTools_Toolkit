@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2024, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -32,22 +32,29 @@ namespace BH.oM.LadybugTools
     [NoAutoConstructor]
     public class SunData : IObject
     {
+        [DisplayText("Sunrise Azimuth")]
         [Description("The azimuth angle at sunrise in degrees. Sunrise is defined as the time at which the sun is first visible above the horizon, ignoring atmospheric effects.")]
         public virtual double SunriseAzimuth { get; set; } = double.NaN;
 
+        [DisplayText("Sunrise Time")]
         [Description("The time of actual sunrise, defined as the time at which the sun is first visible above the horizon, ignoring atmospheric effects.")]
         public virtual DateTime SunriseTime { get; set; } = DateTime.MinValue;
 
+        [DisplayText("Noon Altitude")]
         [Description("The altitude angle at solar noon (when the sun is at its highest point) in degrees.")]
         public virtual double NoonAltitude { get; set; } = double.NaN;
 
+        [DisplayText("Noon Time")]
         [Description("The time that the altitude is highest.")]
         public virtual DateTime NoonTime { get; set; } = DateTime.MinValue;
 
+        [DisplayText("Sunset Azimuth")]
         [Description("The azimuth angle at sunset in degrees. Sunset is defined as the time at which the sun has just finished passing the horizon, ignoring atmospheric effects.")]
         public virtual double SunsetAzimuth { get; set; } = double.NaN;
 
+        [DisplayText("Sunset Time")]
         [Description("The time of actual sunset, defined as the time at which the sun has just finished passing the horizon, ignoring atmospheric effects.")]
         public virtual DateTime SunsetTime { get; set; } = DateTime.MinValue;
     }
 }
+
