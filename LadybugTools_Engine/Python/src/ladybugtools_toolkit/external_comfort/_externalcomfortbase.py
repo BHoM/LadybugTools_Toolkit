@@ -334,7 +334,7 @@ class ExternalComfort:
         Returns:
             HourlyContinuousCollection: An object containing walkability values for each hour. 
         """
-        csv_file = r"C:\ProgramData\BHoM\Extensions\PythonCode\LadybugTools_Toolkit\src\data\walkability.csv"
+        csv_file = Path(__file__).parent.parent.parent / "data/walkability.csv"
         df = pd.read_csv(csv_file)
         walkability_vals = []
 
