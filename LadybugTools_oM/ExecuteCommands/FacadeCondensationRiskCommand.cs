@@ -35,10 +35,10 @@ namespace BH.oM.LadybugTools
         [Description("The path to an EPW file.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
-        [Description("The list of thresholds to use.")]
+        [Description("The list of thresholds to use. If no values are provided, default values of [10,7,4,1,-2,-5] will be used.")]
         public virtual List<double> Thresholds { get; set; } = new List<double>();
 
-        [Description("Boolean indicating whether to return heatmap or just the chart and table.")]
+        [Description("Set to true to return a heatmap, or set to false to return a chart and table.")]
         public virtual bool Heatmap { get; set; } = true;
 
         [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]

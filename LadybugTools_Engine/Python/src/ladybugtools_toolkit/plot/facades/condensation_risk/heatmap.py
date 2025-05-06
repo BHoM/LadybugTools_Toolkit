@@ -20,8 +20,7 @@ from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_met
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 
-
-default_thresholds = [10,7,4,1,-2,-5]
+DEFAULT_THRESHOLDS = [10,7,4,1,-2,-5]
 
 def condensation_categories_from_thresholds(thresholds: list[float]) -> Categorical:
     """Create a categorical from provided threshold temperatures.
@@ -36,7 +35,7 @@ def condensation_categories_from_thresholds(thresholds: list[float]) -> Categori
 
     thresholds = [i for i in thresholds if not np.isinf(i)]
     if len(thresholds) < 2:
-        thresholds = default_thresholds;
+        thresholds = DEFAULT_THRESHOLDS;
     thresholds.insert(0,-np.inf)
     thresholds.append(np.inf)
     thresholds_sorted = sorted(set(thresholds))
@@ -44,7 +43,7 @@ def condensation_categories_from_thresholds(thresholds: list[float]) -> Categori
     cmap = LinearSegmentedColormap.from_list("condensation", ["mediumvioletred", "indigo" , "blue", "white"], N=100)
     return Categorical.from_cmap(thresholds_sorted, cmap)
 
-def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] = default_thresholds, **kwargs) -> Figure:
+def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] = DEFAULT_THRESHOLDS, **kwargs) -> Figure:
     """Create a chart with thresholds of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 

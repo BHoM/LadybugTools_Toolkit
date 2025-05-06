@@ -53,8 +53,7 @@ namespace BH.Adapter.LadybugTools
             List<double> thresholds;
             if (command.Thresholds == null || command.Thresholds.Count() == 0)
             {
-                BH.Engine.Base.Compute.RecordWarning($"{nameof(command.Thresholds)} input was null, and has been replaced with default values.");
-                thresholds = new List<double> { -10, -5, 0, 5, 10};
+                thresholds = new List<double>{10, 7, 4, 1, -2, -5};
             }
             else
             {
