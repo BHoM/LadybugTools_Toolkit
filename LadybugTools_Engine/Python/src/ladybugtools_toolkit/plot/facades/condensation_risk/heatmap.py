@@ -89,7 +89,7 @@ def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] 
     return fig
 
 
-def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float] = default_thresholds, **kwargs) -> Figure:
+def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[float] = DEFAULT_THRESHOLDS, **kwargs) -> Figure:
     """Create a histogram of the condensation potential for a given set of
     timeseries dry bulb temperatures from an EPW.
 
