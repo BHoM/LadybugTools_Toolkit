@@ -8,6 +8,7 @@ from enum import Enum, auto
 from typing import Any
 
 import matplotlib.ticker as mticker
+from matplotlib.font_manager import FontProperties
 
 # pylint: enable=E0401
 import numpy as np
@@ -22,6 +23,8 @@ from matplotlib.legend import Legend
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.plot.heatmap import heatmap
+from python_toolkit.plot.timeseries import timeseries
+
 
 from ..helpers import rolling_window, sunrise_sunset, validate_timeseries
 from ..plot.utilities import contrasting_color
@@ -123,7 +126,9 @@ class Categorical:
         if np.isinf(_bins[-1]):
             _bins[-1] = bins[-2]
 
-        normalised = np.interp(_bins, [min(bins), max(bins)], [0, 1])
+        _bins_finite = [x for x in bins if not (np.isinf(x))]
+
+        normalised = np.interp(_bins, [min(_bins_finite), max(_bins_finite)], [0, 1])
         colors = [cmap(i) for i in normalised]
 
         return cls(bins=bins, bin_names=bin_names, colors=colors, name=name)
@@ -554,6 +559,50 @@ class Categorical:
         return ax
 
     @bhom_analytics()
+    def annual_monthly_table(
+        self,
+        series: pd.Series,
+        ax: plt.Axes = None,
+        **kwargs,
+    ) -> plt.Axes:
+        """Create a monthly table from a pandas Series.
+
+        Args:
+            series (pd.Series):
+                The pandas Series to plot. Must have a datetime index.
+            ax (plt.Axes, optional):
+                An optional plt.Axes object to populate. Defaults to None,
+                which creates a new plt.Axes object.
+            **kwargs:
+                Additional keyword arguments to pass to plt.bar.
+
+        Returns:
+            plt.Axes:
+                The populated plt.Axes object.
+        """
+
+        validate_timeseries(series)
+
+        if ax is None:
+            ax = plt.gca()
+
+        t = self.timeseries_summary_monthly(series, density=False)
+        #t = t.iloc[:,:-1]
+        t = t.transpose().iloc[::-1]
+
+        # Hide axes
+        ax.axis('off')
+
+        # Create table
+        colors = self.colors[::-1]
+        table = ax.table(cellText=t.values,  rowLabels = t.index, colLabels = t.columns, rowColours = colors, loc='center', **kwargs)
+        for (row, col), cell in table.get_celld().items():
+            if (row == 0) or (col == -1):
+                cell.set_text_props(fontproperties=FontProperties(weight='bold'))
+
+        return ax
+
+    @bhom_analytics()
     def annual_heatmap(self, series: pd.Series, ax: plt.Axes = None, **kwargs) -> plt.Axes:
         """Create a heatmap showing the annual hourly categorical assignment for the given series.
 
@@ -678,6 +727,44 @@ class Categorical:
             hmap_ax.set_ylim(ylimz)
 
         return fig
+
+    @bhom_analytics()
+    def annual_threshold_chart(self, series: pd.Series, ax: plt.Axes = None, **kwargs) -> plt.Axes:
+        """Create an annual chart annotated with lines at the category's cutoff values for the given series.
+
+        Args:
+            series (pd.Series):
+                A time-indexed pandas Series object.
+            ax (plt.Axes, optional):
+                A matplotlib Axes object to plot on. Defaults to None.
+            **kwargs:
+                Additional keyword arguments to pass to the heatmap function.
+            show_legend (bool, optional):
+                Whether to show the legend. Defaults to True.
+
+        Returns:
+            plt.Axes:
+                A matplotlib Axes object.
+        """
+
+        validate_timeseries(series)
+
+        if ax is None:
+            ax = plt.gca()
+
+        plt = timeseries(
+            series,
+            ax=ax,
+            **kwargs,
+        )
+
+        for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
+            val = interval.right
+            if np.isfinite(val) and val>ax.get_ylim()[0]:
+                col = self.color_from_bin_name(bin_name)
+                ax.axhline(val, 0, 1, color = col, ls="--", lw=2)
+                ax.text(0.5, val, val, va='center', ha='center', backgroundcolor='w', color = col, transform=ax.get_yaxis_transform())
+        return ax
 
 
 class ComfortClass(Enum):
