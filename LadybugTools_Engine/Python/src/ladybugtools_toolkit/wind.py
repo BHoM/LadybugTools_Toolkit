@@ -1897,7 +1897,7 @@ class Wind:
         if title is None or title == "":
             title = textwrap.fill(f"{self.source}", 75)
 
-        ax = polar(df, "Wind Speed (m/s)", "Wind Direction (degrees)", ax, directions, value_bins, colors, title, legend, ylim, label)
+        ax = polar(data=df, value_column=df.columns[0], direction_column=df.columns[1], ax=ax, directions=directions, value_bins=value_bins, colours=colors, title=title, legend=legend, ylim=ylim, label=label)
 
         return ax
 
