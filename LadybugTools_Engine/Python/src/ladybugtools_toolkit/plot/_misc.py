@@ -13,7 +13,7 @@ from ladybug.sunpath import Sunpath
 from python_toolkit.plot.heatmap import heatmap
 
 from ..categorical.categories import Categorical
-from ..helpers import sunrise_sunset
+from ..helpers import sunrise_sunset, fix_sunrise_sunset
 from ..ladybug_extension.datacollection import collection_to_series
 
 
