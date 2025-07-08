@@ -14,7 +14,7 @@ from ladybug_comfort.collection.utci import UTCI
 from matplotlib.figure import Figure
 from matplotlib.colors import LinearSegmentedColormap
 
-from ..bhom.logging import CONSOLE_LOGGER
+from ..bhom.logger import CONSOLE_LOGGER
 from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case

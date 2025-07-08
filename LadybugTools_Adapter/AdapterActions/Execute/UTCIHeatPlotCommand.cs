@@ -77,12 +77,12 @@ namespace BH.Adapter.LadybugTools
             string argFile = Path.GetTempFileName();
             File.WriteAllText(argFile, inputObjects.ToJson());
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "utci_heatmap.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} \"{script}\" -in \"{argFile}\" -r \"{returnFile.Replace('\\', '/')}\" -sp \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" -command plot/utci_heatmap -in \"{argFile.Replace('\\', '/')}\" -r \"{returnFile.Replace('\\', '/')}\" -sp \"{command.OutputLocation.Replace('\\', '/')}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             string resultFile = result.Split('\n').Last();

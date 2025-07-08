@@ -8,7 +8,7 @@ import matplotlib
 
 def utci_heatmap(json_file:str,
             return_file: str,
-            save_path = None) -> None:
+            save_path = None) -> str:
     try:
         from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
         from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metadata
@@ -52,9 +52,9 @@ def utci_heatmap(json_file:str,
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
     
-        print(return_file)
+        return(return_file)
     except Exception as ex:
-        print(traceback.format_exc())
+        return(traceback.format_exc())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
