@@ -3,6 +3,7 @@
 import argparse
 import traceback
 import json
+from ladybugtools_toolkit.external_comfort.typology import Typologies
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -20,8 +21,6 @@ PARSER.add_argument(
 def get_typology(json_file: str) -> None:
     """Create a file containing all default typologies."""
     try:
-        from ladybugtools_toolkit.external_comfort.typology import Typologies
-
         ds = []
         for typ in Typologies:
             ds.append(typ.value.to_dict())

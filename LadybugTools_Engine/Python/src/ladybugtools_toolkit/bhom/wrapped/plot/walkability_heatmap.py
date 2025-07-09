@@ -1,6 +1,12 @@
 ﻿import argparse
 import matplotlib
 import traceback
+from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
+from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metadata
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+import json
+import matplotlib.pyplot as plt
+
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -31,12 +37,6 @@ PARSER.add_argument(
 
 def walkability_heatmap(json_file: str, return_file: str, save_path: str):
     try:
-        from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
-        from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metadata
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        import json
-        import matplotlib.pyplot as plt
-
         with open(json_file, "r") as args:
             argsDict = json.loads(args.read())
     

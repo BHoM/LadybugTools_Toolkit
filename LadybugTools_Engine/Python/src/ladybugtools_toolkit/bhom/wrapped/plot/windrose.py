@@ -4,6 +4,14 @@ import argparse
 import traceback
 from pathlib import Path
 import matplotlib
+from ladybug.epw import EPW, AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybugtools_toolkit.wind import Wind
+from ladybugtools_toolkit.bhom.wrapped.metadata.wind_metadata import wind_metadata
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+import matplotlib.pyplot as plt
+from pathlib import Path
+import json
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -56,15 +64,6 @@ PARSER.add_argument(
 def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, return_file: str, save_path: str = None) -> None:
     """Method to wrap for creating wind roses from epw files."""
     try:
-        from ladybug.epw import EPW, AnalysisPeriod
-        from ladybug.datacollection import HourlyContinuousCollection
-        from ladybugtools_toolkit.wind import Wind
-        from ladybugtools_toolkit.bhom.wrapped.metadata.wind_metadata import wind_metadata
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        import matplotlib.pyplot as plt
-        from pathlib import Path
-        import json
-
         if colour_map not in plt.colormaps():
             colour_map = "YlGnBu"
 

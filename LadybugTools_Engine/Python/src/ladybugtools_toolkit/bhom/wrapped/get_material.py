@@ -3,6 +3,7 @@
 import argparse
 import traceback
 import json
+from ladybugtools_toolkit.external_comfort.material import Materials
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -20,8 +21,6 @@ PARSER.add_argument(
 def get_material(json_file: str) -> None:
     """Create a file containing all default materials."""
     try:
-        from ladybugtools_toolkit.external_comfort.material import Materials
-
         with open(json_file, "w") as f:
             json.dump([material.value.to_dict() for material in Materials], f)
 

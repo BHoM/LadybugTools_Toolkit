@@ -4,6 +4,16 @@ import argparse
 import traceback
 from pathlib import Path
 import matplotlib
+from ladybugtools_toolkit.plot._sunpath import sunpath
+from ladybug.epw import EPW, AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybug.sunpath import Sunpath
+from ladybugtools_toolkit.bhom.wrapped.metadata.sunpath_metadata import sunpath_metadata
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+import matplotlib.pyplot as plt
+from pathlib import Path
+import json
+
 PARSER = argparse.ArgumentParser(
     description=(
         "Given an EPW file path, create a plot of its' sun path"
@@ -47,16 +57,6 @@ PARSER.add_argument(
 
 def sunpath(epw_file, analysis_period, size, return_file: str, save_path):
     try:
-        from ladybugtools_toolkit.plot._sunpath import sunpath
-        from ladybug.epw import EPW, AnalysisPeriod
-        from ladybug.datacollection import HourlyContinuousCollection
-        from ladybug.sunpath import Sunpath
-        from ladybugtools_toolkit.bhom.wrapped.metadata.sunpath_metadata import sunpath_metadata
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        import matplotlib.pyplot as plt
-        from pathlib import Path
-        import json
-
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         epw = EPW(epw_file)
         fig = sunpath(

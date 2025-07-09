@@ -5,6 +5,15 @@ import json
 import traceback
 from pathlib import Path
 import matplotlib
+from ladybug.epw import EPW, AnalysisPeriod
+from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
+from python_toolkit.plot.diurnal import diurnal
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
+import matplotlib.pyplot as plt
+        
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -63,15 +72,6 @@ PARSER.add_argument(
 
 def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", color="#000000", title=None, period="monthly", save_path = None):
     try:
-        from ladybug.epw import EPW, AnalysisPeriod
-        from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-        from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
-        from python_toolkit.plot.diurnal import diurnal
-        from ladybug.datacollection import HourlyContinuousCollection
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
-        import matplotlib.pyplot as plt
-        
         epw = EPW(epw_file)
         
         if data_type_key == "Wet Bulb Temperature":

@@ -5,6 +5,14 @@ import traceback
 from pathlib import Path
 from unittest.util import _MIN_COMMON_LEN
 import matplotlib
+from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
+from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metadata
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
+import matplotlib.pyplot as plt
+import numpy as np
+import json
+    
 PARSER = argparse.ArgumentParser(
     description=(
         "Given an EPW file path, extract a heatmap"
@@ -36,14 +44,6 @@ def utci_heatmap(json_file:str,
             return_file: str,
             save_path = None) -> str:
     try:
-        from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
-        from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metadata
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
-        import matplotlib.pyplot as plt
-        import numpy as np
-        import json
-    
         with open(json_file, "r") as args:
             argsDict = json.loads(args.read())
     

@@ -57,7 +57,6 @@ PARSER.add_argument(
 
 
 def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
-
     epw = EPW(epw_file)
     hcc = epw.dry_bulb_temperature
 

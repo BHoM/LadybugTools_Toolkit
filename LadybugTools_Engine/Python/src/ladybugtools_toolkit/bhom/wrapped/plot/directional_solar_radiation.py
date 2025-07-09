@@ -5,6 +5,13 @@ import traceback
 from pathlib import Path
 import os
 import matplotlib
+from ladybugtools_toolkit.solar import IrradianceType, tilt_orientation_factor, create_radiation_matrix
+from ladybug.wea import AnalysisPeriod
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+from ladybugtools_toolkit.bhom.wrapped.metadata.solar_radiation_metadata import solar_radiation_metadata
+import matplotlib.pyplot as plt
+from pathlib import Path
+import json
 
 PARSER = argparse.ArgumentParser(
         description=(
@@ -77,14 +84,6 @@ PARSER.add_argument(
 
 def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, analysis_period, cmap, title, save_path, return_file):
     try:
-        from ladybugtools_toolkit.solar import IrradianceType, tilt_orientation_factor, create_radiation_matrix
-        from ladybug.wea import AnalysisPeriod
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        from ladybugtools_toolkit.bhom.wrapped.metadata.solar_radiation_metadata import solar_radiation_metadata
-        import matplotlib.pyplot as plt
-        from pathlib import Path
-        import json
-        
         if cmap not in plt.colormaps():
             cmap = "YlOrRd"
 

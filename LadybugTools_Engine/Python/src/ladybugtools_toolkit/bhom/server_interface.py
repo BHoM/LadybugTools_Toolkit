@@ -33,15 +33,15 @@ from ladybugtools_toolkit.bhom import HOST, PORT
 
 #dictionary containing all the parsers for bhom/wrapped commands
 PARSERS = {
-    "plot\walkability_heatmap": walkability_heatmap_parser,
-    "plot\windrose": windrose_parser,
-    "plot\directional_solar_radiation": directional_solar_radiation_parser,
-    "plot\diurnal": diurnal_parser,
-    "plot\facade_condensation_risk_chart": facade_condensation_risk_chart_parser,
-    "plot\facade_condensation_risk_heatmap": facade_condensation_risk_heatmap_parser,
-    "plot\heatmap": heatmap_parser,
-    "plot\sunpath": sunpath_parser,
-    "plot\utci_heatmap": utci_heatmap_parser,
+    "plot/walkability_heatmap": walkability_heatmap_parser,
+    "plot/windrose": windrose_parser,
+    "plot/directional_solar_radiation": directional_solar_radiation_parser,
+    "plot/diurnal": diurnal_parser,
+    "plot/facade_condensation_risk_chart": facade_condensation_risk_chart_parser,
+    "plot/facade_condensation_risk_heatmap": facade_condensation_risk_heatmap_parser,
+    "plot/heatmap": heatmap_parser,
+    "plot/sunpath": sunpath_parser,
+    "plot/utci_heatmap": utci_heatmap_parser,
     "get_material": get_material_parser,
     "get_typology": get_typology_parser,
 }

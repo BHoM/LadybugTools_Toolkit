@@ -5,6 +5,14 @@ import traceback
 from pathlib import Path
 import json
 import matplotlib
+from ladybug.epw import EPW
+from ladybug.datacollection import HourlyContinuousCollection
+from python_toolkit.plot.heatmap import heatmap
+from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
+from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+import matplotlib.pyplot as plt
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -50,16 +58,6 @@ PARSER.add_argument(
 def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str, save_path:str = None) -> None:
     """Create a CSV file version of an EPW."""
     try:
-        from ladybug.epw import EPW
-        from ladybug.datacollection import HourlyContinuousCollection
-        from python_toolkit.plot.heatmap import heatmap
-        #from ladybugtools_toolkit.plot._heatmap import heatmap
-        from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-        from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
-        from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        import matplotlib.pyplot as plt
-
         if colour_map not in plt.colormaps():
             colour_map = "YlGnBu"
 
