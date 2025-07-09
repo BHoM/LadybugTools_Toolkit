@@ -7,7 +7,7 @@ import json
 import matplotlib
 from ladybug.epw import EPW
 from ladybug.datacollection import HourlyContinuousCollection
-from python_toolkit.plot.heatmap import heatmap
+from python_toolkit.plot.heatmap import heatmap as hmap
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
 from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
@@ -69,7 +69,7 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
         else:
             coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         
-        fig = heatmap(collection_to_series(coll), cmap=colour_map).get_figure()
+        fig = hmap(collection_to_series(coll), cmap=colour_map).get_figure()
 
         return_dict = {}
 

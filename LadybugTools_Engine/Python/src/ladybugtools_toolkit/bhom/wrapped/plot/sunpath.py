@@ -4,7 +4,7 @@ import argparse
 import traceback
 from pathlib import Path
 import matplotlib
-from ladybugtools_toolkit.plot._sunpath import sunpath
+from ladybugtools_toolkit.plot._sunpath import sunpath as spath
 from ladybug.epw import EPW, AnalysisPeriod
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.sunpath import Sunpath
@@ -59,7 +59,7 @@ def sunpath(epw_file, analysis_period, size, return_file: str, save_path):
     try:
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         epw = EPW(epw_file)
-        fig = sunpath(
+        fig = spath(
             location=epw.location, 
             analysis_period=analysis_period, 
             sun_size=size, 
