@@ -55,7 +55,7 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "windrose.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
             string colourMap = command.ColourMap;
@@ -65,7 +65,7 @@ namespace BH.Adapter.LadybugTools
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -command plot/windrose -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             if (!File.Exists(result))

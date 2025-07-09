@@ -80,9 +80,9 @@ namespace BH.Adapter.LadybugTools
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
             string returnFile = Path.GetTempFileName();
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "directional_solar_radiation.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -d {command.Directions} -ti {command.Tilts} -ir {command.IrradianceType} -cmap \"{colourMap}\" -t \"{command.Title}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\" -r \"{returnFile.Replace('\\', '/')}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -command plot/directional_solar_radiation -e \"{epwFile}\" -d {command.Directions} -ti {command.Tilts} -ir {command.IrradianceType} -cmap \"{colourMap}\" -t \"{command.Title}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -p \"{command.OutputLocation}\" -r \"{returnFile.Replace('\\', '/')}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
             string resultFile = result.Split('\n').Last();

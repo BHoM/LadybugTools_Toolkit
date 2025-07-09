@@ -65,9 +65,9 @@ namespace BH.Adapter.LadybugTools
 
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_typology.py");
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
-                string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
+                string cmdCommand = $"{m_environment.Executable} {script} -command get_typology -j \"{config.JsonFile.GetFullFileName()}\"";
 
                 Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
             }

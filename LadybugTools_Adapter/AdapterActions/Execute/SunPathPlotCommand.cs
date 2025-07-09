@@ -62,12 +62,12 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "sunpath.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
             string returnFile = Path.GetTempFileName();
 
             //run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -s {command.SunSize} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -command plot/sunpath -e \"{epwFile}\" -s {command.SunSize} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
 
             string resultFile = result.Split('\n').Last();

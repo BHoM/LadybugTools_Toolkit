@@ -62,21 +62,18 @@ namespace BH.Adapter.LadybugTools
             string thresholdsStr = string.Join(" ",  thresholds);  
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
-            string script;
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
+            string commandArg;
             if (command.Heatmap)
-            {
-                script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "facade_condensation_risk_heatmap.py");
-            }              
+                commandArg = "-command plot/facade_condensation_risk_heatmap";
             else
-            {
-                script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "facade_condensation_risk_chart.py");
-            }
+                commandArg = "-command plot/facade_condensation_risk_chart";
                 
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} \"{script}\" -e \"{epwFile}\" -t {thresholdsStr} -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} \"{script}\" {commandArg} -e \"{epwFile}\" -t {thresholdsStr} -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             string resultFile = result.Split('\n').Last();

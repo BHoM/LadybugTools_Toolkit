@@ -66,12 +66,12 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped\\plot", "diurnal.py");
+            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -c \"{command.Colour.ToHexCode()}\" -t \"{command.Title}\" -ap \"{command.Period.ToString().ToLower()}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
+            string cmdCommand = $"{m_environment.Executable} {script} -command plot/diurnal -e \"{epwFile}\" -dtk \"{command.EPWKey.ToText()}\" -c \"{command.Colour.ToHexCode()}\" -t \"{command.Title}\" -ap \"{command.Period.ToString().ToLower()}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
             string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
 
             string resultFile = result.Split('\n').Last();
