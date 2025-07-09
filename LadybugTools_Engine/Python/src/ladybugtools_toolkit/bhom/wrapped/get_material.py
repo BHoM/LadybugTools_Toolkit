@@ -4,8 +4,20 @@ import argparse
 import traceback
 import json
 
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given a JSON file path, write the pre-defined materials for the External Comfort workflow."
+    )
+)
+PARSER.add_argument(
+    "-j",
+    "--json_file",
+    help="The JSON file to write material objects into.",
+    type=str,
+    required=True,
+)
 
-def main(json_file: str) -> None:
+def get_material(json_file: str) -> None:
     """Create a file containing all default materials."""
     try:
         from ladybugtools_toolkit.external_comfort.material import Materials
@@ -13,23 +25,12 @@ def main(json_file: str) -> None:
         with open(json_file, "w") as f:
             json.dump([material.value.to_dict() for material in Materials], f)
 
+        return json_file
+
     except Exception as e:
-        print(e)
-        print(traceback.format_exc())
+        return traceback.format_exc()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given a JSON file path, write the pre-defined materials for the External Comfort workflow."
-        )
-    )
-    parser.add_argument(
-        "-j",
-        "--json_file",
-        help="The JSON file to write material objects into.",
-        type=str,
-        required=True,
-    )
-    args = parser.parse_args()
-    main(args.json_file)
+    args = PARSER.parse_args()
+    get_material(args.json_file)

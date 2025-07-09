@@ -2,6 +2,33 @@
 import matplotlib
 import traceback
 
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given an external comfort object, extract a walkability heatmap"
+    )
+)
+PARSER.add_argument(
+    "-in",
+    "--json_args",
+    help="helptext",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-r",
+    "--return_file",
+    help="json file to write return data to.",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-sp",
+    "--save_path",
+    help="helptext",
+    type=str,
+    required=False,
+)
+
 def walkability_heatmap(json_file: str, return_file: str, save_path: str):
     try:
         from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
@@ -34,39 +61,13 @@ def walkability_heatmap(json_file: str, return_file: str, save_path: str):
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
     
-        print(return_file)
+        return return_file
 
     except Exception as ex:
-        print(traceback.format_exc())
+        return traceback.format_exc()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an external comfort object, extract a walkability heatmap"
-        )
-    )
-    parser.add_argument(
-        "-in",
-        "--json_args",
-        help="helptext",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-sp",
-        "--save_path",
-        help="helptext",
-        type=str,
-        required=False,
-    )
 
-    args = parser.parse_args()
+    args = PARSER.parse_args()
     matplotlib.use("Agg")
     walkability_heatmap(args.json_args, args.return_file, args.save_path)

@@ -5,6 +5,32 @@ import traceback
 from pathlib import Path
 from unittest.util import _MIN_COMMON_LEN
 import matplotlib
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given an EPW file path, extract a heatmap"
+    )
+)
+PARSER.add_argument(
+    "-in",
+    "--json_file",
+    help="helptext",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-r",
+    "--return_file",
+    help="json file to write return data to.",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-sp",
+    "--save_path",
+    help="helptext",
+    type=str,
+    required=False,
+)
 
 def utci_heatmap(json_file:str,
             return_file: str,
@@ -57,33 +83,6 @@ def utci_heatmap(json_file:str,
         return(traceback.format_exc())
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, extract a heatmap"
-        )
-    )
-    parser.add_argument(
-        "-in",
-        "--json_args",
-        help="helptext",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-sp",
-        "--save_path",
-        help="helptext",
-        type=str,
-        required=False,
-    )
-
-    args = parser.parse_args()
+    args = PARSER.parse_args()
     matplotlib.use("Agg")
-    utci_heatmap(args.json_args, args.return_file, args.save_path)
+    utci_heatmap(args.json_file, args.return_file, args.save_path)

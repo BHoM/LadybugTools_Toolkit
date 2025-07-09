@@ -6,6 +6,75 @@ from pathlib import Path
 import os
 import matplotlib
 
+PARSER = argparse.ArgumentParser(
+        description=(
+            "Given an EPW file path, extract a heatmap"
+        )
+    )
+PARSER.add_argument(
+    "-e",
+    "--epw_file",
+    help="The EPW file to extract a heatmap from",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-d",
+    "--directions",
+    help="The number of directions to use when plotting orientations.",
+    type=int,
+    required=True,
+)
+PARSER.add_argument(
+    "-ti",
+    "--tilts",
+    help="The number of tilts to use when plotting orientations.",
+    type=int,
+    required=True,
+)
+PARSER.add_argument(
+    "-ir",
+    "--irradiance_type",
+    help="The irradiance type to use.",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-cmap",
+    "--cmap",
+    help="Matplotlib colour map to use.",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-ap",
+    "--analysis_period",
+    help="Analysis period",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-t",
+    "--title",
+    help="The title to be displayed on the plot.",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-r",
+    "--return_file",
+    help="json file to write return data to.",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-p",
+    "--save_path",
+    help="Path to save the output image.",
+    type=str,
+    required=False,
+    )
+
 def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, analysis_period, cmap, title, save_path, return_file):
     try:
         from ladybugtools_toolkit.solar import IrradianceType, tilt_orientation_factor, create_radiation_matrix
@@ -50,82 +119,13 @@ def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, an
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
 
-        print(return_file)
+        return return_file
 
     except Exception as ex:
-        print(traceback.format_exc())
+        return traceback.format_exc()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, extract a heatmap"
-        )
-    )
-    parser.add_argument(
-        "-e",
-        "--epw_file",
-        help="The EPW file to extract a heatmap from",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-d",
-        "--directions",
-        help="The number of directions to use when plotting orientations.",
-        type=int,
-        required=True,
-    )
-    parser.add_argument(
-        "-ti",
-        "--tilts",
-        help="The number of tilts to use when plotting orientations.",
-        type=int,
-        required=True,
-    )
-    parser.add_argument(
-        "-ir",
-        "--irradiance_type",
-        help="The irradiance type to use.",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-cmap",
-        "--colour_map",
-        help="Matplotlib colour map to use.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-ap",
-        "--analysis_period",
-        help="Analysis period",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-t",
-        "--title",
-        help="The title to be displayed on the plot.",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-p",
-        "--save_path",
-        help="Path to save the output image.",
-        type=str,
-        required=False,
-        )
-
-    args = parser.parse_args()
+    args = PARSER.parse_args()
 
     os.environ["TQDM_DISABLE"] = "1" # set an environment variable so that progress bars are disabled for the simulation process
     matplotlib.use("Agg")

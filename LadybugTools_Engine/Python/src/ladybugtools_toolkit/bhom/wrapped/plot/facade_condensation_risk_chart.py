@@ -20,6 +20,41 @@ from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_met
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.plot.facades.condensation_risk.heatmap import *
 
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given an EPW file path, extract a heatmap of condensation risk"
+    )
+)
+PARSER.add_argument(
+    "-e",
+    "--epw_file",
+    help="The EPW file to extract a heatmap from",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-t",
+    "--thresholds",
+    help="thresholds to use.",
+    type = float,
+    nargs='*',
+    required=True,
+)
+PARSER.add_argument(
+    "-r",
+    "--return_file",
+    help="json file to write return data to.",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-p",
+    "--save_path",
+    help="Path where to save the output image.",
+    type=str,
+    required=False,
+    )
+
 
 def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
 
@@ -40,45 +75,11 @@ def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], retur
     with open(return_file, "w") as rtn:
         rtn.write(json.dumps(return_dict, default=str))
     
-    print(return_file)
+    return return_file
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, extract a heatmap of condensation risk"
-        )
-    )
-    parser.add_argument(
-        "-e",
-        "--epw_file",
-        help="The EPW file to extract a heatmap from",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-t",
-        "--thresholds",
-        help="thresholds to use.",
-        type = float,
-        nargs='*',
-        required=True,
-    )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-p",
-        "--save_path",
-        help="Path where to save the output image.",
-        type=str,
-        required=False,
-        )
 
-    args = parser.parse_args()
+    args = PARSER.parse_args()
     matplotlib.use("Agg")
     facade_condensation_risk_chart(args.epw_file, args.thresholds, args.return_file, args.save_path)

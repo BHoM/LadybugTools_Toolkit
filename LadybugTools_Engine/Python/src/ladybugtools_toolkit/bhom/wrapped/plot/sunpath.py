@@ -4,8 +4,48 @@ import argparse
 import traceback
 from pathlib import Path
 import matplotlib
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given an EPW file path, create a plot of its' sun path"
+    )
+)
+PARSER.add_argument(
+    "-e",
+    "--epw_file",
+    help="The EPW file to extract a sun path plot from",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-s",
+    "--size",
+    help="Size of the sun",
+    type=float,
+    required=True,
+    )
+PARSER.add_argument(
+    "-ap",
+    "--analysis_period",
+    help="Analysis perioderiod of the sun path",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-r",
+    "--return_file",
+    help="json file to write return data to.",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-p",
+    "--save_path",
+    help="Path where to save the output image.",
+    type=str,
+    required=False,
+    )
 
-def sun_path(epw_file, analysis_period, size, return_file: str, save_path):
+def sunpath(epw_file, analysis_period, size, return_file: str, save_path):
     try:
         from ladybugtools_toolkit.plot._sunpath import sunpath
         from ladybug.epw import EPW, AnalysisPeriod
@@ -37,53 +77,13 @@ def sun_path(epw_file, analysis_period, size, return_file: str, save_path):
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
 
-        print(return_file)
+        return return_file
 
     except Exception as e:
-        print(e)
+        return traceback.format_exc()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, create a plot of its' sun path"
-        )
-    )
-    parser.add_argument(
-        "-e",
-        "--epw_file",
-        help="The EPW file to extract a sun path plot from",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-s",
-        "--size",
-        help="Size of the sun",
-        type=float,
-        required=True,
-        )
-    parser.add_argument(
-        "-ap",
-        "--analysis_period",
-        help="Analysis perioderiod of the sun path",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-p",
-        "--save_path",
-        help="Path where to save the output image.",
-        type=str,
-        required=False,
-        )
 
-    args = parser.parse_args()
+    args = PARSER.parse_args()
     matplotlib.use("Agg")
-    sun_path(args.epw_file, args.analysis_period, args.size, args.return_file, args.save_path)
+    sunpath(args.epw_file, args.analysis_period, args.size, args.return_file, args.save_path)
