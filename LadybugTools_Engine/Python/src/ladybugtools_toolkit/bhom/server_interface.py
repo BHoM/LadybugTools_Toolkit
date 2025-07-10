@@ -41,17 +41,17 @@ from ladybugtools_toolkit.bhom import HOST, PORT
 
 #dictionary containing all the parsers for bhom/wrapped commands
 PARSERS = {
-    "plot/walkability_heatmap": walkability_heatmap_parser,
-    "plot/windrose": windrose_parser,
-    "plot/directional_solar_radiation": directional_solar_radiation_parser,
-    "plot/diurnal": diurnal_parser,
-    "plot/facade_condensation_risk_chart": facade_condensation_risk_chart_parser,
-    "plot/facade_condensation_risk_heatmap": facade_condensation_risk_heatmap_parser,
-    "plot/heatmap": heatmap_parser,
-    "plot/sunpath": sunpath_parser,
-    "plot/utci_heatmap": utci_heatmap_parser,
-    "get_material": get_material_parser,
-    "get_typology": get_typology_parser,
+    "plot/walkability_heatmap": (walkability_heatmap_parser, walkability_heatmap),
+    "plot/windrose": (windrose_parser, windrose),
+    "plot/directional_solar_radiation": (directional_solar_radiation_parser, directional_solar_radiation),
+    "plot/diurnal": (diurnal_parser, diurnal),
+    "plot/facade_condensation_risk_chart": (facade_condensation_risk_chart_parser, facade_condensation_risk_chart),
+    "plot/facade_condensation_risk_heatmap": (facade_condensation_risk_heatmap_parser, facade_condensation_risk_heatmap),
+    "plot/heatmap": (heatmap_parser, heatmap),
+    "plot/sunpath": (sunpath_parser, sunpath),
+    "plot/utci_heatmap": (utci_heatmap_parser, utci_heatmap),
+    "get_material": (get_material_parser, get_material),
+    "get_typology": (get_typology_parser, get_typology),
 }
 
 def resolve(data: List[str]) -> str:
@@ -62,31 +62,9 @@ def resolve(data: List[str]) -> str:
     command_parser = argparse.ArgumentParser(description="Command parser")
     command_parser.add_argument("-command", "--command")
     command_arg, unknown_args = command_parser.parse_known_args(data)
-    kwargs = vars(PARSERS[command_arg.command].parse_args(unknown_args))
 
-    match command_arg.command:
-        case "plot/directional_solar_radiation":
-            return directional_solar_radiation(**kwargs)
-        case "plot/utci_heatmap":
-            return utci_heatmap(**kwargs)
-        case "plot/walkability_heatmap":
-            return walkability_heatmap(**kwargs)
-        case "plot/windrose":
-            return windrose(**kwargs)
-        case "plot/directional_solar_radiation":
-            return directional_solar_radiation(**kwargs)
-        case "plot/diurnal":
-            return diurnal(**kwargs)
-        case "plot/facade_condensation_risk_chart":
-            return facade_condensation_risk_chart(**kwargs)
-        case "plot/facade_condensation_risk_heatmap":
-            return facade_condensation_risk_heatmap(**kwargs)
-        case "plot/heatmap":
-            return heatmap(**kwargs)
-        case "plot/sunpath":
-            return sunpath(**kwargs)
-        case "plot/utci_heatmap":
-            return utci_heatmap(**kwargs)
+    parser_function = PARSERS[command_arg.command]
+    return parser_function[1](**vars(parser_function[0].parse_args(unknown_args))) #gets the function for the requested command, and runs it with arguments parsed with the desired parser.
 
 def socket_handler(client_socket, addr):
     print("connection received:", addr)
