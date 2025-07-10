@@ -118,6 +118,8 @@ def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, an
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
 
+        plt.close(fig)
+
         return return_file
 
     except Exception as ex:

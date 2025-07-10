@@ -18,7 +18,7 @@ from ladybug.epw import AnalysisPeriod, HourlyContinuousCollection
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
-from ladybugtools_toolkit.plot.facades.condensation_risk.heatmap import *
+from ladybugtools_toolkit.plot.facades.condensation_risk.heatmap import facade_condensation_risk_chart_table
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -60,7 +60,7 @@ def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], retur
     epw = EPW(epw_file)
     hcc = epw.dry_bulb_temperature
 
-    fig = facade_condensation_risk_chart_table(epw_file, thresholds).get_figure()
+    fig = facade_condensation_risk_chart_table(epw_file, thresholds)
 
     return_dict = {"data": collection_metadata(hcc)}
 
@@ -74,6 +74,8 @@ def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], retur
     with open(return_file, "w") as rtn:
         rtn.write(json.dumps(return_dict, default=str))
     
+    plt.close(fig)
+
     return return_file
 
 

@@ -5,6 +5,7 @@ import traceback
 from pathlib import Path
 import json
 import matplotlib
+import matplotlib.figure
 from ladybug.epw import EPW
 from ladybug.datacollection import HourlyContinuousCollection
 from python_toolkit.plot.heatmap import heatmap as hmap
@@ -61,6 +62,7 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
         if colour_map not in plt.colormaps():
             colour_map = "YlGnBu"
 
+        fig, ax = plt.subplots()
 
         epw = EPW(epw_file)
         
@@ -69,7 +71,7 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
         else:
             coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         
-        fig = hmap(collection_to_series(coll), cmap=colour_map).get_figure()
+        hmap(collection_to_series(coll), ax=ax, cmap=colour_map)
 
         return_dict = {}
 
@@ -79,7 +81,9 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
             return_dict["figure"] = save_path
-        
+
+        plt.close(fig)
+
         return_dict["data"] = collection_metadata(coll)
 
         with open(return_file, "w") as rtn:
@@ -87,10 +91,8 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
         
         return return_file
             
-
     except Exception as e:
         return traceback.format_exc()
-
 
 
 if __name__ == "__main__":

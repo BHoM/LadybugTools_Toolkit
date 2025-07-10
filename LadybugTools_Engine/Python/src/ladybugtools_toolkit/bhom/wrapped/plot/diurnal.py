@@ -35,7 +35,7 @@ PARSER.add_argument(
     required=True,
 )
 PARSER.add_argument(
-    "-c",
+    "-colour",
     "--colour",
     help="Colour of the line",
     type=str,
@@ -70,7 +70,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", color="#000000", title=None, period="monthly", save_path = None):
+def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", colour="#000000", title=None, period="monthly", save_path = None):
     try:
         epw = EPW(epw_file)
         
@@ -79,7 +79,9 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
         else:
             coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         
-        fig = dnal(collection_to_series(coll),title=title, period=period, color=color).get_figure()
+        fig, ax = plt.subplots()
+
+        dnal(collection_to_series(coll), ax=ax, title=title, period=period, color=colour)
         return_dict = {"data": collection_metadata(coll)}
         
         if save_path == None or save_path == "":
@@ -91,7 +93,9 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
 
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
-           
+        
+        plt.close(fig)
+
         return return_file
 
     except Exception as e:

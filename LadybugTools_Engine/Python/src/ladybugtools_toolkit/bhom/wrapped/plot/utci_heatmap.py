@@ -40,9 +40,7 @@ PARSER.add_argument(
     required=False,
 )
 
-def utci_heatmap(json_file:str,
-            return_file: str,
-            save_path = None) -> str:
+def utci_heatmap(json_file:str, return_file: str, save_path = None) -> str:
     try:
         with open(json_file, "r") as args:
             argsDict = json.loads(args.read())
@@ -60,7 +58,7 @@ def utci_heatmap(json_file:str,
                 name="UTCI")
 
         fig, ax = plt.subplots(1, 1, figsize=(10, 4))
-        ec.plot_utci_heatmap(utci_categories = custom_bins)
+        ec.plot_utci_heatmap(utci_categories = custom_bins, ax=ax)
 
         utci_collection = ec.universal_thermal_climate_index
 
@@ -78,6 +76,8 @@ def utci_heatmap(json_file:str,
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
     
+        plt.close(fig)
+
         return(return_file)
     except Exception as ex:
         return(traceback.format_exc())

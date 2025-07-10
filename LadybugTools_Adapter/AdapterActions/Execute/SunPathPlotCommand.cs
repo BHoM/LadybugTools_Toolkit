@@ -61,14 +61,21 @@ namespace BH.Adapter.LadybugTools
             }
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
-
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
-
             string returnFile = Path.GetTempFileName();
 
-            //run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -command plot/sunpath -e \"{epwFile}\" -s {command.SunSize} -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
-            string result = Engine.Python.Compute.RunCommandStdout(cmdCommand, hideWindows: true);
+            // run the process
+            List<string> args = new List<string>() { "-command", "plot/sunpath", "-e", epwFile.Replace('\\', '/'), "-s", command.SunSize.ToString(), "-ap", command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\""), "-r", returnFile.Replace('\\', '/'), "-p", command.OutputLocation.Replace('\\', '/') };
+
+            (string result, bool success) = Compute.RunLBTClientSocket(args);
+
+            if (!success)
+            {
+                //if the server was not running or some other error happened, try running the python directly.
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
+                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            }
 
             string resultFile = result.Split('\n').Last();
 

@@ -27,6 +27,7 @@ using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace BH.Adapter.LadybugTools
@@ -55,8 +56,6 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
-
             //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
             string colourMap = command.ColourMap;
             if (colourMap.ColourMapValidity())
@@ -65,8 +64,18 @@ namespace BH.Adapter.LadybugTools
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} {script} -command plot/windrose -e \"{epwFile}\" -ap \"{command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\"")}\" -cmap \"{colourMap}\" -bins \"{command.NumberOfDirectionBins}\" -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
-            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            List<string> args = new List<string>() { "-command", "plot/windrose", "-e", epwFile.Replace('\\', '/'), "-ap", command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\""), "-cmap", colourMap, "-bins", command.NumberOfDirectionBins.ToString(), "-r", returnFile.Replace('\\', '/'), "-p", command.OutputLocation.Replace('\\', '/') };
+
+            (string result, bool success) = Compute.RunLBTClientSocket(args);
+
+            if (!success)
+            {
+                //if the server was not running or some other error happened, try running the python directly.
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
+                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            }
 
             if (!File.Exists(result))
             {

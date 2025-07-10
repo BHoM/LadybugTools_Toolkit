@@ -57,13 +57,11 @@ PARSER.add_argument(
 
 def sunpath(epw_file, analysis_period, size, return_file: str, save_path):
     try:
+        fig, ax = plt.subplots()
+
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         epw = EPW(epw_file)
-        fig = spath(
-            location=epw.location, 
-            analysis_period=analysis_period, 
-            sun_size=size, 
-        ).get_figure()
+        spath(location=epw.location, analysis_period=analysis_period, sun_size=size, ax=ax)
 
         return_dict = {"data": sunpath_metadata(Sunpath.from_location(epw.location))}
 
@@ -76,6 +74,8 @@ def sunpath(epw_file, analysis_period, size, return_file: str, save_path):
         
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
+
+        plt.close(fig)
 
         return return_file
 

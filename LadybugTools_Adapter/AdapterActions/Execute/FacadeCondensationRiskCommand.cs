@@ -62,19 +62,28 @@ namespace BH.Adapter.LadybugTools
             string thresholdsStr = string.Join(" ",  thresholds);  
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
 
             string commandArg;
             if (command.Heatmap)
-                commandArg = "-command plot/facade_condensation_risk_heatmap";
+                commandArg = "plot/facade_condensation_risk_heatmap";
             else
-                commandArg = "-command plot/facade_condensation_risk_chart";
+                commandArg = "plot/facade_condensation_risk_chart";
                 
             string returnFile = Path.GetTempFileName();
 
             // run the process
-            string cmdCommand = $"{m_environment.Executable} \"{script}\" {commandArg} -e \"{epwFile}\" -t {thresholdsStr} -r \"{returnFile.Replace('\\', '/')}\" -p \"{command.OutputLocation}\"";
-            string result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            List<string> args = new List<string>() { "-command", commandArg, "-e", epwFile.Replace('\\', '/'), "-t", thresholdsStr, "-r", returnFile.Replace('\\', '/'), "-p", command.OutputLocation.Replace('\\', '/') };
+
+            (string result, bool success) = Compute.RunLBTClientSocket(args);
+
+            if (!success)
+            {
+                //if the server was not running or some other error happened, try running the python directly.
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
+                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            }
 
             string resultFile = result.Split('\n').Last();
 

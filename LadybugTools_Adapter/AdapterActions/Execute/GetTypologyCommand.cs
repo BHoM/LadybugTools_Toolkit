@@ -63,6 +63,7 @@ namespace BH.Adapter.LadybugTools
             if (timeSinceLastUpdate.Days > config.CacheFileMaximumAge)
                 File.Delete(config.JsonFile.GetFullFileName());
 
+            //TODO: figure out how to get the socket code working here
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");

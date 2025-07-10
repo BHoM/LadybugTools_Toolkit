@@ -1,10 +1,18 @@
 ﻿import socket
+import sys
+import threading
 import traceback
 import shlex
 import argparse
 import traceback
 from pathlib import Path
 from typing import List
+
+import time
+start = time.time()
+
+import matplotlib
+matplotlib.use("Agg") #use a gui-less backend to avoid memory leaking figures
 
 #big import list that covers all methods in bhom/wrapped
 from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
@@ -54,7 +62,6 @@ def resolve(data: List[str]) -> str:
     command_parser = argparse.ArgumentParser(description="Command parser")
     command_parser.add_argument("-command", "--command")
     command_arg, unknown_args = command_parser.parse_known_args(data)
-
     kwargs = vars(PARSERS[command_arg.command].parse_args(unknown_args))
 
     match command_arg.command:
@@ -81,6 +88,18 @@ def resolve(data: List[str]) -> str:
         case "plot/utci_heatmap":
             return utci_heatmap(**kwargs)
 
+def socket_handler(client_socket, addr):
+    print("connection received:", addr)
+    with client_socket:
+        data = client_socket.recv(1024)
+        if not data:
+            return
+        #parse data as args
+        args = json.loads(data.decode())
+        print("received args:", args)
+        result = resolve(args)
+        client_socket.sendall(result.encode())
+    print("connection closed:", addr)
 
 def server(host: str = HOST, port: int = PORT):
     """The "server" socket for interaction between bhom c# and python. This could be used with a socket connection from any other language.
@@ -93,45 +112,29 @@ def server(host: str = HOST, port: int = PORT):
         port (int):
             The port that the server accepts data from. defaults to 5999
     """
-    conn = None
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((host, port))
-    s.listen(1)
+    s.listen(5)
     s.settimeout(1)
     print(f"listening on {host} with port {port}")
 
     #main listener loop
-    conn = None
     while True:
         try:
-            conn, addr = s.accept()
-            print("connection received:", addr)
-            data = conn.recv(1024)
-            if not data:
-                continue
-            #parse data as args
-            args = json.loads(data.decode())
-            print("received args:", args)
-            res = resolve(args)
-            conn.sendall(res.encode())
-            
-        except socket.timeout:
+            client_socket, addr = s.accept()
+            threading.Thread(target=socket_handler, args=(client_socket, addr), daemon=True).start() #daemon=True, so that the thread exits if the main program exits (i.e. due to keyboard interrupt)
+        except socket.timeout: #timeouts exist to allow keyboard interrupts to close the program properly.
             pass
         except KeyboardInterrupt:
-            if conn:
-                conn.close()
-                print("Handling keyboard interrupt")
-            break
+            sys.exit(1)
         except Exception as ex:
             print(traceback.format_exc())
-        finally:
-            if conn:
-                conn.close()
-                conn = None
-                print("Closing connection")
             pass
+
+end = time.time()
 
 if __name__ == "__main__":
     #run with preset host and port (127.0.0.1 on 5999)
+    print("module load took", str(end - start), "seconds")
     server()
     print("closing app")

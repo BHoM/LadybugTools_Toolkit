@@ -89,6 +89,8 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(output_dict, default=str))
         
+        plt.close(fig)
+
         return return_file
             
     except Exception as e:

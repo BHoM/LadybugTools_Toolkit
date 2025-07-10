@@ -15,7 +15,7 @@ PARSER = argparse.ArgumentParser(
 )
 PARSER.add_argument(
     "-in",
-    "--json_args",
+    "--json_file",
     help="helptext",
     type=str,
     required=True,
@@ -60,7 +60,9 @@ def walkability_heatmap(json_file: str, return_file: str, save_path: str):
     
         with open(return_file, "w") as rtn:
             rtn.write(json.dumps(return_dict, default=str))
-    
+        
+        plt.close(fig)
+
         return return_file
 
     except Exception as ex:
