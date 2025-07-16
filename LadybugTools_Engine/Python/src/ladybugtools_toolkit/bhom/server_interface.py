@@ -1,8 +1,8 @@
 ﻿import socket
+import ssl
 import sys
 import threading
 import traceback
-import shlex
 import argparse
 import traceback
 from pathlib import Path
@@ -66,7 +66,7 @@ def resolve(data: List[str]) -> str:
     parser_function = PARSERS[command_arg.command]
     return parser_function[1](**vars(parser_function[0].parse_args(unknown_args))) #gets the function for the requested command, and runs it with arguments parsed with the desired parser.
 
-def socket_handler(client_socket, addr):
+def socket_handler(client_socket: ssl.SSLSocket, addr):
     print("connection received:", addr)
     with client_socket:
         data = client_socket.recv(1024)
@@ -95,12 +95,19 @@ def server(host: str = HOST, port: int = PORT):
     s.listen(5)
     s.settimeout(1)
     print(f"listening on {host} with port {port}")
+    context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(r"C:\ProgramData\BHoM\Developer\LBTTK.crt", r"C:\ProgramData\BHoM\Developer\LBTTK.key")
+    context.minimum_version = ssl.TLSVersion.TLSv1_3
+    context.maximum_version = ssl.TLSVersion.TLSv1_3
+    print("cacerts", context.get_ca_certs(False))
 
     #main listener loop
     while True:
         try:
             client_socket, addr = s.accept()
-            threading.Thread(target=socket_handler, args=(client_socket, addr), daemon=True).start() #daemon=True, so that the thread exits if the main program exits (i.e. due to keyboard interrupt)
+            print(addr)
+            ssock = context.wrap_socket(client_socket, server_side=True, do_handshake_on_connect=True)
+            threading.Thread(target=socket_handler, args=(ssock, addr), daemon=True).start() #daemon=True, so that the thread exits if the main program exits (i.e. due to keyboard interrupt)
         except socket.timeout: #timeouts exist to allow keyboard interrupts to close the program properly.
             pass
         except KeyboardInterrupt:

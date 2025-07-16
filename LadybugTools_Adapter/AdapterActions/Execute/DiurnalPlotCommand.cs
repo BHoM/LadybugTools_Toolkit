@@ -71,12 +71,17 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>() { "--command", "plot/diurnal", "-e", epwFile.Replace('\\', '/'), "-dtk", command.EPWKey.ToText(), "--colour", command.Colour.ToHexCode(), "-t", command.Title, "-ap", command.Period.ToString().ToLower(), "-r", returnFile.Replace('\\', '/'), "-p", command.OutputLocation.Replace('\\', '/') };
 
-            (string result, bool success) = Compute.RunLBTClientSocket(args);
+            string result = "";
+            bool success;
+            if (m_useHost)
+                (result, success) = Compute.RunLBTClientSocket(args, m_address, m_port);
+            else
+                success = false;
 
             if (!success)
             {
                 //if the server was not running or some other error happened, try running the python directly.
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
                 result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);

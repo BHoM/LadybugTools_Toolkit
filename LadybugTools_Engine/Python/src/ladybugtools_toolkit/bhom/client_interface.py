@@ -1,4 +1,5 @@
 ﻿import socket
+import ssl
 import sys
 import json
 from ladybugtools_toolkit.bhom import HOST, PORT
@@ -28,7 +29,7 @@ def run_client(args: List[str], host: str = HOST, port: int = PORT):
                 data_full = data_full + data.decode()
                 data = s.recv(1024)
             return data_full
-    except socket.error:
+    except:
         #lazy import resolver from server interface to handle if the connection failed or no server existed. If this fails, then let the exception through for bhom/c# to handle
         from ladybugtools_toolkit.bhom.server_interface import resolve
         return resolve(args)
