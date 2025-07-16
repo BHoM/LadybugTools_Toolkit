@@ -44,11 +44,11 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            /*if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile}' does not exist.");
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
                 return null;
-            }
+            }*/
 
             if (command.Period == DiurnalPeriod.Undefined)
             {
@@ -66,10 +66,10 @@ namespace BH.Adapter.LadybugTools
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            string returnFile = Path.GetTempFileName();
+            //string returnFile = Path.GetTempFileName();
 
             // run the process
-            List<string> args = new List<string>() { "--command", "plot/diurnal", "-e", epwFile.Replace('\\', '/'), "-dtk", command.EPWKey.ToText(), "--colour", command.Colour.ToHexCode(), "-t", command.Title, "-ap", command.Period.ToString().ToLower(), "-r", returnFile.Replace('\\', '/'), "-p", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "--command", "plot/diurnal", "-e", epwFile.Replace('\\', '/'), "-dtk", command.EPWKey.ToText(), "--colour", command.Colour.ToHexCode(), "-t", command.Title, "-ap", command.Period.ToString().ToLower(), "-p", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;
@@ -87,21 +87,18 @@ namespace BH.Adapter.LadybugTools
                 result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
             }
 
-            string resultFile = result.Split('\n').Last();
-
-            if (!File.Exists(resultFile))
+            try
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
-                File.Delete(returnFile);
+                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
+                PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
+                m_executeSuccess = true;
+                return new List<object>() { info };
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred when deserialising the output from the script.");
                 return new List<object>();
             }
-
-            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
-            File.Delete(returnFile);
-            PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
-
-            m_executeSuccess = true;
-            return new List<object>() { info };
         }
     }
 }

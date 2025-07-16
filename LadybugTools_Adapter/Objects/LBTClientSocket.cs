@@ -39,7 +39,6 @@ namespace BH.Adapter.LadybugTools
                     using (SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCert), null))
                     {
                         sslStream.AuthenticateAsClient(host);
-                        BH.Engine.Base.Compute.RecordNote(sslStream.SslProtocol.ToString());
                         byte[] send = Encoding.UTF8.GetBytes(argString);
                         sslStream.Write(send, 0, send.Length);
                         sslStream.Flush();
