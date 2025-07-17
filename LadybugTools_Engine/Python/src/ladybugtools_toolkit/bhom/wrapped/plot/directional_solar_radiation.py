@@ -68,13 +68,6 @@ PARSER.add_argument(
     required=True,
 )
 PARSER.add_argument(
-    "-r",
-    "--return_file",
-    help="json file to write return data to.",
-    type=str,
-    required=True,
-    )
-PARSER.add_argument(
     "-p",
     "--save_path",
     help="Path to save the output image.",
@@ -82,7 +75,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, analysis_period, cmap, title, save_path, return_file):
+def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, analysis_period, cmap, title, save_path):
     try:
         if cmap not in plt.colormaps():
             cmap = "YlOrRd"
@@ -115,12 +108,9 @@ def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, an
         
         return_dict["data"] = solar_radiation_metadata(values, dirs, tts)
 
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(return_dict, default=str))
-
         plt.close(fig)
 
-        return return_file
+        return json.dumps(return_dict, default=str)
 
     except Exception as ex:
         return traceback.format_exc()
@@ -130,5 +120,5 @@ if __name__ == "__main__":
 
     os.environ["TQDM_DISABLE"] = "1" # set an environment variable so that progress bars are disabled for the simulation process
     matplotlib.use("Agg")
-    directional_solar_radiation(args.epw_file, args.directions, args.tilts, args.irradiance_type, args.analysis_period, args.colour_map, args.title, args.save_path, args.return_file)
+    directional_solar_radiation(args.epw_file, args.directions, args.tilts, args.irradiance_type, args.analysis_period, args.colour_map, args.title, args.save_path)
     del os.environ["TQDM_DISABLE"] # unset the env variable

@@ -41,13 +41,6 @@ PARSER.add_argument(
     required=True,
 )
 PARSER.add_argument(
-    "-r",
-    "--return_file",
-    help="json file to write return data to.",
-    type=str,
-    required=True,
-)
-PARSER.add_argument(
     "-p",
     "--save_path",
     help="Path where to save the output image.",
@@ -55,7 +48,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def facade_condensation_risk_heatmap(epw_file: str, thresholds: list[float], return_file: str, save_path: str = None) -> None:
+def facade_condensation_risk_heatmap(epw_file: str, thresholds: list[float], save_path: str = None) -> None:
     epw = EPW(epw_file)
     hcc = epw.dry_bulb_temperature
 
@@ -70,16 +63,13 @@ def facade_condensation_risk_heatmap(epw_file: str, thresholds: list[float], ret
         fig.savefig(save_path, dpi=300, transparent=True)
         return_dict["figure"] = save_path
     
-    with open(return_file, "w") as rtn:
-        rtn.write(json.dumps(return_dict, default=str))
-    
     plt.close(fig)
 
-    return return_file
+    return json.dumps(return_dict, default=str)
 
 
 if __name__ == "__main__":
 
     args = PARSER.parse_args()
     matplotlib.use("Agg")
-    facade_condensation_risk_heatmap(args.epw_file, args.thresholds, args.return_file, args.save_path)
+    facade_condensation_risk_heatmap(args.epw_file, args.thresholds, args.save_path)

@@ -41,13 +41,6 @@ PARSER.add_argument(
     required=True,
     )
 PARSER.add_argument(
-    "-r",
-    "--return_file",
-    help="json file to write return data to.",
-    type=str,
-    required=True,
-    )
-PARSER.add_argument(
     "-p",
     "--save_path",
     help="Path where to save the output image.",
@@ -55,7 +48,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def sunpath(epw_file, analysis_period, size, return_file: str, save_path):
+def sunpath(epw_file, analysis_period, size, save_path):
     try:
         fig, ax = plt.subplots()
 
@@ -72,12 +65,9 @@ def sunpath(epw_file, analysis_period, size, return_file: str, save_path):
             fig.savefig(save_path, dpi=150, transparent=True)
             return_dict["figure"] = save_path
         
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(return_dict, default=str))
-
         plt.close(fig)
 
-        return return_file
+        return json.dumps(return_dict, default=str)
 
     except Exception as e:
         return traceback.format_exc()
@@ -86,4 +76,4 @@ if __name__ == "__main__":
 
     args = PARSER.parse_args()
     matplotlib.use("Agg")
-    sunpath(args.epw_file, args.analysis_period, args.size, args.return_file, args.save_path)
+    sunpath(args.epw_file, args.analysis_period, args.size, args.save_path)

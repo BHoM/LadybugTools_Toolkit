@@ -68,11 +68,9 @@ namespace BH.Adapter.LadybugTools
                 commandArg = "plot/facade_condensation_risk_heatmap";
             else
                 commandArg = "plot/facade_condensation_risk_chart";
-                
-            string returnFile = Path.GetTempFileName();
 
             // run the process
-            List<string> args = new List<string>() { "-command", commandArg, "-e", epwFile.Replace('\\', '/'), "-t", thresholdsStr, "-r", returnFile.Replace('\\', '/'), "-p", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "-command", commandArg, "-e", epwFile.Replace('\\', '/'), "-t", thresholdsStr, "-p", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;
@@ -87,24 +85,21 @@ namespace BH.Adapter.LadybugTools
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
             }
 
-            string resultFile = result.Split('\n').Last();
-
-            if (!File.Exists(resultFile))
+            try
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
-                File.Delete(returnFile);
+                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
+                PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
+                m_executeSuccess = true;
+                return new List<object>() { info };
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred when deserialising the output from the script.");
                 return new List<object>();
             }
-
-            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
-            File.Delete(returnFile);
-            PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
-
-            m_executeSuccess = true;
-            return new List<object> { info };
         }
     }
 }

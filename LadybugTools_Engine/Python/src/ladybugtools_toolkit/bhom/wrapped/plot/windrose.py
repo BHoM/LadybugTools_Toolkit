@@ -47,13 +47,6 @@ PARSER.add_argument(
     required=True,
 )
 PARSER.add_argument(
-    "-r",
-    "--return_file",
-    help="json file to write return data to.",
-    type=str,
-    required=True,
-    )
-PARSER.add_argument(
     "-p",
     "--save_path",
     help="Path where to save the output image.",
@@ -61,7 +54,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, return_file: str, save_path: str = None) -> None:
+def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> None:
     """Method to wrap for creating wind roses from epw files."""
     try:
         if colour_map not in plt.colormaps():
@@ -77,21 +70,18 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
 
         w_epw.filter_by_analysis_period(analysis_period=analysis_period).plot_windrose(ax=ax, directions=bins, ylim=(0, 3.6/bins), colors=colour_map)
 
-        output_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
+        return_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
 
         plt.tight_layout()
         if save_path == None or save_path == "":
-            output_dict["figure"] = figure_to_base64(fig,html=False)
+            return_dict["figure"] = figure_to_base64(fig,html=False)
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
-            output_dict["figure"] = save_path
+            return_dict["figure"] = save_path
             
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(output_dict, default=str))
-        
         plt.close(fig)
 
-        return return_file
+        return json.dumps(return_dict, default=str)
             
     except Exception as e:
         return traceback.format_exc()
@@ -101,4 +91,4 @@ if __name__ == "__main__":
 
     args = PARSER.parse_args()
     matplotlib.use("Agg")
-    windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.return_file, args.save_path)
+    windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.save_path)

@@ -26,13 +26,6 @@ PARSER.add_argument(
     required=True,
 )
 PARSER.add_argument(
-    "-r",
-    "--return_file",
-    help="json file to write return data to.",
-    type=str,
-    required=True,
-    )
-PARSER.add_argument(
     "-sp",
     "--save_path",
     help="helptext",
@@ -40,7 +33,7 @@ PARSER.add_argument(
     required=False,
 )
 
-def utci_heatmap(json_file:str, return_file: str, save_path = None) -> str:
+def utci_heatmap(json_file:str, save_path = None) -> str:
     try:
         with open(json_file, "r") as args:
             argsDict = json.loads(args.read())
@@ -73,16 +66,13 @@ def utci_heatmap(json_file:str, return_file: str, save_path = None) -> str:
             fig.savefig(save_path, dpi=150, transparent=True)
             return_dict["figure"] = save_path
     
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(return_dict, default=str))
-    
         plt.close(fig)
 
-        return(return_file)
+        return json.dumps(return_dict, default=str)
     except Exception as ex:
         return(traceback.format_exc())
 
 if __name__ == "__main__":
     args = PARSER.parse_args()
     matplotlib.use("Agg")
-    utci_heatmap(args.json_file, args.return_file, args.save_path)
+    utci_heatmap(args.json_file, args.save_path)

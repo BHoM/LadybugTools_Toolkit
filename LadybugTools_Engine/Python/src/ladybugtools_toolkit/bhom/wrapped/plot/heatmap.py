@@ -42,13 +42,6 @@ PARSER.add_argument(
     required=True,
     )
 PARSER.add_argument(
-    "-r",
-    "--return_file",
-    help="json file to write return data to.",
-    type=str,
-    required=True,
-    )
-PARSER.add_argument(
     "-p",
     "--save_path",
     help="Path where to save the output image.",
@@ -56,7 +49,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str, save_path:str = None) -> None:
+def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = None) -> None:
     """Create a CSV file version of an EPW."""
     try:
         if colour_map not in plt.colormaps():
@@ -86,10 +79,7 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, return_file: str
 
         return_dict["data"] = collection_metadata(coll)
 
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(return_dict, default=str))
-        
-        return return_file
+        return json.dumps(return_dict, default=str)
             
     except Exception as e:
         return traceback.format_exc()
@@ -99,4 +89,4 @@ if __name__ == "__main__":
 
     args = PARSER.parse_args()
     matplotlib.use("Agg")
-    heatmap(args.epw_file, args.data_type_key, args.colour_map, args.return_file, args.save_path)
+    heatmap(args.epw_file, args.data_type_key, args.colour_map, args.save_path)

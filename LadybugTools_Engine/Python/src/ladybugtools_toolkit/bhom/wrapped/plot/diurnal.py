@@ -56,13 +56,6 @@ PARSER.add_argument(
     required=True,
     )
 PARSER.add_argument(
-    "-r",
-    "--return_file",
-    help="json file to write return data to.",
-    type=str,
-    required=True,
-    )
-PARSER.add_argument(
     "-p",
     "--save_path",
     help="Path where to save the output image.",
@@ -70,7 +63,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", colour="#000000", title=None, period="monthly", save_path = None):
+def diurnal(epw_file, data_type_key="Dry Bulb Temperature", colour="#000000", title=None, period="monthly", save_path = None):
     try:
         epw = EPW(epw_file)
         
@@ -91,12 +84,9 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
             fig.savefig(save_path, dpi=150, transparent=True)
             return_dict["figure"] = save_path
 
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(return_dict, default=str))
-        
         plt.close(fig)
 
-        return return_file
+        return json.dumps(return_dict, default=str)
 
     except Exception as e:
         return traceback.format_exc()

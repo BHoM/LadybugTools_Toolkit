@@ -61,10 +61,8 @@ namespace BH.Adapter.LadybugTools
             if (colourMap.ColourMapValidity())
                 colourMap = colourMap.ToColourMap().FromColourMap();
 
-            string returnFile = Path.GetTempFileName();
-
             // run the process
-            List<string> args = new List<string>() { "-command", "plot/windrose", "-e", epwFile.Replace('\\', '/'), "-ap", command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\""), "-cmap", colourMap, "-bins", command.NumberOfDirectionBins.ToString(), "-r", returnFile.Replace('\\', '/'), "-p", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "-command", "plot/windrose", "-e", epwFile.Replace('\\', '/'), "-ap", command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\""), "-cmap", colourMap, "-bins", command.NumberOfDirectionBins.ToString(), "-p", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;
@@ -79,22 +77,21 @@ namespace BH.Adapter.LadybugTools
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
             }
 
-            if (!File.Exists(result))
+            try
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred while running the command: {result}");
-                File.Delete(returnFile);
+                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
+                PlotInformation info = Convert.ToPlotInformation(obj, new WindroseData());
+                m_executeSuccess = true;
+                return new List<object>() { info };
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, "An error occurred when deserialising the output from the script.");
                 return new List<object>();
             }
-
-            CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(System.IO.File.ReadAllText(returnFile));
-            File.Delete(returnFile);
-            PlotInformation info = Convert.ToPlotInformation(obj, new WindroseData());
-
-            m_executeSuccess = true;
-            return new List<object> { info };
         }
     }
 }
