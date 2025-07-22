@@ -172,6 +172,7 @@ class Typology:
     def wind_speed(self, epw: EPW) -> list[float]:
         """Direct access to "wind_speed" method for this typology object."""
         #multiply wind speed by multiplier
+        epw.wind_speed
         wind_speed = epw._data[21]
         epw._data[21] = epw.wind_speed * self.wind_speed_multiplier
 

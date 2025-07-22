@@ -5,9 +5,11 @@ import pandas as pd
 import pytest
 from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
 from ladybugtools_toolkit.external_comfort.typology import Typologies
+from ladybug.datacollection import HourlyContinuousCollection
 
 from .test_simulate import TEST_SIMULATION_RESULT
 from .test_typology import TEST_TYPOLOGY
+from .. import EPW_OBJ
 
 TEST_EXTERNAL_COMFORT = ExternalComfort(
     simulation_result=TEST_SIMULATION_RESULT, typology=TEST_TYPOLOGY
@@ -122,3 +124,9 @@ def test_plot_mrt_heatmap():
 
     assert isinstance(TEST_EXTERNAL_COMFORT.plot_mrt_heatmap(), plt.Axes)
     plt.close("all")
+
+def test_set_all_but_wind_speed():
+    """Test that the wind speed method for getting the typology wind speed works correctly when dbt and rh are set."""
+    temp_ec_test = ExternalComfort(TEST_SIMULATION_RESULT, typology=TEST_TYPOLOGY, dry_bulb_temperature=EPW_OBJ.dry_bulb_temperature, relative_humidity=EPW_OBJ.relative_humidity)
+    assert isinstance(temp_ec_test, ExternalComfort)
+    assert isinstance(temp_ec_test.wind_speed, HourlyContinuousCollection)
