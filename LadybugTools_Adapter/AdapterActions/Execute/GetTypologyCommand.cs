@@ -63,14 +63,26 @@ namespace BH.Adapter.LadybugTools
             if (timeSinceLastUpdate.Days > config.CacheFileMaximumAge)
                 File.Delete(config.JsonFile.GetFullFileName());
 
-            //TODO: figure out how to get the socket code working here
+            // run the process
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "client_interface.py");
+                List<string> args = new List<string>() { "--command", "get_typology", "-j", config.JsonFile.GetFullFileName() };
 
-                string cmdCommand = $"{m_environment.Executable} {script} -command get_typology -j \"{config.JsonFile.GetFullFileName()}\"";
+                string result = "";
+                bool success;
+                if (m_useHost)
+                    (result, success) = Compute.RunLBTClientSocket(args, host: m_address, port: m_port);
+                else
+                    success = false;
 
-                Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+                if (!success)
+                {
+                    //if the server was not running or some other error happened, try running the python directly.
+                    string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
+                    string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+
+                    result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+                }
             }
 
             List<object> typologyObjects = Pull(new FilterRequest(), actionConfig: config).ToList();
