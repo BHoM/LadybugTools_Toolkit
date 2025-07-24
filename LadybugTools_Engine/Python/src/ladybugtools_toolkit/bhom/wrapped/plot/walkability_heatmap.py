@@ -15,7 +15,7 @@ PARSER = argparse.ArgumentParser(
 )
 PARSER.add_argument(
     "-in",
-    "--json_file",
+    "--input_json",
     help="helptext",
     type=str,
     required=True,
@@ -28,10 +28,9 @@ PARSER.add_argument(
     required=False,
 )
 
-def walkability_heatmap(json_file: str, save_path: str):
+def walkability_heatmap(input_json: str, save_path: str):
     try:
-        with open(json_file, "r") as args:
-            argsDict = json.loads(args.read())
+        argsDict = json.loads(input_json)
     
         ec = ExternalComfort.from_dict(json.loads(argsDict["external_comfort"]))
         fig, ax = plt.subplots(1, 1, figsize=(10, 4))

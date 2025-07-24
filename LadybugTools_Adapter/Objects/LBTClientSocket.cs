@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -28,20 +29,43 @@ namespace BH.Adapter.LadybugTools
             return false;
         }
 
-        public static (string, bool) RunLBTClientSocket(List<string> args, string host = "127.0.0.1", int port = 5999, bool temp = false)
+        public static (string, bool) RunLBTClientSocket(List<string> args, string inFile = null, string outFile = null, string host = "127.0.0.1", int port = 5999, bool temp = false)
         {
+            string argString = "[\"" + args.Aggregate((a, b) => a + "\", \"" + b) + "\"]";
+            byte[] argBytes = Encoding.UTF8.GetBytes(argString);
+            string firstMessage = $"{argBytes.Length};";
+            byte[] file = null;
+
+            if (inFile != null)
+            {
+                file = System.IO.File.ReadAllBytes(inFile);
+                firstMessage += $"{file.Length};";
+            }
+
+            else
+                firstMessage += "0;";
+
             try
             {
                 using (TcpClient client = new TcpClient(host, port))
                 {
-                    string argString = "[\"" + args.Aggregate((a, b) => a + "\", \"" + b) + "\"]";
 
                     using (SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCert), null))
                     {
                         sslStream.AuthenticateAsClient(host);
-                        byte[] send = Encoding.UTF8.GetBytes(argString);
-                        sslStream.Write(send, 0, send.Length);
+                        //send message containing file length, then send the file, then send the args
+                        byte[] first = Encoding.UTF8.GetBytes(firstMessage);
+                        sslStream.Write(first, 0, first.Length);
                         sslStream.Flush();
+
+                        sslStream.Write(argBytes, 0, argBytes.Length);
+                        sslStream.Flush();
+
+                        if (file != null)
+                        {
+                            sslStream.Write(file, 0, file.Length);
+                            sslStream.Flush();
+                        }
 
                         //receive everything...
                         byte[] buffer = new byte[1024];

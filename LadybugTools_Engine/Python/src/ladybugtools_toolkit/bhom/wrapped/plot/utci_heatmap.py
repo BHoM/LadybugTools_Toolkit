@@ -2,8 +2,6 @@
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import traceback
-from pathlib import Path
-from unittest.util import _MIN_COMMON_LEN
 import matplotlib
 from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
 from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metadata
@@ -20,7 +18,7 @@ PARSER = argparse.ArgumentParser(
 )
 PARSER.add_argument(
     "-in",
-    "--json_file",
+    "--input_json",
     help="helptext",
     type=str,
     required=True,
@@ -33,10 +31,14 @@ PARSER.add_argument(
     required=False,
 )
 
-def utci_heatmap(json_file:str, save_path = None) -> str:
+def utci_heatmap(input_json:str, save_path = None) -> str:
     try:
-        with open(json_file, "r") as args:
-            argsDict = json.loads(args.read())
+
+        if not input_json.startswith("{"): #assume it's a path
+            with open(input_json, "r") as f:
+                input_json = f.read()
+
+        argsDict = json.loads(input_json)
     
         ec = ExternalComfort.from_dict(json.loads(argsDict["external_comfort"]))
 
@@ -75,4 +77,4 @@ def utci_heatmap(json_file:str, save_path = None) -> str:
 if __name__ == "__main__":
     args = PARSER.parse_args()
     matplotlib.use("Agg")
-    utci_heatmap(args.json_file, args.save_path)
+    utci_heatmap(args.input_json, args.save_path)

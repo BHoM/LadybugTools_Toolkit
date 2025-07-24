@@ -64,23 +64,27 @@ namespace BH.Adapter.LadybugTools
             File.WriteAllText(argFile, inputObjects.ToJson());
 
             // run the process
-            List<string> args = new List<string>() { "-command", "plot/walkability_heatmap", "-in", argFile.Replace('\\', '/'), "-sp", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "-command", "plot/walkability_heatmap", "-sp", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;
             if (m_useHost)
-                (result, success) = Compute.RunLBTClientSocket(args, m_address, m_port);
+                (result, success) = Compute.RunLBTClientSocket(args, argFile, host: m_address, port: m_port);
             else
                 success = false;
 
             if (!success)
             {
                 //if the server was not running or some other error happened, try running the python directly.
+                args.Add("-in");
+                args.Add(argFile);
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
-                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
                 result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
             }
+
+            System.IO.File.Delete(argFile);
 
             try
             {
@@ -92,7 +96,7 @@ namespace BH.Adapter.LadybugTools
             }
             catch (Exception ex)
             {
-                BH.Engine.Base.Compute.RecordError(ex, "An error occurred when deserialising the output from the script.");
+                BH.Engine.Base.Compute.RecordError(ex, $"An error occurred when deserialising the output from the script.\n Python output: {result}");
                 return new List<object>();
             }
         }

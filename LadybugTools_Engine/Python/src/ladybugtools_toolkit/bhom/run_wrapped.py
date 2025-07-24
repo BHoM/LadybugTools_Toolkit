@@ -2,7 +2,8 @@
 import sys
 
 def run_wrapped(args):
-    return resolve(args)
+    res = resolve(args)
+    return res
 
 if __name__ == "__main__":
     print(run_wrapped(sys.argv[1:]))
