@@ -38,9 +38,9 @@ namespace BH.Adapter.LadybugTools
         {
             LadybugConfig config;
 
-            if (actionConfig?.GetType() == typeof(LadybugConfig))
+            if (actionConfig is LadybugConfig config1)
             {
-                config = (LadybugConfig)actionConfig;
+                config = config1;
                 config.JsonFile = new FileSettings()
                 {
                     FileName = $"LBTBHoM_Typologies.json",
@@ -60,13 +60,13 @@ namespace BH.Adapter.LadybugTools
             }
 
             TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
-            if (timeSinceLastUpdate.Days > config.CacheFileMaximumAge)
+            if (timeSinceLastUpdate.Days >= config.CacheFileMaximumAge)
                 File.Delete(config.JsonFile.GetFullFileName());
 
             // run the process
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
-                List<string> args = new List<string>() { "--command", "get_typology", "-j", config.JsonFile.GetFullFileName() };
+                List<string> args = new List<string>() { "--command", "get_typology", "-j", config.JsonFile.GetFullFileName().Replace('\\', '/') };
 
                 string result = "";
                 bool success;
