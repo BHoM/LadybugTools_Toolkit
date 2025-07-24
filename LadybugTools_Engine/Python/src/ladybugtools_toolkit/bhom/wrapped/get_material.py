@@ -21,10 +21,12 @@ PARSER.add_argument(
 def get_material(json_file: str) -> None:
     """Create a file containing all default materials."""
     try:
-        with open(json_file, "w") as f:
-            json.dump([material.value.to_dict() for material in Materials], f)
+        json_str = json.dumps([material.value.to_dict() for material in Materials])
 
-        return json_file
+        with open(json_file, "w") as f:
+            f.write(json_str)
+
+        return json_str
 
     except Exception as e:
         return traceback.format_exc()

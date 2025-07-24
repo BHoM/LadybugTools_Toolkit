@@ -21,13 +21,12 @@ PARSER.add_argument(
 def get_typology(json_file: str) -> None:
     """Create a file containing all default typologies."""
     try:
-        ds = []
-        for typ in Typologies:
-            ds.append(typ.value.to_dict())
-        with open(json_file, "w") as f:
-            json.dump(ds, f)
+        json_str = json.dumps([typology.value.to_dict() for typology in Typologies])
 
-        return json_file
+        with open(json_file, "w") as f:
+            f.write(json_str)
+
+        return json_str
 
     except Exception as e:
         return traceback.format_exc()
