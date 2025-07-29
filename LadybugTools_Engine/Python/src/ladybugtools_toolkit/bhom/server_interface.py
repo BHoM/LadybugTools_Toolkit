@@ -137,6 +137,7 @@ def server(host: str = HOST, port: int = PORT, certs: List[str] = [], epw_folder
         port (int):
             The port that the server accepts data from. defaults to 5999
     """
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((host, port))
     s.listen(5)
@@ -163,7 +164,7 @@ def server(host: str = HOST, port: int = PORT, certs: List[str] = [], epw_folder
             sys.exit(1)
         except Exception as ex:
             print(traceback.format_exc())
-            pass 
+            pass
 
 end = time.time()
 
