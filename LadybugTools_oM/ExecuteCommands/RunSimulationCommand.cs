@@ -48,4 +48,3 @@ namespace BH.oM.LadybugTools
     }
 }
 
-
