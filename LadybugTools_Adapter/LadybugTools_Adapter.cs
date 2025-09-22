@@ -25,6 +25,7 @@ using BH.Engine.Python;
 using System.IO;
 using BH.oM.Base.Attributes;
 using BH.oM.Python;
+using System.Net.Http;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -51,6 +52,13 @@ namespace BH.Adapter.LadybugTools
             m_environment = environment;
         }
 
-        private readonly PythonEnvironment m_environment;
+        public LadybugToolsAdapter(HttpClient httpClient)
+        {
+            m_environment = null;
+            m_httpClient = httpClient;
+        }
+
+        private readonly PythonEnvironment m_environment = null;
+        private readonly HttpClient m_httpClient = null;
     }
 }

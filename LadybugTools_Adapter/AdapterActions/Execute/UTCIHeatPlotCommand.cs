@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -74,31 +75,33 @@ namespace BH.Adapter.LadybugTools
                 { "bin_colours", hexColours }
             };
 
-            string argFile = Path.GetTempFileName();
-            File.WriteAllText(argFile, inputObjects.ToJson());
-
             // run the process
             List<string> args = new List<string>() { "-command", "plot/utci_heatmap", "-sp", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;
-            if (m_useHost)
-                (result, success) = Compute.RunLBTClientSocket(args, argFile, host: m_address, port: m_port);
-            else
-                success = false;
 
-            if (!success)
+            if (m_httpClient != null)
+            {
+                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args, inputObjects.ToJson());
+                task.Wait();
+                (result, success) = task.Result;
+            }
+            else
             {
                 //if the server was not running or some other error happened, try running the python directly.
+                string argFile = Path.GetTempFileName();
+                File.WriteAllText(argFile, inputObjects.ToJson());
                 args.Add("-in");
                 args.Add(argFile);
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
                 result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+
+                System.IO.File.Delete(argFile);
             }
 
-            System.IO.File.Delete(argFile);
 
             try
             {

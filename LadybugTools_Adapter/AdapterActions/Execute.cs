@@ -38,33 +38,17 @@ using BH.Engine.Base;
 using System.Drawing;
 using BH.Engine.Serialiser;
 using System.Reflection;
-using BH.oM.LadybugTools.Config;
+using System.Net.Http;
 
 namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
         bool m_executeSuccess = false;
-        bool m_useHost = false;
-        string m_address = "127.0.0.1";
-        int m_port = 5999;
 
         public override Output<List<object>, bool> Execute(IExecuteCommand command, ActionConfig actionConfig = null)
         {
             m_executeSuccess = false;
-
-            if (actionConfig is LadybugHostConfig hostConfig)
-            {
-                m_useHost = hostConfig.UseExistingHost;
-                m_address = hostConfig.HostName;
-                m_port = hostConfig.HostPort;
-            }
-            else
-            {
-                m_useHost = false;
-                m_address = "127.0.0.1";
-                m_port = 5999;
-            }
 
             Output<List<object>, bool> output = new Output<List<object>, bool>() { Item1 = new List<object>(), Item2 = false };
 

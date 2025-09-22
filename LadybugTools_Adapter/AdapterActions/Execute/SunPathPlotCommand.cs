@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -67,12 +68,14 @@ namespace BH.Adapter.LadybugTools
 
             string result = "";
             bool success;
-            if (m_useHost)
-                (result, success) = Compute.RunLBTClientSocket(args, host: m_address, port: m_port);
-            else
-                success = false;
 
-            if (!success)
+            if (m_httpClient != null)
+            {
+                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
+                task.Wait();
+                (result, success) = task.Result;
+            }
+            else
             {
                 //if the server was not running or some other error happened, try running the python directly.
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
