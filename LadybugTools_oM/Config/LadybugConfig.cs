@@ -39,5 +39,9 @@ namespace BH.oM.LadybugTools
         [DisplayText("Cache File Maximum Age")]
         [Description("The amount of time (in days) any files that have been created by the adapter for caching purposes should exist before being removed/recreated. \n Files are only deleted/updated . \n Set to 0 to force a recompute of a simulation that has a stored cache.")]
         public virtual int CacheFileMaximumAge { get; set; } = 30;
+
+        [DisplayText("Skip EPW Check")]
+        [Description("Skips EPW file checks to allow epw files that are not on a drive accessible to the adapter. In general this should be set to false.")]
+        public virtual bool SkipEPWCheck { get; set; } = false;
     }
 }

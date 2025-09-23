@@ -38,13 +38,17 @@ namespace BH.Adapter.LadybugTools
     {
         private List<object> RunCommand(HeatPlotCommand command, ActionConfig actionConfig)
         {
+            bool ignoreEPWCheck = false;
+            if (actionConfig is LadybugConfig config)
+                ignoreEPWCheck = config.SkipEPWCheck;
+
             if (command.EPWFile == null)
             {
                 BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
                 return null;
             }
 
-            if (!System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            if (!ignoreEPWCheck & !System.IO.File.Exists(command.EPWFile.GetFullFileName()))
             {
                 BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile}' does not exist.");
                 return null;

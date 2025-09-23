@@ -37,32 +37,21 @@ namespace BH.Adapter.LadybugTools
     {
         private List<object> RunCommand(GetMaterialCommand command, ActionConfig actionConfig)
         {
-            LadybugConfig config;
-
-            if (actionConfig is LadybugConfig config1)
+            LadybugConfig config = (actionConfig as LadybugConfig) ?? new LadybugConfig()
             {
-                config = config1;
-                config.JsonFile = new FileSettings()
+                JsonFile = new FileSettings()
                 {
-                    FileName = $"LBTBHoM_Materials.json",
+                    FileName = "LBTBHoM_Materials.json",
                     Directory = Path.GetTempPath()
-                };
-            }
-            else
-            {
-                config = new LadybugConfig()
-                {
-                    JsonFile = new FileSettings()
-                    {
-                        FileName = $"LBTBHoM_Materials.json",
-                        Directory = Path.GetTempPath()
-                    }
-                };
-            }
+                }
+            };
 
-            TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
-            if (timeSinceLastUpdate.Days >= config.CacheFileMaximumAge)
-                File.Delete(config.JsonFile.GetFullFileName());
+            if (File.Exists(config.JsonFile.GetFullFileName()))
+            {
+                TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
+                if (timeSinceLastUpdate.Days >= config.CacheFileMaximumAge)
+                    File.Delete(config.JsonFile.GetFullFileName());
+            }
 
             // run the process
             if (!File.Exists(config.JsonFile.GetFullFileName()))
@@ -86,6 +75,8 @@ namespace BH.Adapter.LadybugTools
 
                     result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
                 }
+
+                File.WriteAllText(config.JsonFile.GetFullFileName(), result);
             }
 
             List<object> materialObjects = Pull(new FilterRequest(), actionConfig: config).ToList();
