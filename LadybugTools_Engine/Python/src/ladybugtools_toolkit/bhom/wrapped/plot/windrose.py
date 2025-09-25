@@ -12,6 +12,7 @@ from ladybugtools_toolkit.plot.utilities import figure_to_base64
 import matplotlib.pyplot as plt
 from pathlib import Path
 import json
+from ...logger import CONSOLE_LOGGER
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -54,7 +55,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> None:
+def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> str:
     """Method to wrap for creating wind roses from epw files."""
     try:
         if colour_map not in plt.colormaps():
@@ -83,8 +84,9 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, sa
 
         return json.dumps(return_dict, default=str)
             
-    except Exception as e:
-        return traceback.format_exc()
+    except Exception:
+        CONSOLE_LOGGER.error("Windrose could not be created.", exc_info=1)
+        return ""
 
 
 if __name__ == "__main__":

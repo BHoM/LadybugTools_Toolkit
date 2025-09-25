@@ -6,7 +6,7 @@ from ladybugtools_toolkit.bhom.wrapped.metadata.utci_metadata import utci_metada
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 import json
 import matplotlib.pyplot as plt
-
+from ...logger import CONSOLE_LOGGER
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -28,7 +28,7 @@ PARSER.add_argument(
     required=False,
 )
 
-def walkability_heatmap(input_json: str, save_path: str):
+def walkability_heatmap(input_json: str, save_path: str) -> str:
     try:
         argsDict = json.loads(input_json)
     
@@ -53,9 +53,10 @@ def walkability_heatmap(input_json: str, save_path: str):
         plt.close(fig)
 
         return json.dumps(return_dict, default=str)
-
-    except Exception as ex:
-        return traceback.format_exc()
+    
+    except Exception:
+        CONSOLE_LOGGER.error("Walkability plot could not be created.", exc_info=1)
+        return ""
 
 if __name__ == "__main__":
 

@@ -10,7 +10,8 @@ from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAUL
 import matplotlib.pyplot as plt
 import numpy as np
 import json
-    
+from ...logger import CONSOLE_LOGGER
+
 PARSER = argparse.ArgumentParser(
     description=(
         "Given an EPW file path, extract a heatmap"
@@ -71,8 +72,9 @@ def utci_heatmap(input_json:str, save_path = None) -> str:
         plt.close(fig)
 
         return json.dumps(return_dict, default=str)
-    except Exception as ex:
-        return(traceback.format_exc())
+    except Exception:
+        CONSOLE_LOGGER.error("UTCI Heatmap could not be created.", exc_info=1)
+        return ""
 
 if __name__ == "__main__":
     args = PARSER.parse_args()

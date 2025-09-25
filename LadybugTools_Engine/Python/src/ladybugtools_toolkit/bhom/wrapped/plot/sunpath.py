@@ -13,6 +13,7 @@ from ladybugtools_toolkit.plot.utilities import figure_to_base64
 import matplotlib.pyplot as plt
 from pathlib import Path
 import json
+from ...logger import CONSOLE_LOGGER
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -48,7 +49,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def sunpath(epw_file, analysis_period, size, save_path):
+def sunpath(epw_file, analysis_period, size, save_path) -> str:
     try:
         fig, ax = plt.subplots()
 
@@ -69,8 +70,9 @@ def sunpath(epw_file, analysis_period, size, save_path):
 
         return json.dumps(return_dict, default=str)
 
-    except Exception as e:
-        return traceback.format_exc()
+    except Exception:
+        CONSOLE_LOGGER.error("Sunpath could not be created.", exc_info=1)
+        return ""
 
 if __name__ == "__main__":
 

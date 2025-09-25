@@ -12,6 +12,7 @@ from ladybugtools_toolkit.bhom.wrapped.metadata.solar_radiation_metadata import 
 import matplotlib.pyplot as plt
 from pathlib import Path
 import json
+from ...logger import CONSOLE_LOGGER
 
 PARSER = argparse.ArgumentParser(
         description=(
@@ -75,7 +76,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, analysis_period, cmap, title, save_path):
+def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, analysis_period, cmap, title, save_path) -> str:
     try:
         if cmap not in plt.colormaps():
             cmap = "YlOrRd"
@@ -111,9 +112,10 @@ def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, an
         plt.close(fig)
 
         return json.dumps(return_dict, default=str)
-
-    except Exception as ex:
-        return traceback.format_exc()
+    
+    except Exception:
+        CONSOLE_LOGGER.error("Solar Radiation plot could not be created.", exc_info=1)
+        return ""
 
 if __name__ == "__main__":
     args = PARSER.parse_args()

@@ -22,6 +22,7 @@ from ladybugtools_toolkit.bhom.wrapped.plot.facade_condensation_risk_heatmap imp
 from ladybugtools_toolkit.bhom.wrapped.plot.heatmap import PARSER as heatmap_parser, heatmap
 from ladybugtools_toolkit.bhom.wrapped.plot.sunpath import PARSER as sunpath_parser, sunpath
 from ladybugtools_toolkit.bhom.wrapped.plot.utci_heatmap import PARSER as utci_heatmap_parser, utci_heatmap
+from ladybugtools_toolkit.bhom.wrapped.epw_to_csv import PARSER as epw_to_csv_parser, epw_to_csv
 from ladybugtools_toolkit.bhom.wrapped.get_material import PARSER as get_material_parser, get_material
 from ladybugtools_toolkit.bhom.wrapped.get_typology import PARSER as get_typology_parser, get_typology
 
@@ -42,6 +43,7 @@ PARSERS = {
     "plot/heatmap": (heatmap_parser, heatmap),
     "plot/sunpath": (sunpath_parser, sunpath),
     "plot/utci_heatmap": (utci_heatmap_parser, utci_heatmap),
+    "epw_to_csv": (epw_to_csv_parser, epw_to_csv),
     "get_material": (get_material_parser, get_material),
     "get_typology": (get_typology_parser, get_typology),
 }

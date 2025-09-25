@@ -13,7 +13,6 @@ def main(json_file: str) -> None:
         res.to_file(json_file)
 
     except Exception as e:  # pylint: disable=W0703
-        print(e)
         print(traceback.format_exc())
 
 

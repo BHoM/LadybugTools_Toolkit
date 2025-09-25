@@ -18,7 +18,6 @@ def main(hbjson_file: str) -> None:
         )
 
     except Exception as e:
-        print(e)
         print(traceback.format_exc())
 
 

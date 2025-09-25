@@ -15,7 +15,6 @@ def main(gem_file: str) -> None:
         model.to_hbjson(folder=gem_file_path.parent.as_posix(), name=gem_file_path.stem)
 
     except Exception as e:
-        print(e)
         print(traceback.format_exc())
 
 

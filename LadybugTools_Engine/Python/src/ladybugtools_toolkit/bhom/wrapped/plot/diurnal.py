@@ -13,7 +13,7 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
 import matplotlib.pyplot as plt
-        
+from ...logger import CONSOLE_LOGGER
 
 PARSER = argparse.ArgumentParser(
     description=(
@@ -63,7 +63,7 @@ PARSER.add_argument(
     required=False,
     )
 
-def diurnal(epw_file, data_type_key="Dry Bulb Temperature", colour="#000000", title=None, period="monthly", save_path = None):
+def diurnal(epw_file, data_type_key="Dry Bulb Temperature", colour="#000000", title=None, period="monthly", save_path = None) -> str:
     try:
         epw = EPW(epw_file)
         
@@ -88,8 +88,9 @@ def diurnal(epw_file, data_type_key="Dry Bulb Temperature", colour="#000000", ti
 
         return json.dumps(return_dict, default=str)
 
-    except Exception as e:
-        return traceback.format_exc()
+    except Exception:
+        CONSOLE_LOGGER.error("Diurnal plot could not be created.", exc_info=1)
+        return ""
 
 if __name__ == "__main__":
     args = PARSER.parse_args()
