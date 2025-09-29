@@ -23,8 +23,10 @@ from ladybugtools_toolkit.bhom.wrapped.plot.heatmap import PARSER as heatmap_par
 from ladybugtools_toolkit.bhom.wrapped.plot.sunpath import PARSER as sunpath_parser, sunpath
 from ladybugtools_toolkit.bhom.wrapped.plot.utci_heatmap import PARSER as utci_heatmap_parser, utci_heatmap
 from ladybugtools_toolkit.bhom.wrapped.epw_to_csv import PARSER as epw_to_csv_parser, epw_to_csv
+from ladybugtools_toolkit.bhom.wrapped.gem_to_hbjson import PARSER as gem_to_hbjson_parser, gem_to_hbjson
 from ladybugtools_toolkit.bhom.wrapped.get_material import PARSER as get_material_parser, get_material
 from ladybugtools_toolkit.bhom.wrapped.get_typology import PARSER as get_typology_parser, get_typology
+from ladybugtools_toolkit.bhom.wrapped.hbjson_to_gem import PARSER as hbjson_to_gem_parser, hbjson_to_gem
 
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
@@ -44,8 +46,10 @@ PARSERS = {
     "plot/sunpath": (sunpath_parser, sunpath),
     "plot/utci_heatmap": (utci_heatmap_parser, utci_heatmap),
     "epw_to_csv": (epw_to_csv_parser, epw_to_csv),
+    "gem_to_hbjson": (gem_to_hbjson_parser, gem_to_hbjson),
     "get_material": (get_material_parser, get_material),
     "get_typology": (get_typology_parser, get_typology),
+    "hbjson_to_gem": (hbjson_to_gem_parser, hbjson_to_gem),
 }
 
 def resolve(data: List[str], epw_folder: Path = Path("C:/epws")) -> str:
@@ -86,6 +90,8 @@ def deconstruct(data: str) -> List[str]:
 
 def run_wrapped(args):
     res = resolve(args)
+    if res == "":
+        sys.exit(1)
     return res
 
 if __name__ == "__main__":

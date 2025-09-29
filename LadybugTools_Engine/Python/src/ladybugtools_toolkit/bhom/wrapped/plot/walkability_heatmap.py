@@ -1,4 +1,5 @@
 ﻿import argparse
+import sys
 import matplotlib
 import traceback
 from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort

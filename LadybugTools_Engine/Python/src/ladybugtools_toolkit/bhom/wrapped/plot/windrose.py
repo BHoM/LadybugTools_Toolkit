@@ -1,6 +1,7 @@
 """Method to wrap for creating wind roses from epw files."""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import sys
 import traceback
 from pathlib import Path
 import matplotlib

@@ -2,6 +2,7 @@
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import json
+import sys
 import traceback
 from pathlib import Path
 import matplotlib

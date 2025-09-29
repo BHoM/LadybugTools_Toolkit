@@ -3,6 +3,7 @@
 import argparse
 from pathlib import Path
 import json
+import sys
 import matplotlib
 import matplotlib.figure
 from ladybug.epw import EPW

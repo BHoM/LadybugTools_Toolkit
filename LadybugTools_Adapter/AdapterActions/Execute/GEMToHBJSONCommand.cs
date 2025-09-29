@@ -8,20 +8,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
 namespace BH.Adapter.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public partial class LadybugToolsAdapter
     {
-        private List<object> RunCommand(EPWToCSVCommand command, ActionConfig actionConfig)
+        public List<object> RunCommand(GEMToHBJSONCommand command, ActionConfig actionConfig)
         {
             bool ignoreEPWCheck = false;
             if (actionConfig is LadybugConfig config)
                 ignoreEPWCheck = config.SkipEPWCheck;
 
-            if (command.EPWFile == null)
+            if (command.GEMFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.GEMFile)} input cannot be null.");
                 return null;
             }
 
@@ -31,13 +30,13 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (!ignoreEPWCheck & !System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            if (!System.IO.File.Exists(command.GEMFile.GetFullFileName()))
             {
-                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
+                BH.Engine.Base.Compute.RecordError($"File '{command.GEMFile.GetFullFileName()}' does not exist.");
                 return null;
             }
 
-            List<string> args = new List<string>() { "--command", "epw_to_csv", "-e", command.EPWFile.GetFullFileName().Replace('\\', '/'), "-a", command.IncludeAdditionalCalculated.ToString() };
+            List<string> args = new List<string>() { "--command", "gem_to_hbjson", "-g", command.GEMFile.GetFullFileName().Replace('\\', '/') };
 
             string result = "";
             bool success = true;
@@ -62,11 +61,11 @@ namespace BH.Adapter.LadybugTools
 
             if (!success)
             {
-                BH.Engine.Base.Compute.RecordError($"An error occurred while converting the file to csv.\nPython output: {result}.");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while converting the file to hbjson.\nPython output: {result}.");
                 return new List<object>();
             }
 
-            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.EPWFile.FileName) + ".csv");
+            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.GEMFile.FileName) + ".hbjson");
             File.WriteAllText(outputFileName, result);
 
             m_executeSuccess = success;

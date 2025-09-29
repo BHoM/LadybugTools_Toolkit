@@ -1,6 +1,7 @@
 """Method to wrap UTCI plots"""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import sys
 import traceback
 import matplotlib
 from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
