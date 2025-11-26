@@ -23,10 +23,10 @@ namespace BH.Adapter.LadybugTools
             string start = $"{argString.Length};{json.Length};";
 
             StringContent content = new StringContent(start + argString + json);
-            HttpResponseMessage message = await httpClient.PostAsync("", content);
+            HttpResponseMessage message = await httpClient.PostAsync("", content).ConfigureAwait(false);
 
             if (message.IsSuccessStatusCode)
-                return (Encoding.UTF8.GetString(await message.Content.ReadAsByteArrayAsync()), true);
+                return (Encoding.UTF8.GetString(await message.Content.ReadAsByteArrayAsync().ConfigureAwait(false)), true);
 
             return ("", message.IsSuccessStatusCode);
         }
