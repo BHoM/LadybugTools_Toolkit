@@ -3,36 +3,35 @@
 import argparse
 import traceback
 import json
+from ladybugtools_toolkit.external_comfort.typology import Typologies
 
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given a JSON file path, write the pre-defined typologies for the External Comfort workflow."
+    )
+)
+PARSER.add_argument(
+    "-j",
+    "--json_file",
+    help="The JSON file to write Typology objects into.",
+    type=str,
+    required=True,
+)
 
-def main(json_file: str) -> None:
+def get_typology(json_file: str) -> None:
     """Create a file containing all default typologies."""
     try:
-        from ladybugtools_toolkit.external_comfort.typology import Typologies
+        json_str = json.dumps([typology.value.to_dict() for typology in Typologies])
 
-        ds = []
-        for typ in Typologies:
-            ds.append(typ.value.to_dict())
         with open(json_file, "w") as f:
-            json.dump(ds, f)
+            f.write(json_str)
+
+        return json_str
 
     except Exception as e:
-        print(e)
-        print(traceback.format_exc())
+        return traceback.format_exc()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given a JSON file path, write the pre-defined typologies for the External Comfort workflow."
-        )
-    )
-    parser.add_argument(
-        "-j",
-        "--json_file",
-        help="The JSON file to write Typology objects into.",
-        type=str,
-        required=True,
-    )
-    args = parser.parse_args()
-    main(args.json_file)
+    args = PARSER.parse_args()
+    get_typology(args.json_file)

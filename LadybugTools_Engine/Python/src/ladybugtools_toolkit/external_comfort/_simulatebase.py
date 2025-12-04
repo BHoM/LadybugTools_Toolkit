@@ -40,7 +40,7 @@ from ladybug.stat import STAT
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal, SolarCalParameter
 from lbt_recipes.version import check_openstudio_version
 
-from ..bhom.logging import CONSOLE_LOGGER
+from ..bhom.logger import CONSOLE_LOGGER
 from ..bhom.to_bhom import (
     hourlycontinuouscollection_to_bhom,
     material_to_bhom,

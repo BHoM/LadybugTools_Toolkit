@@ -15,7 +15,6 @@ def main(json_file: str) -> None:
         ec.to_file(json_file)
 
     except Exception as e:
-        print(e)
         print(traceback.format_exc())
 
 

@@ -25,6 +25,8 @@ using BH.Engine.Python;
 using System.IO;
 using BH.oM.Base.Attributes;
 using BH.oM.Python;
+using System.Net.Http;
+using System;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -40,6 +42,9 @@ namespace BH.Adapter.LadybugTools
             m_environment = BH.Engine.LadybugTools.Compute.InstallPythonEnv_LBT(run: true);
         }
 
+        [Description("Produces a LadybugTools Adapter that converts objects between Ladybug compatible json and BHoM objects.")]
+        [Input("environment", "A `BH.oM.PythonEnvironment` to use to process objects or requests")]
+        [Output("adapter", "Adapter to a LadybugTools object.")]
         public LadybugToolsAdapter(PythonEnvironment environment)
         {
             if (!File.Exists(environment.Executable))
@@ -51,6 +56,25 @@ namespace BH.Adapter.LadybugTools
             m_environment = environment;
         }
 
-        private readonly PythonEnvironment m_environment;
+        [Description("Produces a LadybugTools Adapter that converts objects between Ladybug compatible json and BHoM objects.")]
+        [Input("httpClient", "A HttpClient to send requests to.")]
+        [Output("adapter", "Adapter to a LadybugTools object.")]
+        public LadybugToolsAdapter(HttpClient httpClient)
+        {
+            m_environment = null;
+            m_httpClient = httpClient;
+        }
+
+        [Description("Produces a LadybugTools Adapter that converts objects between Ladybug compatible json and BHoM objects.")]
+        [Input("baseUri", "A Uri to create a new HttpClient to send requests to, with a timeout of 5 minutes.")]
+        [Output("adapter", "Adapter to a LadybugTools object.")]
+        public LadybugToolsAdapter(string baseUri)
+        {
+            m_environment = null;
+            m_httpClient = new HttpClient() { BaseAddress = new System.Uri(baseUri), Timeout = TimeSpan.FromMinutes(5) };
+        }
+
+        private readonly PythonEnvironment m_environment = null;
+        private readonly HttpClient m_httpClient = null;
     }
 }

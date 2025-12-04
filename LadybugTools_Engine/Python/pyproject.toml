@@ -22,14 +22,92 @@ dependencies = [
     "scipy",
     "tables",
     "tqdm",
-    "xlrd",
+    "xlrd","attrs",
+    "Brotli",
+    "click",
+    "click-plugins",
+    "colorama",
+    "contourpy",
+    "cycler",
+    "dragonfly-comparison",
+    "dragonfly-core",
+    "dragonfly-display",
+    "dragonfly-doe2",
+    "dragonfly-energy",
+    "dragonfly-radiance",
+    "dragonfly-schema",
+    "dragonfly-uwg",
+    "fonttools",
+    "honeybee-core",
+    "honeybee-display",
+    "honeybee-doe2",
+    "honeybee-energy",
+    "honeybee-energy-standards",
+    "honeybee-idaice",
+    "honeybee-ies",
+    "honeybee-openstudio",
+    "honeybee-radiance",
+    "honeybee-radiance-command",
+    "honeybee-radiance-folder",
+    "honeybee-radiance-postprocess",
+    "honeybee-schema",
+    "honeybee-standards",
+    "inflate64",
+    "jsonschema",
+    "jsonschema-specifications",
+    "kiwisolver",
+    "ladybug-comfort",
+    "ladybug-core",
+    "ladybug-display",
+    "ladybug-display-schema",
+    "ladybug-geometry",
+    "ladybug-geometry-polyskel",
+    "ladybug-radiance",
+    "ladybug-rhino",
+    "ladybug-vtk",
+    "lbt-dragonfly",
+    "lbt-honeybee",
+    "lbt-ladybug",
+    "lbt-recipes",
+    "lockfile",
+    "luigi",
+    "matplotlib",
+    "multivolumefile",
+    "numpy",
+    "openstudio",
+    "packaging",
+    "pillow",
+    "pollination-handlers",
+    "psutil",
+    "py7zr",
+    "pybcj",
+    "pycryptodomex",
+    "pydantic",
+    "pydantic-openapi-helper",
+    "pyparsing",
+    "pyppmd",
+    "python-daemon",
+    "python-dateutil",
+    "PyYAML",
+    "pyzstd",
+    "queenbee",
+    "queenbee-local",
+    "referencing",
+    "rpds-py",
+    "six",
+    "tenacity",
+    "texttable",
+    "tornado",
+    "typing_extensions",
+    "uwg",
+    "vtk",
 ]
 
 [urls]
 source = "https://github.com/BHoM/LadybugTools_Toolkit"
 
 [build-system]
-requires = ["setuptools", "pywin32"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
@@ -52,6 +130,9 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 exclude = ["tests"]
+
+[tool.setuptools.package-data]
+"*" = ["*.xlsx", "*.csv", "*.json"]
 
 [tool.pytest.ini_options]
 pythonpath = "src"
