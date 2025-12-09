@@ -85,7 +85,7 @@ namespace BH.Adapter.LadybugTools
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
             // run the process
-            List<string> args = new List<string>() { "-command", "plot/directional_solar_radiation", "-e", epwFile.Replace('\\', '/'), "-d", command.Directions.ToString(), "-ti", command.Tilts.ToString(), "-cmap", colourMap, "-t", command.Title, "-ap", command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\""), "-p", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "-command", "plot/directional_solar_radiation", "-e", epwFile.Replace('\\', '/'), "-d", command.Directions.ToString(), "-ti", command.Tilts.ToString(), "-ir", command.IrradianceType.ToString(), "-cmap", colourMap, "-t", command.Title, "-ap", command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\""), "-p", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;
