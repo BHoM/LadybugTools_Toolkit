@@ -79,8 +79,10 @@ namespace BH.Adapter.LadybugTools
                 { "bin_colours", hexColours }
             };
 
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
             // run the process
-            List<string> args = new List<string>() { "-command", "plot/utci_heatmap", "-sp", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "-command", "plot/utci_heatmap", "-e", epwFile.Replace('\\', '/'), "-sp", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;

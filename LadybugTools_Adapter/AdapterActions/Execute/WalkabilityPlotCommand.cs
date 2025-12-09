@@ -65,8 +65,10 @@ namespace BH.Adapter.LadybugTools
                 { "external_comfort", command.ExternalComfort.FromBHoM() }
             };
 
+            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+
             // run the process
-            List<string> args = new List<string>() { "-command", "plot/walkability_heatmap", "-sp", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "-command", "plot/walkability_heatmap", "-e", epwFile.Replace('\\', '/'), "-sp", command.OutputLocation.Replace('\\', '/') };
 
             string result = "";
             bool success;
