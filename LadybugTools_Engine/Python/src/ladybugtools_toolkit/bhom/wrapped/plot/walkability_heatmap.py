@@ -15,6 +15,13 @@ PARSER = argparse.ArgumentParser(
     )
 )
 PARSER.add_argument(
+    "-e",
+    "--epw_file",
+    help="helptext",
+    type=str,
+    required=False
+)
+PARSER.add_argument(
     "-in",
     "--input_json",
     help="helptext",
