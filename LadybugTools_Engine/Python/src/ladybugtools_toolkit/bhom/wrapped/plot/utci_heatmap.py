@@ -40,7 +40,7 @@ PARSER.add_argument(
     required=False,
 )
 
-def utci_heatmap(input_json:str, save_path = None) -> str:
+def utci_heatmap(input_json:str, save_path = None, epw_file:str = None) -> str:
     try:
 
         if not input_json.startswith("{"): #assume it's a path

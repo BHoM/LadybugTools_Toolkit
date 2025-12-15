@@ -36,7 +36,7 @@ PARSER.add_argument(
     required=False,
 )
 
-def walkability_heatmap(input_json: str, save_path: str) -> str:
+def walkability_heatmap(input_json: str, save_path: str, epw_file:str = None) -> str:
     try:
         argsDict = json.loads(input_json)
     
