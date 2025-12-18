@@ -33,6 +33,7 @@ namespace BH.Engine.LadybugTools
         [Description("Convert a Honeybee JSON into an IES GEM file.")]
         [Input("hbjson", "A Honeybee JSON file.")]
         [Output("gem", "The GEM file.")]
+        [ToBeRemoved("8.3", "Compute methods that send commands to a python environment have been moved to LadybugTools_Adapter workflows with Execute Commands. See the HBJSONtoGEMCommand.")]
         public static string HBJSONtoGEM(string hbjson)
         {
             if (hbjson == null)

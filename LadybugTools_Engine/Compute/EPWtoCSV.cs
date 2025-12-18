@@ -34,6 +34,7 @@ namespace BH.Engine.LadybugTools
         [Input("epwFile", "An EPW file.")]
         [Input("includeAdditional", "Add sun position and psychrometric properties to the resultant CSV.")]
         [Output("csv", "The generated CSV file.")]
+        [ToBeRemoved("8.3", "Compute methods that send commands to a python environment have been moved to LadybugTools_Adapter workflows with Execute Commands. See the EPWtoCSVCommand.")]
         public static string EPWtoCSV(string epwFile, bool includeAdditional = false)
         {
             if (epwFile == null)

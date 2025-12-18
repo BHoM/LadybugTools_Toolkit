@@ -1,22 +1,64 @@
 """Method to wrap for creating wind roses from epw files."""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import sys
 import traceback
 from pathlib import Path
 import matplotlib
+from ladybug.epw import EPW, AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybugtools_toolkit.wind import Wind
+from ladybugtools_toolkit.bhom.wrapped.metadata.wind_metadata import wind_metadata
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+import matplotlib.pyplot as plt
+from pathlib import Path
+import json
+from ...logger import CONSOLE_LOGGER
 
-def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, return_file: str, save_path: str = None) -> None:
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given an EPW file path, extract a heatmap"
+    )
+)
+PARSER.add_argument(
+    "-e",
+    "--epw_file",
+    help="The EPW file to extract a heatmap from",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-ap",
+    "--analysis_period",
+    help="Analysis period",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-cmap",
+    "--colour_map",
+    help="Matplotlib colour map to use.",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-bins",
+    "--bins",
+    help="Number of bins",
+    type=int,
+    required=True,
+)
+PARSER.add_argument(
+    "-p",
+    "--save_path",
+    help="Path where to save the output image.",
+    type=str,
+    required=False,
+    )
+
+def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> str:
     """Method to wrap for creating wind roses from epw files."""
     try:
-        from ladybug.epw import EPW, AnalysisPeriod
-        from ladybug.datacollection import HourlyContinuousCollection
-        from ladybugtools_toolkit.wind import Wind
-        from ladybugtools_toolkit.bhom.wrapped.metadata.wind_metadata import wind_metadata
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        import matplotlib.pyplot as plt
-        from pathlib import Path
-        import json
-
         if colour_map not in plt.colormaps():
             colour_map = "YlGnBu"
 
@@ -30,73 +72,26 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, re
 
         w_epw.filter_by_analysis_period(analysis_period=analysis_period).plot_windrose(ax=ax, directions=bins, ylim=(0, 3.6/bins), colors=colour_map)
 
-        output_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
+        return_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
 
         plt.tight_layout()
         if save_path == None or save_path == "":
-            output_dict["figure"] = figure_to_base64(fig,html=False)
+            return_dict["figure"] = figure_to_base64(fig,html=False)
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
-            output_dict["figure"] = save_path
+            return_dict["figure"] = save_path
             
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(output_dict, default=str))
-        
-        print(return_file)
+        plt.close(fig)
+
+        return json.dumps(return_dict, default=str)
             
-    except Exception as e:
-        print(traceback.format_exc())
+    except Exception:
+        CONSOLE_LOGGER.error("Windrose could not be created.", exc_info=1)
+        return ""
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, extract a heatmap"
-        )
-    )
-    parser.add_argument(
-        "-e",
-        "--epw_file",
-        help="The EPW file to extract a heatmap from",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-ap",
-        "--analysis_period",
-        help="Analysis period",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-cmap",
-        "--colour_map",
-        help="Matplotlib colour map to use.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-bins",
-        "--bins",
-        help="Number of bins",
-        type=int,
-        required=True,
-    )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-p",
-        "--save_path",
-        help="Path where to save the output image.",
-        type=str,
-        required=False,
-        )
 
-    args = parser.parse_args()
+    args = PARSER.parse_args()
     matplotlib.use("Agg")
-    windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.return_file, args.save_path)
+    windrose(args.epw_file, args.analysis_period, args.colour_map, args.bins, args.save_path)

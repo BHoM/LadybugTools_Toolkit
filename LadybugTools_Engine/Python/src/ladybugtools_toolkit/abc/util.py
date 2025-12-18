@@ -6,7 +6,7 @@ from pathlib import Path
 
 import requests
 
-from ..bhom.logging import CONSOLE_LOGGER
+from ..bhom.logger import CONSOLE_LOGGER
 
 
 def read_json_file(file_path: str) -> str:

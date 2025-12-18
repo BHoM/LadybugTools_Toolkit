@@ -38,15 +38,18 @@ using BH.Engine.Base;
 using System.Drawing;
 using BH.Engine.Serialiser;
 using System.Reflection;
+using System.Net.Http;
 
 namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
         bool m_executeSuccess = false;
+
         public override Output<List<object>, bool> Execute(IExecuteCommand command, ActionConfig actionConfig = null)
         {
             m_executeSuccess = false;
+
             Output<List<object>, bool> output = new Output<List<object>, bool>() { Item1 = new List<object>(), Item2 = false };
 
             List<object> temp = IRunCommand(command, actionConfig);

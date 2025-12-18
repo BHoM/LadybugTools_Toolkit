@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -36,40 +37,46 @@ namespace BH.Adapter.LadybugTools
     {
         private List<object> RunCommand(GetMaterialCommand command, ActionConfig actionConfig)
         {
-            LadybugConfig config;
-
-            if (actionConfig?.GetType() == typeof(LadybugConfig))
+            LadybugConfig config = (actionConfig as LadybugConfig) ?? new LadybugConfig()
             {
-                config = (LadybugConfig)actionConfig;
-                config.JsonFile = new FileSettings()
+                JsonFile = new FileSettings()
                 {
-                    FileName = $"LBTBHoM_Materials.json",
+                    FileName = "LBTBHoM_Materials.json",
                     Directory = Path.GetTempPath()
-                };
-            }
-            else
+                }
+            };
+
+            if (File.Exists(config.JsonFile.GetFullFileName()))
             {
-                config = new LadybugConfig()
-                {
-                    JsonFile = new FileSettings()
-                    {
-                        FileName = $"LBTBHoM_Materials.json",
-                        Directory = Path.GetTempPath()
-                    }
-                };
+                TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
+                if (timeSinceLastUpdate.Days >= config.CacheFileMaximumAge)
+                    File.Delete(config.JsonFile.GetFullFileName());
             }
 
-            TimeSpan timeSinceLastUpdate = DateTime.Now - File.GetCreationTime(config.JsonFile.GetFullFileName());
-            if (timeSinceLastUpdate.Days > config.CacheFileMaximumAge)
-                File.Delete(config.JsonFile.GetFullFileName());
-
+            // run the process
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "get_material.py");
+                List<string> args = new List<string>() { "--command", "get_material", "-j", config.JsonFile.GetFullFileName().Replace('\\', '/') };
 
-                string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
+                string result = "";
+                bool success;
 
-                Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+                if (m_httpClient != null)
+                {
+                    Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
+                    task.Wait();
+                    (result, success) = task.Result;
+                }
+                else
+                {
+                    //if the server was not running or some other error happened, try running the python directly.
+                    string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
+                    string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+
+                    result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+                }
+
+                File.WriteAllText(config.JsonFile.GetFullFileName(), result);
             }
 
             List<object> materialObjects = Pull(new FilterRequest(), actionConfig: config).ToList();

@@ -1,37 +1,59 @@
 """Method to wrap for conversion of HBJSON to GEM file."""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import json
+import random
+import sys
 import traceback
 from pathlib import Path
+import uuid
+from ..logger import CONSOLE_LOGGER
+import tempfile
+from honeybee.model import Model
+from honeybee_ies.writer import model_to_ies
 
+PARSER = argparse.ArgumentParser(
+    description=("Given an HBJSON file path, convert to a GEM file.")
+)
+PARSER.add_argument(
+    "-j",
+    "--hbjson_file",
+    help="The HBJSON file to convert to GEM.",
+    type=str,
+    required=True,
+)
 
-def main(hbjson_file: str) -> None:
+def hbjson_to_gem(hbjson_file: str) -> None:
     """Create an IES GEM file from an HBJSON file."""
     try:
-        from honeybee.model import Model
-        from honeybee_ies.writer import model_to_ies
+        hbjson_dict = None
 
-        hbjson_file_path = Path(hbjson_file)
-        model = Model.from_hbjson(hbjson_file_path.as_posix())
+        try:
+            file_path = Path(hbjson_file)
+            if file_path.is_file():
+                hbjson_dict = json.loads(file_path.read_text())
+        except:
+            CONSOLE_LOGGER.info("gem file provided was not a path, trying to read as json...")
+
+        if hbjson_dict is None:
+            hbjson_dict = json.loads(hbjson_file)
+
+        model = Model.from_dict(hbjson_dict)
+        name = str(uuid.uuid4()) + ".gem"
         model_to_ies(
-            model, folder=hbjson_file_path.parent.as_posix(), name=hbjson_file_path.stem
+            model, folder=tempfile.gettempdir, name=name
         )
 
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
+        gem_file = (Path(tempfile.gettempdir) / name)
+        gem = gem_file.read_text()
+        gem_file.unlink()
+
+        return gem
+    except Exception:
+        CONSOLE_LOGGER.error("Could not convert the hbjson file to a gem file.", exc_info=1)
+        return ""
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=("Given an HBJSON file path, convert to a GEM file.")
-    )
-    parser.add_argument(
-        "-j",
-        "--hbjson_file",
-        help="The HBJSON file to convert to GEM.",
-        type=str,
-        required=True,
-    )
-    args = parser.parse_args()
-    main(args.hbjson_file)
+    args = PARSER.parse_args()
+    hbjson_to_gem(args.hbjson_file)

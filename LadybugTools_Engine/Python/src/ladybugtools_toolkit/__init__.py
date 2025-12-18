@@ -15,8 +15,9 @@ HOME_DIRECTORY = (Path("C:/Users/") / getpass.getuser()).absolute()
 
 TOOLKIT_NAME = "LadybugTools_Toolkit"
 
-# override "HOME" in case IT has set this to something other than default
-os.environ["HOME"] = (Path("C:/Users/") / getpass.getuser()).as_posix()
+if os.name == "nt":
+    # override "HOME" in case this is set to something other than default for windows
+    os.environ["HOME"] = (Path("C:/Users/") / getpass.getuser()).as_posix()
 
 import python_toolkit
 # set plotting style for modules within this toolkit

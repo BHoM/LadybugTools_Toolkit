@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
@@ -21,9 +21,7 @@
  */
 
 using BH.Engine.Adapter;
-using BH.Engine.Base;
 using BH.oM.Adapter;
-using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
@@ -34,45 +32,42 @@ using System.Threading.Tasks;
 
 namespace BH.Adapter.LadybugTools
 {
-    public partial class LadybugToolsAdapter : BHoMAdapter
+    public partial class LadybugToolsAdapter
     {
-        private List<object> RunCommand(HeatPlotCommand command, ActionConfig actionConfig)
+        public List<object> RunCommand(GEMToHBJSONCommand command, ActionConfig actionConfig)
         {
             bool ignoreEPWCheck = false;
             if (actionConfig is LadybugConfig config)
                 ignoreEPWCheck = config.SkipEPWCheck;
 
-            if (command.EPWFile == null)
+            if (command.GEMFile == null)
             {
-                BH.Engine.Base.Compute.RecordError($"{nameof(command.EPWFile)} input cannot be null.");
+                BH.Engine.Base.Compute.RecordError($"{nameof(command.GEMFile)} input cannot be null.");
                 return null;
             }
 
-            if (!ignoreEPWCheck & !System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            if (!Directory.Exists(command.OutputDirectory))
             {
-                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile}' does not exist.");
+                BH.Engine.Base.Compute.RecordError("The given output directory does not exist.");
                 return null;
             }
 
-            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+            if (!System.IO.File.Exists(command.GEMFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.GEMFile.GetFullFileName()}' does not exist.");
+                return null;
+            }
 
-
-            //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
-            string colourMap = command.ColourMap;
-            if (colourMap.ColourMapValidity())
-                colourMap = colourMap.ToColourMap().FromColourMap();
-
-            // run the process
-            List<string> args = new List<string>() { "-command", "plot/heatmap", "-e", epwFile.Replace('\\', '/'), "-dtk", command.EPWKey.ToText(), "-cmap", colourMap, "-p", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "--command", "gem_to_hbjson", "-g", command.GEMFile.GetFullFileName().Replace('\\', '/') };
 
             string result = "";
-            bool success;
+            bool success = true;
 
             if (m_httpClient != null)
             {
                 Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
                 task.Wait();
-                (result, success) = task.Result;
+                (result, success) = task.Result; //in this case, result is the text of the csv file.
             }
             else
             {
@@ -80,21 +75,23 @@ namespace BH.Adapter.LadybugTools
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
             }
 
-            try
+            //as the file output is hard to verify by itself, check that no errors got output to stderr log
+            success &= !result.Contains("Traceback (most recent call last):");
+
+            if (!success)
             {
-                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
-                m_executeSuccess = true;
-                return new List<object>() { info };
-            }
-            catch (Exception ex)
-            {
-                BH.Engine.Base.Compute.RecordError(ex, $"An error occurred when deserialising the output from the script.\n Python output: {result}");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while converting the file to hbjson.\nPython output: {result}.");
                 return new List<object>();
             }
+
+            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.GEMFile.FileName) + ".hbjson");
+            File.WriteAllText(outputFileName, result);
+
+            m_executeSuccess = success;
+            return new List<object> { outputFileName };
         }
     }
 }

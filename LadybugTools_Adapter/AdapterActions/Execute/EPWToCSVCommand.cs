@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
  * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
  *
@@ -21,9 +21,7 @@
  */
 
 using BH.Engine.Adapter;
-using BH.Engine.Base;
 using BH.oM.Adapter;
-using BH.oM.Base;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
@@ -32,11 +30,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace BH.Adapter.LadybugTools
 {
     public partial class LadybugToolsAdapter : BHoMAdapter
     {
-        private List<object> RunCommand(HeatPlotCommand command, ActionConfig actionConfig)
+        private List<object> RunCommand(EPWToCSVCommand command, ActionConfig actionConfig)
         {
             bool ignoreEPWCheck = false;
             if (actionConfig is LadybugConfig config)
@@ -48,31 +47,28 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            if (!ignoreEPWCheck & !System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            if (!Directory.Exists(command.OutputDirectory))
             {
-                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile}' does not exist.");
+                BH.Engine.Base.Compute.RecordError("The given output directory does not exist.");
                 return null;
             }
 
-            string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
+            if (!ignoreEPWCheck & !System.IO.File.Exists(command.EPWFile.GetFullFileName()))
+            {
+                BH.Engine.Base.Compute.RecordError($"File '{command.EPWFile.GetFullFileName()}' does not exist.");
+                return null;
+            }
 
-
-            //check if the colourmap is valid for user warning, but run with input anyway as the map could be defined separately.
-            string colourMap = command.ColourMap;
-            if (colourMap.ColourMapValidity())
-                colourMap = colourMap.ToColourMap().FromColourMap();
-
-            // run the process
-            List<string> args = new List<string>() { "-command", "plot/heatmap", "-e", epwFile.Replace('\\', '/'), "-dtk", command.EPWKey.ToText(), "-cmap", colourMap, "-p", command.OutputLocation.Replace('\\', '/') };
+            List<string> args = new List<string>() { "--command", "epw_to_csv", "-e", command.EPWFile.GetFullFileName().Replace('\\', '/'), "-a", command.IncludeAdditionalCalculated.ToString() };
 
             string result = "";
-            bool success;
+            bool success = true;
 
             if (m_httpClient != null)
             {
                 Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
                 task.Wait();
-                (result, success) = task.Result;
+                (result, success) = task.Result; //in this case, result is the text of the csv file.
             }
             else
             {
@@ -80,21 +76,23 @@ namespace BH.Adapter.LadybugTools
                 string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
             }
 
-            try
+            //as the file output is hard to verify by itself, check that no errors got output to stderr log
+            success &= !result.Contains("Traceback (most recent call last):");
+
+            if (!success)
             {
-                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
-                m_executeSuccess = true;
-                return new List<object>() { info };
-            }
-            catch (Exception ex)
-            {
-                BH.Engine.Base.Compute.RecordError(ex, $"An error occurred when deserialising the output from the script.\n Python output: {result}");
+                BH.Engine.Base.Compute.RecordError($"An error occurred while converting the file to csv.\nPython output: {result}.");
                 return new List<object>();
             }
+
+            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.EPWFile.FileName) + ".csv");
+            File.WriteAllText(outputFileName, result);
+
+            m_executeSuccess = success;
+            return new List<object> { outputFileName };
         }
     }
 }

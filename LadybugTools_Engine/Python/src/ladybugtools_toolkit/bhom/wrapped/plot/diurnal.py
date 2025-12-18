@@ -2,21 +2,70 @@
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import json
+import sys
 import traceback
 from pathlib import Path
 import matplotlib
+from ladybug.epw import EPW, AnalysisPeriod
+from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
+from python_toolkit.plot.diurnal import diurnal as dnal
+from ladybug.datacollection import HourlyContinuousCollection
+from ladybugtools_toolkit.plot.utilities import figure_to_base64
+from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
+import matplotlib.pyplot as plt
+from ...logger import CONSOLE_LOGGER
 
-def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", color="#000000", title=None, period="monthly", save_path = None):
+PARSER = argparse.ArgumentParser(
+    description=(
+        "Given an EPW file path, extract a diurnal plot"
+    )
+)
+PARSER.add_argument(
+    "-e",
+    "--epw_file",
+    help="The EPW file to extract a diurnal plot from",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-dtk",
+    "--data_type_key",
+    help="Key in EPW data to create a plot from.",
+    type=str,
+    required=True,
+)
+PARSER.add_argument(
+    "-colour",
+    "--colour",
+    help="Colour of the line",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-t",
+    "--title",
+    help="Title that the plot will have",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-ap",
+    "--period",
+    help="Period that will be plotted on the diurnal plot",
+    type=str,
+    required=True,
+    )
+PARSER.add_argument(
+    "-p",
+    "--save_path",
+    help="Path where to save the output image.",
+    type=str,
+    required=False,
+    )
+
+def diurnal(epw_file, data_type_key="Dry Bulb Temperature", colour="#000000", title=None, period="monthly", save_path = None) -> str:
     try:
-        from ladybug.epw import EPW, AnalysisPeriod
-        from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-        from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
-        from python_toolkit.plot.diurnal import diurnal
-        from ladybug.datacollection import HourlyContinuousCollection
-        from ladybugtools_toolkit.plot.utilities import figure_to_base64
-        from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
-        import matplotlib.pyplot as plt
-        
         epw = EPW(epw_file)
         
         if data_type_key == "Wet Bulb Temperature":
@@ -24,7 +73,9 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
         else:
             coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
         
-        fig = diurnal(collection_to_series(coll),title=title, period=period, color=color).get_figure()
+        fig, ax = plt.subplots()
+
+        dnal(collection_to_series(coll), ax=ax, title=title, period=period, color=colour)
         return_dict = {"data": collection_metadata(coll)}
         
         if save_path == None or save_path == "":
@@ -34,70 +85,15 @@ def diurnal(epw_file, return_file: str, data_type_key="Dry Bulb Temperature", co
             fig.savefig(save_path, dpi=150, transparent=True)
             return_dict["figure"] = save_path
 
-        with open(return_file, "w") as rtn:
-            rtn.write(json.dumps(return_dict, default=str))
-           
-        print(return_file)
+        plt.close(fig)
 
-    except Exception as e:
-        print(traceback.format_exc())
+        return json.dumps(return_dict, default=str)
+
+    except Exception:
+        CONSOLE_LOGGER.error("Diurnal plot could not be created.", exc_info=1)
+        return ""
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given an EPW file path, extract a diurnal plot"
-        )
-    )
-    parser.add_argument(
-        "-e",
-        "--epw_file",
-        help="The EPW file to extract a diurnal plot from",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-dtk",
-        "--data_type_key",
-        help="Key in EPW data to create a plot from.",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "-c",
-        "--colour",
-        help="Colour of the line",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-t",
-        "--title",
-        help="Title that the plot will have",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-ap",
-        "--period",
-        help="Period that will be plotted on the diurnal plot",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-r",
-        "--return_file",
-        help="json file to write return data to.",
-        type=str,
-        required=True,
-        )
-    parser.add_argument(
-        "-p",
-        "--save_path",
-        help="Path where to save the output image.",
-        type=str,
-        required=False,
-        )
-
-    args = parser.parse_args()
+    args = PARSER.parse_args()
     matplotlib.use("Agg")
     diurnal(args.epw_file, args.return_file, args.data_type_key, args.colour, args.title, args.period, args.save_path)

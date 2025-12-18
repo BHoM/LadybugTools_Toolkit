@@ -163,7 +163,7 @@ namespace BH.Adapter.LadybugTools
         public static string FromSimulationResult(SimulationResult simulationResult)
         {
             string type = $"\"type\": \"SimulationResult\", ";
-            string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile.GetFullFileName().Replace("\\", "\\\\")}\", ";
+            string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile.GetFullFileName().Replace("\\", "/")}\", ";
             string groundMaterial = $"\"ground_material\": {FromBHoM(simulationResult.GroundMaterial)}, ";
             string shadeMaterial = $"\"shade_material\": {FromBHoM(simulationResult.ShadeMaterial)}, ";
             string name = $"\"identifier\": \"{simulationResult.Name}\"";

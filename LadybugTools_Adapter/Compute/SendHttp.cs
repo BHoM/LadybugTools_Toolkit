@@ -20,28 +20,37 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
-using BH.oM.Adapter;
-using BH.oM.Base.Attributes;
+
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace BH.oM.LadybugTools
+namespace BH.Adapter.LadybugTools
 {
-    [Description("The action config for the LadybugTools Adapter.")]
-    public class LadybugConfig : ActionConfig
+    public static partial class Compute
     {
-        [DisplayText("Json File")]
-        [Description("File settings for the json file to pull/push to.")]
-        public virtual FileSettings JsonFile { get; set; } = null;
+        public static async Task<(string, bool)> SendHttp(this HttpClient httpClient, List<string> args, string json = "")
+        {
+            string argString = "[\"" + args.Aggregate((a, b) => a + "\", \"" + b) + "\"]";
+            string start = $"{argString.Length};{json.Length};";
 
-        [DisplayText("Cache File Maximum Age")]
-        [Description("The amount of time (in days) any files that have been created by the adapter for caching purposes should exist before being removed/recreated. \n Files are only deleted/updated . \n Set to 0 to force a recompute of a simulation that has a stored cache.")]
-        public virtual int CacheFileMaximumAge { get; set; } = 30;
+            StringContent content = new StringContent(start + argString + json);
+            HttpResponseMessage message = await httpClient.PostAsync("", content).ConfigureAwait(false);
 
-        [DisplayText("Skip EPW Check")]
-        [Description("Skips EPW file checks to allow epw files that are not on a drive accessible to the adapter. In general this should be set to false.")]
-        public virtual bool SkipEPWCheck { get; set; } = false;
+            if (message.IsSuccessStatusCode)
+                return (Encoding.UTF8.GetString(await message.Content.ReadAsByteArrayAsync().ConfigureAwait(false)), true);
+
+            return ("", message.IsSuccessStatusCode);
+        }
     }
 }
