@@ -135,7 +135,7 @@ def test_wind_from_dataframe():
 def test_wind_from_csv():
     """."""
     assert isinstance(
-        Wind.from_csv(EPW_CSV_FILE),
+        Wind.from_csv(EPW_CSV_FILE, "Wind Speed (m/s)", "Wind Direction (degrees)"),
         Wind,
     )
 

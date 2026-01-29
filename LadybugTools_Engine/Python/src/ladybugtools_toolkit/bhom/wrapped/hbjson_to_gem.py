@@ -51,7 +51,7 @@ def hbjson_to_gem(hbjson_file: str) -> None:
         return gem
     except Exception:
         CONSOLE_LOGGER.error("Could not convert the hbjson file to a gem file.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 
 if __name__ == "__main__":

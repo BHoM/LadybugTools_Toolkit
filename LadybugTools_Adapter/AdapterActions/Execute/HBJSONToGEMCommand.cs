@@ -79,7 +79,7 @@ namespace BH.Adapter.LadybugTools
             }
 
             //as the file output is hard to verify by itself, check that no errors got output to stderr log
-            success &= !result.Contains("Traceback (most recent call last):");
+            success &= (!result.Contains("Traceback (most recent call last):") || result.Length == 0);
 
             if (!success)
             {
