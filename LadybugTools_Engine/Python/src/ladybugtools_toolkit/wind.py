@@ -218,10 +218,10 @@ class Wind:
         """
 
         if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"df must be of type {type(pd.DataFrame)}")
+            raise TypeError(f"df must be of type {pd.DataFrame}")
 
         if not isinstance(df.index, pd.DatetimeIndex):
-            raise ValueError(f"The DataFrame's index must be of type {type(pd.DatetimeIndex)}")
+            raise TypeError(f"The DataFrame's index must be of type {pd.DatetimeIndex}")
 
         # remove NaN values
         df.dropna(axis=0, how="any", inplace=True)
@@ -263,6 +263,7 @@ class Wind:
         """
         csv_path = Path(csv_path)
         df = pd.read_csv(csv_path, **kwargs)
+        df.index = pd.to_datetime(df.index)
         return cls.from_dataframe(
             df,
             wind_speed_column=wind_speed_column,
