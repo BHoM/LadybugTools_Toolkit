@@ -41,10 +41,10 @@ def hbjson_to_gem(hbjson_file: str) -> None:
         model = Model.from_dict(hbjson_dict)
         name = str(uuid.uuid4()) + ".gem"
         model_to_ies(
-            model, folder=tempfile.gettempdir, name=name
+            model, folder=tempfile.gettempdir(), name=name
         )
 
-        gem_file = (Path(tempfile.gettempdir) / name)
+        gem_file = (Path(tempfile.gettempdir()) / name)
         gem = gem_file.read_text()
         gem_file.unlink()
 
