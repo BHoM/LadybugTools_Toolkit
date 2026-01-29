@@ -87,7 +87,7 @@ namespace BH.Adapter.LadybugTools
                 return new List<object>();
             }
 
-            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.HBJSONFile.FileName) + ".hbjson");
+            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.HBJSONFile.FileName) + ".gem");
             File.WriteAllText(outputFileName, result);
 
             m_executeSuccess = success;

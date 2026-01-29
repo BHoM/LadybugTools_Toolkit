@@ -118,7 +118,7 @@ def test_wind_from_dataframe():
         Wind,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Wind.from_dataframe(
             df="not_a_dataframe",
             wind_speed_column="speed",
