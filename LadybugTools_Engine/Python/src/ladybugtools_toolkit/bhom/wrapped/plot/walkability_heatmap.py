@@ -64,7 +64,7 @@ def walkability_heatmap(input_json: str, save_path: str, epw_file:str = None) ->
     
     except Exception:
         CONSOLE_LOGGER.error("Walkability plot could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
 

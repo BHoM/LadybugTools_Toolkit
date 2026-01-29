@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import json
 import sys
+import traceback
 import matplotlib
 import matplotlib.figure
 from ladybug.epw import EPW
@@ -84,7 +85,7 @@ def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = 
             
     except Exception:
         CONSOLE_LOGGER.error("Heatmap could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 
 if __name__ == "__main__":

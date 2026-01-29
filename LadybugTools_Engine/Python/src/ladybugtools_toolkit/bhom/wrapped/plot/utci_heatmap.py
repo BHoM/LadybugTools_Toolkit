@@ -82,7 +82,7 @@ def utci_heatmap(input_json:str, save_path = None, epw_file:str = None) -> str:
         return json.dumps(return_dict, default=str)
     except Exception:
         CONSOLE_LOGGER.error("UTCI Heatmap could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
     args = PARSER.parse_args()

@@ -87,7 +87,7 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, sa
             
     except Exception:
         CONSOLE_LOGGER.error("Windrose could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 
 if __name__ == "__main__":

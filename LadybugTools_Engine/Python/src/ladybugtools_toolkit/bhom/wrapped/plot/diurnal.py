@@ -91,7 +91,7 @@ def diurnal(epw_file, data_type_key="Dry Bulb Temperature", colour="#000000", ti
 
     except Exception:
         CONSOLE_LOGGER.error("Diurnal plot could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
     args = PARSER.parse_args()

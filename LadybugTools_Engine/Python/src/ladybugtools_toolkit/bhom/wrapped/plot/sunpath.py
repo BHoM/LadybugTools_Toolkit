@@ -73,7 +73,7 @@ def sunpath(epw_file, analysis_period, size, save_path) -> str:
 
     except Exception:
         CONSOLE_LOGGER.error("Sunpath could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
 
