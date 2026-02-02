@@ -116,7 +116,7 @@ def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, an
     
     except Exception:
         CONSOLE_LOGGER.error("Solar Radiation plot could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
     args = PARSER.parse_args()

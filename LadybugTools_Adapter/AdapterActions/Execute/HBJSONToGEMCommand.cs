@@ -79,7 +79,7 @@ namespace BH.Adapter.LadybugTools
             }
 
             //as the file output is hard to verify by itself, check that no errors got output to stderr log
-            success &= !result.Contains("Traceback (most recent call last):");
+            success &= (!result.Contains("Traceback (most recent call last):") || result.Length == 0);
 
             if (!success)
             {
@@ -87,7 +87,7 @@ namespace BH.Adapter.LadybugTools
                 return new List<object>();
             }
 
-            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.HBJSONFile.FileName) + ".hbjson");
+            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.HBJSONFile.FileName) + ".gem");
             File.WriteAllText(outputFileName, result);
 
             m_executeSuccess = success;
