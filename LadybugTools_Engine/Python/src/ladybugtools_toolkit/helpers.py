@@ -1538,7 +1538,7 @@ def month_hour_binned_series(
     return df
 
 
-def sunrise_sunset(location: Location) -> pd.DataFrame():
+def sunrise_sunset(location: Location) -> pd.DataFrame:
     """Calculate sunrise and sunset times for a given location and year. Includes
     civil, nautical and astronomical twilight.
 
@@ -1602,3 +1602,19 @@ def sunrise_sunset(location: Location) -> pd.DataFrame():
             "astronomical twilight end",
         ]
     ]
+
+class _NullWriter:
+    """Suppress print output from methods within this context manager.
+
+    Example:
+    >>> with contextlib.redirect_stdout(_NullWriter()):
+    >>>     print("This will not be printed to the console.")
+    This is useful for suppressing output from methods that use print statements,
+
+    """
+
+    def write(self, _):
+        pass
+
+    def flush(self):
+        pass

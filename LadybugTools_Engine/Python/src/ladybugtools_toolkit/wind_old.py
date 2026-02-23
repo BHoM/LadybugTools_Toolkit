@@ -73,7 +73,7 @@ class Wind:
     source: str = None
 
     def __post_init__(self):
-        CONSOLE_LOGGER.warning("This version of the wind class is ")
+        CONSOLE_LOGGER.warning("DeprecationWarning: This version of the wind class is deprecated in favour of the new Wind class, and may provide incorrect/incompatible results. Please use `from ladybugtools_toolkit.wind import Wind` in future")
         if self.height_above_ground < 0.1:
             raise ValueError("Height above ground must be >= 0.1m.")
 

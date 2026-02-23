@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Iterator, Optional, Tuple, Union
+from typing import Any, Generator, Iterator, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ from honeybee.shade import Shade
 from ladybug.dt import Date
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
 from ladybug.sunpath import Location
-from ladybug.windrose import WindRose
+from ladybug.windrose import WindRose #TODO
 from ladybug_geometry.geometry3d import Point3D, Ray3D, Vector3D
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
@@ -24,32 +24,38 @@ from matplotlib.colors import Colormap, ListedColormap
 from matplotlib.patches import Patch, Rectangle
 from matplotlib.ticker import PercentFormatter
 
-from ..convert.to_color import to_color
+from ..convert.to_colour import to_colour
 from ..convert.to_ladybug import to_ladybug
 from ..convert.to_pandas import to_pandas
-from ..honeybee_energy_ext.util import get_schedule_as_data_collection
-from ..ladybug_ext.defaults import DefaultAnalysisPeriod
-from ..ladybug_ext.location import (
+from ..honeybee_energy_extension.util import get_schedule_as_data_collection #TODO
+from ..ladybug_extension.analysisperiod import DefaultAnalysisPeriod
+
+from ..ladybug_extension.location import (
     average_location,
     location_to_pytz_fixed_offset,
     location_to_timezone,
 )
-from ..ladybug_ext.util import (
+
+from ..ladybug_extension.analysisperiod import (
     analysis_period_to_string,
-    metadata_dict_to_str,
-    metadata_str_to_dict,
+    metadata_dict_to_str, #TODO
+    metadata_str_to_dict, #TODO
 )
-from ..ladybug_geometry_ext.util import (
-    azimuth_to_vector,
+
+from ..helpers import(
     cardinality,
+    angle_to_vector as azimuth_to_vector,
     circular_weighted_mean,
+)
+
+from ..ladybug_geometry_extension.util import (
     vector_to_azimuth_altitude,
 )
-from ..scrape_weather import OpenMeteoVariable, openmeteo
-from ..util import contrasting_color
+
+from ..scrape_weather import OpenMeteoVariable, openmeteo #TODO
+from ..plot.utilities import contrasting_color
 from .terrain import WindTerrainType
 from .util import direction_bin_edges
-
 
 @dataclass
 class Wind:
@@ -75,12 +81,13 @@ class Wind:
     # NOTE - Conversions happen in class methods.
     # NOTE - Validation happens at instantiation.
 
-    location: Location
+    location: Location #TODO: change reference of self.location.source to self.source
     datetimes: pd.DatetimeIndex
     wind_speed: list[float]
     wind_direction: list[float]
     height_above_ground: float
     terrain_type: WindTerrainType = WindTerrainType.COUNTRY
+    source: str
 
     # region: DUNDER METHODS
 
@@ -88,12 +95,12 @@ class Wind:
         """Check for validation of the inputs."""
         # location checks
         if not isinstance(self.location, Location):
-            raise ValueError("location must be a ladybug Location object.")
-        if self.location.source is None:
+            raise TypeError("location must be a ladybug Location object.")
+        if self.source is None:
             warnings.warn(
-                'The source field of the Location input is None. This means that things are a bit ambiguous! A default value of "UnknownSource" has been added.'
+                'The source input is None. This means that things are a bit ambiguous! A default value of "UnknownSource" has been added.'
             )
-            self.location.source = "UnknownSource"
+            self.source = "UnknownSource"
 
         # datetimes validation
         self.datetimes = pd.DatetimeIndex(self.datetimes, freq="infer")
@@ -113,7 +120,7 @@ class Wind:
 
         # height above ground validation
         if not isinstance(self.height_above_ground, (int, float)):
-            raise ValueError("height_above_ground must be a number.")
+            raise TypeError("height_above_ground must be a number.")
         if self.height_above_ground < 0.1:
             raise ValueError(
                 "height_above_ground must be greater than or equal to 0.1."
@@ -126,7 +133,7 @@ class Wind:
                 "terrain_type was not provided. Defaulting to TerrainType.COUNTRY."
             )
         if not isinstance(self.terrain_type, WindTerrainType):
-            raise ValueError("terrain_type must be a TerrainType object.")
+            raise TypeError("terrain_type must be a TerrainType object.")
 
         # data validation
         array_names = [
@@ -141,7 +148,7 @@ class Wind:
             if not all(
                 isinstance(i, (int, float, np.float64)) for i in getattr(self, name)
             ):
-                raise ValueError(f"{name} must be a list of numeric values.")
+                raise TypeError(f"{name} must be a list of numeric values.")
             if any(np.isnan(getattr(self, name))):
                 raise ValueError(f"{name} cannot contain null values.")
         if any(i < 0 for i in self.wind_speed):
@@ -182,15 +189,9 @@ class Wind:
             and self.terrain_type == other.terrain_type
         )
 
-    def __iter__(self) -> Iterator[tuple[pd.Timestamp, float, float]]:
-        return (
-            (
-                self.datetimes[i],
-                self.wind_speed[i],
-                self.wind_direction[i],
-            )
-            for i in range(len(self))
-        )
+    def __iter__(self) -> Generator[tuple[pd.Timestamp, float, float]]:
+        for i in range(len(self)):
+            yield (self.datetimes[i], self.wind_speed[i], self.wind_direction[i])
 
     def __getitem__(self, idx: int) -> dict[str, Union[datetime, float]]:
         return {
@@ -213,6 +214,11 @@ class Wind:
     # endregion: DUNDER METHODS
 
     # region: PROPERTIES
+
+    @property
+    def source(self) -> str:
+        """Return the source for this object."""
+        return self.location.source
 
     @property
     def _metadata_str(self) -> str:
@@ -319,16 +325,10 @@ class Wind:
         )
 
     @property
-    def uv(self) -> list[tuple[float, float]]:
-        """Return the U and V wind components in m/s."""
-        uvs = []
-        for wd, ws in zip(*[self.wind_direction, self.wind_speed]):
-            if ws == 0:
-                uvs.append((0, 0))
-            else:
-                u, v = azimuth_to_vector(wd)
-                uvs.append((float(u * ws), float(v * ws)))
-        return uvs
+    def uv(self) -> pd.DataFrame:
+        """Return the U and V wind components in m/s as a pd.DataFrame."""
+        u, v = azimuth_to_vector(self.wind_direction)
+        return pd.concat([u * self.wind_speed_series, v * self.wind_speed_series], axis=1, keys=["u", "v"])
 
     # endregion: PROPERTIES
 
@@ -336,21 +336,19 @@ class Wind:
 
     @classmethod
     def from_epw(
-        cls, epw: Union[Path, EPW], terrain_type: WindTerrainType = WindTerrainType.COUNTRY
+        cls, epw: Union[Path, str, EPW], terrain_type: WindTerrainType = WindTerrainType.COUNTRY
     ) -> "Wind":
         """Create a Wind object from an EPW file or object.
 
         Args:
-            epw (Union[Path, EPW]):
+            epw (Union[Path, str, EPW]):
                 The path to the EPW file, or an EPW object.
 
         """
         if isinstance(epw, (str, Path)):
             epw = EPW(epw)
 
-        # modify location to state the EPW file in the source field
         location = epw.location
-        location.source = f"{Path(epw.file_path).name}"  # type: ignore
 
         # obtain the datetimes
         datetimes = to_pandas(epw.dry_bulb_temperature.header.analysis_period)
@@ -365,6 +363,7 @@ class Wind:
             wind_direction=epw.wind_direction.values,
             height_above_ground=10,
             terrain_type=terrain_type,
+            source=f"{Path(epw.file_path).name}"
         )
 
     def to_dict(self) -> dict:
@@ -377,6 +376,7 @@ class Wind:
             "wind_direction": self.wind_direction,
             "height_above_ground": self.height_above_ground,
             "terrain_type": self.terrain_type.name,
+            "source": self.source,
         }
 
     @classmethod
@@ -389,9 +389,10 @@ class Wind:
             location=Location.from_dict(d["location"]),
             datetimes=pd.to_datetime(d["datetimes"]),
             wind_speed=d["wind_speed"],
-            wind_direction=d["wind_direction"],  #
+            wind_direction=d["wind_direction"],
             height_above_ground=d["height_above_ground"],
             terrain_type=WindTerrainType[d["terrain_type"]],  # type: ignore[call-arg]
+            source = d.pop(["source"], "Unknown Python Dict"),
         )
 
     def to_json(self) -> str:
@@ -407,9 +408,12 @@ class Wind:
     def from_dataframe(
         cls,
         df: pd.DataFrame,
+        wind_speed_column: str,
+        wind_direction_column: str,
         location: Optional[Location] = None,
         terrain_type: Optional[WindTerrainType] = None,
         height_above_ground: Optional[float] = None,
+        source: str = "DataFrame",
     ) -> "Wind":
         """Create this object from a DataFrame.
 
@@ -429,51 +433,35 @@ class Wind:
                 or the height from the dataframe metadata if present.
 
         """
+        
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError(f"df must be of type {pd.DataFrame}")
+
         if not isinstance(df.index, pd.DatetimeIndex):
-            raise ValueError("The DataFrame's index must be of type pd.DatetimeIndex.")
+            raise TypeError("The DataFrame's index must be of type pd.DatetimeIndex.")
+
         if not isinstance(location, Location):
-            raise ValueError("location must be a ladybug Location object.")
-        if not isinstance(df.columns, pd.MultiIndex):
-            raise ValueError("The DataFrame's columns must be of type pd.MultiIndex.")
+            raise TypeError("location must be a ladybug Location object.")
 
-        ws_unit = "m/s"
-        ws_name = "Wind Speed"
-        wd_unit = "degrees"
-        wd_name = "Wind Direction"
-        for name, unit in zip(*[[ws_name, wd_name], [ws_unit, wd_unit]]):
-            if name not in df.columns.get_level_values(0):
-                raise ValueError(f"{name} not found in DataFrame columns.")
-            if df[name].columns.get_level_values(0)[0] != unit:
-                raise ValueError(
-                    f"{name} column does not have the correct unit ({unit})."
-                )
+        # remove NaN values
+        df.dropna(axis=0, how="any", inplace=True)
 
-        metadata = []
-        # get the direct normal radiation
-        ws_series: pd.Series = df[ws_name][ws_unit].squeeze()
-        metadata.append(ws_series.name)
-        # get the diffuse horizontal radiation
-        wd_series: pd.Series = df[wd_name][wd_unit].squeeze()
-        metadata.append(wd_series.name)
+        # remove duplicates in input dataframe
+        df = df.loc[~df.index.duplicated()]
+
+        ws_series:pd.Series = df[wind_speed_column]
+        wd_series:pd.Series = df[wind_direction_column]
 
         loc_copy = location.duplicate()
-        try:
-            d = metadata_str_to_dict(metadata[0])
-            loc_copy.source = d["source"]
-            terrain_type = WindTerrainType[d["terrain_type"]]
-            height_above_ground = d["height_above_ground"]
-        except Exception:
-            loc_copy.source = "pd.DataFrame"
-            terrain_type = WindTerrainType.COUNTRY
-            height_above_ground = 10
 
         return cls(
             location=loc_copy,
             datetimes=df.index,
-            wind_speed=ws_series.tolist(),
-            wind_direction=wd_series.tolist(),
+            wind_speed=ws_series.values,
+            wind_direction=wd_series.values,
             height_above_ground=height_above_ground,
             terrain_type=terrain_type,
+            source = source,
         )
 
     @classmethod
@@ -481,7 +469,7 @@ class Wind:
         """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
         # validation
         if not all(isinstance(i, Wind) for i in objects):
-            raise ValueError("objects must be a list of Wind objects.")
+            raise TypeError("objects must be a list of Wind objects.")
         if len(objects) == 0:
             raise ValueError("objects cannot be empty.")
         if len(objects) == 1:
@@ -501,6 +489,13 @@ class Wind:
 
         # create average location
         avg_location = average_location([i.location for i in objects], weights=weights)
+        
+        source = "|".join(
+            [
+                str(w.source) if w.source not in ["", "-", None] else "NoSource"
+                for w in objects
+            ]
+        )
 
         # align collections so that intersection only is created
         df_ws = pd.concat([i.wind_speed_series for i in objects], axis=1).dropna()
@@ -531,6 +526,7 @@ class Wind:
             height_above_ground=avg_height_above_ground,
             location=avg_location,
             terrain_type=terrain_type,
+            source=source
         )
 
     @classmethod
@@ -542,6 +538,7 @@ class Wind:
         datetimes: list[datetime],
         height_above_ground: float = 10,
         terrain_type: WindTerrainType = WindTerrainType.COUNTRY,
+        source: str = "Custom U, V wind components",
     ) -> "Wind":
         """Create a Wind object from a set of U, V wind components.
 
@@ -582,6 +579,7 @@ class Wind:
             height_above_ground=height_above_ground,
             location=location,
             terrain_type=terrain_type,
+            source=source,
         )
 
     @classmethod
@@ -608,7 +606,6 @@ class Wind:
 
         # modify location to state the Openmeteo file in the source field
         loc = location.duplicate()
-        loc.source = f"{metadata_str_to_dict(wd.name[1])['source']} [{datetimes.min():%Y-%m-%d}-{datetimes.max():%Y-%m-%d}, n={len(ws):,}]"
 
         return cls(
             location=loc,
@@ -617,6 +614,7 @@ class Wind:
             wind_direction=wd.values.tolist(),
             height_above_ground=10,
             terrain_type=terrain_type,
+            source=f"{metadata_str_to_dict(wd.name[1])['source']} [{datetimes.min():%Y-%m-%d}-{datetimes.max():%Y-%m-%d}, n={len(ws):,}]"
         )
 
     # endregion: CLASS METHODS
@@ -640,7 +638,7 @@ class Wind:
 
         # validations
         if not all(isinstance(i, bool) for i in mask):
-            raise ValueError("mask must be a list of booleans.")
+            raise TypeError("mask must be a list of booleans.")
         if len(mask) != len(self):
             raise ValueError(
                 "The length of the boolean mask must match the length of the current object."
@@ -1336,7 +1334,7 @@ class Wind:
         if terrain_types is None:
             terrain_types = tuple([i for i in WindTerrainType])
         if not all(isinstance(tt, WindTerrainType) for tt in terrain_types):
-            raise ValueError("terrain_types must be a list of TerrainType objects.")
+            raise TypeError("terrain_types must be a list of TerrainType objects.")
 
         if ax is None:
             ax = plt.gca()
@@ -1599,7 +1597,7 @@ class Wind:
         # obtain colors
         if not isinstance(cmap, Colormap):
             cmap = plt.get_cmap(cmap)
-        colors = [to_color(cmap(i), fmt="hex") for i in np.linspace(0, 1, len(binned.columns))]
+        colors = [to_colour(cmap(i), fmt="hex") for i in np.linspace(0, 1, len(binned.columns))]
 
         # create the patches
         theta_width = np.deg2rad(360 / directions)
@@ -1990,7 +1988,7 @@ class Wind:
 
         # validate inputs
         if not all(isinstance(i, Shade) for i in shades):
-            raise ValueError("shades must be an iterable of ladybug Shade objects.")
+            raise TypeError("shades must be an iterable of ladybug Shade objects.")
 
         # create shade transmissivities
         shade_transmissivities = []
