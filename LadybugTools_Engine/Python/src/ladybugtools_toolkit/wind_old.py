@@ -26,6 +26,7 @@ from scipy.stats import weibull_min
 
 from .categorical.categories import BEAUFORT_CATEGORIES
 from .helpers import (
+    CONSOLE_LOGGER,
     OpenMeteoVariable,
     angle_from_north,
     angle_to_vector,
@@ -72,6 +73,7 @@ class Wind:
     source: str = None
 
     def __post_init__(self):
+        CONSOLE_LOGGER.warning("This version of the wind class is ")
         if self.height_above_ground < 0.1:
             raise ValueError("Height above ground must be >= 0.1m.")
 
