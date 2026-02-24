@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Generator, Iterator, Optional, Tuple, Union
+from typing import Any, Generator, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -56,6 +56,7 @@ from ..scrape_weather import OpenMeteoVariable, openmeteo #TODO
 from ..plot.utilities import contrasting_color
 from .terrain import WindTerrainType
 from .util import direction_bin_edges
+from ..bhom.logger import CONSOLE_LOGGER
 
 @dataclass
 class Wind:
@@ -81,7 +82,7 @@ class Wind:
     # NOTE - Conversions happen in class methods.
     # NOTE - Validation happens at instantiation.
 
-    location: Location #TODO: change reference of self.location.source to self.source
+    location: Location
     datetimes: pd.DatetimeIndex
     wind_speed: list[float]
     wind_direction: list[float]
@@ -97,7 +98,7 @@ class Wind:
         if not isinstance(self.location, Location):
             raise TypeError("location must be a ladybug Location object.")
         if self.source is None:
-            warnings.warn(
+            CONSOLE_LOGGER.warning(
                 'The source input is None. This means that things are a bit ambiguous! A default value of "UnknownSource" has been added.'
             )
             self.source = "UnknownSource"
@@ -110,7 +111,7 @@ class Wind:
         if any(self.datetimes.isna()):
             raise ValueError("datetimes cannot contain null values.")
         if any(np.diff(self.datetimes) < timedelta(0)):
-            raise ValueError("datetimes must be in increasing order.")
+            raise ValueError("datetimes must be in increasing order.") #why not just take in the current order and reorder it in a dataframe?
 
         # timezone validation
         if self.datetimes[0].tzinfo is None:
@@ -129,7 +130,7 @@ class Wind:
         # terrain type validation
         if self.terrain_type is None:
             self.terrain_type = WindTerrainType.COUNTRY
-            warnings.warn(
+            CONSOLE_LOGGER.warning(
                 "terrain_type was not provided. Defaulting to TerrainType.COUNTRY."
             )
         if not isinstance(self.terrain_type, WindTerrainType):
@@ -162,7 +163,7 @@ class Wind:
         return len(self.datetimes)
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__} data from {self.location.source}"
+        return f"{self.__class__.__name__} data from {self.source}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -209,22 +210,12 @@ class Wind:
             wind_direction=copy.copy(self.wind_direction),
             height_above_ground=self.height_above_ground,
             terrain_type=self.terrain_type,
+            source=self.source
         )
 
     # endregion: DUNDER METHODS
 
     # region: PROPERTIES
-
-    @property
-    def source(self) -> str:
-        """Return the source for this object."""
-        return self.location.source
-
-    @property
-    def _metadata_str(self) -> str:
-        """Return the metadata for this object as a string."""
-        return metadata_dict_to_str({"source": self.location.source, "location": str(self.location), "time-zone": self.location.time_zone, "terrain_type": self.terrain_type.name, "height_above_ground": self.height_above_ground})
-
 
     @property
     def metadata(self) -> dict[str, Any]:
@@ -241,11 +232,11 @@ class Wind:
 
     @property
     def start_datetime(self) -> date:
-        return min(self.datetimes)
+        return self.datetimes[0]
 
     @property
     def end_datetime(self) -> date:
-        return max(self.datetimes)
+        return self.datetimes[len(self)]
 
     @property
     def lb_datetimes(self) -> list[date]:
@@ -449,23 +440,23 @@ class Wind:
         # remove duplicates in input dataframe
         df = df.loc[~df.index.duplicated()]
 
-        ws_series:pd.Series = df[wind_speed_column]
-        wd_series:pd.Series = df[wind_direction_column]
+        wind_speeds:pd.Series = df[wind_speed_column]
+        wind_directions:pd.Series = df[wind_direction_column]
 
         loc_copy = location.duplicate()
 
         return cls(
             location=loc_copy,
             datetimes=df.index,
-            wind_speed=ws_series.values,
-            wind_direction=wd_series.values,
+            wind_speed=wind_speeds.values,
+            wind_direction=wind_directions.values,
             height_above_ground=height_above_ground,
             terrain_type=terrain_type,
             source = source,
         )
 
     @classmethod
-    def from_average(cls, objects: list["Wind"], weights: list[float] = None) -> "Wind":
+    def from_average(cls, objects: List["Wind"], weights: List[float] = None) -> "Wind":
         """Create an average Wind object from a set of input Wind objects, with optional weighting for each."""
         # validation
         if not all(isinstance(i, Wind) for i in objects):
@@ -478,7 +469,7 @@ class Wind:
         # check datetimes are the same
         for obj in objects:
             if not all(obj.datetimes == objects[0].datetimes):
-                raise ValueError("All objects must share the same datetimes.")
+                raise IndexError("All objects must share the same datetimes.")
 
         # create default weightings if None
         if weights is None:
@@ -488,7 +479,7 @@ class Wind:
                 raise ValueError("weights must total 1.")
 
         # create average location
-        avg_location = average_location([i.location for i in objects], weights=weights)
+        average_location = average_location([w.location for w in objects], weights=weights)
         
         source = "|".join(
             [
@@ -498,33 +489,33 @@ class Wind:
         )
 
         # align collections so that intersection only is created
-        df_ws = pd.concat([i.wind_speed_series for i in objects], axis=1).dropna()
-        df_wd = pd.concat([i.wind_direction_series for i in objects], axis=1).dropna()
+        df_wind_speeds = pd.concat([w.wind_speed_series for w in objects], axis=1).dropna()
+        df_wind_directions = pd.concat([w.wind_direction_series for w in objects], axis=1).dropna()
 
         # construct the weighted means
-        wd_avg = np.array(
-            [circular_weighted_mean(i, weights) for _, i in df_wd.iterrows()]
+        wind_direction_averages = np.array(
+            [circular_weighted_mean(direction, weights) for _, direction in df_wind_directions.iterrows()]
         )
-        ws_avg = np.average(df_ws, axis=1, weights=weights)
+        wind_speed_averages = np.average(df_wind_speeds, axis=1, weights=weights)
 
         # construct the avg height above ground
-        avg_height_above_ground = np.average(
-            [i.height_above_ground for i in objects], weights=weights
+        average_height_above_ground = np.average(
+            [w.height_above_ground for w in objects], weights=weights
         )
 
         # construct the new terrain type, based on the average of the input objects
-        avg_roughness_length = np.average(
-            [i.terrain_type.roughness_length for i in objects], weights=weights
+        average_roughness_length = np.average(
+            [w.terrain_type.roughness_length for w in objects], weights=weights
         )
-        terrain_type = WindTerrainType.from_roughness_length(avg_roughness_length)
+        terrain_type = WindTerrainType.from_roughness_length(average_roughness_length)
 
         # return the new averaged object
         return cls(
-            wind_speed=ws_avg.tolist(),
-            wind_direction=wd_avg.tolist(),
+            wind_speed=wind_speed_averages.tolist(),
+            wind_direction=wind_direction_averages.tolist(),
             datetimes=objects[0].datetimes,
-            height_above_ground=avg_height_above_ground,
-            location=avg_location,
+            height_above_ground=average_height_above_ground,
+            location=average_location,
             terrain_type=terrain_type,
             source=source
         )
@@ -570,7 +561,7 @@ class Wind:
 
         if any(wind_direction[wind_speed == 0] == 90):
             warning_message = "Some input vectors have velocity of 0. This is not bad, but can mean directions may be misreported."
-            warnings.warn(warning_message, UserWarning)
+            CONSOLE_LOGGER.warning(warning_message, UserWarning)
 
         return cls(
             wind_speed=wind_speed.tolist(),
@@ -601,20 +592,20 @@ class Wind:
             ),
         )
         datetimes: pd.DatetimeIndex = df.index
-        ws: pd.Series = df["Wind Speed"].squeeze()  # type: ignore
-        wd: pd.Series = df["Wind Direction"].squeeze()  # type: ignore
+        wind_speeds: pd.Series = df["Wind Speed"].squeeze()  # type: ignore
+        wind_directions: pd.Series = df["Wind Direction"].squeeze()  # type: ignore
 
         # modify location to state the Openmeteo file in the source field
-        loc = location.duplicate()
+        location = location.duplicate()
 
         return cls(
-            location=loc,
+            location=location,
             datetimes=datetimes,
-            wind_speed=ws.values.tolist(),
-            wind_direction=wd.values.tolist(),
+            wind_speed=wind_speeds.values.tolist(),
+            wind_direction=wind_directions.values.tolist(),
             height_above_ground=10,
             terrain_type=terrain_type,
-            source=f"{metadata_str_to_dict(wd.name[1])['source']} [{datetimes.min():%Y-%m-%d}-{datetimes.max():%Y-%m-%d}, n={len(ws):,}]"
+            source=f"{metadata_str_to_dict(wind_directions.name[1])['source']} [{datetimes.min():%Y-%m-%d}-{datetimes.max():%Y-%m-%d}, n={len(wind_speeds):,}]"
         )
 
     # endregion: CLASS METHODS
@@ -649,7 +640,6 @@ class Wind:
             return self
 
         loc = self.location.duplicate()
-        loc.source = f"{self.location.source} (filtered)"
 
         return Wind(
             location=loc,
@@ -658,6 +648,7 @@ class Wind:
             wind_direction=[i for i, j in zip(*[self.wind_direction, mask]) if j],
             height_above_ground=self.height_above_ground,
             terrain_type=self.terrain_type,
+            source=f"{self.source} (filtered)"
         )
 
     def filter_by_analysis_period(
@@ -676,25 +667,24 @@ class Wind:
 
         """
         mask = []
-        for n, i in enumerate(self.lb_datetimes):
-            mask.append(i in analysis_period.datetimes)
+        for date in enumerate(self.lb_datetimes):
+            mask.append(date in analysis_period.datetimes)
 
         # create new data
-        loc = self.location.duplicate()
-        loc.source = (
-            f"{self.location.source} (filtered to {analysis_period_to_string(analysis_period)})",
-        )
-        datetimes = [i for i, j in zip(*[self.datetimes, mask]) if j]
-        wd = [i for i, j in zip(*[self.wind_direction, mask]) if j]
-        ws = [i for i, j in zip(*[self.wind_speed, mask]) if j]
+        location = self.location.duplicate()
+
+        datetimes = [datetime for datetime, include in zip(*[self.datetimes, mask]) if include]
+        wind_directions = [value for value, include in zip(*[self.wind_direction, mask]) if include]
+        wind_directions = [value for value, include in zip(*[self.wind_speed, mask]) if include]
 
         return Wind(
-            location=loc,
+            location=location,
             datetimes=datetimes,
-            wind_direction=wd,
-            wind_speed=ws,
+            wind_direction=wind_directions,
+            wind_speed=wind_directions,
             height_above_ground=self.height_above_ground,
             terrain_type=self.terrain_type,
+            source=f"{self.source} (filtered to {analysis_period_to_string(analysis_period)})"
         )
 
     def filter_by_time(
@@ -759,19 +749,20 @@ class Wind:
         mask = np.all([year_mask, month_mask, day_mask, hour_mask], axis=0)
 
         # create new data
-        loc = self.location.duplicate()
-        loc.source = f"{self.location.source} (filtered by {filtered_by})"
-        datetimes = [i for i, j in zip(*[self.datetimes, mask]) if j]
-        ws = [i for i, j in zip(*[self.wind_speed, mask]) if j]
-        wd = [i for i, j in zip(*[self.wind_direction, mask]) if j]
+        location = self.location.duplicate()
+
+        datetimes = [datetime for datetime, include in zip(*[self.datetimes, mask]) if include]
+        wind_speeds = [value for value, include in zip(*[self.wind_speed, mask]) if include]
+        wind_directions = [value for value, include in zip(*[self.wind_direction, mask]) if include]
 
         return Wind(
-            location=loc,
+            location=location,
             datetimes=datetimes,
-            wind_speed=ws,
-            wind_direction=wd,
+            wind_speed=wind_speeds,
+            wind_direction=wind_directions,
             height_above_ground=self.height_above_ground,
             terrain_type=self.terrain_type,
+            source=f"{self.source} (filtered by {filtered_by})"
         )
 
     def filter_by_direction(
@@ -814,17 +805,17 @@ class Wind:
         if (left_angle == right_angle) or (left_angle == 360 and right_angle == 0):
             raise ValueError("Angle limits cannot be identical.")
 
-        wd = self.wind_direction_series.values
+        wind_direction_values = self.wind_direction_series.values
 
         if include_right:
-            right_mask = wd <= right_angle
+            right_mask = wind_direction_values <= right_angle
         else:
-            right_mask = wd < right_angle
+            right_mask = wind_direction_values < right_angle
 
         if include_left:
-            left_mask = wd >= left_angle
+            left_mask = wind_direction_values >= left_angle
         else:
-            left_mask = wd > left_angle
+            left_mask = wind_direction_values > left_angle
 
         if left_angle > right_angle:
             mask = left_mask | right_mask
@@ -832,19 +823,20 @@ class Wind:
             mask = left_mask & right_mask
 
         # create new data
-        loc = self.location.duplicate()
-        loc.source = f"{self.location.source} (filtered by direction {'[' if include_left else '('}{left_angle}°-{right_angle}°{']' if include_right else ')'})"
-        datetimes = [i for i, j in zip(*[self.datetimes, mask]) if j]
-        ws = [i for i, j in zip(*[self.wind_speed, mask]) if j]
-        wd = [i for i, j in zip(*[self.wind_direction, mask]) if j]
+        location = self.location.duplicate()
+
+        datetimes = [datetime for datetime, include in zip(*[self.datetimes, mask]) if include]
+        wind_speed_values = [value for value, include in zip(*[self.wind_speed, mask]) if include]
+        wind_direction_values = [value for value, include in zip(*[self.wind_direction, mask]) if include]
 
         return Wind(
-            location=loc,
+            location=location,
             datetimes=datetimes,
-            wind_speed=ws,
-            wind_direction=wd,
+            wind_speed=wind_speed_values,
+            wind_direction=wind_direction_values,
             height_above_ground=self.height_above_ground,
             terrain_type=self.terrain_type,
+            source=f"{self.source} (filtered by direction {'[' if include_left else '('}{left_angle}°-{right_angle}°{']' if include_right else ')'})"
         )
 
     def filter_by_speed(
@@ -883,34 +875,35 @@ class Wind:
         if min_speed == 0 and np.isinf(max_speed):
             return self
 
-        ws = self.wind_speed_series.values
+        wind_speed_values = self.wind_speed_series.values
         if include_right:
-            right_mask = ws <= max_speed
+            right_mask = wind_speed_values <= max_speed
         else:
-            right_mask = ws < max_speed
+            right_mask = wind_speed_values < max_speed
 
         if include_left:
-            left_mask = ws >= min_speed
+            left_mask = wind_speed_values >= min_speed
         else:
-            left_mask = ws > min_speed
+            left_mask = wind_speed_values > min_speed
 
         mask = left_mask & right_mask
 
         # create new data
-        loc = self.location.duplicate()
+        location = self.location.duplicate()
+
         speed_range = f"{'[' if include_left else '('}{min_speed}m/s-{max_speed}m/s{']' if include_right else ')'}"
-        loc.source = f"{self.location.source} (filtered by speed {speed_range})"
-        datetimes = [i for i, j in zip(*[self.datetimes, mask]) if j]
-        ws = [i for i, j in zip(*[self.wind_speed, mask]) if j]
-        wd = [i for i, j in zip(*[self.wind_direction, mask]) if j]
+        datetimes = [datetime for datetime, include in zip(*[self.datetimes, mask]) if include]
+        wind_speed_values = [value for value, include in zip(*[self.wind_speed, mask]) if include]
+        wind_direction_values = [value for value, include in zip(*[self.wind_direction, mask]) if include]
 
         return Wind(
-            location=loc,
+            location=location,
             datetimes=datetimes,
-            wind_speed=ws,
-            wind_direction=wd,
+            wind_speed=wind_speed_values,
+            wind_direction=wind_direction_values,
             height_above_ground=self.height_above_ground,
             terrain_type=self.terrain_type,
+            source=f"{self.source} (filtered by speed {speed_range})"
         )
 
     # endregion: FILTER METHODS
@@ -925,19 +918,21 @@ class Wind:
         self, directions: int = 36, other_data: Any = None
     ) -> dict[str, list[Any]]:
         """Bin data by wind direction."""
+
         if other_data is None:
             other_data = self.wind_speed
         if len(other_data) != len(self):
             raise ValueError("other_data must be same length as this object")
 
         binned = self._direction_categories(directions=directions)
-        grp = pd.Series(other_data).groupby(binned, observed=True)
-        d = {k: table.values.tolist() for k, table in grp}
-        # combine the first and last bins
+        grouped_by_bin = pd.Series(other_data).groupby(binned, observed=True)
+        grouped_dict = {k: group.values.tolist() for k, group in grouped_by_bin}
+
+        # combine the first and last bins, by renaming the bin categories and combining the ones with the same name.
         renamer = {}
-        for n, interval in enumerate(binned.categories):
-            if n == 0 or n == len(binned.categories) - 1:
-                renamer[interval] = (
+        for i, category in enumerate(binned.categories):
+            if i == 0 or i == len(binned.categories) - 1: #there will be two groups that have 0 degrees on their edge, these should be combined into one, thus the renamer treats them as the same
+                renamer[category] = (
                     (
                         str(binned.categories[-1]).split(",")[0]
                         if directions != 1
@@ -947,16 +942,18 @@ class Wind:
                     + str(binned.categories[0]).split(",")[1]
                 )
             else:
-                renamer[interval] = str(interval)
+                renamer[category] = str(category)
+
         # rename the keys in the original dict
-        d_renamed = {}
-        for k, v in d.items():
-            target_key = renamer[k]
-            if target_key in d_renamed:
-                d_renamed[target_key].extend(v)
+        grouped_dict_renamed = {}
+        for original_key, group in grouped_dict.items():
+            target_key = renamer[original_key]
+            if target_key in grouped_dict_renamed: #combine the two groups with the same key
+                grouped_dict_renamed[target_key].extend(group)
             else:
-                d_renamed[target_key] = v
-        return d_renamed
+                grouped_dict_renamed[target_key] = group
+
+        return grouped_dict_renamed
 
     def proportion_calm(self, threshold: float = 0.1) -> float:
         """Return proportion of timestep's below calm threshold.
@@ -985,12 +982,24 @@ class Wind:
         """
         return (np.array(self.wind_speed) <= threshold).tolist()
 
-    def percentile(
+    def percentile(self, percentile:float):
+        """Calculate the wind speed at the given percentile.
+
+        Args:
+            percentile (float):
+                The percentile to calculate.
+
+        Returns:
+            float: Wind speed at the given percentile.
+        """
+        return self.wind_speed_series.quantile(percentile)
+
+    def percentile_df(
         self,
         q: Union[float, Tuple[float, ...]] = (0.25, 0.5, 0.75, 0.95),
         directions: int = 8,
     ) -> pd.DataFrame:
-        """Calculate wind speed at given percentiles.
+        """Calculate wind speed at given percentiles by direction.
 
         Args:
             q (Union[float, Tuple[float, ...]], optional): Percentiles to
@@ -999,13 +1008,13 @@ class Wind:
                 Defaults to 8.
 
         Returns:
-            pd.DataFrame: Wind speeds at specified percentiles by direction.
+            pd.DataFrame: Wind speeds at specified percentiles by direction, indexed by the percentile with columns representing individual directions.
 
         """
         q = np.atleast_1d(q)
-        dd = self._direction_binned_data(directions=directions)
+        bin_dict = self._direction_binned_data(directions=directions)
         return pd.DataFrame(
-            {k: np.quantile(v, q).tolist() for k, v in dd.items()}, index=q
+            {group_key: np.quantile(values, q).tolist() for group_key, values in bin_dict.items()}, index=q
         ).T
 
     def to_height(
@@ -1027,7 +1036,7 @@ class Wind:
         if self.height_above_ground == target_height:
             return self
 
-        wss = [
+        wind_speed_at_height = [
             self.terrain_type.wind_speed_at_height(
                 reference_value=ws,
                 reference_height=self.height_above_ground,
@@ -1036,15 +1045,16 @@ class Wind:
             )
             for ws in self.wind_speed
         ]
-        loc = self.location.duplicate()
-        loc.source = f"{self.location.source} translated to {target_height}m"
+        location = self.location.duplicate()
+
         return Wind(
-            wind_speed=wss,
+            wind_speed=wind_speed_at_height,
             wind_direction=self.wind_direction,
             datetimes=self.datetimes,
             height_above_ground=target_height,
-            location=loc,
+            location=location,
             terrain_type=self.terrain_type,
+            source=f"{self.source} translated to {target_height}m"
         )
 
     def apply_directional_factors(
@@ -1072,25 +1082,25 @@ class Wind:
             ValueError: If number of factors doesn't match directions.
 
         """
-        binned = self._direction_categories(directions=directions)
-
-        if len(binned.categories) - 1 != len(factors):
+        if len(factors) != directions:
             raise ValueError("Number of factors must be equal to number of directions.")
 
-        mapping = {k: v for k, v in zip(binned.categories, factors + [factors[0]])}
+        binned = self._direction_categories(directions=directions)
+
+        mapping = {category: factor for category, factor in zip(binned.categories, factors + [factors[0]])}
 
         wind_speeds = self.wind_speed * binned.map(mapping, na_action="ignore")
 
-        loc = self.location.duplicate()
-        loc.source = f"{self.location.source} (adjusted by {directions} directional factors {factors})"
+        location = self.location.duplicate()
 
         return Wind(
             wind_speed=wind_speeds.tolist(),
             wind_direction=self.wind_direction,
             datetimes=self.datetimes,
             height_above_ground=self.height_above_ground,
-            location=loc,
+            location=location,
             terrain_type=self.terrain_type,
+            source=f"{self.source} (adjusted by {directions} directional factors {factors})"
         )
 
     def direction_counts(
@@ -1110,21 +1120,25 @@ class Wind:
             dict[str, int]: Count of values per direction bin.
 
         """
-        dd = {
-            k: len(np.array(v)[np.array(v) != 0])
-            for k, v in self._direction_binned_data(directions=directions).items()
+        direction_counts = {
+            category: len(np.array(values)[np.array(values) != 0])
+            for category, values in self._direction_binned_data(directions=directions).items()
         }
+
         if as_midpoints:
             lookup = {}
-            for n, (k, v) in enumerate(dd.items()):
-                if n == 0:
-                    lookup[k] = 0.0
+            for i, category in enumerate(direction_counts):
+                if i == 0:
+                    lookup[category] = 0.0
                 else:
-                    lookup[k] = (
-                        float(k[1:-1].split(",")[0]) + float(k[1:-1].split(",")[1])
+                    lookup[category] = (
+                        float(category[1:-1].split(",")[0])
+                      + float(category[1:-1].split(",")[1])
                     ) / 2.0
-            dd = {lookup[k]: v for k, v in dd.items()}
-        return dd
+
+            direction_counts = {lookup[category]: values for category, values in direction_counts.items()}
+
+        return direction_counts
 
     def prevailing(
         self, directions: int = 8, n: int = 1, as_cardinal: bool = False
@@ -1143,20 +1157,23 @@ class Wind:
             list[str]: Prevailing wind directions.
 
         """
-        pp = self.direction_counts(directions=directions, as_midpoints=True)
+        direction_counts = self.direction_counts(directions=directions, as_midpoints=True)
         prevailing_directions = [
-            i[0] for i in sorted(pp.items(), key=lambda x: x[1], reverse=True)
+            item[0] for item in sorted(direction_counts.items(), key=lambda x: x[1], reverse=True)
         ]
         if as_cardinal:
-            x = [cardinality(j, directions=32) for j in prevailing_directions]
-            # remove duplicates from x, but retain order
-            seen = []
-            for i in x:
-                if i not in seen:
-                    seen.append(i)
-                if len(seen) == n:
+            cardinals = [cardinality(direction, directions=32) for direction in prevailing_directions]
+
+            # remove duplicates from cardinals, but retain order
+            prevailing_cardinals = []
+            for cardinal in cardinals:
+                if cardinal not in prevailing_cardinals:
+                    prevailing_cardinals.append(cardinal)
+                if len(prevailing_cardinals) == n:
                     break
-            return seen
+
+            return prevailing_cardinals
+
         return prevailing_directions[:n]
 
     def month_hour_mean_matrix(
@@ -1224,7 +1241,7 @@ class Wind:
 
         return df
 
-    def windrose(
+    def windrose( #TODO: query whether this should be renamed to LB_windrose or similar to distinguish it as returning a ladybug visulaisation object rather than a matplotlib plot (plot_windrose)
         self,
         other_data: Optional[HourlyContinuousCollection] = None,
         directions: int = 36,
@@ -1282,7 +1299,7 @@ class Wind:
             raise ValueError("other_data must be the same length as wind data")
 
         # bin per direction
-        dd = self._direction_binned_data(directions=directions)
+        direction_binned_data = self._direction_binned_data(directions=directions)
 
         # create other intervals, and check for invalid edges
         cats = pd.cut(other_data, other_bins, right=True, include_lowest=True)
@@ -1295,20 +1312,20 @@ class Wind:
 
         # iterate binned data, and bin
         new_d = {}
-        for k, v in dd.items():
+        for category, bin_values in direction_binned_data.items():
             dv = (
-                pd.cut(v, other_bins, right=True, include_lowest=True)
+                pd.cut(bin_values, other_bins, right=True, include_lowest=True)
                 .value_counts()
                 .values
             )
-            new_d[k] = {str(i): float(j) for i, j in zip(*[cats.categories, dv])}
+            new_d[category] = {str(i): float(j) for i, j in zip(*[cats.categories, dv])}
 
         df = pd.DataFrame(new_d).T
 
         # rename first column
         if float(str(df.columns[0]).split(",")[0][1:]) < min(other_data):
-            r = str(df.columns[0]).split(",")[1]
-            df.rename(columns={df.columns[0]: f"({min(other_data)},{r}"}, inplace=True)
+            right_bin_edge = str(df.columns[0]).split(",")[1]
+            df.rename(columns = { df.columns[0]: f"({min(other_data)},{right_bin_edge}" }, inplace=True)
 
         # name the index and columns to be used downstream
         df.index.name = "Wind Direction (degrees)"
@@ -1457,7 +1474,7 @@ class Wind:
         vmin = kwargs.pop("vmin", _other_data.values.min())
         vmax = kwargs.pop("vmax", _other_data.values.max())
         unit = kwargs.pop("unit", other_data_header.unit)
-        title = kwargs.pop("title", self.location.source)
+        title = kwargs.pop("title", self.source)
         norm = kwargs.pop("norm", plt.Normalize(vmin=vmin, vmax=vmax, clip=True))
         mapper = kwargs.pop("mapper", ScalarMappable(norm=norm, cmap=cmap))
         arrow_scale = kwargs.pop("arrow_scale", 0.8)
@@ -1574,7 +1591,7 @@ class Wind:
         cmap = kwargs.pop("cmap", "YlGnBu")
         title = kwargs.pop(
             "title",
-            f"{self.location.source}"
+            f"{self.source}"
             + (
                 f" ({sum(calm_wind_speeds) / len(self):0.2%} calm)"
                 if remove_calm
@@ -1814,7 +1831,7 @@ class Wind:
             cb.ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=1))
         cb.outline.set_visible(False)
 
-        ax.set_title(self.location.source)
+        ax.set_title(self.source)
 
         if show_values:
             for _xx, row in enumerate(_values):
@@ -1906,7 +1923,7 @@ class Wind:
 
     # endregion: visualization
 
-    # region: UsefulThings
+    # region: Miscellaneous
 
     def wind_exposure(
         self,
@@ -1941,7 +1958,7 @@ class Wind:
                 If True, run in parallel. Useful when number of shade objects
                 is high, otherwise the overheads of set-up aren't worth it.
         Returns:
-            List[float]:
+            Tuple[float]:
                 A list of annual hourly values denoting sun exposure values.
 
         Examples
@@ -1992,85 +2009,61 @@ class Wind:
 
         # create shade transmissivities
         shade_transmissivities = []
-        for hb_shd in shades:
+        for shade in shades:
             try:
                 shade_transmissivities.append(
                     get_schedule_as_data_collection(
-                        hb_shd.properties.energy.transmittance_schedule  # type: ignore
+                        shade.properties.energy.transmittance_schedule  # type: ignore
                     ).values
                 )
             except ValueError:
                 # no schedule available, assume fully opaque
                 shade_transmissivities.append(tuple([0.0] * len(self)))
 
+        def process_direction(n: int, direction: float, edge_acceleration_width: float, edge_acceleration_factor: float) -> tuple[int, float]:
+            """Process a single wind direction and return its 'visibility'.
+            """
+            if edge_acceleration_width == 0:
+                ray = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180)))
+                transmissivity = 1.0
+
+                for m, shade in enumerate(shades):
+                    # check for intersection
+                    if shade.geometry.intersect_line_ray(ray):
+                        # sun is blocked by shade geometry
+                        transmissivity = min(
+                            shade_transmissivities[m][n], transmissivity
+                        )
+
+                return (n, transmissivity)
+            else:
+                ray1 = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180 - (edge_acceleration_width / 2))))
+                ray2 = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180 + (edge_acceleration_width / 2))))
+                transmissivity = 1.0
+
+                for m, shade in enumerate(shades):
+                    # check for intersection
+                    intersect1 = shade.geometry.intersect_line_ray(ray1)
+                    intersect2 = shade.geometry.intersect_line_ray(ray2)
+                    if intersect1 or intersect2:
+                        # sun is blocked by shade geometry
+                        local_transmissivity = shade_transmissivities[m][n]
+                        if intersect1 and intersect2:
+                            transmissivity = min(local_transmissivity, transmissivity)
+                        else:
+                            transmissivity *= edge_acceleration_factor
+
+                return (n, transmissivity)
+
         if not parallel:
             # for each sun, determine whether a ray from the origin to the sun intersects
             # any of the shade objects, and the resultant visibility as product of the
             # intersecting shade transmissivities at that time
-
             wind_visibility = []
             for n, direction in enumerate(self.wind_direction):
-                if edge_acceleration_width == 0:
-                    ray = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180)))
-                    transmissivity = 1.0
-                    for m, hb_shd in enumerate(shades):
-                        # check for intersection
-                        if hb_shd.geometry.intersect_line_ray(ray):
-                            # wind is blocked by shade geometry
-                            transmissivity = min(shade_transmissivities[m][n], transmissivity)
-                else:
-                    ray1 = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180 - (edge_acceleration_width / 2))))
-                    ray2 = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180 + (edge_acceleration_width / 2))))
-                    transmissivity = 1.0
-                    for m, hb_shd in enumerate(shades):
-                        # check for intersection
-                        intersect1 = hb_shd.geometry.intersect_line_ray(ray1)
-                        intersect2 = hb_shd.geometry.intersect_line_ray(ray2)
-                        if intersect1 or intersect2:
-                            # wind is blocked by shade geometry
-                            local_transmissivity = shade_transmissivities[m][n]
-                            if intersect1 and intersect2:
-                                transmissivity = min(local_transmissivity, transmissivity)
-                            else:
-                                transmissivity *= edge_acceleration_factor
+                (_, transmissivity) = process_direction(n, direction, edge_acceleration_width, edge_acceleration_factor)
                 wind_visibility.append(transmissivity)
         else:
-
-            def process_direction(n: int, direction: float, edge_acceleration_width: float, edge_acceleration_factor: float) -> tuple[int, float]:
-                """Process a single wind direction and return its 'visibility'.
-                """
-                if edge_acceleration_factor == 0:
-                    ray = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180)))
-                    transmissivity = 1.0
-
-                    for m, hb_shd in enumerate(shades):
-                        # check for intersection
-                        if hb_shd.geometry.intersect_line_ray(ray):
-                            # sun is blocked by shade geometry
-                            transmissivity = min(
-                                shade_transmissivities[m][n], transmissivity
-                            )
-
-                    return (n, transmissivity)
-                else:
-                    ray1 = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180 - (edge_acceleration_width / 2))))
-                    ray2 = Ray3D(origin, Vector3D(*azimuth_to_vector(direction + 180 + (edge_acceleration_width / 2))))
-                    transmissivity = 1.0
-
-                    for m, hb_shd in enumerate(shades):
-                        # check for intersection
-                        intersect1 = hb_shd.geometry.intersect_line_ray(ray1)
-                        intersect2 = hb_shd.geometry.intersect_line_ray(ray2)
-                        if intersect1 or intersect2:
-                            # sun is blocked by shade geometry
-                            local_transmissivity = shade_transmissivities[m][n]
-                            if intersect1 and intersect2:
-                                transmissivity = min(local_transmissivity, transmissivity)
-                            else:
-                                transmissivity *= edge_acceleration_factor
-
-                    return (n, transmissivity)
-
             # Process all directions in parallel
             wind_visibility: list[float] = [None] * len(self)  # type: ignore
 
@@ -2088,4 +2081,4 @@ class Wind:
 
         return tuple(wind_visibility)
     
-    # endregion: UsefulThings
+    # endregion: Miscellaneous
