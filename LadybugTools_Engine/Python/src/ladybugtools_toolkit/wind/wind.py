@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, Optional, Tuple, Union
+from typing import Any, Generator, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ from honeybee.shade import Shade
 from ladybug.dt import Date
 from ladybug.epw import EPW, AnalysisPeriod, HourlyContinuousCollection
 from ladybug.sunpath import Location
-from ladybug.windrose import WindRose #TODO
+from ladybug.windrose import WindRose
 from ladybug_geometry.geometry3d import Point3D, Ray3D, Vector3D
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
@@ -28,18 +28,19 @@ from ..convert.to_colour import to_colour
 from ..convert.to_ladybug import to_ladybug
 from ..convert.to_pandas import to_pandas
 from ..honeybee_energy_extension.util import get_schedule_as_data_collection #TODO
-from ..ladybug_extension.analysisperiod import DefaultAnalysisPeriod
 
+from ..ladybug_extension.analysisperiod import (
+    DefaultAnalysisPeriod,
+    analysis_period_to_string,
+)
 from ..ladybug_extension.location import (
     average_location,
     location_to_pytz_fixed_offset,
     location_to_timezone,
 )
-
-from ..ladybug_extension.analysisperiod import (
-    analysis_period_to_string,
-    metadata_dict_to_str, #TODO
-    metadata_str_to_dict, #TODO
+from ..ladybug_extension.utilities import (
+    metadata_dict_to_str,
+    metadata_str_to_dict,
 )
 
 from ..helpers import(
@@ -479,7 +480,7 @@ class Wind:
                 raise ValueError("weights must total 1.")
 
         # create average location
-        average_location = average_location([w.location for w in objects], weights=weights)
+        _average_location = average_location([w.location for w in objects], weights=weights)
         
         source = "|".join(
             [
@@ -515,7 +516,7 @@ class Wind:
             wind_direction=wind_direction_averages.tolist(),
             datetimes=objects[0].datetimes,
             height_above_ground=average_height_above_ground,
-            location=average_location,
+            location=_average_location,
             terrain_type=terrain_type,
             source=source
         )
@@ -1462,7 +1463,7 @@ class Wind:
         try:
             other_data_header = to_pandas(other_data.name)
         except Exception:
-            other_data_header = to_ladybug(other_data.name)
+            other_data_header = to_ladybug(other_data.name) #this can cause an exception if a user is inputting a dataframe without header metadata information. This should not be required.
 
         _wind_directions = df[df.columns.get_level_values(0)[0]]
         _other_data = df[df.columns.get_level_values(0)[-1]]
