@@ -1,6 +1,7 @@
 import calendar
 import copy
 import json
+from types import NoneType
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -111,9 +112,7 @@ class Wind:
             raise ValueError("datetimes must be unique.")
         if any(self.datetimes.isna()):
             raise ValueError("datetimes cannot contain null values.")
-        if any(np.diff(self.datetimes) < timedelta(0)):
-            raise ValueError("datetimes must be in increasing order.") #why not just take in the current order and reorder it in a dataframe?
-
+        
         # timezone validation
         if self.datetimes[0].tzinfo is None:
             self.datetimes = self.datetimes.tz_localize(
@@ -159,6 +158,16 @@ class Wind:
             raise ValueError(
                 f"Wind directions must be between 0 and 360 degrees, values given span {min(self.wind_direction)} to {max(self.wind_direction)}."
             )
+
+        if any(np.diff(self.datetimes) < timedelta(0)):
+            CONSOLE_LOGGER.warning("The datetime index was not in ascending order. Data in the Wind class must be in ascending order and as such the collections will be ordered by ascending date.")
+
+            df = pd.DataFrame([self.wind_speed, self.wind_direction], columns=["wind_speed", "wind_direction"], index=self.datetimes)
+            df = df.sort_index()
+
+            self.datetimes = df.index.values
+            self.wind_speed = df["wind_speed"].values
+            self.wind_direction = df["wind_direction"].values
 
     def __len__(self) -> int:
         return len(self.datetimes)
@@ -249,11 +258,15 @@ class Wind:
 
     @property
     def wind_speed_series(self) -> pd.Series:
-        return pd.Series(
+        series = pd.Series(
             data=self.wind_speed,
             index=self.datetimes,
-            name=("Wind Speed", "m/s", metadata_dict_to_str(self.metadata)),
+            name=("Wind Speed", "m/s"),
         )
+
+        series.attrs = self.metadata
+
+        return series
 
     @property
     def wind_speed_collection(self) -> HourlyContinuousCollection:
@@ -262,26 +275,29 @@ class Wind:
         agg_year = series.groupby(
             [series.index.month, series.index.day, series.index.hour]
         ).mean()
+
         if (2, 29) in agg_year.index:
             # if leap day is present, we need to remove it
             agg_year = agg_year.drop((2, 29))
         # add a generic index
         agg_year.index = to_pandas(AnalysisPeriod())
-        agg_year.name = (
-            agg_year.name[0],
-            agg_year.name[1],
-            agg_year.name[2] + " | __type__: HourlyContinuousCollection",
-        )
+        agg_year.name = (agg_year.name[0], agg_year.name[1])
+        #" | __type__: HourlyContinuousCollection"
+        agg_year.attrs = self.metadata
 
         return to_ladybug(agg_year)
 
     @property
     def wind_direction_series(self) -> pd.Series:
-        return pd.Series(
+        series = pd.Series(
             data=self.wind_direction,
             index=self.datetimes,
-            name=("Wind Direction", "degrees", metadata_dict_to_str(self.metadata)),
+            name=("Wind Direction", "degrees"),
         )
+
+        series.attrs = self.metadata
+
+        return series
 
     @property
     def wind_direction_collection(self) -> HourlyContinuousCollection:
@@ -298,23 +314,23 @@ class Wind:
             agg_year = agg_year.drop((2, 29))
         # add a generic index
         agg_year.index = to_pandas(AnalysisPeriod())
-        agg_year.name = (
-            agg_year.name[0],
-            agg_year.name[1],
-            agg_year.name[2] + " | __type__: HourlyContinuousCollection",
-        )
+        agg_year.name = (agg_year.name[0], agg_year.name[1])
+        #" | __type__: HourlyContinuousCollection"
+        agg_year.attrs = self.metadata
 
         return to_ladybug(agg_year)
 
     @property
     def df(self) -> pd.DataFrame:
-        return pd.concat(
+        df = pd.concat(
             [
-                self.wind_speed_series,
-                self.wind_direction_series,
+                self.wind_speed_series.copy(),
+                self.wind_direction_series.copy(),
             ],
             axis=1,
         )
+        df.attrs = self.metadata
+        return df
 
     @property
     def uv(self) -> pd.DataFrame:
@@ -373,9 +389,12 @@ class Wind:
 
     @classmethod
     def from_dict(cls, d: dict) -> "Wind":
-        """Create this object from a dictionary."""
-        if d.get("type", None) != "Wind":
-            raise ValueError("The dictionary cannot be converted Wind object.")
+        """Create a Wind instance from a dictionary."""
+        dict_type = d.get("type", None)
+        if dict_type is None:
+            CONSOLE_LOGGER.warning("The dictionary given did not contain a 'type' key, and so is not guaranteed to be deserialisable to a Wind object. If an error occurs, ensure that the dictionary can be converted to a Wind object.")
+        elif dict_type != "Wind":
+            raise TypeError(f"The dictionary cannot be converted to a Wind object due to a type mismatch (expected 'type': 'Wind' but got 'type':'{dict_type})'.")
 
         return cls(
             location=Location.from_dict(d["location"]),
@@ -400,11 +419,11 @@ class Wind:
     def from_dataframe(
         cls,
         df: pd.DataFrame,
-        wind_speed_column: str,
-        wind_direction_column: str,
-        location: Optional[Location] = None,
-        terrain_type: Optional[WindTerrainType] = None,
-        height_above_ground: Optional[float] = None,
+        location: Location,
+        wind_speed_column: Optional[str | tuple] = None,
+        wind_direction_column: Optional[str | tuple] = None,
+        terrain_type: WindTerrainType = WindTerrainType.COUNTRY,
+        height_above_ground: float = 10,
         source: str = "DataFrame",
     ) -> "Wind":
         """Create this object from a DataFrame.
@@ -412,16 +431,15 @@ class Wind:
         Args:
             df (pd.DataFrame):
                 A DataFrame object containing the wind data.
-            location (Location, optional):
-                A ladybug Location object. If not provided, the location data
-                will be extracted from the DataFrame if present.
-            terrain_type (TerrainType, optional):
+            location (Location):
+                A ladybug Location object.
+            terrain_type (TerrainType):
                 The terrain type associated with the wind data. If not provided,
                 the default is TerrainType.COUNTRY, or the terrain type from the
                 dataframe metadata if present.
-            height_above_ground (float, optional):
+            height_above_ground (float):
                 The height above ground (in m) where the input wind speeds and
-                directions were collected. If not provided, the default is 10m,
+                directions were collected. Default is 10m,
                 or the height from the dataframe metadata if present.
 
         """
@@ -435,14 +453,33 @@ class Wind:
         if not isinstance(location, Location):
             raise TypeError("location must be a ladybug Location object.")
 
+        wind_speed_unit = "m/s"
+        wind_speed_name = "Wind Speed"
+        wind_direction_unit = "degrees"
+        wind_direction_name = "Wind Direction"
+        
         # remove NaN values
         df.dropna(axis=0, how="any", inplace=True)
 
         # remove duplicates in input dataframe
         df = df.loc[~df.index.duplicated()]
 
-        wind_speeds:pd.Series = df[wind_speed_column]
-        wind_directions:pd.Series = df[wind_direction_column]
+        if wind_speed_column is None or wind_direction_column is None:
+            #assume the dataframe is formatted correctly
+            for name, unit in zip(*[[wind_speed_name, wind_direction_name], [wind_speed_unit, wind_direction_unit]]):
+                if name not in df.columns.get_level_values(0):
+                    raise ValueError(f"{name} not found in DataFrame columns.")
+                if df[name].columns.get_level_values(0)[0] != unit:
+                    raise ValueError(
+                        f"{name} column does not have the correct unit ({unit})."
+                    )
+
+            wind_speeds:pd.Series = df[wind_speed_name][wind_speed_unit].squeeze()
+            wind_directions:pd.Series = df[wind_direction_name][wind_direction_unit].squeeze()
+        else:
+            #use flat index
+            wind_speeds:pd.Series = df[wind_speed_column]
+            wind_directions:pd.Series = df[wind_direction_column]
 
         loc_copy = location.duplicate()
 
@@ -574,6 +611,7 @@ class Wind:
             source=source,
         )
 
+    #TODO: get the openmeteo stuff to work
     @classmethod
     def from_openmeteo(
         cls,
@@ -602,8 +640,8 @@ class Wind:
         return cls(
             location=location,
             datetimes=datetimes,
-            wind_speed=wind_speeds.values.tolist(),
-            wind_direction=wind_directions.values.tolist(),
+            wind_speed=wind_speeds.values,
+            wind_direction=wind_directions.values,
             height_above_ground=10,
             terrain_type=terrain_type,
             source=f"{metadata_str_to_dict(wind_directions.name[1])['source']} [{datetimes.min():%Y-%m-%d}-{datetimes.max():%Y-%m-%d}, n={len(wind_speeds):,}]"
@@ -911,22 +949,31 @@ class Wind:
 
     # region: INSTANCE METHODS
 
-    def _direction_categories(self, directions: int = 36) -> pd.Categorical:
+    def _direction_categories(self, directions: int = 36, remove_calm: bool = False) -> pd.Categorical:
         edges = direction_bin_edges(directions=directions)
-        return pd.cut(self.wind_direction, bins=edges, include_lowest=True, right=True)
+        series = self.wind_direction_series
+
+        if remove_calm:
+            series = series[~self.calm_mask]
+
+        return pd.cut(series, bins=edges, include_lowest=True, right=True)
 
     def _direction_binned_data(
-        self, directions: int = 36, other_data: Any = None
+        self, directions: int = 36, other_data: Any = None, remove_calm: bool = False
     ) -> dict[str, list[Any]]:
         """Bin data by wind direction."""
 
         if other_data is None:
             other_data = self.wind_speed
         if len(other_data) != len(self):
-            raise ValueError("other_data must be same length as this object")
+            raise ValueError(f"other_data must be same length as this object (got length: {len(other_data)} but expected length: {len(self)}.")
 
-        binned = self._direction_categories(directions=directions)
-        grouped_by_bin = pd.Series(other_data).groupby(binned, observed=True)
+        other_data_series = pd.Series(other_data)
+        if remove_calm:
+            other_data_series = other_data_series[~self.calm_mask]
+
+        binned = self._direction_categories(directions=directions, remove_calm=remove_calm)
+        grouped_by_bin = other_data_series.groupby(binned, observed=True)
         grouped_dict = {k: group.values.tolist() for k, group in grouped_by_bin}
 
         # combine the first and last bins, by renaming the bin categories and combining the ones with the same name.
@@ -1108,6 +1155,7 @@ class Wind:
         self,
         directions: int = 8,
         as_midpoints: bool = False,
+        remove_calm:bool = False,
     ) -> dict[str, int]:
         """Calculate number of values per wind direction.
 
@@ -1123,7 +1171,7 @@ class Wind:
         """
         direction_counts = {
             category: len(np.array(values)[np.array(values) != 0])
-            for category, values in self._direction_binned_data(directions=directions).items()
+            for category, values in self._direction_binned_data(directions=directions, remove_calm=remove_calm).items()
         }
 
         if as_midpoints:
@@ -1142,7 +1190,7 @@ class Wind:
         return direction_counts
 
     def prevailing(
-        self, directions: int = 8, n: int = 1, as_cardinal: bool = False
+        self, directions: int = 8, n: int = 1, as_cardinal: bool = False, remove_calm: bool = True
     ) -> list[str]:
         """Get prevailing wind directions.
 
@@ -1158,7 +1206,7 @@ class Wind:
             list[str]: Prevailing wind directions.
 
         """
-        direction_counts = self.direction_counts(directions=directions, as_midpoints=True)
+        direction_counts = self.direction_counts(directions=directions, as_midpoints=True, remove_calm=remove_calm)
         prevailing_directions = [
             item[0] for item in sorted(direction_counts.items(), key=lambda x: x[1], reverse=True)
         ]
@@ -1242,12 +1290,12 @@ class Wind:
 
         return df
 
-    def windrose( #TODO: query whether this should be renamed to LB_windrose or similar to distinguish it as returning a ladybug visulaisation object rather than a matplotlib plot (plot_windrose)
+    def lb_windrose(
         self,
         other_data: Optional[HourlyContinuousCollection] = None,
         directions: int = 36,
     ) -> WindRose:
-        """Create a WindRose object.
+        """Create a Ladybug WindRose object.
 
         Args:
             other_data (HourlyContinuousCollection, optional): Additional data
