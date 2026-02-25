@@ -64,7 +64,6 @@ namespace BH.Adapter.LadybugTools
             {
                 thresholds = command.Thresholds;
             }
-            string thresholdsStr = string.Join(" ",  thresholds);  
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
@@ -74,9 +73,11 @@ namespace BH.Adapter.LadybugTools
             else
                 commandArg = "plot/facade_condensation_risk_chart";
 
-            // run the process
-            List<string> args = new List<string>() { "-command", commandArg, "-e", epwFile.Replace('\\', '/'), "-t", thresholdsStr, "-p", command.OutputLocation.Replace('\\', '/') };
+            //construct args: insert thresholds as a range as concatenating them into a space delimited string causes the numbers to be wrapped in quotes which breaks the python argument parser
+            List<string> args = new List<string>() { "-command", commandArg, "-e", epwFile.Replace('\\', '/'), "-t", "-p", command.OutputLocation.Replace('\\', '/') };
+            args.InsertRange(args.IndexOf("-t") + 1, thresholds.Select(x => x.ToString()));
 
+            // run the process
             string result = "";
             bool success;
 
