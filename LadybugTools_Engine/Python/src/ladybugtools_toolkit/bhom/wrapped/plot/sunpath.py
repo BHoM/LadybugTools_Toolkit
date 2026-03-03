@@ -1,6 +1,7 @@
 ﻿"""Method to wrap creation of sunpath plots"""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -52,11 +53,13 @@ PARSER.add_argument(
 
 def sunpath(epw_file, analysis_period, size, save_path) -> str:
     try:
-        fig, ax = plt.subplots()
+        style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
+        with plt.style.context(style):
+            fig, ax = plt.subplots()
 
-        analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
-        epw = EPW(epw_file)
-        spath(location=epw.location, analysis_period=analysis_period, sun_size=size, ax=ax)
+            analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
+            epw = EPW(epw_file)
+            spath(location=epw.location, analysis_period=analysis_period, sun_size=size, ax=ax, style_context=style)
 
         return_dict = {"data": sunpath_metadata(Sunpath.from_location(epw.location))}
 

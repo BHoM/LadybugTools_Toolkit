@@ -2,6 +2,7 @@
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import json
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -66,17 +67,19 @@ PARSER.add_argument(
 
 def diurnal(epw_file, data_type_key="Dry Bulb Temperature", colour="#000000", title=None, period="monthly", save_path = None) -> str:
     try:
+        style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
         epw = EPW(epw_file)
         
         if data_type_key == "Wet Bulb Temperature":
             coll = wet_bulb_temperature(epw)
         else:
             coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
-        
-        fig, ax = plt.subplots()
 
-        dnal(collection_to_series(coll), ax=ax, title=title, period=period, color=colour)
-        return_dict = {"data": collection_metadata(coll)}
+        with plt.style.context(style):
+            fig, ax = plt.subplots()
+
+            dnal(collection_to_series(coll), ax=ax, title=title, period=period, color=colour, style_context=style)
+            return_dict = {"data": collection_metadata(coll)}
         
         if save_path == None or save_path == "":
             base64 = figure_to_base64(fig, html=False)

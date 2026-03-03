@@ -278,7 +278,7 @@ class ExternalComfort:
         return pd.concat([simulation_result_df, obj_df], axis=1)
 
     def plot_utci_day_comfort_metrics(
-        self, ax: plt.Axes = None, month: int = 3, day: int = 21
+        self, ax: plt.Axes = None, month: int = 3, day: int = 21, style_context:str = "python_toolkit.bhom"
     ) -> plt.Axes:
         """Plot a single day UTCI and composite components
 
@@ -304,12 +304,14 @@ class ExternalComfort:
             month=month,
             day=day,
             title=self.description(),
+            style_context=style_context
         )
 
     def plot_utci_heatmap(
         self,
         ax: plt.Axes = None,
         utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+        style_context:str = "python_toolkit.bhom"
     ) -> plt.Axes:
         """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
@@ -326,6 +328,7 @@ class ExternalComfort:
             series=collection_to_series(self.universal_thermal_climate_index),
             ax=ax,
             title=self.description(),
+            style_context=style_context
         )
 
     def walkability_time_limits(self):
@@ -452,6 +455,7 @@ class ExternalComfort:
         ax: plt.Axes = None,
         comfort_thresholds: tuple[float] = (9, 26),
         distance_to_comfort_band_centroid: bool = True,
+        style_context:str = "python_toolkit.bhom"
     ) -> Figure:
         """Create a heatmap showing the "distance" in C from the "no thermal stress" UTCI comfort
             band.
@@ -480,6 +484,7 @@ class ExternalComfort:
             title=f"{self.description()}\nDistance to comfortable",
             vmin=-10,
             vmax=10,
+            style_context=style_context
         )
 
     def plot_dbt_heatmap(self, **kwargs) -> plt.Axes:

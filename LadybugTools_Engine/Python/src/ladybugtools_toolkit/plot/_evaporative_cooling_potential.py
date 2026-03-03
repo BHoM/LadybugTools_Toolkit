@@ -39,35 +39,38 @@ def evaporative_cooling_potential(
 
     if any(dbt.index != dpt.index):
         raise ValueError("The indices of the two series must be the same.")
+    
+    style_context = kwargs.get("style_context", "python_toolkit.bhom")
 
-    if ax is None:
-        ax = plt.gca()
+    with plt.style.context(style_context):
+        if ax is None:
+            ax = plt.gca()
 
-    ecp = (dbt - dpt).clip(lower=0).rename("Evaporative Cooling Potential (C)")
+        ecp = (dbt - dpt).clip(lower=0).rename("Evaporative Cooling Potential (C)")
 
-    if agg_year:
-        # check for presence of Feb 29 in ecp index
-        if len(ecp[(ecp.index.month == 2) & (ecp.index.day == 29)]) != 0:
-            idx = pd.date_range(start="2016-01-01", periods=8784, freq="h")
-        else:
-            idx = pd.date_range(start="2017-01-01", periods=8760, freq="h")
+        if agg_year:
+            # check for presence of Feb 29 in ecp index
+            if len(ecp[(ecp.index.month == 2) & (ecp.index.day == 29)]) != 0:
+                idx = pd.date_range(start="2016-01-01", periods=8784, freq="h")
+            else:
+                idx = pd.date_range(start="2017-01-01", periods=8760, freq="h")
 
-        ecp = ecp.groupby([ecp.index.month, ecp.index.day, ecp.index.hour]).agg(agg)
-        ecp.index = idx
+            ecp = ecp.groupby([ecp.index.month, ecp.index.day, ecp.index.hour]).agg(agg)
+            ecp.index = idx
 
-    if "cmap" not in kwargs:
-        kwargs["cmap"] = "GnBu"
+        if "cmap" not in kwargs:
+            kwargs["cmap"] = "GnBu"
 
-    heatmap(series=ecp, ax=ax, **kwargs)
-    ax.text(
-        1,
-        1,
-        "*values shown indicate cooling effect from saturating air with moisture (DBT - DPT)",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize="small",
-    )
+        heatmap(series=ecp, ax=ax, **kwargs)
+        ax.text(
+            1,
+            1,
+            "*values shown indicate cooling effect from saturating air with moisture (DBT - DPT)",
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize="small",
+        )
 
     return ax
 
@@ -86,17 +89,12 @@ def evaporative_cooling_potential_epw(epw: EPW, ax: plt.Axes = None, **kwargs) -
     Returns:
         plt.Axes: The matplotlib axes.
     """
-
-    if ax is None:
-        ax = plt.gca()
-
     evaporative_cooling_potential(
         dbt=collection_to_series(epw.dry_bulb_temperature),
         dpt=collection_to_series(epw.dew_point_temperature),
         ax=ax,
+        title=kwargs.pop("title", Path(epw.file_path).name)
         **kwargs
     )
-
-    ax.set_title(Path(epw.file_path).name)
 
     return ax
