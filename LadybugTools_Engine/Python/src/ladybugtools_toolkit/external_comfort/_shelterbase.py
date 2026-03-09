@@ -753,7 +753,7 @@ class Shelter:
         ax: plt.Axes = None,
         tri_kwargs: dict[str, Any] = None,
         lim_kwargs: dict[str, tuple[float]] = None,
-    ) -> Figure:
+    ) -> plt.Axes:
         """Visualise this shelter to check validity and that it exists where you think it should!
 
         Args:
@@ -822,7 +822,7 @@ class Shelter:
 
         ax.set_aspect("equal")
 
-        return fig
+        return ax
 
 
 @bhom_analytics()
