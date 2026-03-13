@@ -58,6 +58,8 @@ def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] 
             The filepath to save the resulting image file of the heatmap to.
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure: A matplotlib Figure object.
@@ -107,6 +109,8 @@ def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[f
             The filepath to save the resulting image file of the heatmap to.
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure: A matplotlib Figure object.

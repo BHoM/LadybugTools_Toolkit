@@ -25,6 +25,8 @@ def cloud_cover_categories(epw: EPW, ax: plt.Axes = None, style_context:str = "p
             The EPW file to plot.
         ax (plt.Axes, optional):
             A matploltib axes to plot on. Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -81,6 +83,8 @@ def hours_sunlight(location: Location, ax: plt.Axes = None, style_context:str = 
             The location to plot.
         ax (plt.Axes, optional):
             A matploltib axes to plot on. Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -203,6 +207,8 @@ def hours_sunrise_sunset(location: Location, ax: plt.Axes = None, style_context:
             The location to plot.
         ax (plt.Axes, optional):
             A matploltib axes to plot on. Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -407,6 +413,8 @@ def solar_elevation_azimuth(location: Location, ax: plt.Axes = None, style_conte
             The location to plot.
         ax (plt.Axes, optional):
             A matploltib axes to plot on. Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:

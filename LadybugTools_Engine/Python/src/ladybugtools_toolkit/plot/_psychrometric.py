@@ -173,6 +173,8 @@ def psychrometric(
         figsize (tuple[float, float], optional):
             A tuple of floats for the figure size. 
             Default is (10, 7).
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Figure:

@@ -31,6 +31,8 @@ def cooling_degree_days(
             Whether to show the labels on the bars. Defaults to True.
         **kwargs:
             Additional keyword arguments to pass to the matplotlib bar plot.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure:
@@ -125,6 +127,8 @@ def heating_degree_days(
         **kwargs:
             Additional keyword arguments to pass to the matplotlib
             bar plot.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure:
@@ -215,6 +219,8 @@ def degree_days(epw: EPW, heat_base: float = 18, cool_base: float = 23, **kwargs
                 The color of the cooling degree days bars.
             figsize (Tuple[float]):
                 The size of the figure.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure:

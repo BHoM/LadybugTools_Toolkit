@@ -500,6 +500,8 @@ class Categorical:
                 Whether to show the labels on the bars. Defaults to False.
             **kwargs:
                 Additional keyword arguments to pass to plt.bar.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -578,6 +580,8 @@ class Categorical:
                 which creates a new plt.Axes object.
             **kwargs:
                 Additional keyword arguments to pass to plt.bar.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -619,6 +623,8 @@ class Categorical:
                 A matplotlib Axes object to plot on. Defaults to None.
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -671,6 +677,8 @@ class Categorical:
                     The number of columns in the legend. Defaults to 5.
                 show_labels (bool, optional):
                     Whether to show the labels on the bars. Defaults to True.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Figure:
@@ -747,6 +755,8 @@ class Categorical:
                 Additional keyword arguments to pass to the heatmap function.
             show_legend (bool, optional):
                 Whether to show the legend. Defaults to True.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -857,6 +867,8 @@ class CategoricalComfort(Categorical):
                 Whether to show the colorbar in the plot. Defaults to True.
             figsize (tuple[float], optional):
                 Change the figsize. Defaults to (15, 5).
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure:

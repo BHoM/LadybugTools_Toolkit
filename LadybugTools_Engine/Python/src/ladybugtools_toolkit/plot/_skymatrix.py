@@ -49,6 +49,8 @@ def skymatrix(
             Show the colorbar. Defaults to True.
         **kwargs:
             Additional keyword arguments to pass to the plotting function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure:

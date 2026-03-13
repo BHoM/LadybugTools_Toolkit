@@ -29,6 +29,8 @@ def evaporative_cooling_potential(
             The matplotlib axes to plot the figure on. Defaults to None.
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes: The matplotlib axes.
@@ -85,6 +87,8 @@ def evaporative_cooling_potential_epw(epw: EPW, ax: plt.Axes = None, **kwargs) -
             The matplotlib axes to plot the figure on. Defaults to None.
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes: The matplotlib axes.

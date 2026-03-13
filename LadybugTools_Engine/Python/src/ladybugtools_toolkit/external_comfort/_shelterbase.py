@@ -750,77 +750,81 @@ class Shelter:
     @bhom_analytics()
     def visualise(
         self,
-        ax: plt.Axes = None,
+        ax: mplot3d.Axes3D = None,
         tri_kwargs: dict[str, Any] = None,
         lim_kwargs: dict[str, tuple[float]] = None,
-    ) -> plt.Axes:
+        style_context: str = "python_toolkit.bhom"
+    ) -> mplot3d.Axes3D:
         """Visualise this shelter to check validity and that it exists where you think it should!
 
         Args:
-            ax (plt.Axes, optional):
-                A matplotlib axes object. Defaults to None.
+            ax (mplot3d.Axes3D, optional):
+                A matplotlib3D axes object. Defaults to None.
             tri_kwargs:
                 Additional keyword arguments to pass to the Poly3DCollection (shelter) render object.
             lim_kwargs:
                 Additional keyword arguments to pass to the x/y/z lims of the axes.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         """
 
-        if ax is None:
-            fig = plt.figure()
-            ax = mplot3d.Axes3D(fig)
-            fig.add_axes(ax)
-        if not isinstance(ax, mplot3d.Axes3D):
-            raise ValueError("ax must be a 3D matplotlib axes object")
+        with plt.style.context(style_context):
+            if ax is None:
+                fig = plt.figure()
+                ax = mplot3d.Axes3D(fig)
+                fig.add_axes(ax)
+            if not isinstance(ax, mplot3d.Axes3D):
+                raise ValueError("ax must be a 3D matplotlib axes object")
 
-        if tri_kwargs is None:
-            tri_kwargs = {}
-        if lim_kwargs is None:
-            lim_kwargs = {}
+            if tri_kwargs is None:
+                tri_kwargs = {}
+            if lim_kwargs is None:
+                lim_kwargs = {}
 
-        # TODO - make this use the Ladybug-Matplotlib renderer when it is ready
+            # TODO - make this use the Ladybug-Matplotlib renderer when it is ready
 
-        ax.scatter(*SENSOR_LOCATION.to_array(), c="red")
+            ax.scatter(*SENSOR_LOCATION.to_array(), c="red")
 
-        # add shelter as a polygon
-        vtx = np.array([i.to_array() for i in self.face3d.vertices])
-        tri = mplot3d.art3d.Poly3DCollection([vtx])
-        tri.set_color(
-            tri_kwargs.get(
-                "color",
+            # add shelter as a polygon
+            vtx = np.array([i.to_array() for i in self.face3d.vertices])
+            tri = mplot3d.art3d.Poly3DCollection([vtx])
+            tri.set_color(
                 tri_kwargs.get(
-                    "c", tri_kwargs.get("fc", tri_kwargs.get("facecolor", "grey"))
-                ),
+                    "color",
+                    tri_kwargs.get(
+                        "c", tri_kwargs.get("fc", tri_kwargs.get("facecolor", "grey"))
+                    ),
+                )
             )
-        )
-        tri.set_alpha(
-            tri_kwargs.get(
-                "alpha",
-                tri_kwargs.get("a", 0.5),
+            tri.set_alpha(
+                tri_kwargs.get(
+                    "alpha",
+                    tri_kwargs.get("a", 0.5),
+                )
             )
-        )
-        tri.set_edgecolor(
-            tri_kwargs.get(
-                "edgecolor",
-                tri_kwargs.get("ec", "k"),
+            tri.set_edgecolor(
+                tri_kwargs.get(
+                    "edgecolor",
+                    tri_kwargs.get("ec", "k"),
+                )
             )
-        )
-        ax.add_collection3d(tri)
+            ax.add_collection3d(tri)
 
-        # format axes
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.set_zlabel("z")
+            # format axes
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
 
-        # set lims
-        ax.set_xlim(lim_kwargs.get("xlim", (-10, 10)))
-        ax.set_ylim(lim_kwargs.get("ylim", (-10, 10)))
+            # set lims
+            ax.set_xlim(lim_kwargs.get("xlim", (-10, 10)))
+            ax.set_ylim(lim_kwargs.get("ylim", (-10, 10)))
 
-        # pylint: disable=no-member
-        ax.set_zlim(lim_kwargs.get("zlim", (0, 20)))
-        # pylint: enable=no-member
+            # pylint: disable=no-member
+            ax.set_zlim(lim_kwargs.get("zlim", (0, 20)))
+            # pylint: enable=no-member
 
-        ax.set_aspect("equal")
+            ax.set_aspect("equal")
 
         return ax
 

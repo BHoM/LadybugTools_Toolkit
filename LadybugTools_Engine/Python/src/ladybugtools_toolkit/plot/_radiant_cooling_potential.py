@@ -19,6 +19,8 @@ def radiant_cooling_potential(
             The matplotlib axes to plot the figure on. Defaults to None.
         **kwargs:
             Additional keyword arguments to pass to matplotlib.pyplot.plot.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes: The matplotlib axes.

@@ -40,6 +40,8 @@ def monthly_histogram_proportion(
             Whether to show the legend. Defaults to False.
         **kwargs:
             Additional keyword arguments to pass to plt.bar.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:

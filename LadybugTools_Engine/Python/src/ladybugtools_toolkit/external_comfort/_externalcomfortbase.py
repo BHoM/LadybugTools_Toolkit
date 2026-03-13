@@ -319,6 +319,8 @@ class ExternalComfort:
             ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
             utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
                 UTCI_DEFAULT_CATEGORIES.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes: A matplotlib Axes object.
@@ -368,6 +370,10 @@ class ExternalComfort:
             ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
             utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
                 UTCI_DEFAULT_CATEGORIES.
+            **kwargs
+                Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
         Returns:
             plt.Axes: A matplotlib Axes object.
         """
@@ -396,6 +402,8 @@ class ExternalComfort:
                 UTCI_DEFAULT_CATEGORIES.
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
         Returns:
             Figure: A matplotlib Figure object.
         """
@@ -429,6 +437,8 @@ class ExternalComfort:
                 Typology and AnalysisPeriod.
             **kwargs:
                 Additional keyword arguments to pass to the histogram function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
         Returns:
             plt.Axes:
                 A matplotlib Axes object.
@@ -466,6 +476,8 @@ class ExternalComfort:
                 Defaults to [9, 26].
             distance_to_comfort_band_centroid (bool, optional): Set to True to calculate the
                 distance to the centroid of the comfort band. Defaults to True.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Axes: A matplotlib Axes object.
@@ -493,6 +505,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.
@@ -511,6 +525,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.
@@ -529,6 +545,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.
@@ -547,6 +565,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.

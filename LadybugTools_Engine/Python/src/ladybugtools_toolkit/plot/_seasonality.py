@@ -30,6 +30,8 @@ def seasonality_comparison(
         **kwargs:
             title (str):
                 The title of the plot. If not provided, then the name of the EPW file is used.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
     """
 
     from_day_length = seasonality_from_day_length(epw=epw).rename("From day-length", inplace=False)

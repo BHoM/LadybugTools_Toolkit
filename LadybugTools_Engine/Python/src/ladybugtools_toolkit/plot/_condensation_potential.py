@@ -39,6 +39,8 @@ def condensation_potential(
             condensation potential calculation. Defaults to 0.9.
         **kwargs:
             A set of kwargs to pass to plt.plot.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes: The plt.Axes object populated with the plot.

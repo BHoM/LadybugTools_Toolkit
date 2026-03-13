@@ -52,6 +52,8 @@ def sunpath(
             Set to True to show the grid. Defaults to True.
         show_legend (bool, optional):
             Set to True to include a legend in the plot if data_collection passed. Defaults to True.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
     Returns:
         plt.Axes:
             A matplotlib Axes object.

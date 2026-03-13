@@ -56,6 +56,8 @@ def utci_comfort_band_comparison(
             If True, then show percentage, otherwise show count. Defaults to True.
         **kwargs:
             Additional keyword arguments to pass to the function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -166,6 +168,8 @@ def utci_comfort_band_comparison_series(
             If True, then show percentage, otherwise show count. Defaults to True.
         **kwargs:
             Additional keyword arguments to pass to the function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -283,6 +287,8 @@ def utci_day_comfort_metrics(
              The day to plot. Default is 21.
         kwargs:
             Additional keyword arguments to pass to the matplotlib plot function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
 
     Returns:
@@ -388,6 +394,8 @@ def utci_comparison_diurnal_day(
             Additional keyword arguments to pass to the matplotlib plot function.
             ylims (list[float], optional):
                 The y-axis limits. Defaults to None which just uses the min/ax of the fiven collections.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure:
@@ -498,6 +506,8 @@ def utci_heatmap_difference(
 
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -547,6 +557,8 @@ def utci_pie(
             The UTCI categories to use. Defaults to UTCI_DEFAULT_CATEGORIES.
         **kwargs:
             Additional keyword arguments to pass to the plotting function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes: A matplotlib Axes object.
@@ -632,6 +644,8 @@ def utci_journey(
             The UTCI categories to use. Defaults to UTCI_DEFAULT_CATEGORIES.
         **kwargs:
             Additional keyword arguments to pass to the plotting function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes: A matplotlib Axes object.
@@ -850,6 +864,8 @@ def utci_histogram(
             Set to True to show the UTCI category labels on the plot. Defaults to False.
         **kwargs:
             Additional keyword arguments to pass to the plotting function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -990,6 +1006,8 @@ def utci_shade_benefit(
             Additional keyword arguments to pass to the plotting function.
             title (str, optional):
                 The title of the plot. Defaults to None.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Figure:

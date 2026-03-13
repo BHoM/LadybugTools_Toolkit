@@ -951,6 +951,8 @@ def radiation_rose(
         lims (tuple[float, float], optional):
             Set the limits of the plot.
             Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
@@ -1179,6 +1181,8 @@ def tilt_orientation_factor(
         lims (tuple[float, float], optional):
             The limits of the plot.
             Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:

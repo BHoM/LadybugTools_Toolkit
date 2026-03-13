@@ -1620,6 +1620,8 @@ class Wind:
                 Additional keyword arguments to pass to the function. These include:
                 title (str, optional):
                     A title for the plot. Defaults to None.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -1666,6 +1668,8 @@ class Wind:
                 Additional keyword arguments to pass to the pcolor function.
                 title (str, optional):
                     A title for the plot. Defaults to None.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -1793,6 +1797,8 @@ class Wind:
                 The function to use. Either "pdf" or "cdf". Defaults to "pdf".
             ylim (tuple[float], optional):
                 The y-axis limits. Defaults to None.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes: The axes object.
@@ -1880,6 +1886,8 @@ class Wind:
                 The y-axis limits. Defaults to None.
             label (bool, optional):
                 Set to False to remove the bin labels. Defaults to False.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes: The axes object.
@@ -2020,6 +2028,8 @@ class Wind:
                 The minimum value for the colormap. Defaults to None.
             vmax (float, optional):
                 The maximum value for the colormap. Defaults to None.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
