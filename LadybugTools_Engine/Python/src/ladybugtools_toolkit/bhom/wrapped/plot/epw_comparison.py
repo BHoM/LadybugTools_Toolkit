@@ -2,19 +2,13 @@
 # pylint: disable=C0415,E0401,W0703
 import argparse
 import os
-from pathlib import Path
 import json
 import sys
 import traceback
 import matplotlib
 import matplotlib.figure
 from ladybug.epw import EPW
-from ladybug.datacollection import HourlyContinuousCollection
-from python_toolkit.plot.heatmap import heatmap as hmap
-from ladybugtools_toolkit.plot.compare import compare_epw_key_line
-from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
-from ladybugtools_toolkit.bhom.wrapped.metadata.collection import collection_metadata
-from ladybugtools_toolkit.ladybug_extension.epw import wet_bulb_temperature
+from ladybugtools_toolkit.plot.compare import compare_epw_key_line, compare_epw_key_hist
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 import matplotlib.pyplot as plt
 from ...logger import CONSOLE_LOGGER
@@ -38,6 +32,7 @@ PARSER.add_argument(
     help="List of EPW files to compare with the base",
     type=str,
     nargs='*',
+    action="extend",
     required=True,
 )
 PARSER.add_argument(
@@ -54,9 +49,16 @@ PARSER.add_argument(
     type=str,
     required=False,
     )
+PARSER.add_argument(
+    "-l",
+    "-line",
+    help="Produce a line plot instead of a histogram",
+    action="store-true",
+    default=False
+    )
 
-def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, save_path:str = None) -> str:
-    """Create a CSV file version of an EPW."""
+def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, line:bool, save_path:str = None) -> str:
+    """Create a timeseries plot with a line for each epw file for the specified data key and return it in a format readable by the LadybugToolsAdapter."""
     try:
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
         if colour_map not in plt.colormaps():
@@ -65,12 +67,13 @@ def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, save_
         with plt.style.context(style):
             fig, ax = plt.subplots()
 
-            epw_list = [EPW(epw_file)]
-            epw_list.extend([EPW(f) for f in epw_list])
-        
-            coll = HourlyContinuousCollection.from_dict([a for a in epw.to_dict()["data_collections"] if a["header"]["data_type"]["name"] == data_type_key][0])
-        
-            compare_epw_key_line(epw_list, key=data_type_key.lower().replace(" ", "_"), style_context=style, ax=ax)
+            epws = [EPW(epw_file)]
+            epws.extend([EPW(f) for f in epw_list])
+            
+            if line:
+                compare_epw_key_line(epws, key=data_type_key.lower().strip().replace(" ", "_"), style_context=style, ax=ax)
+            else:
+                compare_epw_key_hist(epws, key=data_type_key.lower().strip().replace(" ", "_"), style_context=style, ax=ax)
 
         return_dict = {}
 
@@ -83,17 +86,17 @@ def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, save_
 
         plt.close(fig)
 
-        return_dict["data"] = collection_metadata(coll)
+        return_dict["data"] = None
 
         return json.dumps(return_dict, default=str)
             
     except Exception:
-        CONSOLE_LOGGER.error("Heatmap could not be created.", exc_info=1)
+        CONSOLE_LOGGER.error("Timeseries comparison could not be created.", exc_info=1)
         return traceback.format_exc()
-
 
 if __name__ == "__main__":
 
     args = PARSER.parse_args()
     matplotlib.use("Agg")
-    epw_comparison(args.epw_file, args.epw_list, args.data_type_key, args.save_path)
+
+    epw_comparison(args.epw_file, args.epw_list, args.data_type_key, args.line, args.save_path)

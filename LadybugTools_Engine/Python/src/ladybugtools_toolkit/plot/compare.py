@@ -11,7 +11,9 @@ from python_toolkit.plot.timeseries import timeseries
 def compare_epw_key_hist(
     epws: list[EPW],
     key: str,
+    ax: plt.Axes = None,
     bins: list[float] = None,
+    **kwargs
     ) -> plt.Axes:
 
     if key not in EPW_PROPERTIES:
@@ -24,12 +26,15 @@ def compare_epw_key_hist(
         bins = np.linspace(df.values.min(), df.values.max(), 31)
     elif len(bins) == 0:
         bins = np.linspace(df.values.min(), df.values.max(), 31)
-
-    fig, ax = plt.subplots(1, 1, figsize=(12, 5))
-    ax.hist(df.values, bins=bins, label = df.columns, density=False)
-    ax.legend()
-    ax.set_ylabel("Number of hours (/8760)")
-    ax.set_xlabel(serieses[0].name)
+        
+    style_context = kwargs.pop("style_context", "python_toolkit.bhom")
+    with plt.style.context(style_context):
+        if ax is None:
+            ax = plt.gca()
+        ax.hist(df.values, bins=bins, label = df.columns, density=False, **kwargs)
+        ax.legend()
+        ax.set_ylabel("Number of hours (/8760)")
+        ax.set_xlabel(serieses[0].name)
     return ax
 
 @bhom_analytics()
@@ -44,7 +49,6 @@ def compare_epw_key_line(
         raise ValueError(f"The key: {key}, is not a valid epw key. Please select one from the list in: ladybugtools_toolkit.ladybug_extension.epw EPW_PROPERTIES")
 
     serieses = [collection_to_series(getattr(epw, key)) for epw in epws]
-    ylabel_name = serieses[0].name
 
     style_context = kwargs.get("style_context", "python_toolkit.bhom")
     with plt.style.context(style_context):
