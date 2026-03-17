@@ -43,7 +43,15 @@ namespace BH.Adapter.LadybugTools
 
             plotInformation.Image = oldObject.CustomData["figure"].ToString();
 
-            plotInformation.OtherData = ToSimulationData((oldObject.CustomData["data"] as CustomObject)?.CustomData, toUpdate as dynamic);
+            Dictionary<string, object> data = (oldObject.CustomData["data"] as CustomObject)?.CustomData;
+
+            if (data == null)
+            {
+                plotInformation.OtherData = toUpdate;
+                return plotInformation;
+            }
+
+            plotInformation.OtherData = ToSimulationData(data, toUpdate as dynamic);
 
             return plotInformation;
  
