@@ -88,7 +88,7 @@ namespace BH.Adapter.LadybugTools
             try
             {
                 CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, null);
+                PlotInformation info = Convert.ToPlotInformation(obj, new NoData()); //this plot type doesn't have collection metadata yet...
                 m_executeSuccess = true;
                 return new List<object>() { info };
             }

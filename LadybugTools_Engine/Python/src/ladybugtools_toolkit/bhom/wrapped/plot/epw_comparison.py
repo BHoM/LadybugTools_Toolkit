@@ -86,7 +86,7 @@ def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, line:
 
         plt.close(fig)
 
-        return_dict["data"] = None
+        return_dict["data"] = None #Unsure of how to create representative collection metadata for a comparison plot type that doesn't simply list every epw file compared
 
         return json.dumps(return_dict, default=str)
             
