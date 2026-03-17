@@ -36,6 +36,7 @@ def compare_epw_key_hist(
 def compare_epw_key_line(
     epws: list[EPW],
     key: str,
+    ax: plt.Axes = None,
     **kwargs
     ) -> plt.Axes:
 
@@ -47,7 +48,9 @@ def compare_epw_key_line(
 
     style_context = kwargs.get("style_context", "python_toolkit.bhom")
     with plt.style.context(style_context):
-        _, ax = plt.subplots(1, 1, figsize=(12, 5))
+        if ax is None:
+            ax = plt.gca()
+
         for series, epw in zip(serieses, epws):
             ax = timeseries(series, ax=ax, label=Path(epw.file_path).stem, **kwargs)
 
