@@ -1620,21 +1620,26 @@ class Wind:
                 Additional keyword arguments to pass to the function. These include:
                 title (str, optional):
                     A title for the plot. Defaults to None.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
                 A matplotlib Axes object.
 
         """
+        
+        style_context = kwargs.get("style_context", "python_toolkit.bhom")
 
-        if ax is None:
-            ax = plt.gca()
+        with plt.style.context(style_context):
+            if ax is None:
+                ax = plt.gca()
 
-        ax.set_title(textwrap.fill(f"{self.source}", 75))
+            ax.set_title(textwrap.fill(f"{self.source}", 75))
 
-        timeseries(self.ws, ax=ax, **kwargs)
+            timeseries(self.ws, ax=ax, **kwargs)
 
-        ax.set_ylabel(self.ws.name)
+            ax.set_ylabel(self.ws.name)
 
         return ax
 
@@ -1663,105 +1668,110 @@ class Wind:
                 Additional keyword arguments to pass to the pcolor function.
                 title (str, optional):
                     A title for the plot. Defaults to None.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
                 A matplotlib Axes object.
 
         """
+        
+        style_context = kwargs.pop("style_context", "python_toolkit.bhom")
 
-        if ax is None:
-            ax = plt.gca()
+        with plt.style.context(style_context):
+            if ax is None:
+                ax = plt.gca()
 
-        if other_data is None:
-            other_data = self.ws
+            if other_data is None:
+                other_data = self.ws
 
-        title = self.source if self.source is not None else ""
-        title += f'\n{kwargs.pop("title", None)}'
-        ax.set_title(textwrap.fill(f"{title}", 75))
+            title = self.source if self.source is not None else ""
+            title += f'\n{kwargs.pop("title", None)}'
+            ax.set_title(textwrap.fill(f"{title}", 75))
 
-        df = self.wind_matrix(other_data=other_data)
-        _other_data = df["other"]
-        _wind_directions = df["direction"]
+            df = self.wind_matrix(other_data=other_data)
+            _other_data = df["other"]
+            _wind_directions = df["direction"]
 
-        if any(
-            [
-                _other_data.shape != (24, 12),
-                _wind_directions.shape != (24, 12),
-                _wind_directions.shape != _other_data.shape,
-                not _wind_directions.index.equals(_other_data.index),
-                not _wind_directions.columns.equals(_other_data.columns),
-                # not np.array_equal(_wind_directions.index, _other_data.index),
-                # not np.array_equal(_wind_directions.columns, _other_data.columns),
-            ]
-        ):
-            raise ValueError(
-                "The other_data and wind_directions must cover all months of the "
-                "year, and all hours of the day, and align with each other."
-            )
+            if any(
+                [
+                    _other_data.shape != (24, 12),
+                    _wind_directions.shape != (24, 12),
+                    _wind_directions.shape != _other_data.shape,
+                    not _wind_directions.index.equals(_other_data.index),
+                    not _wind_directions.columns.equals(_other_data.columns),
+                    # not np.array_equal(_wind_directions.index, _other_data.index),
+                    # not np.array_equal(_wind_directions.columns, _other_data.columns),
+                ]
+            ):
+                raise ValueError(
+                    "The other_data and wind_directions must cover all months of the "
+                    "year, and all hours of the day, and align with each other."
+                )
 
-        cmap = kwargs.pop("cmap", "YlGnBu")
-        vmin = kwargs.pop("vmin", _other_data.values.min())
-        vmax = kwargs.pop("vmax", _other_data.values.max())
-        cbar_title = kwargs.pop("cbar_title", None)
-        unit = kwargs.pop("unit", None)
-        norm = kwargs.pop("norm", Normalize(vmin=vmin, vmax=vmax, clip=True))
-        mapper = kwargs.pop("mapper", ScalarMappable(norm=norm, cmap=cmap))
+            cmap = kwargs.pop("cmap", "YlGnBu")
+            vmin = kwargs.pop("vmin", _other_data.values.min())
+            vmax = kwargs.pop("vmax", _other_data.values.max())
+            cbar_title = kwargs.pop("cbar_title", None)
+            unit = kwargs.pop("unit", None)
+            norm = kwargs.pop("norm", Normalize(vmin=vmin, vmax=vmax, clip=True))
+            mapper = kwargs.pop("mapper", ScalarMappable(norm=norm, cmap=cmap))
 
-        pc = ax.pcolor(_other_data, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
-        _x = -np.sin(np.deg2rad(_wind_directions.values))
-        _y = -np.cos(np.deg2rad(_wind_directions.values))
-        direction_matrix = angle_from_north([_x, _y])
-        if show_arrows:
-            arrow_scale = 0.8
-            ax.quiver(
-                np.arange(1, 13, 1) - 0.5,
-                np.arange(0, 24, 1) + 0.5,
-                (_x * _other_data.values / 2) * arrow_scale,
-                (_y * _other_data.values / 2) * arrow_scale,
-                pivot="mid",
-                fc="white",
-                ec="black",
-                lw=0.5,
-                alpha=0.5,
-            )
+            pc = ax.pcolor(_other_data, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+            _x = -np.sin(np.deg2rad(_wind_directions.values))
+            _y = -np.cos(np.deg2rad(_wind_directions.values))
+            direction_matrix = angle_from_north([_x, _y])
+            if show_arrows:
+                arrow_scale = 0.8
+                ax.quiver(
+                    np.arange(1, 13, 1) - 0.5,
+                    np.arange(0, 24, 1) + 0.5,
+                    (_x * _other_data.values / 2) * arrow_scale,
+                    (_y * _other_data.values / 2) * arrow_scale,
+                    pivot="mid",
+                    fc="white",
+                    ec="black",
+                    lw=0.5,
+                    alpha=0.5,
+                )
 
-        if show_values:
-            for _xx, col in enumerate(_wind_directions.values.T):
-                for _yy, _ in enumerate(col.T):
-                    local_value = _other_data.values[_yy, _xx]
-                    cell_color = mapper.to_rgba(local_value)
-                    text_color = contrasting_color(cell_color)
-                    # direction text
-                    ax.text(
-                        _xx,
-                        _yy,
-                        f"{direction_matrix[_yy][_xx]:0.0f}°",
-                        color=text_color,
-                        ha="left",
-                        va="bottom",
-                        fontsize="xx-small",
-                    )
-                    # other_data text
-                    ax.text(
-                        _xx + 1,
-                        _yy + 1,
-                        f"{_other_data.values[_yy][_xx]:0.1f}{unit}",
-                        color=text_color,
-                        ha="right",
-                        va="top",
-                        fontsize="xx-small",
-                    )
+            if show_values:
+                for _xx, col in enumerate(_wind_directions.values.T):
+                    for _yy, _ in enumerate(col.T):
+                        local_value = _other_data.values[_yy, _xx]
+                        cell_color = mapper.to_rgba(local_value)
+                        text_color = contrasting_color(cell_color)
+                        # direction text
+                        ax.text(
+                            _xx,
+                            _yy,
+                            f"{direction_matrix[_yy][_xx]:0.0f}°",
+                            color=text_color,
+                            ha="left",
+                            va="bottom",
+                            fontsize="xx-small",
+                        )
+                        # other_data text
+                        ax.text(
+                            _xx + 1,
+                            _yy + 1,
+                            f"{_other_data.values[_yy][_xx]:0.1f}{unit}",
+                            color=text_color,
+                            ha="right",
+                            va="top",
+                            fontsize="xx-small",
+                        )
 
-        ax.set_xticks(np.arange(1, 13, 1) - 0.5)
-        ax.set_xticklabels([calendar.month_abbr[i] for i in np.arange(1, 13, 1)])
-        ax.set_yticks(np.arange(0, 24, 1) + 0.5)
-        ax.set_yticklabels([f"{i:02d}:00" for i in np.arange(0, 24, 1)])
-        for label in ax.yaxis.get_ticklabels()[1::2]:
-            label.set_visible(False)
+            ax.set_xticks(np.arange(1, 13, 1) - 0.5)
+            ax.set_xticklabels([calendar.month_abbr[i] for i in np.arange(1, 13, 1)])
+            ax.set_yticks(np.arange(0, 24, 1) + 0.5)
+            ax.set_yticklabels([f"{i:02d}:00" for i in np.arange(0, 24, 1)])
+            for label in ax.yaxis.get_ticklabels()[1::2]:
+                label.set_visible(False)
 
-        cb = plt.colorbar(pc, label=cbar_title, pad=0.01)
-        cb.outline.set_visible(False)
+            cb = plt.colorbar(pc, label=cbar_title, pad=0.01)
+            cb.outline.set_visible(False)
 
         return ax
 
@@ -1772,6 +1782,7 @@ class Wind:
         percentiles: tuple[float] = (0.5, 0.95),
         function: str = "pdf",
         ylim: tuple[float] = None,
+        style_context:str = "python_toolkit.bhom"
     ) -> plt.Axes:
         """Create a histogram showing wind speed frequency.
 
@@ -1786,6 +1797,8 @@ class Wind:
                 The function to use. Either "pdf" or "cdf". Defaults to "pdf".
             ylim (tuple[float], optional):
                 The y-axis limits. Defaults to None.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes: The axes object.
@@ -1794,43 +1807,44 @@ class Wind:
         if function not in ["pdf", "cdf"]:
             raise ValueError('function must be either "pdf" or "cdf".')
 
-        if ax is None:
-            ax = plt.gca()
+        with plt.style.context(style_context):
+            if ax is None:
+                ax = plt.gca()
 
-        ax.set_title(
-            f"{str(self)}\n{'Probability Density Function' if function == 'pdf' else 'Cumulative Density Function'}"
-        )
-
-        self.ws.plot.hist(
-            ax=ax,
-            density=True,
-            bins=speed_bins,
-            cumulative=True if function == "cdf" else False,
-        )
-
-        for percentile in percentiles:
-            x = np.quantile(self.ws, percentile)
-            ax.axvline(x, 0, 1, ls="--", lw=1, c="black", alpha=0.5)
-            ax.text(
-                x + 0.05,
-                0,
-                f"{percentile:0.0%}\n{x:0.2f}m/s",
-                ha="left",
-                va="bottom",
+            ax.set_title(
+                f"{str(self)}\n{'Probability Density Function' if function == 'pdf' else 'Cumulative Density Function'}"
             )
 
-        ax.set_xlim(0, ax.get_xlim()[-1])
-        if ylim:
-            ax.set_ylim(ylim)
+            self.ws.plot.hist(
+                ax=ax,
+                density=True,
+                bins=speed_bins,
+                cumulative=True if function == "cdf" else False,
+            )
 
-        ax.set_xlabel("Wind Speed (m/s)")
-        ax.set_ylabel("Frequency")
+            for percentile in percentiles:
+                x = np.quantile(self.ws, percentile)
+                ax.axvline(x, 0, 1, ls="--", lw=1, c="black", alpha=0.5)
+                ax.text(
+                    x + 0.05,
+                    0,
+                    f"{percentile:0.0%}\n{x:0.2f}m/s",
+                    ha="left",
+                    va="bottom",
+                )
 
-        for spine in ["top", "right"]:
-            ax.spines[spine].set_visible(False)
-        ax.grid(visible=True, which="major", axis="both", ls="--", lw=1, alpha=0.25)
+            ax.set_xlim(0, ax.get_xlim()[-1])
+            if ylim:
+                ax.set_ylim(ylim)
 
-        ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
+            ax.set_xlabel("Wind Speed (m/s)")
+            ax.set_ylabel("Frequency")
+
+            for spine in ["top", "right"]:
+                ax.spines[spine].set_visible(False)
+            ax.grid(visible=True, which="major", axis="both", ls="--", lw=1, alpha=0.25)
+
+            ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
 
         return ax
 
@@ -1845,6 +1859,7 @@ class Wind:
         legend: bool = True,
         ylim: tuple[float] = None,
         label: bool = False,
+        style_context:str = "python_toolkit.bhom"
     ) -> plt.Axes:
         """Create a wind rose showing wind speed and direction frequency.
 
@@ -1871,108 +1886,111 @@ class Wind:
                 The y-axis limits. Defaults to None.
             label (bool, optional):
                 Set to False to remove the bin labels. Defaults to False.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes: The axes object.
         """
+        
+        with plt.style.context(style_context):
+            if ax is None:
+                _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
-        if ax is None:
-            _, ax = plt.subplots(subplot_kw={"projection": "polar"})
-
-        # create grouped data for plotting
-        binned = self.histogram(
-            directions=directions,
-            other_data=other_data,
-            other_bins=other_bins,
-            density=True,
-            remove_calm=True,
-        )
-
-        # set colors
-        if colors is None:
-            if other_data is None:
-                colors = [
-                    to_hex(BEAUFORT_CATEGORIES.cmap(i))
-                    for i in np.linspace(0, 1, len(binned.columns))
-                ]
-            else:
-                colors = [
-                    to_hex(plt.get_cmap("viridis")(i))
-                    for i in np.linspace(0, 1, len(binned.columns))
-                ]
-        if isinstance(colors, str):
-            colors = plt.get_cmap(colors)
-        if isinstance(colors, Colormap):
-            colors = [to_hex(colors(i)) for i in np.linspace(0, 1, len(binned.columns))]
-        if isinstance(colors, list | tuple):
-            if len(colors) != len(binned.columns):
-                raise ValueError(
-                    f"colors must be a list of length {len(binned.columns)}, or a colormap."
-                )
-
-        # HACK to ensure that bar ends are curved when using a polar plot.
-        fig = plt.figure()
-        rect = [0.1, 0.1, 0.8, 0.8]
-        hist_ax = plt.Axes(fig, rect)
-        hist_ax.bar(np.array([1]), np.array([1]))
-
-        if title is None or title == "":
-            ax.set_title(textwrap.fill(f"{self.source}", 75))
-        else:
-            ax.set_title(title)
-
-        theta_width = np.deg2rad(360 / directions)
-        patches = []
-        color_list = []
-        x = theta_width / 2
-        for _, data_values in binned.iterrows():
-            y = 0
-            for n, val in enumerate(data_values.values):
-                patches.append(
-                    Rectangle(
-                        xy=(x, y),
-                        width=theta_width,
-                        height=val,
-                        alpha=1,
-                    )
-                )
-                color_list.append(colors[n])
-                y += val
-            if label:
-                ax.text(x, y, f"{y:0.1%}", ha="center", va="center", fontsize="x-small")
-            x += theta_width
-        local_cmap = ListedColormap(np.array(color_list).flatten())
-        pc = PatchCollection(patches, cmap=local_cmap)
-        pc.set_array(np.arange(len(color_list)))
-        ax.add_collection(pc)
-
-        # construct legend
-        if legend:
-            handles = [
-                mpatches.Patch(color=colors[n], label=f"{i} to {j}")
-                for n, (i, j) in enumerate(binned.columns.values)
-            ]
-            _ = ax.legend(
-                handles=handles,
-                bbox_to_anchor=(1.1, 0.5),
-                loc="center left",
-                ncol=1,
-                borderaxespad=0,
-                frameon=False,
-                fontsize="small",
-                title=binned.columns.name,
-                title_fontsize="small",
+            # create grouped data for plotting
+            binned = self.histogram(
+                directions=directions,
+                other_data=other_data,
+                other_bins=other_bins,
+                density=True,
+                remove_calm=True,
             )
 
-        # set y-axis limits
-        if ylim is None:
-            ylim = (0, max(binned.sum(axis=1)))
-        if len(ylim) != 2:
-            raise ValueError("ylim must be a tuple of length 2.")
-        ax.set_ylim(ylim)
-        ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
+            # set colors
+            if colors is None:
+                if other_data is None:
+                    colors = [
+                        to_hex(BEAUFORT_CATEGORIES.cmap(i))
+                        for i in np.linspace(0, 1, len(binned.columns))
+                    ]
+                else:
+                    colors = [
+                        to_hex(plt.get_cmap("viridis")(i))
+                        for i in np.linspace(0, 1, len(binned.columns))
+                    ]
+            if isinstance(colors, str):
+                colors = plt.get_cmap(colors)
+            if isinstance(colors, Colormap):
+                colors = [to_hex(colors(i)) for i in np.linspace(0, 1, len(binned.columns))]
+            if isinstance(colors, list | tuple):
+                if len(colors) != len(binned.columns):
+                    raise ValueError(
+                        f"colors must be a list of length {len(binned.columns)}, or a colormap."
+                    )
 
-        format_polar_plot(ax, yticklabels=True)
+            # HACK to ensure that bar ends are curved when using a polar plot.
+            fig = plt.figure()
+            rect = [0.1, 0.1, 0.8, 0.8]
+            hist_ax = plt.Axes(fig, rect)
+            hist_ax.bar(np.array([1]), np.array([1]))
+
+            if title is None or title == "":
+                ax.set_title(textwrap.fill(f"{self.source}", 75))
+            else:
+                ax.set_title(title)
+
+            theta_width = np.deg2rad(360 / directions)
+            patches = []
+            color_list = []
+            x = theta_width / 2
+            for _, data_values in binned.iterrows():
+                y = 0
+                for n, val in enumerate(data_values.values):
+                    patches.append(
+                        Rectangle(
+                            xy=(x, y),
+                            width=theta_width,
+                            height=val,
+                            alpha=1,
+                        )
+                    )
+                    color_list.append(colors[n])
+                    y += val
+                if label:
+                    ax.text(x, y, f"{y:0.1%}", ha="center", va="center", fontsize="x-small")
+                x += theta_width
+            local_cmap = ListedColormap(np.array(color_list).flatten())
+            pc = PatchCollection(patches, cmap=local_cmap)
+            pc.set_array(np.arange(len(color_list)))
+            ax.add_collection(pc)
+
+            # construct legend
+            if legend:
+                handles = [
+                    mpatches.Patch(color=colors[n], label=f"{i} to {j}")
+                    for n, (i, j) in enumerate(binned.columns.values)
+                ]
+                _ = ax.legend(
+                    handles=handles,
+                    bbox_to_anchor=(1.1, 0.5),
+                    loc="center left",
+                    ncol=1,
+                    borderaxespad=0,
+                    frameon=False,
+                    fontsize="small",
+                    title=binned.columns.name,
+                    title_fontsize="small",
+                )
+
+            # set y-axis limits
+            if ylim is None:
+                ylim = (0, max(binned.sum(axis=1)))
+            if len(ylim) != 2:
+                raise ValueError("ylim must be a tuple of length 2.")
+            ax.set_ylim(ylim)
+            ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
+
+            format_polar_plot(ax, yticklabels=True)
 
         return ax
 
@@ -1987,6 +2005,7 @@ class Wind:
         show_values: bool = True,
         vmin: float = None,
         vmax: float = None,
+        style_context:str = "python_toolkit.bhom"
     ) -> plt.Axes:
         """Plot a 2D-histogram for a collection of wind speeds and directions.
 
@@ -2009,60 +2028,63 @@ class Wind:
                 The minimum value for the colormap. Defaults to None.
             vmax (float, optional):
                 The maximum value for the colormap. Defaults to None.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
                 A matplotlib Axes object.
         """
+        
+        with plt.style.context(style_context):
+            if ax is None:
+                ax = plt.gca()
 
-        if ax is None:
-            ax = plt.gca()
+            hist = self.histogram(
+                directions=directions,
+                other_data=other_data,
+                other_bins=other_bins,
+                density=density,
+            )
 
-        hist = self.histogram(
-            directions=directions,
-            other_data=other_data,
-            other_bins=other_bins,
-            density=density,
-        )
+            vmin = hist.values.min() if vmin is None else vmin
+            vmax = hist.values.max() if vmax is None else vmax
+            cmap = plt.get_cmap(cmap)
+            norm = Normalize(vmin=vmin, vmax=vmax, clip=True)
+            mapper = ScalarMappable(norm=norm, cmap=cmap)
 
-        vmin = hist.values.min() if vmin is None else vmin
-        vmax = hist.values.max() if vmax is None else vmax
-        cmap = plt.get_cmap(cmap)
-        norm = Normalize(vmin=vmin, vmax=vmax, clip=True)
-        mapper = ScalarMappable(norm=norm, cmap=cmap)
+            _xticks = np.roll(hist.index, 1)
+            _values = np.roll(hist.values, 1, axis=0).T
 
-        _xticks = np.roll(hist.index, 1)
-        _values = np.roll(hist.values, 1, axis=0).T
+            pc = ax.pcolor(_values, cmap=cmap, vmin=vmin, vmax=vmax)
+            ax.set_xticks(np.arange(0.5, len(hist.index), 1), labels=_xticks, rotation=90)
+            ax.set_xlabel(hist.index.name)
+            ax.set_yticks(np.arange(0.5, len(hist.columns), 1), labels=hist.columns)
+            ax.set_ylabel(hist.columns.name)
 
-        pc = ax.pcolor(_values, cmap=cmap, vmin=vmin, vmax=vmax)
-        ax.set_xticks(np.arange(0.5, len(hist.index), 1), labels=_xticks, rotation=90)
-        ax.set_xlabel(hist.index.name)
-        ax.set_yticks(np.arange(0.5, len(hist.columns), 1), labels=hist.columns)
-        ax.set_ylabel(hist.columns.name)
+            cb = plt.colorbar(pc, pad=0.01, label="Density" if density else "Count")
+            if density:
+                cb.ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
+            cb.outline.set_visible(False)
 
-        cb = plt.colorbar(pc, pad=0.01, label="Density" if density else "Count")
-        if density:
-            cb.ax.yaxis.set_major_formatter(mticker.PercentFormatter(1, decimals=1))
-        cb.outline.set_visible(False)
+            ax.set_title(textwrap.fill(f"{self.source}", 75))
 
-        ax.set_title(textwrap.fill(f"{self.source}", 75))
-
-        if show_values:
-            for _xx, row in enumerate(_values):
-                for _yy, col in enumerate(row):
-                    if (col * 100).round(1) == 0:
-                        continue
-                    cell_color = mapper.to_rgba(col)
-                    text_color = contrasting_color(cell_color)
-                    ax.text(
-                        _yy + 0.5,
-                        _xx + 0.5,
-                        f"{col:0.2%}" if density else col,
-                        color=text_color,
-                        ha="center",
-                        va="center",
-                        fontsize="xx-small",
-                    )
+            if show_values:
+                for _xx, row in enumerate(_values):
+                    for _yy, col in enumerate(row):
+                        if (col * 100).round(1) == 0:
+                            continue
+                        cell_color = mapper.to_rgba(col)
+                        text_color = contrasting_color(cell_color)
+                        ax.text(
+                            _yy + 0.5,
+                            _xx + 0.5,
+                            f"{col:0.2%}" if density else col,
+                            color=text_color,
+                            ha="center",
+                            va="center",
+                            fontsize="xx-small",
+                        )
 
         return ax
 

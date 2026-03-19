@@ -1,6 +1,7 @@
 ﻿"""Method to wrap creation of diurnal plots"""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import os
 import textwrap
 
 from pathlib import Path
@@ -50,10 +51,12 @@ PARSER.add_argument(
 
 
 def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], save_path: str = None) -> None:
+    style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
+
     epw = EPW(epw_file)
     hcc = epw.dry_bulb_temperature
 
-    fig = facade_condensation_risk_chart_table(epw_file, thresholds)
+    fig = facade_condensation_risk_chart_table(epw_file, thresholds, style_context=style)
 
     return_dict = {"data": collection_metadata(hcc)}
 

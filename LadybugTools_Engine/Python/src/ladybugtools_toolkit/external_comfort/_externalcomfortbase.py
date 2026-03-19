@@ -278,7 +278,7 @@ class ExternalComfort:
         return pd.concat([simulation_result_df, obj_df], axis=1)
 
     def plot_utci_day_comfort_metrics(
-        self, ax: plt.Axes = None, month: int = 3, day: int = 21
+        self, ax: plt.Axes = None, month: int = 3, day: int = 21, style_context:str = "python_toolkit.bhom"
     ) -> plt.Axes:
         """Plot a single day UTCI and composite components
 
@@ -304,12 +304,14 @@ class ExternalComfort:
             month=month,
             day=day,
             title=self.description(),
+            style_context=style_context
         )
 
     def plot_utci_heatmap(
         self,
         ax: plt.Axes = None,
         utci_categories: Categorical = UTCI_DEFAULT_CATEGORIES,
+        style_context:str = "python_toolkit.bhom"
     ) -> plt.Axes:
         """Create a heatmap showing the annual hourly UTCI values associated with this Typology.
 
@@ -317,6 +319,8 @@ class ExternalComfort:
             ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
             utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
                 UTCI_DEFAULT_CATEGORIES.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes: A matplotlib Axes object.
@@ -326,6 +330,7 @@ class ExternalComfort:
             series=collection_to_series(self.universal_thermal_climate_index),
             ax=ax,
             title=self.description(),
+            style_context=style_context
         )
 
     def walkability_time_limits(self):
@@ -365,6 +370,10 @@ class ExternalComfort:
             ax (plt.Axes, optional): A matplotlib Axes object to plot on. Defaults to None.
             utci_categories (Categorical, optional): The UTCI categories to use. Defaults to
                 UTCI_DEFAULT_CATEGORIES.
+            **kwargs
+                Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
         Returns:
             plt.Axes: A matplotlib Axes object.
         """
@@ -393,6 +402,8 @@ class ExternalComfort:
                 UTCI_DEFAULT_CATEGORIES.
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
         Returns:
             Figure: A matplotlib Figure object.
         """
@@ -426,6 +437,8 @@ class ExternalComfort:
                 Typology and AnalysisPeriod.
             **kwargs:
                 Additional keyword arguments to pass to the histogram function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
         Returns:
             plt.Axes:
                 A matplotlib Axes object.
@@ -452,6 +465,7 @@ class ExternalComfort:
         ax: plt.Axes = None,
         comfort_thresholds: tuple[float] = (9, 26),
         distance_to_comfort_band_centroid: bool = True,
+        style_context:str = "python_toolkit.bhom"
     ) -> Figure:
         """Create a heatmap showing the "distance" in C from the "no thermal stress" UTCI comfort
             band.
@@ -462,6 +476,8 @@ class ExternalComfort:
                 Defaults to [9, 26].
             distance_to_comfort_band_centroid (bool, optional): Set to True to calculate the
                 distance to the centroid of the comfort band. Defaults to True.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Axes: A matplotlib Axes object.
@@ -480,6 +496,7 @@ class ExternalComfort:
             title=f"{self.description()}\nDistance to comfortable",
             vmin=-10,
             vmax=10,
+            style_context=style_context
         )
 
     def plot_dbt_heatmap(self, **kwargs) -> plt.Axes:
@@ -488,6 +505,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.
@@ -506,6 +525,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.
@@ -524,6 +545,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.
@@ -542,6 +565,8 @@ class ExternalComfort:
         Args:
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure: A matplotlib Figure object.

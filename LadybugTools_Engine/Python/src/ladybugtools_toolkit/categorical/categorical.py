@@ -500,6 +500,8 @@ class Categorical:
                 Whether to show the labels on the bars. Defaults to False.
             **kwargs:
                 Additional keyword arguments to pass to plt.bar.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -507,54 +509,57 @@ class Categorical:
         """
 
         validate_timeseries(series)
+        
+        style_context = kwargs.pop("style_context", "python_toolkit.bhom")
 
-        if ax is None:
-            ax = plt.gca()
+        with plt.style.context(style_context):
+            if ax is None:
+                ax = plt.gca()
 
-        color_lookup = dict(zip(self.bin_names, self.colors))
+            color_lookup = dict(zip(self.bin_names, self.colors))
 
-        t = self.timeseries_summary_monthly(series, density=True)
+            t = self.timeseries_summary_monthly(series, density=True)
 
-        t.plot(
-            ax=ax,
-            kind="bar",
-            stacked=True,
-            color=[color_lookup[i] for i in t.columns],
-            width=kwargs.pop("width", 1),
-            legend=False,
-            **kwargs,
-        )
-        ax.set_xlim(-0.5, len(t) - 0.5)
-        ax.set_ylim(0, 1)
-        ax.set_xticklabels(
-            [calendar.month_abbr[int(i._text)] for i in ax.get_xticklabels()],
-            ha="center",
-            rotation=0,
-        )
-        for spine in ["top", "right", "left", "bottom"]:
-            ax.spines[spine].set_visible(False)
-        ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
-
-        if show_legend:
-            ax.legend(
-                bbox_to_anchor=(1, 1),
-                loc="upper left",
-                borderaxespad=0.0,
-                frameon=False,
-                title=self.name,
+            t.plot(
+                ax=ax,
+                kind="bar",
+                stacked=True,
+                color=[color_lookup[i] for i in t.columns],
+                width=kwargs.pop("width", 1),
+                legend=False,
+                **kwargs,
             )
+            ax.set_xlim(-0.5, len(t) - 0.5)
+            ax.set_ylim(0, 1)
+            ax.set_xticklabels(
+                [calendar.month_abbr[int(i._text)] for i in ax.get_xticklabels()],
+                ha="center",
+                rotation=0,
+            )
+            for spine in ["top", "right", "left", "bottom"]:
+                ax.spines[spine].set_visible(False)
+            ax.yaxis.set_major_formatter(mticker.PercentFormatter(1))
 
-        if show_labels:
-            for i, c in enumerate(ax.containers):
-                label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
-                labels = [f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c]
-                ax.bar_label(
-                    c,
-                    labels=labels,
-                    label_type="center",
-                    color=label_colors[i],
-                    fontsize="x-small",
+            if show_legend:
+                ax.legend(
+                    bbox_to_anchor=(1, 1),
+                    loc="upper left",
+                    borderaxespad=0.0,
+                    frameon=False,
+                    title=self.name,
                 )
+
+            if show_labels:
+                for i, c in enumerate(ax.containers):
+                    label_colors = [contrasting_color(i.get_facecolor()) for i in c.patches]
+                    labels = [f"{v.get_height():0.1%}" if v.get_height() > 0.15 else "" for v in c]
+                    ax.bar_label(
+                        c,
+                        labels=labels,
+                        label_type="center",
+                        color=label_colors[i],
+                        fontsize="x-small",
+                    )
 
         return ax
 
@@ -575,6 +580,8 @@ class Categorical:
                 which creates a new plt.Axes object.
             **kwargs:
                 Additional keyword arguments to pass to plt.bar.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -582,23 +589,26 @@ class Categorical:
         """
 
         validate_timeseries(series)
+        
+        style_context = kwargs.pop("style_context", "python_toolkit.bhom")
 
-        if ax is None:
-            ax = plt.gca()
+        with plt.style.context(style_context):
+            if ax is None:
+                ax = plt.gca()
 
-        t = self.timeseries_summary_monthly(series, density=False)
-        #t = t.iloc[:,:-1]
-        t = t.transpose().iloc[::-1]
+            t = self.timeseries_summary_monthly(series, density=False)
+            #t = t.iloc[:,:-1]
+            t = t.transpose().iloc[::-1]
 
-        # Hide axes
-        ax.axis('off')
+            # Hide axes
+            ax.axis('off')
 
-        # Create table
-        colors = self.colors[::-1]
-        table = ax.table(cellText=t.values,  rowLabels = t.index, colLabels = t.columns, rowColours = colors, loc='center', **kwargs)
-        for (row, col), cell in table.get_celld().items():
-            if (row == 0) or (col == -1):
-                cell.set_text_props(fontproperties=FontProperties(weight='bold'))
+            # Create table
+            colors = self.colors[::-1]
+            table = ax.table(cellText=t.values,  rowLabels = t.index, colLabels = t.columns, rowColours = colors, loc='center', **kwargs)
+            for (row, col), cell in table.get_celld().items():
+                if (row == 0) or (col == -1):
+                    cell.set_text_props(fontproperties=FontProperties(weight='bold'))
 
         return ax
 
@@ -613,6 +623,8 @@ class Categorical:
                 A matplotlib Axes object to plot on. Defaults to None.
             **kwargs:
                 Additional keyword arguments to pass to the heatmap function.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -620,11 +632,8 @@ class Categorical:
         """
 
         validate_timeseries(series)
-
-        if ax is None:
-            ax = plt.gca()
-
-        heatmap(
+        
+        ax = heatmap(
             series,
             ax=ax,
             cmap=self.cmap,
@@ -668,6 +677,8 @@ class Categorical:
                     The number of columns in the legend. Defaults to 5.
                 show_labels (bool, optional):
                     Whether to show the labels on the bars. Defaults to True.
+                style_context (string, optional):
+                    The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Figure:
@@ -681,50 +692,53 @@ class Categorical:
         title = kwargs.pop("title", None)
 
         ti = self.name + ("" if title is None else f"\n{title}")
+        
+        style_context = kwargs.get("style_context", "python_toolkit.bhom")
 
-        if show_legend:
-            fig, (hmap_ax, legend_ax, bar_ax) = plt.subplots(
-                3, 1, figsize=figsize, height_ratios=(7, 0.5, 2)
-            )
-            legend_ax.set_axis_off()
-            handles, labels = self.create_legend_handles_labels(label_type="name")
-            legend_ax.legend(
-                handles,
-                labels,
-                loc="center",
-                bbox_to_anchor=(0.5, 0),
-                fontsize="small",
-                ncol=ncol,
-                borderpad=2.5,
-            )
-        else:
-            fig, (hmap_ax, bar_ax) = plt.subplots(2, 1, figsize=figsize, height_ratios=(7, 2))
+        with plt.style.context(style_context):
+            if show_legend:
+                fig, (hmap_ax, legend_ax, bar_ax) = plt.subplots(
+                    3, 1, figsize=figsize, height_ratios=(7, 0.5, 2)
+                )
+                legend_ax.set_axis_off()
+                handles, labels = self.create_legend_handles_labels(label_type="name")
+                legend_ax.legend(
+                    handles,
+                    labels,
+                    loc="center",
+                    bbox_to_anchor=(0.5, 0),
+                    fontsize="small",
+                    ncol=ncol,
+                    borderpad=2.5,
+                )
+            else:
+                fig, (hmap_ax, bar_ax) = plt.subplots(2, 1, figsize=figsize, height_ratios=(7, 2))
 
-        self.annual_heatmap(series, show_colorbar=False, ax=hmap_ax)
+            self.annual_heatmap(series, show_colorbar=False, ax=hmap_ax, **kwargs)
 
-        self.annual_monthly_histogram(ax=bar_ax, series=series, show_labels=show_labels)
+            self.annual_monthly_histogram(ax=bar_ax, series=series, show_labels=show_labels, **kwargs)
 
-        hmap_ax.set_title(ti)
+            hmap_ax.set_title(ti)
 
-        # add sun up indicator lines
-        if location is not None:
-            ylimz = hmap_ax.get_ylim()
-            xlimz = hmap_ax.get_xlim()
-            ymin = min(hmap_ax.get_ylim())
-            sun_rise_set = sunrise_sunset(location=location)
-            sunrise = [
-                ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
-                for i in sun_rise_set.sunrise
-            ]
-            sunset = [
-                ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
-                for i in sun_rise_set.sunset
-            ]
-            xx = np.arange(min(hmap_ax.get_xlim()), max(hmap_ax.get_xlim()) + 1, 1)
-            hmap_ax.plot(xx, sunrise, zorder=9, c=sunrise_color, lw=1)
-            hmap_ax.plot(xx, sunset, zorder=9, c=sunset_color, lw=1)
-            hmap_ax.set_xlim(xlimz)
-            hmap_ax.set_ylim(ylimz)
+            # add sun up indicator lines
+            if location is not None:
+                ylimz = hmap_ax.get_ylim()
+                xlimz = hmap_ax.get_xlim()
+                ymin = min(hmap_ax.get_ylim())
+                sun_rise_set = sunrise_sunset(location=location)
+                sunrise = [
+                    ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
+                    for i in sun_rise_set.sunrise
+                ]
+                sunset = [
+                    ymin + (((i.time().hour * 60) + (i.time().minute)) / (60 * 24))
+                    for i in sun_rise_set.sunset
+                ]
+                xx = np.arange(min(hmap_ax.get_xlim()), max(hmap_ax.get_xlim()) + 1, 1)
+                hmap_ax.plot(xx, sunrise, zorder=9, c=sunrise_color, lw=1)
+                hmap_ax.plot(xx, sunset, zorder=9, c=sunset_color, lw=1)
+                hmap_ax.set_xlim(xlimz)
+                hmap_ax.set_ylim(ylimz)
 
         return fig
 
@@ -741,6 +755,8 @@ class Categorical:
                 Additional keyword arguments to pass to the heatmap function.
             show_legend (bool, optional):
                 Whether to show the legend. Defaults to True.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             plt.Axes:
@@ -748,22 +764,22 @@ class Categorical:
         """
 
         validate_timeseries(series)
+        
+        style_context = kwargs.get("style_context", "python_toolkit.bhom")
 
-        if ax is None:
-            ax = plt.gca()
+        with plt.style.context(style_context):
+            ax = timeseries(
+                series,
+                ax=ax,
+                **kwargs,
+            )
 
-        plt = timeseries(
-            series,
-            ax=ax,
-            **kwargs,
-        )
-
-        for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
-            val = interval.right
-            if np.isfinite(val) and val>ax.get_ylim()[0]:
-                col = self.color_from_bin_name(bin_name)
-                ax.axhline(val, 0, 1, color = col, ls="--", lw=2)
-                ax.text(0.5, val, val, va='center', ha='center', backgroundcolor='w', color = col, transform=ax.get_yaxis_transform())
+            for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
+                val = interval.right
+                if np.isfinite(val) and val>ax.get_ylim()[0]:
+                    col = self.color_from_bin_name(bin_name)
+                    ax.axhline(val, 0, 1, color = col, ls="--", lw=2)
+                    ax.text(0.5, val, val, va='center', ha='center', backgroundcolor='w', color = col, transform=ax.get_yaxis_transform())
         return ax
 
 
@@ -840,7 +856,7 @@ class CategoricalComfort(Categorical):
         )
 
     def heatmap_histogram(
-        self, series: pd.Series, show_colorbar: bool = True, figsize: tuple[float] = (15, 5)
+        self, series: pd.Series, show_colorbar: bool = True, figsize: tuple[float] = (15, 5), style_context:str = "python_toolkit.bhom"
     ) -> Figure:
         """Create a heatmap histogram. This combines the heatmap and histogram.
 
@@ -851,55 +867,58 @@ class CategoricalComfort(Categorical):
                 Whether to show the colorbar in the plot. Defaults to True.
             figsize (tuple[float], optional):
                 Change the figsize. Defaults to (15, 5).
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
         Returns:
             Figure:
                 A figure!
         """
-
-        fig = plt.figure(figsize=figsize, constrained_layout=True)
-        spec = fig.add_gridspec(
-            ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0
-        )
-        heatmap_ax = fig.add_subplot(spec[0, 0])
-        histogram_ax = fig.add_subplot(spec[1, 0])
-
-        # Add heatmap
-        self.annual_heatmap(series, ax=heatmap_ax, show_colorbar=False)
-        # Add stacked plot
-        self.annual_monthly_histogram(series=series, ax=histogram_ax, show_labels=True)
-
-        if show_colorbar:
-            # add colorbar
-            divider = make_axes_locatable(histogram_ax)
-            colorbar_ax = divider.append_axes("bottom", size="20%", pad=0.7)
-            cb = fig.colorbar(
-                mappable=heatmap_ax.get_children()[0],
-                cax=colorbar_ax,
-                orientation="horizontal",
-                drawedges=False,
-                extend="both",
+        
+        with plt.style.context(style_context):
+            fig = plt.figure(figsize=figsize, constrained_layout=True)
+            spec = fig.add_gridspec(
+                ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 2], hspace=0.0
             )
-            cb.outline.set_visible(False)
-            for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
-                if np.isinf(interval.left):
-                    ha = "right"
-                    position = interval.right
-                elif np.isinf(interval.right):
-                    ha = "left"
-                    position = interval.left
-                else:
-                    ha = "center"
-                    position = np.mean([interval.left, interval.right])
-                colorbar_ax.text(
-                    position,
-                    1.05,
-                    textwrap.fill(bin_name, 11),
-                    ha=ha,
-                    va="bottom",
-                    fontsize="x-small",
-                )
+            heatmap_ax = fig.add_subplot(spec[0, 0])
+            histogram_ax = fig.add_subplot(spec[1, 0])
 
-        heatmap_ax.set_title(f"{self.name}\n{series.name}", y=1, ha="left", va="bottom", x=0)
+            # Add heatmap
+            self.annual_heatmap(series, ax=heatmap_ax, show_colorbar=False, style_context=style_context)
+            # Add stacked plot
+            self.annual_monthly_histogram(series=series, ax=histogram_ax, show_labels=True, style_context=style_context)
+
+            if show_colorbar:
+                # add colorbar
+                divider = make_axes_locatable(histogram_ax)
+                colorbar_ax = divider.append_axes("bottom", size="20%", pad=0.7)
+                cb = fig.colorbar(
+                    mappable=heatmap_ax.get_children()[0],
+                    cax=colorbar_ax,
+                    orientation="horizontal",
+                    drawedges=False,
+                    extend="both",
+                )
+                cb.outline.set_visible(False)
+                for bin_name, interval in list(zip(*[self.bin_names, self.interval_index])):
+                    if np.isinf(interval.left):
+                        ha = "right"
+                        position = interval.right
+                    elif np.isinf(interval.right):
+                        ha = "left"
+                        position = interval.left
+                    else:
+                        ha = "center"
+                        position = np.mean([interval.left, interval.right])
+                    colorbar_ax.text(
+                        position,
+                        1.05,
+                        textwrap.fill(bin_name, 11),
+                        ha=ha,
+                        va="bottom",
+                        fontsize="x-small",
+                    )
+
+            heatmap_ax.set_title(f"{self.name}\n{series.name}", y=1, ha="left", va="bottom", x=0)
 
         return fig

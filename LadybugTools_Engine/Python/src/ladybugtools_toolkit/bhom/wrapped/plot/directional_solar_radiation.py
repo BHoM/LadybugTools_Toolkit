@@ -79,6 +79,8 @@ PARSER.add_argument(
 
 def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, analysis_period, cmap, title, save_path) -> str:
     try:
+        style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
+
         if cmap not in plt.colormaps():
             cmap = "YlOrRd"
 
@@ -93,11 +95,12 @@ def directional_solar_radiation(epw_file, directions, tilts, irradiance_type, an
         elif irradiance_type == "Reflected":
             irradiance_type = IrradianceType.REFLECTED
 
-        fig, ax = plt.subplots(1, 1, figsize=(22.8/2, 7.6/2))
-        values, dirs, tts = create_radiation_matrix(Path(epw_file), rad_type=irradiance_type, analysis_period=analysis_period, directions=directions, tilts=tilts)
-        tilt_orientation_factor(Path(epw_file), ax=ax, rad_type=irradiance_type, analysis_period=analysis_period, directions=directions, tilts=tilts, cmap=cmap)
-        if not (title == "" or title is None):
-            ax.set_title(title)
+        with plt.style.context(style):
+            fig, ax = plt.subplots(1, 1, figsize=(22.8/2, 7.6/2))
+            values, dirs, tts = create_radiation_matrix(Path(epw_file), rad_type=irradiance_type, analysis_period=analysis_period, directions=directions, tilts=tilts)
+            tilt_orientation_factor(Path(epw_file), ax=ax, rad_type=irradiance_type, analysis_period=analysis_period, directions=directions, tilts=tilts, cmap=cmap, style_context=style)
+            if not (title == "" or title is None):
+                ax.set_title(title)
 
         return_dict = {}
 

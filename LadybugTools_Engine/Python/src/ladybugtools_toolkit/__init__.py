@@ -19,10 +19,6 @@ if os.name == "nt":
     # override "HOME" in case this is set to something other than default for windows
     os.environ["HOME"] = (Path("C:/Users/") / getpass.getuser()).as_posix()
 
-import python_toolkit
-# set plotting style for modules within this toolkit
-plt.style.use(Path(list(python_toolkit.__path__)[0]).absolute() / "bhom" / "bhom.mplstyle")
-
 # get dataset paths
 SRI_DATA = DATA_DIRECTORY / "sri_data.csv"
 KOEPPEN_DATA = DATA_DIRECTORY / "koeppen.csv"

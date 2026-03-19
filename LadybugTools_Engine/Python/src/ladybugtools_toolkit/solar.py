@@ -917,6 +917,7 @@ def radiation_rose(
     label: bool = True,
     bar_width: float = 1,
     lims: tuple[float, float] = None,
+    style_context:str = "python_toolkit.bhom"
 ) -> plt.Axes:
     """Create a solar radiation rose
 
@@ -950,132 +951,135 @@ def radiation_rose(
         lims (tuple[float, float], optional):
             Set the limits of the plot.
             Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
             The matplotlib axes.
     """
-    if ax is None:
-        _, ax = plt.subplots(subplot_kw={"projection": "polar"})
+    with plt.style.context(style_context):
+        if ax is None:
+            _, ax = plt.subplots(subplot_kw={"projection": "polar"})
 
-    if ax.name != "polar":
-        raise ValueError("ax must be a polar axis.")
+        if ax.name != "polar":
+            raise ValueError("ax must be a polar axis.")
 
-    match rad_type:
-        case IrradianceType.TOTAL:
-            rad_type = "total"
-        case IrradianceType.DIRECT:
-            rad_type = "direct"
-        case IrradianceType.DIFFUSE:
-            rad_type = "diffuse"
-        case IrradianceType.REFLECTED:
-            raise NotImplementedError("Reflected irradiance not yet supported.")
-        case _:
-            raise ValueError("rad_type must be IrradianceType.")
+        match rad_type:
+            case IrradianceType.TOTAL:
+                rad_type = "total"
+            case IrradianceType.DIRECT:
+                rad_type = "direct"
+            case IrradianceType.DIFFUSE:
+                rad_type = "diffuse"
+            case IrradianceType.REFLECTED:
+                raise NotImplementedError("Reflected irradiance not yet supported.")
+            case _:
+                raise ValueError("rad_type must be IrradianceType.")
 
-    # create sky conditions
-    smx = SkyMatrix.from_epw(epw_file=epw_file, high_density=True, hoys=analysis_period.hoys)
-    rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=tilt_angle)
+        # create sky conditions
+        smx = SkyMatrix.from_epw(epw_file=epw_file, high_density=True, hoys=analysis_period.hoys)
+        rr = RadiationRose(sky_matrix=smx, direction_count=directions, tilt_angle=tilt_angle)
 
-    # get properties to plot
-    angles = np.deg2rad(
-        [angle_from_north(j) for j in [Vector2D(*i[:2]) for i in rr.direction_vectors]]
-    )
-    values = getattr(rr, f"{rad_type}_values")
-    if lims is None:
-        norm = Normalize(vmin=0, vmax=max(values))
-    else:
-        norm = Normalize(vmin=lims[0], vmax=lims[1])
-    cmap = plt.get_cmap(cmap)
-    colors = [cmap(i) for i in [norm(v) for v in values]]
-
-    # generate plot
-    rects = ax.bar(
-        x=angles,
-        height=values,
-        width=((np.pi / directions) * 2) * bar_width,
-        color=colors,
-    )
-    format_polar_plot(ax)
-
-    # add colormap
-    sm = ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array([])
-    cbar = plt.colorbar(
-        sm,
-        ax=ax,
-        orientation="vertical",
-        label="Cumulative irradiance (W/m$^2$)",
-        fraction=0.046,
-        pad=0.04,
-    )
-    cbar.outline.set_visible(False)
-
-    # add labels
-    if label:
-        offset_distance = max(values) / 10
-        if directions > 36:
-            max_angle = angles[np.argmax(values)]
-            max_val = max(values)
-            ax.text(
-                max_angle,
-                max_val + offset_distance,
-                f"{max_val:0.0f}W/m$^2$\n{np.rad2deg(max_angle):0.0f}°",
-                fontsize="xx-small",
-                ha="center",
-                va="center",
-                rotation=0,
-                rotation_mode="anchor",
-                color="k",
-            )
+        # get properties to plot
+        angles = np.deg2rad(
+            [angle_from_north(j) for j in [Vector2D(*i[:2]) for i in rr.direction_vectors]]
+        )
+        values = getattr(rr, f"{rad_type}_values")
+        if lims is None:
+            norm = Normalize(vmin=0, vmax=max(values))
         else:
-            for rect, color in list(zip(*[rects, colors])):
-                theta = rect.get_x() + (rect.get_width() / 2)
-                theta_deg = np.rad2deg(theta)
-                val = rect.get_height()
+            norm = Normalize(vmin=lims[0], vmax=lims[1])
+        cmap = plt.get_cmap(cmap)
+        colors = [cmap(i) for i in [norm(v) for v in values]]
 
-                if theta_deg < 180:
-                    if val < max(values) / 2:
-                        ha = "left"
-                        anchor = val + offset_distance
+        # generate plot
+        rects = ax.bar(
+            x=angles,
+            height=values,
+            width=((np.pi / directions) * 2) * bar_width,
+            color=colors,
+        )
+        format_polar_plot(ax)
+
+        # add colormap
+        sm = ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        cbar = plt.colorbar(
+            sm,
+            ax=ax,
+            orientation="vertical",
+            label="Cumulative irradiance (W/m$^2$)",
+            fraction=0.046,
+            pad=0.04,
+        )
+        cbar.outline.set_visible(False)
+
+        # add labels
+        if label:
+            offset_distance = max(values) / 10
+            if directions > 36:
+                max_angle = angles[np.argmax(values)]
+                max_val = max(values)
+                ax.text(
+                    max_angle,
+                    max_val + offset_distance,
+                    f"{max_val:0.0f}W/m$^2$\n{np.rad2deg(max_angle):0.0f}°",
+                    fontsize="xx-small",
+                    ha="center",
+                    va="center",
+                    rotation=0,
+                    rotation_mode="anchor",
+                    color="k",
+                )
+            else:
+                for rect, color in list(zip(*[rects, colors])):
+                    theta = rect.get_x() + (rect.get_width() / 2)
+                    theta_deg = np.rad2deg(theta)
+                    val = rect.get_height()
+
+                    if theta_deg < 180:
+                        if val < max(values) / 2:
+                            ha = "left"
+                            anchor = val + offset_distance
+                        else:
+                            ha = "right"
+                            anchor = val - offset_distance
+                        ax.text(
+                            theta,
+                            anchor,
+                            f"{val:0.0f}",
+                            fontsize="xx-small",
+                            ha=ha,
+                            va="center",
+                            rotation=90 - theta_deg,
+                            rotation_mode="anchor",
+                            color=contrasting_color(color),
+                        )
                     else:
-                        ha = "right"
-                        anchor = val - offset_distance
-                    ax.text(
-                        theta,
-                        anchor,
-                        f"{val:0.0f}",
-                        fontsize="xx-small",
-                        ha=ha,
-                        va="center",
-                        rotation=90 - theta_deg,
-                        rotation_mode="anchor",
-                        color=contrasting_color(color),
-                    )
-                else:
-                    if val < max(values) / 2:
-                        ha = "right"
-                        anchor = val + offset_distance
-                    else:
-                        ha = "left"
-                        anchor = val - offset_distance
-                    ax.text(
-                        theta,
-                        anchor,
-                        f"{val:0.0f}",
-                        fontsize="xx-small",
-                        ha=ha,
-                        va="center",
-                        rotation=-theta_deg - 90,
-                        rotation_mode="anchor",
-                        color=contrasting_color(color),
-                    )
+                        if val < max(values) / 2:
+                            ha = "right"
+                            anchor = val + offset_distance
+                        else:
+                            ha = "left"
+                            anchor = val - offset_distance
+                        ax.text(
+                            theta,
+                            anchor,
+                            f"{val:0.0f}",
+                            fontsize="xx-small",
+                            ha=ha,
+                            va="center",
+                            rotation=-theta_deg - 90,
+                            rotation_mode="anchor",
+                            color=contrasting_color(color),
+                        )
 
-    ax.set_title(
-        f"{epw_file.name}\n{rad_type.title()} irradiance ({tilt_angle}° altitude)\n{describe_analysis_period(analysis_period)}"
-    )
+        ax.set_title(
+            f"{epw_file.name}\n{rad_type.title()} irradiance ({tilt_angle}° altitude)\n{describe_analysis_period(analysis_period)}"
+        )
 
-    plt.tight_layout()
+        plt.tight_layout()
 
     return ax
 
@@ -1146,6 +1150,7 @@ def tilt_orientation_factor(
     tilts: int = 9,
     quantiles: tuple[float] = (0.05, 0.25, 0.5, 0.75, 0.95),
     lims: tuple[float, float] = None,
+    style_context:str = "python_toolkit.bhom"
 ) -> plt.Axes:
     """Create a tilt-orientation factor plot.
 
@@ -1176,105 +1181,108 @@ def tilt_orientation_factor(
         lims (tuple[float, float], optional):
             The limits of the plot.
             Defaults to None.
+        style_context (string, optional):
+            The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         plt.Axes:
             The matplotlib axes.
     """
 
-    if ax is None:
-        ax = plt.gca()
+    with plt.style.context(style_context):
+        if ax is None:
+            ax = plt.gca()
 
-    cmap = plt.get_cmap(cmap)
+        cmap = plt.get_cmap(cmap)
 
-    values, _directions, _tilts = create_radiation_matrix(epw_file=epw_file, rad_type=rad_type, analysis_period=analysis_period, directions=directions, tilts=tilts)
+        values, _directions, _tilts = create_radiation_matrix(epw_file=epw_file, rad_type=rad_type, analysis_period=analysis_period, directions=directions, tilts=tilts)
 
-    # create x, y coordinates per result value
-    __directions, __tilts = np.meshgrid(_directions, _tilts)
+        # create x, y coordinates per result value
+        __directions, __tilts = np.meshgrid(_directions, _tilts)
 
-    # get location of max
-    _max = values.flatten().max()
-    if _max == 0:
-        raise ValueError(f"No solar radiation within {analysis_period}.")
+        # get location of max
+        _max = values.flatten().max()
+        if _max == 0:
+            raise ValueError(f"No solar radiation within {analysis_period}.")
 
-    _max_idx = values.flatten().argmax()
-    _max_alt = __tilts.flatten()[_max_idx]
-    _max_az = __directions.flatten()[_max_idx]
+        _max_idx = values.flatten().argmax()
+        _max_alt = __tilts.flatten()[_max_idx]
+        _max_az = __directions.flatten()[_max_idx]
 
-    # create colormap
-    if lims is None:
-        norm = Normalize(vmin=0, vmax=_max)
-    else:
-        norm = Normalize(vmin=lims[0], vmax=lims[1])
+        # create colormap
+        if lims is None:
+            norm = Normalize(vmin=0, vmax=_max)
+        else:
+            norm = Normalize(vmin=lims[0], vmax=lims[1])
 
-    # create triangulation
-    tri = Triangulation(x=__directions.flatten(), y=__tilts.flatten())
+        # create triangulation
+        tri = Triangulation(x=__directions.flatten(), y=__tilts.flatten())
 
-    # create quantile lines
-    quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
-    levels = [np.quantile(a=values.flatten(), q=i) for i in quantiles]
-    quant_colors = [cmap(i) for i in [norm(v) for v in levels]]
-    quant_colors_inv = [contrasting_color(i) for i in quant_colors]
-    max_color_inv = contrasting_color(cmap(norm(_max)))
+        # create quantile lines
+        quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
+        levels = [np.quantile(a=values.flatten(), q=i) for i in quantiles]
+        quant_colors = [cmap(i) for i in [norm(v) for v in levels]]
+        quant_colors_inv = [contrasting_color(i) for i in quant_colors]
+        max_color_inv = contrasting_color(cmap(norm(_max)))
 
-    # plot data
-    tcf = ax.tricontourf(tri, values.flatten(), levels=100, cmap=cmap, norm=norm)
-    tcl = ax.tricontour(
-        tri,
-        values.flatten(),
-        levels=levels,
-        colors=quant_colors_inv,
-        linestyles=":",
-        alpha=0.5,
-    )
+        # plot data
+        tcf = ax.tricontourf(tri, values.flatten(), levels=100, cmap=cmap, norm=norm)
+        tcl = ax.tricontour(
+            tri,
+            values.flatten(),
+            levels=levels,
+            colors=quant_colors_inv,
+            linestyles=":",
+            alpha=0.5,
+        )
 
-    # add contour labels
-    def cl_fmt(x):
-        return f"{x:,.0f}W/m$^2$"
+        # add contour labels
+        def cl_fmt(x):
+            return f"{x:,.0f}W/m$^2$"
 
-    _ = ax.clabel(tcl, fontsize="small", fmt=cl_fmt)
+        _ = ax.clabel(tcl, fontsize="small", fmt=cl_fmt)
 
-    # add colorbar
-    cb = plt.colorbar(
-        tcf,
-        ax=ax,
-        orientation="vertical",
-        drawedges=False,
-        fraction=0.05,
-        aspect=25,
-        pad=0.02,
-        label="Cumulative irradiance (W/m$^2$)",
-    )
-    cb.outline.set_visible(False)
-    for quantile_val in levels:
-        cb.ax.plot([0, 1], [quantile_val] * 2, color="k", ls="-", alpha=0.5)
+        # add colorbar
+        cb = plt.colorbar(
+            tcf,
+            ax=ax,
+            orientation="vertical",
+            drawedges=False,
+            fraction=0.05,
+            aspect=25,
+            pad=0.02,
+            label="Cumulative irradiance (W/m$^2$)",
+        )
+        cb.outline.set_visible(False)
+        for quantile_val in levels:
+            cb.ax.plot([0, 1], [quantile_val] * 2, color="k", ls="-", alpha=0.5)
 
-    # add max-location
-    ax.scatter(_max_az, _max_alt, c=max_color_inv, s=10, marker="x")
-    alt_offset = (90 / 100) * 0.5 if _max_alt <= 45 else -(90 / 100) * 0.5
-    az_offset = (360 / 100) * 0.5 if _max_az <= 180 else -(360 / 100) * 0.5
-    ha = "left" if _max_az <= 180 else "right"
-    va = "bottom" if _max_alt <= 45 else "top"
-    ax.text(
-        _max_az + az_offset,
-        _max_alt + alt_offset,
-        f"{_max:,.0f}W/m$^2$\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
-        ha=ha,
-        va=va,
-        c=max_color_inv,
-        weight="bold",
-        size="small",
-    )
+        # add max-location
+        ax.scatter(_max_az, _max_alt, c=max_color_inv, s=10, marker="x")
+        alt_offset = (90 / 100) * 0.5 if _max_alt <= 45 else -(90 / 100) * 0.5
+        az_offset = (360 / 100) * 0.5 if _max_az <= 180 else -(360 / 100) * 0.5
+        ha = "left" if _max_az <= 180 else "right"
+        va = "bottom" if _max_alt <= 45 else "top"
+        ax.text(
+            _max_az + az_offset,
+            _max_alt + alt_offset,
+            f"{_max:,.0f}W/m$^2$\n({_max_az:0.0f}°, {_max_alt:0.0f}°)",
+            ha=ha,
+            va=va,
+            c=max_color_inv,
+            weight="bold",
+            size="small",
+        )
 
-    ax.set_xlim(0, 360)
-    ax.set_ylim(0, 90)
-    ax.xaxis.set_major_locator(MultipleLocator(base=30))
-    ax.yaxis.set_major_locator(MultipleLocator(base=10))
-    ax.set_xlabel("Panel orientation (clockwise from North at 0°)")
-    ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
+        ax.set_xlim(0, 360)
+        ax.set_ylim(0, 90)
+        ax.xaxis.set_major_locator(MultipleLocator(base=30))
+        ax.yaxis.set_major_locator(MultipleLocator(base=10))
+        ax.set_xlabel("Panel orientation (clockwise from North at 0°)")
+        ax.set_ylabel("Panel tilt (0° facing the horizon, 90° facing the sky)")
 
-    ax.set_title(
-        f"{epw_file.name}\n{rad_type.to_string()} irradiance (cumulative)\n{describe_analysis_period(analysis_period)}"
-    )
+        ax.set_title(
+            f"{epw_file.name}\n{rad_type.to_string()} irradiance (cumulative)\n{describe_analysis_period(analysis_period)}"
+        )
 
     return ax

@@ -58,6 +58,8 @@ def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] 
             The filepath to save the resulting image file of the heatmap to.
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure: A matplotlib Figure object.
@@ -71,20 +73,23 @@ def facade_condensation_risk_chart_table(epw_file: str, thresholds: list[float] 
     figsize = kwargs.pop("figsize", (15, 8))
 
     # Instantiate figure
-    fig = plt.figure(figsize=figsize, constrained_layout=True)
-    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[6, 5], hspace=0)
-    chart_ax = fig.add_subplot(spec[0, 0])
-    table_ax = fig.add_subplot(spec[1, 0])
+    style_context = kwargs.get("style_context", "python_toolkit.bhom")
 
-    # Add Thresholds Chart
-    CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey', **kwargs)
+    with plt.style.context(style_context):
+        fig = plt.figure(figsize=figsize, constrained_layout=True)
+        spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[6, 5], hspace=0)
+        chart_ax = fig.add_subplot(spec[0, 0])
+        table_ax = fig.add_subplot(spec[1, 0])
+
+        # Add Thresholds Chart
+        CATEGORIES.annual_threshold_chart(series, chart_ax, color = 'slategrey', **kwargs)
    
-    # Add table
-    CATEGORIES.annual_monthly_table(series, table_ax, **kwargs)
+        # Add table
+        CATEGORIES.annual_monthly_table(series, table_ax, **kwargs)
 
-    title = f"{title}" if title is not None else series.name
-    chart_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
-    chart_ax.set_anchor('W')
+        title = f"{title}" if title is not None else series.name
+        chart_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
+        chart_ax.set_anchor('W')
 
     return fig
 
@@ -104,6 +109,8 @@ def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[f
             The filepath to save the resulting image file of the heatmap to.
         **kwargs:
             Additional keyword arguments to pass to the heatmap function.
+            style_context (string, optional):
+                The matplotlib style to use. Defaults to python_toolkit.bhom
 
     Returns:
         Figure: A matplotlib Figure object.
@@ -117,18 +124,21 @@ def facade_condensation_risk_heatmap_histogram(epw_file: str, thresholds: list[f
     figsize = kwargs.pop("figsize", (15, 8))
 
     # Instantiate figure
-    fig = plt.figure(figsize=figsize, constrained_layout=True)
-    spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 3], hspace=0.0)
-    heatmap_ax = fig.add_subplot(spec[0, 0])
-    histogram_ax = fig.add_subplot(spec[1, 0])
+    style_context = kwargs.get("style_context", "python_toolkit.bhom")
 
-    # Add heatmap
-    CATEGORIES.annual_heatmap(series, heatmap_ax, **kwargs)
+    with plt.style.context(style_context):
+        fig = plt.figure(figsize=figsize, constrained_layout=True)
+        spec = fig.add_gridspec(ncols=1, nrows=2, width_ratios=[1], height_ratios=[5, 3], hspace=0.0)
+        heatmap_ax = fig.add_subplot(spec[0, 0])
+        histogram_ax = fig.add_subplot(spec[1, 0])
 
-    # Add stacked plot
-    CATEGORIES.annual_monthly_histogram(series, histogram_ax, False, True, **kwargs)
+        # Add heatmap
+        CATEGORIES.annual_heatmap(series, heatmap_ax, **kwargs)
 
-    title = f"{series.name} - {title}" if title is not None else series.name
-    heatmap_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
+        # Add stacked plot
+        CATEGORIES.annual_monthly_histogram(series, histogram_ax, False, True, **kwargs)
+
+        title = f"{series.name} - {title}" if title is not None else series.name
+        heatmap_ax.set_title(title, y=1, ha="left", va="bottom", x=0)
 
     return fig
