@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -30,6 +31,7 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Query
     {
+        [Description("Gets the custom code folder for this toolkit if it exists, otherwise gets the deefault BHoM/Extensions/PythonCode folder.")]
         public static string PythonCodeDirectory()
         {
             string directory = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "PythonCode");
