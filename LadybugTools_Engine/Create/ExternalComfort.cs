@@ -50,8 +50,8 @@ namespace BH.Engine.LadyBugTools
             };
         }
 
-        [Description("Create an ExternalComfort object from an existing SimulationResult and a Typology")]
-        [Input("simuationResult", "The existing simulation result to use for this external comfort.")]
+        [Description("Create an ExternalComfort object from an existing SimulationResult and a Typology.")]
+        [Input("simulationResult", "The existing simulation result to use for this external comfort.")]
         [Input("typology", "The typology to use.")]
         [Output("externalComfort", "The unpopulated external comfort.")]
         public static ExternalComfort ExternalComfort(SimulationResult simulationResult, Typology typology)
