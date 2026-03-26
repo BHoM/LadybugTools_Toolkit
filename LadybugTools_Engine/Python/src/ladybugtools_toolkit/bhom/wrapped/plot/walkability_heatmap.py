@@ -40,6 +40,11 @@ PARSER.add_argument(
 def walkability_heatmap(input_json: str, save_path: str, epw_file:str = None) -> str:
     try:
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
+
+        if not input_json.startswith("{"): #assume it's a path
+            with open(input_json, "r") as f:
+                input_json = f.read()
+
         argsDict = json.loads(input_json)
     
         ec = ExternalComfort.from_dict(json.loads(argsDict["external_comfort"]))
