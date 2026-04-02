@@ -1,6 +1,6 @@
-﻿/*
+/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2026, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -23,15 +23,24 @@
 using BH.Engine.Adapter;
 using BH.Engine.LadybugTools;
 using BH.oM.Adapter;
+using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace BH.Engine.LadyBugTools
 {
     public static partial class Create
     {
+        [Description("Create an ExternalComfort object from an epw file, a simulation identifier, two materials and a typology (without a SimulationResult).")]
+        [Input("epwFile", "The epw file that the created SimulationResult is based on.")]
+        [Input("identifier", "The unique identifier for the created SimulationResult.")]
+        [Input("groundMaterial", "The material to use for the ground in the simulation.")]
+        [Input("shadeMaterial", "The material to use for the shade in the simulation.")]
+        [Input("typology", "The typology to use.")]
+        [Output("externalComfort", "The unpopulated external comfort.")]
         public static ExternalComfort ExternalComfort(FileSettings epwFile, string identifier, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial, Typology typology)
         {
             return new ExternalComfort()
@@ -41,6 +50,10 @@ namespace BH.Engine.LadyBugTools
             };
         }
 
+        [Description("Create an ExternalComfort object from an existing SimulationResult and a Typology.")]
+        [Input("simulationResult", "The existing simulation result to use for this external comfort.")]
+        [Input("typology", "The typology to use.")]
+        [Output("externalComfort", "The unpopulated external comfort.")]
         public static ExternalComfort ExternalComfort(SimulationResult simulationResult, Typology typology)
         {
             return new ExternalComfort()
@@ -51,3 +64,4 @@ namespace BH.Engine.LadyBugTools
         }
     }
 }
+

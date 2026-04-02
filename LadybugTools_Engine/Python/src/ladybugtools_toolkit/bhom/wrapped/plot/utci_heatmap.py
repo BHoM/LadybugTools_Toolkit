@@ -1,6 +1,7 @@
 """Method to wrap UTCI plots"""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import os
 import sys
 import traceback
 import matplotlib
@@ -42,6 +43,7 @@ PARSER.add_argument(
 
 def utci_heatmap(input_json:str, save_path = None, epw_file:str = None) -> str:
     try:
+        style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
 
         if not input_json.startswith("{"): #assume it's a path
             with open(input_json, "r") as f:
@@ -61,14 +63,15 @@ def utci_heatmap(input_json:str, save_path = None, epw_file:str = None) -> str:
                 colors=(bin_colours),
                 name="UTCI")
 
-        fig, ax = plt.subplots(1, 1, figsize=(10, 4))
-        ec.plot_utci_heatmap(utci_categories = custom_bins, ax=ax)
+        with plt.style.context(style):
+            fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+            ec.plot_utci_heatmap(utci_categories = custom_bins, ax=ax, style_context=style)
 
-        utci_collection = ec.universal_thermal_climate_index
+            utci_collection = ec.universal_thermal_climate_index
 
-        return_dict = {"data": utci_metadata(utci_collection), "external_comfort": ec.to_dict()}
+            return_dict = {"data": utci_metadata(utci_collection), "external_comfort": ec.to_dict()}
 
-        plt.tight_layout()
+            plt.tight_layout()
     
         if save_path == None or save_path == "":
             base64 = figure_to_base64(fig,html=False)
@@ -82,7 +85,7 @@ def utci_heatmap(input_json:str, save_path = None, epw_file:str = None) -> str:
         return json.dumps(return_dict, default=str)
     except Exception:
         CONSOLE_LOGGER.error("UTCI Heatmap could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
     args = PARSER.parse_args()

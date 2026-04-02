@@ -45,7 +45,7 @@ def gem_to_hbjson(gem_file: str) -> None:
         return json.dumps(model_dict)
     except Exception:
         CONSOLE_LOGGER.error("HBJSON file could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 
 if __name__ == "__main__":

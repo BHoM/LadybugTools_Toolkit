@@ -1,6 +1,7 @@
 """Method to wrap for creating wind roses from epw files."""
 # pylint: disable=C0415,E0401,W0703
 import argparse
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -59,6 +60,7 @@ PARSER.add_argument(
 def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, save_path: str = None) -> str:
     """Method to wrap for creating wind roses from epw files."""
     try:
+        style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
         if colour_map not in plt.colormaps():
             colour_map = "YlGnBu"
 
@@ -66,15 +68,16 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, sa
         analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
         w_epw = Wind.from_epw(epw_file)
 
-        fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "polar"})
+        with plt.style.context(style):
+            fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "polar"})
         
-        wind_filtered = w_epw.filter_by_analysis_period(analysis_period=analysis_period)
+            wind_filtered = w_epw.filter_by_analysis_period(analysis_period=analysis_period)
 
-        w_epw.filter_by_analysis_period(analysis_period=analysis_period).plot_windrose(ax=ax, directions=bins, ylim=(0, 3.6/bins), colors=colour_map)
+            wind_filtered.plot_windrose(ax=ax, directions=bins, ylim=(0, 3.6/bins), colors=colour_map, style_context=style)
 
-        return_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
+            return_dict = {"data": wind_metadata(wind_filtered, directions=bins)}
 
-        plt.tight_layout()
+            plt.tight_layout()
         if save_path == None or save_path == "":
             return_dict["figure"] = figure_to_base64(fig,html=False)
         else:
@@ -87,7 +90,7 @@ def windrose(epw_file: str, analysis_period: str, colour_map: str, bins: int, sa
             
     except Exception:
         CONSOLE_LOGGER.error("Windrose could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 
 if __name__ == "__main__":

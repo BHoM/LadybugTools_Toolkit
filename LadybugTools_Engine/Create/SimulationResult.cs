@@ -1,6 +1,6 @@
-﻿/*
+/*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2026, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -21,15 +21,23 @@
  */
 
 using BH.oM.Adapter;
+using BH.oM.Base.Attributes;
 using BH.oM.LadybugTools;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace BH.Engine.LadyBugTools
 {
     public static partial class Create
     {
+        [Description("Create an unpopulated SimulationResult from an epw file, identifier and two materials.")]
+        [Input("epwFile", "The epw file that the created SimulationResult is based on.")]
+        [Input("identifier", "The unique identifier for the created SimulationResult.")]
+        [Input("groundMaterial", "The material to use for the ground in the simulation.")]
+        [Input("shadeMaterial", "The material to use for the shade in the simulation.")]
+        [Output("simulationResult", "The unpopulated SimulationResult.")]
         public static SimulationResult SimulationResult(FileSettings epwFile, string identifier, IEnergyMaterialOpaque groundMaterial, IEnergyMaterialOpaque shadeMaterial)
         {
             return new SimulationResult()
@@ -42,3 +50,4 @@ namespace BH.Engine.LadyBugTools
         }
     }
 }
+

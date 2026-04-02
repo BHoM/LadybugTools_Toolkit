@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2026, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -33,26 +33,27 @@ namespace BH.oM.LadybugTools
     {
         [DisplayText("Maximum Value")]
         [Description("The maximum incoming solar radiation.")]
-        public double MaxValue { get; set; } = double.NaN;
+        public virtual double MaxValue { get; set; } = double.NaN;
 
         [DisplayText("Minimum Value")]
         [Description("The minimum incoming solar radiation.")]
-        public double MinValue { get; set; } = double.NaN;
+        public virtual double MinValue { get; set; } = double.NaN;
 
         [DisplayText("Maximum Direction")]
         [Description("The direction, in degrees(°) clockwise from north that the maximum incoming solar radiation is coming from.")]
-        public double MaxDirection { get; set; } = double.NaN;
+        public virtual double MaxDirection { get; set; } = double.NaN;
 
         [DisplayText("Minimum Direction")]
         [Description("The direction, in degrees(°) clockwise from north that the minimum incoming solar radiation is coming from.")]
-        public double MinDirection { get; set; } = double.NaN;
+        public virtual double MinDirection { get; set; } = double.NaN;
 
         [DisplayText("Maximum Tilt")]
         [Description("The angle, in degrees(°) above the horizon that the maximum incoming solar radiation is coming from.")]
-        public double MaxTilt { get; set; } = double.NaN;
+        public virtual double MaxTilt { get; set; } = double.NaN;
 
         [DisplayText("Minimum Tilt")]
         [Description("The angle, in degrees(°) above the horizon that the minimum incoming solar radiation is coming from.")]
-        public double MinTilt { get; set;} = double.NaN;
+        public virtual double MinTilt { get; set;} = double.NaN;
     }
 }
+

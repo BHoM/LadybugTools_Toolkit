@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2026, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -30,6 +31,7 @@ namespace BH.Engine.LadybugTools
 {
     public static partial class Query
     {
+        [Description("Gets the custom code folder for this toolkit if it exists, otherwise gets the default BHoM/Extensions/PythonCode folder.")]
         public static string PythonCodeDirectory()
         {
             string directory = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "PythonCode");
@@ -41,4 +43,5 @@ namespace BH.Engine.LadybugTools
         }
     }
 }
+
 

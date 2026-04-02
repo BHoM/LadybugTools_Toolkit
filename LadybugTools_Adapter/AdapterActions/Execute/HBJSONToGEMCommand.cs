@@ -1,6 +1,6 @@
 /*
  * This file is part of the Buildings and Habitats object Model (BHoM)
- * Copyright (c) 2015 - 2025, the respective contributors. All rights reserved.
+ * Copyright (c) 2015 - 2026, the respective contributors. All rights reserved.
  *
  * Each contributor holds copyright over their respective contributions.
  * The project versioning (Git) records all such contribution source information.
@@ -79,7 +79,7 @@ namespace BH.Adapter.LadybugTools
             }
 
             //as the file output is hard to verify by itself, check that no errors got output to stderr log
-            success &= !result.Contains("Traceback (most recent call last):");
+            success &= (!result.Contains("Traceback (most recent call last):") || result.Length == 0);
 
             if (!success)
             {
@@ -87,7 +87,7 @@ namespace BH.Adapter.LadybugTools
                 return new List<object>();
             }
 
-            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.HBJSONFile.FileName) + ".hbjson");
+            string outputFileName = Path.Combine(command.OutputDirectory, Path.GetFileNameWithoutExtension(command.HBJSONFile.FileName) + ".gem");
             File.WriteAllText(outputFileName, result);
 
             m_executeSuccess = success;
@@ -95,3 +95,4 @@ namespace BH.Adapter.LadybugTools
         }
     }
 }
+

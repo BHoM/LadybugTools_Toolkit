@@ -36,7 +36,7 @@ def epw_to_csv(epw_file: str, include_additional: bool) -> str:
         return csv_str
     except Exception:
         CONSOLE_LOGGER.error("CSV file could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
     args = PARSER.parse_args()

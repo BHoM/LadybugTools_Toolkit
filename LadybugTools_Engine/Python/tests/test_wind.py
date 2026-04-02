@@ -8,7 +8,7 @@ from ladybug.epw import AnalysisPeriod
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
 from ladybugtools_toolkit.wind import Wind
 
-from . import EPW_OBJ, EPW_FILE
+from . import EPW_OBJ, EPW_FILE, EPW_CSV_FILE
 
 TEST_WIND = Wind.from_epw(EPW_OBJ)
 
@@ -118,7 +118,7 @@ def test_wind_from_dataframe():
         Wind,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Wind.from_dataframe(
             df="not_a_dataframe",
             wind_speed_column="speed",
@@ -132,6 +132,12 @@ def test_wind_from_dataframe():
             height_above_ground=10,
         )
 
+def test_wind_from_csv():
+    """."""
+    assert isinstance(
+        Wind.from_csv(EPW_CSV_FILE, "Wind Speed (m/s)", "Wind Direction (degrees)"),
+        Wind,
+    )
 
 def test_wind_from_openmeteo():
     """."""

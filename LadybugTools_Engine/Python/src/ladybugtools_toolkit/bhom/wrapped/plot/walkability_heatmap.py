@@ -1,4 +1,5 @@
 ﻿import argparse
+import os
 import sys
 import matplotlib
 import traceback
@@ -38,18 +39,26 @@ PARSER.add_argument(
 
 def walkability_heatmap(input_json: str, save_path: str, epw_file:str = None) -> str:
     try:
+        style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
+
+        if not input_json.startswith("{"): #assume it's a path
+            with open(input_json, "r") as f:
+                input_json = f.read()
+
         argsDict = json.loads(input_json)
     
         ec = ExternalComfort.from_dict(json.loads(argsDict["external_comfort"]))
-        fig, ax = plt.subplots(1, 1, figsize=(10, 4))
-        ec.plot_walkability_heatmap(ax=ax)
 
-        #TODO: create walkability collection metadata
-        utci_collection = ec.universal_thermal_climate_index
+        with plt.style.context(style):
+            fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+            ec.plot_walkability_heatmap(ax=ax, style_context=style)
 
-        return_dict = {"data": utci_metadata(utci_collection), "external_comfort": ec.to_dict()}
+            #TODO: create walkability collection metadata
+            utci_collection = ec.universal_thermal_climate_index
 
-        plt.tight_layout()
+            return_dict = {"data": utci_metadata(utci_collection), "external_comfort": ec.to_dict()}
+
+            plt.tight_layout()
     
         if save_path == None or save_path == "":
             base64 = figure_to_base64(fig,html=False)
@@ -64,7 +73,7 @@ def walkability_heatmap(input_json: str, save_path: str, epw_file:str = None) ->
     
     except Exception:
         CONSOLE_LOGGER.error("Walkability plot could not be created.", exc_info=1)
-        return ""
+        return traceback.format_exc()
 
 if __name__ == "__main__":
 
