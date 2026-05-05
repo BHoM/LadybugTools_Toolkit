@@ -56,7 +56,7 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>
             {
-                "--command", "plot/diurnal",
+                "--command", "plot/epw_comparison",
                 "-e", epwFile,
                 "-dtk", command.EPWKey.ToText(),
                 "-p", command.OutputLocation.Replace('\\', '/'),

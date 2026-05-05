@@ -51,9 +51,9 @@ PARSER.add_argument(
     )
 PARSER.add_argument(
     "-l",
-    "-line",
+    "--line",
     help="Produce a line plot instead of a histogram",
-    action="store-true",
+    action="store_true",
     default=False
     )
 
@@ -61,8 +61,6 @@ def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, line:
     """Create a timeseries plot with a line for each epw file for the specified data key and return it in a format readable by the LadybugToolsAdapter."""
     try:
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
-        if colour_map not in plt.colormaps():
-            colour_map = "YlGnBu"
 
         with plt.style.context(style):
             fig, ax = plt.subplots()
