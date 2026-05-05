@@ -5,6 +5,7 @@ import pytest
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug_comfort.collection.utci import UTCI
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from ladybugtools_toolkit.ladybug_extension.epw import EPW_PROPERTIES
 from ladybugtools_toolkit.plot._degree_days import (
     cooling_degree_days,
     degree_days,
@@ -26,6 +27,7 @@ from ladybugtools_toolkit.plot._utci import (
     utci_shade_benefit,
 )
 from ladybugtools_toolkit.plot.colormaps import colormap_sequential
+from ladybugtools_toolkit.plot.compare import compare_epw_key_line, compare_epw_key_hist
 from ladybugtools_toolkit.plot.utilities import (
     colormap_sequential,
     contrasting_color,
@@ -365,3 +367,15 @@ def test_shade_benefit_plot() -> None:
 def test_seasonality_plot() -> None:
     """_"""
     assert isinstance(seasonality_comparison(epw=EPW_OBJ), plt.Axes)
+
+def test_epw_comparison() -> None:
+    """_"""
+    epw_objs = [EPW_OBJ, EPW_OBJ] #compare to self as the visual does not matter, only that it works
+
+    assert EPW_PROPERTIES[10] == "dry_bulb_temperature" #handle regression of properties
+
+    assert isinstance(compare_epw_key_line(epw_objs, EPW_PROPERTIES[10]), plt.Axes)
+    plt.close("all")
+
+    assert isinstance(compare_epw_key_hist(epw_objs, EPW_PROPERTIES[10]), plt.Axes)
+    plt.close("all")
