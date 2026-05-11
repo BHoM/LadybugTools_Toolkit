@@ -29,14 +29,19 @@ namespace BH.oM.LadybugTools
 {
     public class CompareEPWKeyPlotCommand : ISimulationCommand
     {
+        [Description("The EPW file that acts as the base for comparisons.")]
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
+        [Description("Key (e.g. Dry Bulb Temperature) to compare.")]
         public virtual EPWKey EPWKey { get; set; } = EPWKey.Undefined;
 
+        [Description("The list of EPW files to be compared with the base file (or each other).")]
         public virtual List<FileSettings> EPWCompareFiles { get; set; } = new List<FileSettings>();
 
+        [Description("Whether to plot a time series chart. If set to false, plots data as a histogram instead.")]
         public virtual bool PlotTimeseries { get; set; } = true;
 
+        [Description("The location to place the image file once complete.")]
         public virtual string OutputLocation { get; set; } = "";
     }
 }
