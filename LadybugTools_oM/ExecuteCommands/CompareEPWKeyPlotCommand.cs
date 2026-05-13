@@ -24,6 +24,7 @@ using BH.oM.Adapter;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 
 namespace BH.oM.LadybugTools
 {
