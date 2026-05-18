@@ -43,7 +43,15 @@ namespace BH.Adapter.LadybugTools
 
             plotInformation.Image = oldObject.CustomData["figure"].ToString();
 
-            plotInformation.OtherData = ToSimulationData((oldObject.CustomData["data"] as CustomObject).CustomData, toUpdate as dynamic);
+            Dictionary<string, object> data = (oldObject.CustomData["data"] as CustomObject)?.CustomData;
+
+            if (data == null)
+            {
+                plotInformation.OtherData = toUpdate;
+                return plotInformation;
+            }
+
+            plotInformation.OtherData = ToSimulationData(data, toUpdate as dynamic);
 
             return plotInformation;
  
@@ -376,6 +384,17 @@ namespace BH.Adapter.LadybugTools
             if (!double.TryParse(oldData["min_tilt"].ToString(), out result))
                 result = double.NaN;
             toUpdate.MinTilt = result;
+
+            return toUpdate;
+        }
+
+        private static ISimulationData ToSimulationData(Dictionary<string, object> oldObject, NoData toUpdate)
+        {
+            if (oldObject != null)
+                if (oldObject.TryGetValue("description", out object description))
+                {
+                    toUpdate.Description = description.ToString();
+                }
 
             return toUpdate;
         }

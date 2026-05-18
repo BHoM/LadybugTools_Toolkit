@@ -14,6 +14,7 @@ from ladybugtools_toolkit.bhom.wrapped.plot.utci_heatmap import utci_heatmap
 
 #import methods and parsers
 from ladybugtools_toolkit.bhom.wrapped.plot.walkability_heatmap import PARSER as walkability_heatmap_parser, walkability_heatmap
+from ladybugtools_toolkit.bhom.wrapped.plot.epw_comparison import PARSER as epw_comparison_parser, epw_comparison
 from ladybugtools_toolkit.bhom.wrapped.plot.windrose import PARSER as windrose_parser, windrose
 from ladybugtools_toolkit.bhom.wrapped.plot.directional_solar_radiation import PARSER as directional_solar_radiation_parser, directional_solar_radiation
 from ladybugtools_toolkit.bhom.wrapped.plot.diurnal import PARSER as diurnal_parser, diurnal
@@ -37,6 +38,7 @@ import json
 #dictionary containing all the parsers for bhom/wrapped commands
 PARSERS = {
     "plot/walkability_heatmap": (walkability_heatmap_parser, walkability_heatmap),
+    "plot/epw_comparison": (epw_comparison_parser, epw_comparison),
     "plot/windrose": (windrose_parser, windrose),
     "plot/directional_solar_radiation": (directional_solar_radiation_parser, directional_solar_radiation),
     "plot/diurnal": (diurnal_parser, diurnal),
