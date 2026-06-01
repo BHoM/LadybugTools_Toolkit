@@ -19,8 +19,9 @@ from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case
 from ..ladybug_extension.analysisperiod import describe_analysis_period
-from ..ladybug_extension.datacollection import collection_to_series
+from ..ladybug_extension.datacollection import collection_to_series, collection_from_bhom_object
 from python_toolkit.plot.heatmap import heatmap
+from python_toolkit.bhom.bhom_object import BHoMObject
 from ..plot._utci import utci_day_comfort_metrics, utci_heatmap_histogram
 from ..plot.colormaps import (
     DBT_COLORMAP,
@@ -44,8 +45,8 @@ _ATTRIBUTES = [
 ]
 
 
-@dataclass(init=True, repr=True, eq=True)
-class ExternalComfort:
+@dataclass(init=False, repr=True, eq=True)
+class ExternalComfort(BHoMObject):
     """_"""
 
     simulation_result: SimulationResult
@@ -56,6 +57,35 @@ class ExternalComfort:
     wind_speed: HourlyContinuousCollection = None
     mean_radiant_temperature: HourlyContinuousCollection = None
     universal_thermal_climate_index: HourlyContinuousCollection = None
+
+    def __init__(
+        self,
+        simulation_result: SimulationResult,
+        typology: Typology,
+        dry_bulb_temperature: HourlyContinuousCollection = None,
+        relative_humidity: HourlyContinuousCollection = None,
+        wind_speed: HourlyContinuousCollection = None,
+        mean_radiant_temperature: HourlyContinuousCollection = None,
+        universal_thermal_climate_index: HourlyContinuousCollection = None,
+        **kwargs
+    ) -> "ExternalComfort":
+        if isinstance(simulation_result, BHoMObject):
+            simulation_result = SimulationResult._from_bhom_object(simulation_result)
+
+        if isinstance(typology, BHoMObject):
+            typology = Typology._from_bhom_object(typology)
+
+        self.simulation_result = simulation_result
+        self.typology = Typology
+
+        self.dry_bulb_temperature = collection_from_bhom_object(dry_bulb_temperature) if isinstance(dry_bulb_temperature, BHoMObject) else dry_bulb_temperature
+        self.relative_humidity = collection_from_bhom_object(relative_humidity) if isinstance(relative_humidity, BHoMObject) else relative_humidity
+        self.wind_speed = collection_from_bhom_object(wind_speed) if isinstance(wind_speed, BHoMObject) else wind_speed
+        self.mean_radiant_temperature = collection_from_bhom_object(mean_radiant_temperature) if isinstance(mean_radiant_temperature, BHoMObject) else mean_radiant_temperature
+        self.universal_thermal_climate_index = collection_from_bhom_object(universal_thermal_climate_index) if isinstance(universal_thermal_climate_index, BHoMObject) else universal_thermal_climate_index
+
+        _t = kwargs.pop("_t", "BH.oM.LadybugTools.ExternalComfort")
+        super().__init__(_t, **kwargs)
 
     def __post_init__(self):
         """_"""
@@ -167,16 +197,6 @@ class ExternalComfort:
             mean_radiant_temperature=d["mean_radiant_temperature"],
             universal_thermal_climate_index=d["universal_thermal_climate_index"],
         )
-
-    def to_json(self) -> str:
-        """Convert this object to a JSON string."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_json(cls, json_string: str) -> "SimulationResult":
-        """Create this object from a JSON string."""
-
-        return cls.from_dict(json.loads(json_string))
 
     def to_file(self, path: Path) -> Path:
         """Write this object to a JSON file."""

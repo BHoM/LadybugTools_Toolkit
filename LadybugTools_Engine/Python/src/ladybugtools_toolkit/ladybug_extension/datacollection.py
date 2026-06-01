@@ -24,6 +24,10 @@ from .analysisperiod import analysis_period_to_datetimes
 from .analysisperiod import describe_analysis_period
 from .header import header_from_string, header_to_string
 
+def collection_from_bhom_object(obj: BHoMObject) -> HourlyContinuousCollection:
+    """Convert a BHoMObject representation of an HourlyContinuousCollection to an HourlyContinuousCollection instance"""
+    d = obj.to_dict()
+    return HourlyContinuousCollection.from_dict(d)
 
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.

@@ -11,6 +11,7 @@ import pandas as pd
 from ladybug.epw import EPW, HourlyContinuousCollection
 
 from python_toolkit.bhom.analytics import bhom_analytics
+from python_toolkit.bhom.bhom_object import BHoMObject
 from ..helpers import (
     convert_keys_to_snake_case,
     decay_rate_smoother,
@@ -29,8 +30,8 @@ from ._shelterbase import (
 from .simulate import SimulationResult
 
 
-@dataclass(init=True, repr=True, eq=True)
-class Typology:
+@dataclass(init=False, repr=True, eq=True)
+class Typology(BHoMObject):
     """_"""
 
     identifier: str
@@ -39,6 +40,32 @@ class Typology:
     target_wind_speed: tuple[float] = (None,) * 8760
     wind_speed_multiplier: float = 1
     radiant_temperature_adjustment: tuple[float] = (0,) * 8760
+
+    def __init__(self,
+        identifier: str,
+        shelters: tuple[Shelter] = (),
+        evaporative_cooling_effect: tuple[float] = None,
+        target_wind_speed: tuple[float] = None,
+        wind_speed_multiplier: float = 1,
+        radiant_temperature_adjustment: tuple[float] = None,
+        **kwargs
+    ) -> "Typology":
+        self.identifier = identifier
+        self.shelters = (None,) * len(shelters)
+
+        for i, shelter in enumerate(shelters):
+            if isinstance(shelter, BHoMObject):
+                self.shelters[i] = Shelter._from_bhom_object(shelter)
+            else
+                self.shelters[i] = shelter
+
+        self.evaporative_cooling_effect = (0,) * 8760 if evaporative_cooling_effect is None else evaporative_cooling_effect
+        self.target_wind_speed = (None,) * 8760 if target_wind_speed is None else target_wind_speed
+        self.wind_speed_multiplier = wind_speed_multiplier
+        self.radiant_temperature_adjustment = (0,) * 8760 if radiant_temperature_adjustment is None else radiant_temperature_adjustment
+
+        _t = kwargs.pop("_t", "BH.oM.LadybugTools.Typology")
+        super().__init__(_t, **kwargs)
 
     def __post_init__(self):
         """_"""
@@ -117,15 +144,6 @@ class Typology:
             wind_speed_multiplier=d["wind_speed_multiplier"],
             radiant_temperature_adjustment=d["radiant_temperature_adjustment"],
         )
-
-    def to_json(self) -> str:
-        """Convert this object to a JSON string."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_json(cls, json_string: str) -> "Shelter":
-        """Create this object from a JSON string."""
-        return cls.from_dict(json.loads(json_string))
 
     def to_file(self, path: Path) -> Path:
         """Convert this object to a JSON file."""
