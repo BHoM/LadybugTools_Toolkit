@@ -52,11 +52,14 @@ class Shelter(BHoMObject):
         **kwargs
     ) -> "Shelter":
         self.vertices = list(vertices)
+
         for i, item in enumerate(self.vertices):
             if isinstance(item, IObject):
                 self.vertices[i] = Point3D.from_dict(vars(item))
+            elif isinstance(item, dict):
+                self.vertices[i] = Point3D.from_dict(item)
             elif not isinstance(item, Point3D):
-                raise ValueError("All vertices must be Point3D objects, or BHoM IObjects.")
+                raise ValueError("All vertices must be Point3D objects, dictionaries, or BHoM IObjects that can be converted to Point3D.")
 
         self.vertices = tuple(self.vertices)
 

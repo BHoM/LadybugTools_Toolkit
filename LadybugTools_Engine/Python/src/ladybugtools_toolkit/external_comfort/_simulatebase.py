@@ -659,34 +659,34 @@ class SimulationResult(BHoMObject):
         self.epw_file = epw_file
         
         if isinstance(ground_material, BHoMObject):
-            ground_material = dict_to_material(vars(self.ground_material))
+            ground_material = dict_to_material(vars(ground_material))
         if isinstance(ground_material, dict):
-            ground_material = dict_to_material(self.ground_material)
+            ground_material = dict_to_material(ground_material)
         self.ground_material = ground_material
 
         if isinstance(shade_material, BHoMObject):
-            shade_material = dict_to_material(vars(self.shade_material))
+            shade_material = dict_to_material(vars(shade_material))
         if isinstance(shade_material, dict):
-            shade_material = dict_to_material(self.shade_material)
+            shade_material = dict_to_material(shade_material)
         self.shade_material = shade_material
 
         self.identifier = identifier
 
-        self.shaded_down_temperature = collection_from_bhom_object(shaded_down_temperature) if isinstance(shaded_down_temperature, BHoMObject) else shaded_down_temperature
-        self.shaded_up_temperature = collection_from_bhom_object(shaded_up_temperature) if isinstance(shaded_up_temperature, BHoMObject) else shaded_up_temperature
+        self.shaded_down_temperature = shaded_down_temperature
+        self.shaded_up_temperature = shaded_up_temperature
 
-        self.unshaded_down_temperature = collection_from_bhom_object(unshaded_down_temperature) if isinstance(unshaded_down_temperature, BHoMObject) else unshaded_down_temperature
-        self.unshaded_up_temperature = collection_from_bhom_object(unshaded_up_temperature) if isinstance(unshaded_up_temperature, BHoMObject) else unshaded_up_temperature
+        self.unshaded_down_temperature = unshaded_down_temperature
+        self.unshaded_up_temperature = unshaded_up_temperature
 
-        self.shaded_radiant_temperature = collection_from_bhom_object(shaded_radiant_temperature) if isinstance(shaded_radiant_temperature, BHoMObject) else shaded_radiant_temperature
-        self.shaded_longwave_mean_radiant_temperature_delta = collection_from_bhom_object(shaded_longwave_mean_radiant_temperature_delta) if isinstance(shaded_longwave_mean_radiant_temperature_delta, BHoMObject) else shaded_longwave_mean_radiant_temperature_delta
-        self.shaded_shortwave_mean_radiant_temperature_delta = collection_from_bhom_object(shaded_shortwave_mean_radiant_temperature_delta) if isinstance(shaded_shortwave_mean_radiant_temperature_delta, BHoMObject) else shaded_shortwave_mean_radiant_temperature_delta
-        self.shaded_mean_radiant_temperature = collection_from_bhom_object(shaded_mean_radiant_temperature) if isinstance(shaded_mean_radiant_temperature, BHoMObject) else shaded_mean_radiant_temperature
+        self.shaded_radiant_temperature = shaded_radiant_temperature
+        self.shaded_longwave_mean_radiant_temperature_delta = shaded_longwave_mean_radiant_temperature_delta
+        self.shaded_shortwave_mean_radiant_temperature_delta = shaded_shortwave_mean_radiant_temperature_delta
+        self.shaded_mean_radiant_temperature = shaded_mean_radiant_temperature
 
-        self.unshaded_radiant_temperature = collection_from_bhom_object(unshaded_radiant_temperature) if isinstance(unshaded_radiant_temperature, BHoMObject) else unshaded_radiant_temperature
-        self.unshaded_longwave_mean_radiant_temperature_delta = collection_from_bhom_object(unshaded_longwave_mean_radiant_temperature_delta) if isinstance(unshaded_longwave_mean_radiant_temperature_delta, BHoMObject) else unshaded_longwave_mean_radiant_temperature_delta
-        self.unshaded_shortwave_mean_radiant_temperature_delta = collection_from_bhom_object(unshaded_shortwave_mean_radiant_temperature_delta) if isinstance(unshaded_shortwave_mean_radiant_temperature_delta, BHoMObject) else unshaded_shortwave_mean_radiant_temperature_delta
-        self.unshaded_mean_radiant_temperature = collection_from_bhom_object(unshaded_mean_radiant_temperature) if isinstance(unshaded_mean_radiant_temperature, BHoMObject) else unshaded_mean_radiant_temperature
+        self.unshaded_radiant_temperature = unshaded_radiant_temperature
+        self.unshaded_longwave_mean_radiant_temperature_delta = unshaded_longwave_mean_radiant_temperature_delta
+        self.unshaded_shortwave_mean_radiant_temperature_delta = unshaded_shortwave_mean_radiant_temperature_delta
+        self.unshaded_mean_radiant_temperature = unshaded_mean_radiant_temperature
 
         _t = kwargs.pop("_t", "BH.oM.LadybugTools.SimulationResult")
         super().__init__(_t, **kwargs)
@@ -723,6 +723,13 @@ class SimulationResult(BHoMObject):
             )
 
         for attr in _ATTRIBUTES:
+            a = getattr(self, attr)
+
+            if isinstance(a, BHoMObject):
+                setattr(self, attr, collection_from_bhom_object(a))
+            elif isinstance(a, dict):
+                setattr(self, attr, HourlyContinuousCollection.from_dict(a))
+
             if not isinstance(
                 getattr(self, attr), (HourlyContinuousCollection, type(None))
             ):
@@ -811,7 +818,7 @@ class SimulationResult(BHoMObject):
         # add some accessors for collections as series
         for attr in _ATTRIBUTES:
             setattr(self, f"{attr}_series", collection_to_series(getattr(self, attr)))
-            
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.identifier})"
 

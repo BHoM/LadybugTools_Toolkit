@@ -95,15 +95,23 @@ class ExternalComfort(BHoMObject):
 
         if isinstance(self.typology, Typologies):
             self.typology = self.typology.value
+
         if not isinstance(self.typology, Typology):
             raise ValueError("typology must be an instance of Typology.")
 
         for attr in _ATTRIBUTES:
+            a = getattr(self, attr)
+
+            if isinstance(a, BHoMObject):
+                setattr(self, attr, collection_from_bhom_object(a))
+            elif isinstance(a, dict):
+                setattr(self, attr, HourlyContinuousCollection.from_dict(a))
+
             if not isinstance(
                 getattr(self, attr), (HourlyContinuousCollection, type(None))
             ):
                 raise ValueError(
-                    f"{attr} must be an instance of HourlyContinuousCollection or None."
+                    f"{attr} must be either an HourlyContinuousCollection, or None."
                 )
 
         CONSOLE_LOGGER.info(
@@ -166,9 +174,6 @@ class ExternalComfort(BHoMObject):
             **attr_dict,
         }
         return d
-
-    def to_json(self) -> str:
-        return super().to_json(default=dict)
 
     @classmethod
     def from_dict(cls, d: dict) -> "ExternalComfort":
