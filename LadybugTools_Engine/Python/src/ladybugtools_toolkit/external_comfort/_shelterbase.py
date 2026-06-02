@@ -29,7 +29,7 @@ from mpl_toolkits import mplot3d
 
 
 from python_toolkit.bhom.analytics import bhom_analytics
-from python_toolkit.bhom.bhom_object import BHoMObject
+from python_toolkit.bhom.bhom_object import BHoMObject, IObject
 from ..bhom.to_bhom import point3d_to_bhom
 from ..ladybug_extension.epw import sun_position_list
 from ..helpers import convert_keys_to_snake_case
@@ -41,30 +41,30 @@ SENSOR_LOCATION = Point3D(0, 0, 1.2)
 class Shelter(BHoMObject):
     """_"""
 
-    vertices: tuple[Union[Point3D, IObject]]
+    vertices: tuple[Point3D]
     wind_porosity: tuple[float] = (0,) * 8760
     radiation_porosity: tuple[float] = (0,) * 8760
 
     def __init__(self,
-        vertices: tuple[Union[Point3D, IObject]],
+        vertices: tuple[Point3D | IObject],
         wind_porosity: tuple[float] = None,
         radiation_porosity: tuple[float] = None,
         **kwargs
     ) -> "Shelter":
-        self.vertices = vertices
-
-        for i, item in self.vertices:
+        self.vertices = list(vertices)
+        for i, item in enumerate(self.vertices):
             if isinstance(item, IObject):
                 self.vertices[i] = Point3D.from_dict(vars(item))
+            elif not isinstance(item, Point3D):
+                raise ValueError("All vertices must be Point3D objects, or BHoM IObjects.")
+
+        self.vertices = tuple(self.vertices)
 
         self.wind_porosity = (0,) * 8760 if wind_porosity is None else wind_porosity
         self.radiation_porosity = (0,) * 8760 if radiation_porosity is None else radiation_porosity
 
         _t = kwargs.pop("_t", "BH.oM.LadybugTools.Shelter")
         super().__init__(_t, **kwargs)
-
-    def __post_init__(self):
-        """_"""
 
         # validation
         if len(self.wind_porosity) != 8760:
@@ -99,12 +99,6 @@ class Shelter(BHoMObject):
 
         if len(self.vertices) < 3:
             raise ValueError("A shelter must have at least 3 vertices.")
-
-        for i, item in self.vertices:
-            if isinstance(item, IObject): #if this object has been translated from json as part of a bhom object.
-                self.vertices[i] = Point3D.from_dict(vars(item))
-            elif not isinstance(item, Point3D):
-                raise ValueError("All vertices must be Point3D objects, or BHoM IObjects.")
 
         _plane = Plane.from_three_points(*self.vertices[:3])
         for vertex in self.vertices[3:]:

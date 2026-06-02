@@ -635,30 +635,41 @@ class SimulationResult(BHoMObject):
     def __init__(
         self,
         epw_file: Path,
-        ground_material: EnergyMaterial | EnergyMaterialVegetation,
-        shade_material: EnergyMaterial | EnergyMaterialVegetation,
+        ground_material: EnergyMaterial | EnergyMaterialVegetation | BHoMObject,
+        shade_material: EnergyMaterial | EnergyMaterialVegetation | BHoMObject,
         identifier: str = None,
 
-        shaded_down_temperature: HourlyContinuousCollection = None,
-        shaded_up_temperature: HourlyContinuousCollection = None,
+        shaded_down_temperature: HourlyContinuousCollection | BHoMObject = None,
+        shaded_up_temperature: HourlyContinuousCollection | BHoMObject = None,
 
-        unshaded_down_temperature: HourlyContinuousCollection = None,
-        unshaded_up_temperature: HourlyContinuousCollection = None,
+        unshaded_down_temperature: HourlyContinuousCollection | BHoMObject = None,
+        unshaded_up_temperature: HourlyContinuousCollection | BHoMObject = None,
 
-        shaded_radiant_temperature: HourlyContinuousCollection = None,
-        shaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
-        shaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
-        shaded_mean_radiant_temperature: HourlyContinuousCollection = None,
+        shaded_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
+        shaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
+        shaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
+        shaded_mean_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
 
-        unshaded_radiant_temperature: HourlyContinuousCollection = None,
-        unshaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
-        unshaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
-        unshaded_mean_radiant_temperature: HourlyContinuousCollection = None,
+        unshaded_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
+        unshaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
+        unshaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
+        unshaded_mean_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
         **kwargs
     ) -> "SimulationResult":
         self.epw_file = epw_file
+        
+        if isinstance(ground_material, BHoMObject):
+            ground_material = dict_to_material(vars(self.ground_material))
+        if isinstance(ground_material, dict):
+            ground_material = dict_to_material(self.ground_material)
         self.ground_material = ground_material
+
+        if isinstance(shade_material, BHoMObject):
+            shade_material = dict_to_material(vars(self.shade_material))
+        if isinstance(shade_material, dict):
+            shade_material = dict_to_material(self.shade_material)
         self.shade_material = shade_material
+
         self.identifier = identifier
 
         self.shaded_down_temperature = collection_from_bhom_object(shaded_down_temperature) if isinstance(shaded_down_temperature, BHoMObject) else shaded_down_temperature
@@ -680,12 +691,6 @@ class SimulationResult(BHoMObject):
         _t = kwargs.pop("_t", "BH.oM.LadybugTools.SimulationResult")
         super().__init__(_t, **kwargs)
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.identifier})"
-
-    def __post_init__(self):
-        """_"""
-
         # validation
         if not isinstance(self.epw_file, (Path, str)):
             raise ValueError("epw_file must be a Path or str.")
@@ -698,15 +703,6 @@ class SimulationResult(BHoMObject):
         if isinstance(self.shade_material, Materials):
             self.shade_material = self.shade_material.value
 
-        if isinstance(ground_material, BHoMObject):
-            self.ground_material = dict_to_material(vars(self.ground_material))
-        if isinstance(ground_material, dict):
-            self.ground_material = dict_to_material(self.ground_material)
-
-        if isinstance(shade_material, BHoMObject):
-            self.shade_material = dict_to_material(vars(self.shade_material))
-        if isinstance(shade_material, dict):
-            self.shade_material = dict_to_material(self.shade_material)
 
         if not isinstance(
             self.ground_material, (EnergyMaterial, EnergyMaterialVegetation)
@@ -815,6 +811,9 @@ class SimulationResult(BHoMObject):
         # add some accessors for collections as series
         for attr in _ATTRIBUTES:
             setattr(self, f"{attr}_series", collection_to_series(getattr(self, attr)))
+            
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.identifier})"
 
     def to_dict(self) -> dict[str, Any]:
         """Convert this object to a dictionary."""

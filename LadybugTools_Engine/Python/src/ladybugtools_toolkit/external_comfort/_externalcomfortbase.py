@@ -60,23 +60,23 @@ class ExternalComfort(BHoMObject):
 
     def __init__(
         self,
-        simulation_result: SimulationResult,
-        typology: Typology,
-        dry_bulb_temperature: HourlyContinuousCollection = None,
-        relative_humidity: HourlyContinuousCollection = None,
-        wind_speed: HourlyContinuousCollection = None,
-        mean_radiant_temperature: HourlyContinuousCollection = None,
-        universal_thermal_climate_index: HourlyContinuousCollection = None,
+        simulation_result: SimulationResult | BHoMObject,
+        typology: Typology | BHoMObject,
+        dry_bulb_temperature: HourlyContinuousCollection | BHoMObject = None,
+        relative_humidity: HourlyContinuousCollection | BHoMObject = None,
+        wind_speed: HourlyContinuousCollection | BHoMObject = None,
+        mean_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
+        universal_thermal_climate_index: HourlyContinuousCollection | BHoMObject = None,
         **kwargs
     ) -> "ExternalComfort":
-        if isinstance(simulation_result, BHoMObject):
+        if type(simulation_result) is BHoMObject:
             simulation_result = SimulationResult._from_bhom_object(simulation_result)
 
-        if isinstance(typology, BHoMObject):
+        if type(typology) is BHoMObject:
             typology = Typology._from_bhom_object(typology)
 
         self.simulation_result = simulation_result
-        self.typology = Typology
+        self.typology = typology
 
         self.dry_bulb_temperature = collection_from_bhom_object(dry_bulb_temperature) if isinstance(dry_bulb_temperature, BHoMObject) else dry_bulb_temperature
         self.relative_humidity = collection_from_bhom_object(relative_humidity) if isinstance(relative_humidity, BHoMObject) else relative_humidity
@@ -86,9 +86,6 @@ class ExternalComfort(BHoMObject):
 
         _t = kwargs.pop("_t", "BH.oM.LadybugTools.ExternalComfort")
         super().__init__(_t, **kwargs)
-
-    def __post_init__(self):
-        """_"""
 
         # validation
         if not isinstance(self.simulation_result, SimulationResult):
@@ -169,6 +166,9 @@ class ExternalComfort(BHoMObject):
             **attr_dict,
         }
         return d
+
+    def to_json(self) -> str:
+        return super().to_json(default=dict)
 
     @classmethod
     def from_dict(cls, d: dict) -> "ExternalComfort":

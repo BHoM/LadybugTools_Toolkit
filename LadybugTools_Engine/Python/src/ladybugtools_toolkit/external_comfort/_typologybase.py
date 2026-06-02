@@ -43,7 +43,7 @@ class Typology(BHoMObject):
 
     def __init__(self,
         identifier: str,
-        shelters: tuple[Shelter] = (),
+        shelters: tuple[Shelter | BHoMObject] = (),
         evaporative_cooling_effect: tuple[float] = None,
         target_wind_speed: tuple[float] = None,
         wind_speed_multiplier: float = 1,
@@ -51,13 +51,15 @@ class Typology(BHoMObject):
         **kwargs
     ) -> "Typology":
         self.identifier = identifier
-        self.shelters = (None,) * len(shelters)
+        self.shelters = list((None,) * len(shelters))
 
         for i, shelter in enumerate(shelters):
-            if isinstance(shelter, BHoMObject):
+            if type(shelter) is BHoMObject:
                 self.shelters[i] = Shelter._from_bhom_object(shelter)
-            else
+            else:
                 self.shelters[i] = shelter
+
+        self.shelters = tuple(self.shelters)
 
         self.evaporative_cooling_effect = (0,) * 8760 if evaporative_cooling_effect is None else evaporative_cooling_effect
         self.target_wind_speed = (None,) * 8760 if target_wind_speed is None else target_wind_speed
@@ -66,9 +68,6 @@ class Typology(BHoMObject):
 
         _t = kwargs.pop("_t", "BH.oM.LadybugTools.Typology")
         super().__init__(_t, **kwargs)
-
-    def __post_init__(self):
-        """_"""
 
         # validation
         if len(self.shelters) > 0:

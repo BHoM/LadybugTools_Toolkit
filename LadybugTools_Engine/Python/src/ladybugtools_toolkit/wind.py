@@ -81,8 +81,6 @@ class Wind(BHoMObject):
         _t = kwargs.pop("_t", "BH.oM.LadybugTools.Wind")
         super().__init__(_t, **kwargs)
 
-
-    def __post_init__(self):
         if self.height_above_ground < 0.1:
             raise ValueError("Height above ground must be >= 0.1m.")
 
