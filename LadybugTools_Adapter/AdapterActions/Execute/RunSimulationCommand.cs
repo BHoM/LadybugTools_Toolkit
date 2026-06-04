@@ -77,7 +77,7 @@ namespace BH.Adapter.LadybugTools
                 EpwFile = command.EPWFile,
                 GroundMaterial = command.GroundMaterial,
                 ShadeMaterial = command.ShadeMaterial,
-                Name = Engine.LadybugTools.Compute.SimulationID(command.EPWFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
+                Identifier = Engine.LadybugTools.Compute.SimulationID(command.EPWFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
             };
 
             // push object to json file

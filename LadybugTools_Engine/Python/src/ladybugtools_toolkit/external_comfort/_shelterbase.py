@@ -30,7 +30,8 @@ from mpl_toolkits import mplot3d
 
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.bhom.bhom_object import BHoMObject, IObject
-from ..bhom.to_bhom import point3d_to_bhom
+from ..bhom.to_bhom import LBTBHoMJSONEncoder, point3d_to_bhom
+from ..bhom.from_bhom import LBTBHoMJSONDecoder
 from ..ladybug_extension.epw import sun_position_list
 from ..helpers import convert_keys_to_snake_case
 
@@ -117,6 +118,13 @@ class Shelter(BHoMObject):
             f"avg_radiation_porosity={self.average_radiation_porosity:0.2f}"
             ")"
         )
+    
+    def to_json(self):
+        return super().to_json(encoder_class=LBTBHoMJSONEncoder)
+    
+    @classmethod
+    def from_json(cls, j):
+        return super().from_json(j, decoder_class=LBTBHoMJSONDecoder)
 
     #TODO: maybe these methods aren't needed with the BHoMObject class implemented
     def to_dict(self) -> str:

@@ -15,7 +15,8 @@ from matplotlib.figure import Figure
 from matplotlib.colors import LinearSegmentedColormap
 
 from ..bhom.logger import CONSOLE_LOGGER
-from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
+from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom, LBTBHoMJSONEncoder
+from ..bhom.from_bhom import LBTBHoMJSONDecoder
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case
 from ..ladybug_extension.analysisperiod import describe_analysis_period
@@ -157,6 +158,13 @@ class ExternalComfort(BHoMObject):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.simulation_result}, {self.typology})"
+
+    def to_json(self):
+        return super().to_json(encoder_class=LBTBHoMJSONEncoder)
+
+    @classmethod
+    def from_json(cls, j):
+        return super().from_json(j, decoder_class=LBTBHoMJSONDecoder)
 
     def to_dict(self) -> str:
         """Convert this object to a dictionary."""

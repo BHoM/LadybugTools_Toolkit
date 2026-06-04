@@ -166,7 +166,7 @@ namespace BH.Adapter.LadybugTools
             string epwFile = $"\"epw_file\": \"{simulationResult.EpwFile.GetFullFileName().Replace("\\", "/")}\", ";
             string groundMaterial = $"\"ground_material\": {FromBHoM(simulationResult.GroundMaterial)}, ";
             string shadeMaterial = $"\"shade_material\": {FromBHoM(simulationResult.ShadeMaterial)}, ";
-            string name = $"\"identifier\": \"{simulationResult.Name}\"";
+            string name = $"\"identifier\": \"{simulationResult.Identifier}\"";
             List<string> properties = new List<string>();
 
             if (simulationResult.ShadedDownTemperature != null)

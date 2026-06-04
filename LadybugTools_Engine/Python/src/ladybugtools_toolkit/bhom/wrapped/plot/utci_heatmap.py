@@ -51,7 +51,7 @@ def utci_heatmap(input_json:str, save_path = None, epw_file:str = None) -> str:
 
         argsDict = json.loads(input_json)
     
-        ec = ExternalComfort.from_dict(json.loads(argsDict["external_comfort"]))
+        ec = ExternalComfort.from_json(argsDict["external_comfort"])
 
         custom_bins = UTCI_DEFAULT_CATEGORIES
 
@@ -69,7 +69,7 @@ def utci_heatmap(input_json:str, save_path = None, epw_file:str = None) -> str:
 
             utci_collection = ec.universal_thermal_climate_index
 
-            return_dict = {"data": utci_metadata(utci_collection), "external_comfort": ec.to_dict()}
+            return_dict = {"data": utci_metadata(utci_collection), "external_comfort": ec.to_json()}
 
             plt.tight_layout()
     

@@ -42,7 +42,9 @@ from lbt_recipes.version import check_openstudio_version
 
 from python_toolkit.bhom.bhom_object import BHoMObject
 from ..bhom.logger import CONSOLE_LOGGER
+from ..bhom.from_bhom import LBTBHoMJSONDecoder
 from ..bhom.to_bhom import (
+    LBTBHoMJSONEncoder,
     hourlycontinuouscollection_to_bhom,
     material_to_bhom,
 )
@@ -606,6 +608,16 @@ _ATTRIBUTES = [
     "unshaded_mean_radiant_temperature",
 ]
 
+def material_from_bhom_object(o: BHoMObject) -> EnergyMaterial | EnergyMaterialVegetation:
+    v = vars(o).copy()
+
+    default_vars = {
+        "type": o._t.split(".")[-1] if not hasattr(o, "type") else o.type
+    }
+
+    v.pop("type", None)
+    return dict_to_material({**default_vars, **v})
+
 
 @dataclass(init=False, repr=True, eq=True)
 class SimulationResult(BHoMObject):
@@ -634,7 +646,7 @@ class SimulationResult(BHoMObject):
 
     def __init__(
         self,
-        epw_file: Path,
+        epw_file: Path | BHoMObject,
         ground_material: EnergyMaterial | EnergyMaterialVegetation | BHoMObject,
         shade_material: EnergyMaterial | EnergyMaterialVegetation | BHoMObject,
         identifier: str = None,
@@ -656,19 +668,29 @@ class SimulationResult(BHoMObject):
         unshaded_mean_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
         **kwargs
     ) -> "SimulationResult":
+
+        if isinstance(epw_file, BHoMObject):
+            if epw_file._t == "BH.oM.Adapter.FileSettings":
+                epw_file = Path(epw_file.directory) / epw_file.file_name
+
         self.epw_file = epw_file
         
         if isinstance(ground_material, BHoMObject):
-            ground_material = dict_to_material(vars(ground_material))
+            ground_material = material_from_bhom_object(ground_material)
         if isinstance(ground_material, dict):
             ground_material = dict_to_material(ground_material)
         self.ground_material = ground_material
 
         if isinstance(shade_material, BHoMObject):
-            shade_material = dict_to_material(vars(shade_material))
+            shade_material = material_from_bhom_object(shade_material)
         if isinstance(shade_material, dict):
             shade_material = dict_to_material(shade_material)
         self.shade_material = shade_material
+
+        name = kwargs.pop("name", None)
+
+        if name is not None and name != '' and identifier is None:
+            identifier = name
 
         self.identifier = identifier
 
@@ -821,6 +843,13 @@ class SimulationResult(BHoMObject):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.identifier})"
+    
+    def to_json(self):
+        return super().to_json(encoder_class=LBTBHoMJSONEncoder)
+
+    @classmethod
+    def from_json(cls, j):
+        return super().from_json(j, decoder_class=LBTBHoMJSONDecoder)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert this object to a dictionary."""

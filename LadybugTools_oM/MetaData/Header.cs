@@ -43,6 +43,8 @@ namespace BH.oM.LadybugTools
 
         [Description("The metadata associated with this header object.")]
         public virtual Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+
+        public virtual string Type { get; set; } = "Header";
     }
 }
 

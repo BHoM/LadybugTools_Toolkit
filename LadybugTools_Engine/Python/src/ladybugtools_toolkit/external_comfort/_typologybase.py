@@ -1,5 +1,6 @@
 """Base class for typology objects."""
 # pylint: disable=E0401
+from ctypes import ArgumentError
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,8 @@ from ladybug.epw import EPW, HourlyContinuousCollection
 
 from python_toolkit.bhom.analytics import bhom_analytics
 from python_toolkit.bhom.bhom_object import BHoMObject
+from ..bhom.to_bhom import LBTBHoMJSONEncoder
+from ..bhom.from_bhom import LBTBHoMJSONDecoder
 from ..helpers import (
     convert_keys_to_snake_case,
     decay_rate_smoother,
@@ -42,7 +45,7 @@ class Typology(BHoMObject):
     radiant_temperature_adjustment: tuple[float] = (0,) * 8760
 
     def __init__(self,
-        identifier: str,
+        identifier: str = None,
         shelters: tuple[Shelter | BHoMObject] = (),
         evaporative_cooling_effect: tuple[float] = None,
         target_wind_speed: tuple[float] = None,
@@ -50,6 +53,12 @@ class Typology(BHoMObject):
         radiant_temperature_adjustment: tuple[float] = None,
         **kwargs
     ) -> "Typology":
+
+        identifier = kwargs.pop("name", None) if identifier is None else identifier
+
+        if identifier is None:
+            raise ArgumentError("Missing required key word argument 'identifier' or 'name.")
+
         self.identifier = identifier
         self.shelters = list((None,) * len(shelters))
 
@@ -108,6 +117,13 @@ class Typology(BHoMObject):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.identifier})"
+    
+    def to_json(self):
+        return super().to_json(encoder_class=LBTBHoMJSONEncoder)
+    
+    @classmethod
+    def from_json(cls, j):
+        return super().from_json(j, decoder_class=LBTBHoMJSONDecoder)
 
     def to_dict(self) -> str:
         """Convert this object to a dictionary."""

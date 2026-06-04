@@ -60,7 +60,9 @@ namespace BH.oM.LadybugTools
 
         [DisplayText("Time Step")]
         [Description("The number of timesteps per hour.")]
-        public virtual int TimeStep { get; set; } = 1;
+        public virtual int Timestep { get; set; } = 1;
+
+        public virtual string Type { get; set; } = "AnalysisPeriod";
     }
 }
 

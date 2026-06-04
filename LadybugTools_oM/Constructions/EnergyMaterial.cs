@@ -32,7 +32,7 @@ namespace BH.oM.LadybugTools
     public class EnergyMaterial : BHoMObject, IEnergyMaterialOpaque
     {
         [Description("The name of this EnergyMaterial.")]
-        public override string Name { get; set; } = string.Empty;
+        public virtual string Identifier { get; set; } = string.Empty;
 
         [Description("Thickness of material (m).")]
         [Length]
@@ -63,6 +63,8 @@ namespace BH.oM.LadybugTools
         [DisplayText("Visible Absorptance")]
         [Description("Light absorptivity (1 - albedo) of material (0-1).")]
         public virtual double VisibleAbsorptance { get; set; }
+
+        public virtual string Type { get; set; } = "EnergyMaterial";
     }
 }
 

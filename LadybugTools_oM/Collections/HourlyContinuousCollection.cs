@@ -36,6 +36,8 @@ namespace BH.oM.LadybugTools
 
         [Description("A list of values.")]
         public virtual List<double?> Values { get; set; } = Enumerable.Repeat<double?>(null, 8760).ToList();
+
+        public virtual string Type { get; set; } = "HourlyContinuousCollection";
     }
 }
 
