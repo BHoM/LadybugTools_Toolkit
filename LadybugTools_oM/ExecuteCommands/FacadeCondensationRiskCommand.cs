@@ -36,7 +36,7 @@ namespace BH.oM.LadybugTools
         public virtual FileSettings EPWFile { get; set; } = new FileSettings();
 
         [Description("The list of thresholds to use. If no values are provided, default values of [10,7,4,1,-2,-5] will be used.")]
-        public virtual List<double> Thresholds { get; set; } = new List<double>();
+        public virtual List<double> Thresholds { get; set; } = new List<double>{10, 7, 4, 1, -2, -5};
 
         [Description("Set to true to return a heatmap, or set to false to return a chart and table.")]
         public virtual bool Heatmap { get; set; } = true;
