@@ -108,7 +108,6 @@ namespace BH.Adapter.LadybugTools
                 System.IO.File.Delete(argFile);
             }
 
-
             try
             {
                 CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
