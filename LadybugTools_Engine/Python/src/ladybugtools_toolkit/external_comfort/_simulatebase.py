@@ -608,17 +608,6 @@ _ATTRIBUTES = [
     "unshaded_mean_radiant_temperature",
 ]
 
-def material_from_bhom_object(o: BHoMObject) -> EnergyMaterial | EnergyMaterialVegetation:
-    v = vars(o).copy()
-
-    default_vars = {
-        "type": o._t.split(".")[-1] if not hasattr(o, "type") else o.type
-    }
-
-    v.pop("type", None)
-    return dict_to_material({**default_vars, **v})
-
-
 @dataclass(init=False, repr=True, eq=True)
 class SimulationResult(BHoMObject):
     """_"""
@@ -647,25 +636,25 @@ class SimulationResult(BHoMObject):
     def __init__(
         self,
         epw_file: Path | BHoMObject,
-        ground_material: EnergyMaterial | EnergyMaterialVegetation | BHoMObject,
-        shade_material: EnergyMaterial | EnergyMaterialVegetation | BHoMObject,
+        ground_material: EnergyMaterial | EnergyMaterialVegetation,
+        shade_material: EnergyMaterial | EnergyMaterialVegetation,
         identifier: str = None,
 
-        shaded_down_temperature: HourlyContinuousCollection | BHoMObject = None,
-        shaded_up_temperature: HourlyContinuousCollection | BHoMObject = None,
+        shaded_down_temperature: HourlyContinuousCollection = None,
+        shaded_up_temperature: HourlyContinuousCollection = None,
 
-        unshaded_down_temperature: HourlyContinuousCollection | BHoMObject = None,
-        unshaded_up_temperature: HourlyContinuousCollection | BHoMObject = None,
+        unshaded_down_temperature: HourlyContinuousCollection = None,
+        unshaded_up_temperature: HourlyContinuousCollection = None,
 
-        shaded_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
-        shaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
-        shaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
-        shaded_mean_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
+        shaded_radiant_temperature: HourlyContinuousCollection = None,
+        shaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        shaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        shaded_mean_radiant_temperature: HourlyContinuousCollection = None,
 
-        unshaded_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
-        unshaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
-        unshaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection | BHoMObject = None,
-        unshaded_mean_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
+        unshaded_radiant_temperature: HourlyContinuousCollection = None,
+        unshaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        unshaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        unshaded_mean_radiant_temperature: HourlyContinuousCollection = None,
         **kwargs
     ) -> "SimulationResult":
 
@@ -675,14 +664,10 @@ class SimulationResult(BHoMObject):
 
         self.epw_file = epw_file
         
-        if isinstance(ground_material, BHoMObject):
-            ground_material = material_from_bhom_object(ground_material)
         if isinstance(ground_material, dict):
             ground_material = dict_to_material(ground_material)
         self.ground_material = ground_material
 
-        if isinstance(shade_material, BHoMObject):
-            shade_material = material_from_bhom_object(shade_material)
         if isinstance(shade_material, dict):
             shade_material = dict_to_material(shade_material)
         self.shade_material = shade_material

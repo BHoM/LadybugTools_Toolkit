@@ -47,7 +47,7 @@ class Shelter(BHoMObject):
     radiation_porosity: tuple[float] = (0,) * 8760
 
     def __init__(self,
-        vertices: tuple[Point3D | IObject],
+        vertices: tuple[Point3D],
         wind_porosity: tuple[float] = None,
         radiation_porosity: tuple[float] = None,
         **kwargs
@@ -55,9 +55,7 @@ class Shelter(BHoMObject):
         self.vertices = list(vertices)
 
         for i, item in enumerate(self.vertices):
-            if isinstance(item, IObject):
-                self.vertices[i] = Point3D.from_dict(vars(item))
-            elif isinstance(item, dict):
+            if isinstance(item, dict):
                 self.vertices[i] = Point3D.from_dict(item)
             elif not isinstance(item, Point3D):
                 raise ValueError("All vertices must be Point3D objects, dictionaries, or BHoM IObjects that can be converted to Point3D.")

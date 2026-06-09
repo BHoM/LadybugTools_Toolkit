@@ -63,11 +63,11 @@ class ExternalComfort(BHoMObject):
         self,
         simulation_result: SimulationResult | BHoMObject,
         typology: Typology | BHoMObject,
-        dry_bulb_temperature: HourlyContinuousCollection | BHoMObject = None,
-        relative_humidity: HourlyContinuousCollection | BHoMObject = None,
-        wind_speed: HourlyContinuousCollection | BHoMObject = None,
-        mean_radiant_temperature: HourlyContinuousCollection | BHoMObject = None,
-        universal_thermal_climate_index: HourlyContinuousCollection | BHoMObject = None,
+        dry_bulb_temperature: HourlyContinuousCollection = None,
+        relative_humidity: HourlyContinuousCollection = None,
+        wind_speed: HourlyContinuousCollection = None,
+        mean_radiant_temperature: HourlyContinuousCollection = None,
+        universal_thermal_climate_index: HourlyContinuousCollection = None,
         **kwargs
     ) -> "ExternalComfort":
         if type(simulation_result) is BHoMObject:
@@ -79,11 +79,11 @@ class ExternalComfort(BHoMObject):
         self.simulation_result = simulation_result
         self.typology = typology
 
-        self.dry_bulb_temperature = collection_from_bhom_object(dry_bulb_temperature) if isinstance(dry_bulb_temperature, BHoMObject) else dry_bulb_temperature
-        self.relative_humidity = collection_from_bhom_object(relative_humidity) if isinstance(relative_humidity, BHoMObject) else relative_humidity
-        self.wind_speed = collection_from_bhom_object(wind_speed) if isinstance(wind_speed, BHoMObject) else wind_speed
-        self.mean_radiant_temperature = collection_from_bhom_object(mean_radiant_temperature) if isinstance(mean_radiant_temperature, BHoMObject) else mean_radiant_temperature
-        self.universal_thermal_climate_index = collection_from_bhom_object(universal_thermal_climate_index) if isinstance(universal_thermal_climate_index, BHoMObject) else universal_thermal_climate_index
+        self.dry_bulb_temperature = dry_bulb_temperature
+        self.relative_humidity = relative_humidity
+        self.wind_speed = wind_speed
+        self.mean_radiant_temperature = mean_radiant_temperature
+        self.universal_thermal_climate_index = universal_thermal_climate_index
 
         _t = kwargs.pop("_t", "BH.oM.LadybugTools.ExternalComfort")
         super().__init__(_t, **kwargs)
