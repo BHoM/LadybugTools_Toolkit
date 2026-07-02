@@ -1,7 +1,8 @@
 ﻿from ladybug.datacollection import BaseCollection
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from python_toolkit.bhom.bhom_object import IObject
 
-def collection_metadata(collection: BaseCollection) -> dict:
+def collection_metadata(collection: BaseCollection) -> IObject:
     """Returns a dictionary containing useful metadata about the series.
     
     Args:
@@ -36,12 +37,13 @@ def collection_metadata(collection: BaseCollection) -> dict:
         month_series = series[series.index.month == month + 1]
         month_means.append(month_series.mean())
     
-    return {
-        "lowest": lowest,
-        "lowest_index": lowest_index,
-        "highest": highest,
-        "highest_index": highest_index,
-        "median": median,
-        "mean": mean,
-        "month_means": month_means,
-        }
+    return IObject(
+        _t = "BH.oM.LadybugTools.CollectionData",
+        lowest_value = lowest,
+        lowest_index = lowest_index,
+        highest_index = highest,
+        highest_index = highest_index,
+        median_value = median,
+        mean_value = mean,
+        monthly_means = month_means,
+        )

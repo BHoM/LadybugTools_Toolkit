@@ -3,8 +3,9 @@ from ladybug.datatype.temperature import (
     UniversalThermalClimateIndex as LB_UniversalThermalClimateIndex,
 )
 from ladybugtools_toolkit.ladybug_extension.datacollection import collection_to_series
+from python_toolkit.bhom.bhom_object import IObject
 
-def utci_metadata(utci_collection: HourlyContinuousCollection, comfort_lower: float = 9, comfort_higher: float = 26, use_start_hour: int=7, use_end_hour: int=23) -> dict:
+def utci_metadata(utci_collection: HourlyContinuousCollection, comfort_lower: float = 9, comfort_higher: float = 26, use_start_hour: int=7, use_end_hour: int=23) -> IObject:
     """Returns a dictionary of useful metadata for the given collection dependant on the given comfortable range.
     
     Args:
@@ -53,11 +54,12 @@ def utci_metadata(utci_collection: HourlyContinuousCollection, comfort_lower: fl
     day_hot = (daytime >= comfort_higher).sum() / len(daytime)
     day_cold = (daytime < comfort_lower).sum() / len(daytime)
 
-    return {
-        "comfortable_ratio": comfortable_ratio,
-        "hot_ratio": hot_ratio,
-        "cold_ratio": cold_ratio,
-        "daytime_comfortable": day_comfortable,
-        "daytime_hot": day_hot,
-        "daytime_cold": day_cold
-        }
+    return IObject(
+        _t = "BH.oM.LadybugTools.UTCIData",
+        comfortable_ratio = comfortable_ratio,
+        heat_stress_ratio = hot_ratio,
+        cold_stress_ratio = cold_ratio,
+        daytime_comfortable_ratio = day_comfortable,
+        daytime_heat_stress_ratio = day_hot,
+        daytime_cold_stress_ratio = day_cold
+    )

@@ -62,7 +62,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, string> inputObjects = new Dictionary<string, string>()
             {
-                { "external_comfort", command.ExternalComfort.FromBHoM() }
+                { "external_comfort", BH.Engine.Serialiser.Convert.ToJson(command.ExternalComfort) }
             };
 
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
@@ -97,7 +97,7 @@ namespace BH.Adapter.LadybugTools
             {
                 CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
                 PlotInformation info = Convert.ToPlotInformation(obj, new UTCIData());
-                ExternalComfort ec = Convert.ToExternalComfort((obj.CustomData["external_comfort"] as CustomObject).CustomData);
+                ExternalComfort ec = BH.Engine.Serialiser.Convert.FromJson((string)obj.CustomData["external_comfort"]) as ExternalComfort;
                 m_executeSuccess = true;
                 return new List<object>() { info, ec };
             }

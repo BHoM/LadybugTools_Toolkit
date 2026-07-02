@@ -1,7 +1,7 @@
 ﻿import sys
 import argparse
 from pathlib import Path
-from typing import List
+from typing import List, Callable
 
 
 import matplotlib
@@ -54,17 +54,21 @@ PARSERS = {
     "hbjson_to_gem": (hbjson_to_gem_parser, hbjson_to_gem),
 }
 
+COMMAND_PARSER = argparse.ArgumentParser(description="argument parser for commands.")
+COMMAND_PARSER.add_argument("-command", "--command")
+COMMAND_PARSER.add_argument("-in", "--input_json")
+
 def resolve(data: List[str], epw_folder: Path = Path("C:/epws")) -> str:
     """Parses the given data (that looks like sys.argv[1:]), and gets the command arg which is then used to get the parser for that command,
     parse the rest of the args and finally run the command, then return the output of those commands.
     """
     #parse data as args
-    command_parser = argparse.ArgumentParser(description="Command parser")
+    command_parser = argparse.ArgumentParser(description="argument parser for commands.")
     command_parser.add_argument("-command", "--command")
-    command_arg, unknown_args = command_parser.parse_known_args(data)
+    command_parser.add_argument("-in", "--input_json")
+    command_args = command_parser.parse_args(data)
 
-    parser_function = PARSERS[command_arg.command]
-    args = vars(parser_function[0].parse_args(unknown_args))
+    parser_function = PARSERS[command_args.command]
 
     if "epw_file" in args:
         #check if the epw file exists, if not prepend the epw_folder and try to run
@@ -73,7 +77,7 @@ def resolve(data: List[str], epw_folder: Path = Path("C:/epws")) -> str:
             epw = epw_folder / epw.name
             args["epw_file"] = str(epw)
 
-    ret = parser_function[1](**args) 
+    ret = parser_function[1](__input_json__ = command_args.input_json) 
     return ret #gets the function for the requested command, and runs it with arguments parsed with the desired parser.
 
 def deconstruct(data: str) -> List[str]:

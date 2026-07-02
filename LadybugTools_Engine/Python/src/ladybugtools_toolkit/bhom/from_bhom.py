@@ -40,7 +40,16 @@ class Header():
     def from_dict(cls, d) -> dict:
         return d
 
-_TYPES: list[type] = [EnergyMaterial, EnergyMaterialVegetation, AnalysisPeriod, HourlyContinuousCollection, Location, DataType, Header, Point]
+_TYPES: list[type] = [
+    EnergyMaterial,
+    EnergyMaterialVegetation,
+    AnalysisPeriod,
+    HourlyContinuousCollection,
+    Location,
+    DataType,
+    Header,
+    Point
+]
 
 class LBTBHoMJSONDecoder(BHoMJSONDecoder):
     def deserialise_unknown(self, obj:BHoMObject | IObject | dict):

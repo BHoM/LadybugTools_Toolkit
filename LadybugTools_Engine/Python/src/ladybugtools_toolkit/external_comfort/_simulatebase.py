@@ -51,8 +51,7 @@ from ..bhom.to_bhom import (
 from ..honeybee_extension.results import load_sql
 from ..ladybug_extension.datacollection import (
     collection_from_series,
-    collection_to_series,
-    collection_from_bhom_object
+    collection_to_series
 )
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.epw import equality as epw_equality
