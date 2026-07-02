@@ -20,29 +20,19 @@
  * along with this code. If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.      
  */
 
+using BH.oM.Base;
+using BH.oM.Base.Attributes;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Drawing;
-using BH.oM.Adapter;
 using System.ComponentModel;
+using System.Text;
 
 namespace BH.oM.LadybugTools
 {
-    [Description("Command that, when executed with the LadybugToolsAdapter, simulates Condensation Risk and outputs a heatmap.\nOutput is a string of either the path to the image (if OutputLocation is not set) or the base 64 string representation of it.")]
-    public class FacadeCondensationRiskCommand : ISimulationCommand
+    [NoAutoConstructor]
+    public class NoData : ISimulationData
     {
-        [Description("The path to an EPW file.")]
-        public virtual FileSettings EPWFile { get; set; } = new FileSettings();
-
-        [Description("The list of thresholds to use. If no values are provided, default values of [10,7,4,1,-2,-5] will be used.")]
-        public virtual List<double> Thresholds { get; set; } = new List<double>{10, 7, 4, 1, -2, -5};
-
-        [Description("Set to true to return a heatmap, or set to false to return a chart and table.")]
-        public virtual bool Heatmap { get; set; } = true;
-
-        [Description("Full file path (with file name) to save the plot to. Leave blank to output a base 64 string representation of the image instead.")]
-        public virtual string OutputLocation { get; set; } = "";
+        public virtual string Description { get; set; } = "There is not additional data for this object";
     }
 }
 
