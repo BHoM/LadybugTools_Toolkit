@@ -38,6 +38,6 @@ def wind_metadata(wind_object: Wind, directions: int=36, ignore_calm: bool=True,
             percentile50 = ws.quantile(0.50),
             ratio_of_calm_hours = wind_object.calm(),
             prevailing_direction = prevailing_direction,
-            prevailing_95percentile = prevailing_wind_speed.quantile(0.95),
-            prevailing_50percentile = prevailing_wind_speed.quantile(0.5)
+            prevailing_percentile95 = prevailing_wind_speed.quantile(0.95),
+            prevailing_percentile50 = prevailing_wind_speed.quantile(0.5)
         )

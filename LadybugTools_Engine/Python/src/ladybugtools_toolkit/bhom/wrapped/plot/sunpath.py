@@ -1,85 +1,44 @@
 ﻿"""Method to wrap creation of sunpath plots"""
 # pylint: disable=C0415,E0401,W0703
-import argparse
 import os
-import sys
 import traceback
-from pathlib import Path
-import matplotlib
 from ladybugtools_toolkit.plot._sunpath import sunpath as spath
 from ladybug.epw import EPW, AnalysisPeriod
-from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.sunpath import Sunpath
 from ladybugtools_toolkit.bhom.wrapped.metadata.sunpath_metadata import sunpath_metadata
+from ladybugtools_toolkit.bhom.wrapped.metadata.plot_information import PlotInformation
+from ladybugtools_toolkit.bhom.from_bhom import LBTBHoMJSONDecoder
+from ladybugtools_toolkit.bhom.to_bhom import LBTBHoMJSONEncoder
 from ladybugtools_toolkit.plot.utilities import figure_to_base64
 import matplotlib.pyplot as plt
-from pathlib import Path
-import json
 from ...logger import CONSOLE_LOGGER
+from python_toolkit.bhom.decorators import bhom_wrapper
 
-PARSER = argparse.ArgumentParser(
-    description=(
-        "Given an EPW file path, create a plot of its' sun path"
-    )
-)
-PARSER.add_argument(
-    "-e",
-    "--epw_file",
-    help="The EPW file to extract a sun path plot from",
-    type=str,
-    required=True,
-)
-PARSER.add_argument(
-    "-s",
-    "--size",
-    help="Size of the sun",
-    type=float,
-    required=True,
-    )
-PARSER.add_argument(
-    "-ap",
-    "--analysis_period",
-    help="Analysis perioderiod of the sun path",
-    type=str,
-    required=True,
-    )
-PARSER.add_argument(
-    "-p",
-    "--save_path",
-    help="Path where to save the output image.",
-    type=str,
-    required=False,
-    )
-
-def sunpath(epw_file, analysis_period, size, save_path) -> str:
+@bhom_wrapper.bhom_callable("plot/sunpath", argument_types = { "analysis_period": AnalysisPeriod }, decoder_cls=LBTBHoMJSONDecoder)
+def sunpath(epw_file: str, analysis_period: AnalysisPeriod, size: int, save_path: str = None, **kwargs) -> PlotInformation:
     try:
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
+        epw = EPW(epw_file)
+
         with plt.style.context(style):
             fig, ax = plt.subplots()
-
-            analysis_period = AnalysisPeriod.from_dict(json.loads(analysis_period))
-            epw = EPW(epw_file)
             spath(location=epw.location, analysis_period=analysis_period, sun_size=size, ax=ax, style_context=style)
+            plt.tight_layout()
 
-        return_dict = {"data": sunpath_metadata(Sunpath.from_location(epw.location))}
+        pi = PlotInformation(other_data = sunpath_metadata(Sunpath.from_location(epw.location)))
+        image: str = ""
 
         if save_path is None or save_path == "":
             base64 = figure_to_base64(fig, html=False)
-            return_dict["figure"] = base64
+            image = base64
         else:
             fig.savefig(save_path, dpi=150, transparent=True)
-            return_dict["figure"] = save_path
+            image = save_path
         
+        pi.image = image
         plt.close(fig)
-
-        return json.dumps(return_dict, default=str)
+        return pi
 
     except Exception:
         CONSOLE_LOGGER.error("Sunpath could not be created.", exc_info=1)
         return traceback.format_exc()
-
-if __name__ == "__main__":
-
-    args = PARSER.parse_args()
-    matplotlib.use("Agg")
-    sunpath(args.epw_file, args.analysis_period, args.size, args.save_path)

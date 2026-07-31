@@ -1,9 +1,8 @@
 """Method to wrap UTCI plots"""
 # pylint: disable=C0415,E0401,W0703
-import argparse
 import os
-import sys
 import traceback
+from typing import Dict
 import matplotlib
 from ladybugtools_toolkit.external_comfort.externalcomfort import ExternalComfort
 from ladybugtools_toolkit.bhom.wrapped.metadata.plot_information import PlotInformation
@@ -14,25 +13,11 @@ from ladybugtools_toolkit.plot.utilities import figure_to_base64
 from ladybugtools_toolkit.categorical.categories import Categorical, UTCI_DEFAULT_CATEGORIES
 import matplotlib.pyplot as plt
 import numpy as np
-import json
 from ...logger import CONSOLE_LOGGER
-from ... import bhom_callable
+from python_toolkit.bhom.decorators import bhom_wrapper
 
-PARSER = argparse.ArgumentParser(
-    description=(
-        "Given an EPW file path, extract a heatmap"
-    )
-)
-PARSER.add_argument(
-    "-in",
-    "--input_json",
-    help="helptext",
-    type=str,
-    required=True,
-)
-
-@bhom_callable(argument_types = { "external_comfort": ExternalComfort }, encoder_cls=LBTBHoMJSONEncoder, decoder_cls=LBTBHoMJSONDecoder)
-def utci_heatmap(external_comfort: ExternalComfort, bin_colours: list[str], save_path: str = "") -> dict:
+@bhom_wrapper.bhom_callable("plot/utci_heatmap", argument_types = { "external_comfort": ExternalComfort }, encoder_cls=LBTBHoMJSONEncoder, decoder_cls=LBTBHoMJSONDecoder)
+def utci_heatmap(external_comfort: ExternalComfort, bin_colours: list[str], save_path: str = "", **kwargs) -> Dict[str, object]:
     try:
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
         custom_bins = UTCI_DEFAULT_CATEGORIES
@@ -62,7 +47,6 @@ def utci_heatmap(external_comfort: ExternalComfort, bin_colours: list[str], save
 
         plt.close(fig)
         pi.image = image
-
         return_dict = {
             "info": pi,
             "external_comfort": external_comfort
@@ -72,8 +56,3 @@ def utci_heatmap(external_comfort: ExternalComfort, bin_colours: list[str], save
     except Exception:
         CONSOLE_LOGGER.error("UTCI Heatmap could not be created.", exc_info=1)
         return traceback.format_exc()
-
-if __name__ == "__main__":
-    args = PARSER.parse_args()
-    matplotlib.use("Agg")
-    utci_heatmap(args.input_json, args.save_path)

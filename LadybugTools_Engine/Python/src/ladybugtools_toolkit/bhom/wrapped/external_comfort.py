@@ -1,36 +1,13 @@
-"""Method to wrap for access to pre-defined materials."""
 # pylint: disable=C0415,E0401,W0703
-import argparse
-import traceback
+from python_toolkit.bhom.decorators import bhom_wrapper
+from ladybugtools_toolkit.external_comfort._externalcomfortbase import ExternalComfort
+from ladybugtools_toolkit.bhom.from_bhom import LBTBHoMJSONDecoder
+from ladybugtools_toolkit.bhom.to_bhom import LBTBHoMJSONEncoder
 
+#Note: All this method does is return the external comfort object given.
+#Originally this method converted from json and then back to json, however the bhom_callable decorator does this automatically.
+#In order to allow this to still exist as callable from BHoM, this method was simplified to just return.
 
-def main(json_file: str) -> None:
-    """From a json file represention of an ExternalComfort, run the calculation."""
-    try:
-        from ladybugtools_toolkit.external_comfort._externalcomfortbase import (
-            ExternalComfort,
-        )
-
-        ec = ExternalComfort.from_file(json_file)
-        ec.to_file(json_file)
-
-    except Exception as e:
-        print(traceback.format_exc())
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Given a JSON file containing the string represention of a ExternalComfort object, "
-            "run all calculations Python-side for that object."
-        )
-    )
-    parser.add_argument(
-        "-j",
-        "--json_file",
-        help="The JSON file to convert into a ExternalComfort object Python-side.",
-        type=str,
-        required=True,
-    )
-    args = parser.parse_args()
-    main(args.json_file)
+@bhom_wrapper.bhom_callable("external_comfort", argument_types = {"external_comfort", ExternalComfort}, encoder_cls=LBTBHoMJSONEncoder, decoder_cls=LBTBHoMJSONDecoder)
+def main(external_comfort: ExternalComfort, **kwargs) -> None:
+    return external_comfort
