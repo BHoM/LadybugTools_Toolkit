@@ -21,24 +21,25 @@
  */
 
 using BH.Engine.Adapter;
+using BH.Engine.Base;
 using BH.Engine.LadybugTools;
+using BH.Engine.Python;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Adapter.Commands;
 using BH.oM.Base;
 using BH.oM.Data.Requests;
 using BH.oM.LadybugTools;
 using BH.oM.Python;
-using BH.Engine.Python;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using BH.Engine.Base;
-using System.Drawing;
-using BH.Engine.Serialiser;
-using System.Reflection;
 using System.Net.Http;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace BH.Adapter.LadybugTools
 {
@@ -84,6 +85,33 @@ namespace BH.Adapter.LadybugTools
         {
             BH.Engine.Base.Compute.RecordError($"The command {command.GetType().FullName} is not valid for the LadybugTools Adapter. Please use a LadybugCommand, or use the correct adapter for the input command.");
             return new List<object>();
+        }
+
+        private (string, bool) ExecutePython(List<string> args, string json)
+        {
+            string result = "";
+            bool success;
+
+            if (m_httpClient != null)
+            {
+                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args, json);
+                task.Wait();
+                (result, success) = task.Result;
+            }
+            else
+            {
+                //if the server was not running or some other error happened, try running the python directly.
+                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
+                string tempFileName = System.IO.Path.GetTempFileName();
+                System.IO.File.WriteAllText(tempFileName, json);
+                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)} -in \"{tempFileName}\"";
+                System.IO.File.Delete(tempFileName);
+                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            }
+
+            success = !result.Contains("Traceback (most recent call last):");
+
+            return (result, success);
         }
     }
 }

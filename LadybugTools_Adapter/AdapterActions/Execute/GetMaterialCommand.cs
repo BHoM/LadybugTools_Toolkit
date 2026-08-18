@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Adapter;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Data.Requests;
 using BH.oM.LadybugTools;
@@ -56,26 +57,28 @@ namespace BH.Adapter.LadybugTools
             // run the process
             if (!File.Exists(config.JsonFile.GetFullFileName()))
             {
-                List<string> args = new List<string>() { "--command", "get_material", "-j", config.JsonFile.GetFullFileName().Replace('\\', '/') };
-
-                string result = "";
-                bool success;
-
-                if (m_httpClient != null)
+                Dictionary<string, object> dict = new Dictionary<string, object>()
                 {
-                    Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
-                    task.Wait();
-                    (result, success) = task.Result;
-                }
-                else
+                    { "json_file", config.JsonFile.GetFullFileName().Replace('\\', '/') }
+                };
+
+                string json = dict.ToJson();
+
+                List<string> args = new List<string>()
                 {
-                    //if the server was not running or some other error happened, try running the python directly.
-                    string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
-                    string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+                    "--command", "get_material"
+                };
 
-                    result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+                (string result, bool success) = ExecutePython(args, json);
+
+                if (!success)
+                {
+                    BH.Engine.Base.Compute.RecordError($"A python error occurred while getting materials. Python output:\n{result}");
+                    m_executeSuccess = success;
+                    return new List<object>();
                 }
 
+                result = result.Split('\n').Last();
                 File.WriteAllText(config.JsonFile.GetFullFileName(), result);
             }
 

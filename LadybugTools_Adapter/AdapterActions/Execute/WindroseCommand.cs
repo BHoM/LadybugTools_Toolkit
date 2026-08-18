@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Adapter;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Base;
 using BH.oM.LadybugTools;
@@ -66,26 +67,32 @@ namespace BH.Adapter.LadybugTools
             if (colourMap.ColourMapValidity())
                 colourMap = colourMap.ToColourMap().FromColourMap();
 
-            // run the process
-            List<string> args = new List<string>() { "-command", "plot/windrose", "-e", epwFile.Replace('\\', '/'), "-ap", command.AnalysisPeriod.FromBHoM().Replace("\"", "\\\""), "-cmap", colourMap, "-bins", command.NumberOfDirectionBins.ToString(), "-p", command.OutputLocation.Replace('\\', '/') };
-
-            string result = "";
-            bool success;
-
-            if (m_httpClient != null)
+            Dictionary<string, object> dict = new Dictionary<string, object>()
             {
-                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
-                task.Wait();
-                (result, success) = task.Result;
-            }
-            else
-            {
-                //if the server was not running or some other error happened, try running the python directly.
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
-                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+                { "analysis_period", command.AnalysisPeriod },
+                { "cmap", colourMap },
+                { "bins", command.NumberOfDirectionBins },
+                { "save_path", command.OutputLocation.Replace('\\', '/') }
+            };
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+            string json = dict.ToJson();
+
+            List<string> args = new List<string>()
+            {
+                "-command", "plot/windrose",
+                "-e", epwFile.Replace('\\', '/')
+            };
+
+            (string result, bool success) = ExecutePython(args, json);
+
+            if (!success)
+            {
+                BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
+                m_executeSuccess = success;
+                return new List<object>();
             }
+
+            result = result.Split('\n').Last();
 
             try
             {
@@ -97,6 +104,7 @@ namespace BH.Adapter.LadybugTools
             catch (Exception ex)
             {
                 BH.Engine.Base.Compute.RecordError(ex, $"An error occurred when deserialising the output from the script.\n Python output: {result}");
+                m_executeSuccess = false;
                 return new List<object>();
             }
         }

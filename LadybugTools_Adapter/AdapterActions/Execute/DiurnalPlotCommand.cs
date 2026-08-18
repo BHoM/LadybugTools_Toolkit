@@ -23,6 +23,7 @@
 using BH.Engine.Adapter;
 using BH.Engine.Base;
 using BH.Engine.LadybugTools;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Base;
 using BH.oM.LadybugTools;
@@ -73,26 +74,34 @@ namespace BH.Adapter.LadybugTools
 
             //string returnFile = Path.GetTempFileName();
 
+            Dictionary<string, object> dict = new Dictionary<string, object>()
+            {
+                { "data_type_key", command.EPWKey.ToText() },
+                { "colour", command.Colour.ToHexCode() },
+                { "title", command.Title },
+                { "period", command.Period.ToString().ToLower() },
+                { "save_path", command.OutputLocation.Replace('\\', '/') }
+            };
+
+            string json = dict.ToJson();
+
             // run the process
-            List<string> args = new List<string>() { "--command", "plot/diurnal", "-e", epwFile.Replace('\\', '/'), "-dtk", command.EPWKey.ToText(), "--colour", command.Colour.ToHexCode(), "-t", command.Title, "-ap", command.Period.ToString().ToLower(), "-p", command.OutputLocation.Replace('\\', '/') };
-
-            string result = "";
-            bool success;
-
-            if (m_httpClient != null)
+            List<string> args = new List<string>()
             {
-                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
-                task.Wait();
-                (result, success) = task.Result;
-            }
-            else
-            {
-                //if the server was not running or some other error happened, try running the python directly.
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
-                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+                "--command", "plot/diurnal",
+                "-e", epwFile.Replace('\\', '/')
+            };
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+            (string result, bool success) = ExecutePython(args, json);
+
+            if (!success)
+            {
+                BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
+                m_executeSuccess = success;
+                return new List<object>();
             }
+
+            result = result.Split('\n').Last();
 
             try
             {
@@ -104,6 +113,7 @@ namespace BH.Adapter.LadybugTools
             catch (Exception ex)
             {
                 BH.Engine.Base.Compute.RecordError(ex, $"An error occurred when deserialising the output from the script.\n Python output: {result}");
+                m_executeSuccess = false;
                 return new List<object>();
             }
         }

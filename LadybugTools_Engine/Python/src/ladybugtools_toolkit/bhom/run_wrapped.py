@@ -18,8 +18,10 @@ COMMAND_PARSER.add_argument("-command", "--command")
 COMMAND_PARSER.add_argument("-in", "--input_json")
 
 def resolve(data: List[str], epw_folder: Path = Path("C:/epws")) -> str:
-    """Parses the given data (that looks like sys.argv[1:]), and gets the command arg which is then used to get the parser for that command,
-    parse the rest of the args and finally run the command, then return the output of those commands.
+    """Parses the given data (that looks like sys.argv[1:]), and gets the command arg which is an identifier for the command which is requested,
+    and the input json string (or file) to be given to the BHoMJSONDecoder wrapped method.
+
+    Also if the given epw file doesn't exist, assume that it is a file name and append it to the epw folder as a backup.
     """
     #parse data as args
     command_parser = argparse.ArgumentParser(description="argument parser for commands.")
