@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Adapter;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Data.Requests;
 using BH.oM.LadybugTools;
@@ -61,16 +62,6 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            // construct adapter and config
-            LadybugConfig config = new LadybugConfig()
-            {
-                JsonFile = new FileSettings()
-                {
-                    FileName = $"LBTBHoM_{Guid.NewGuid()}.json",
-                    Directory = Path.GetTempPath()
-                }
-            };
-
             // construct the base object and file to be passed to Python for simulation
             SimulationResult simulationResult = new SimulationResult()
             {
@@ -80,24 +71,42 @@ namespace BH.Adapter.LadybugTools
                 Identifier = Engine.LadybugTools.Compute.SimulationID(command.EPWFile.GetFullFileName(), command.GroundMaterial, command.ShadeMaterial)
             };
 
-            // push object to json file
-            Push(new List<SimulationResult>() { simulationResult }, actionConfig: config);
+            Dictionary<string, object> dict = new Dictionary<string, object>()
+            {
+                { "simulation_result", simulationResult }
+            };
 
-            // locate the Python file containing the simulation code
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "simulation_result.py");
+            string json = dict.ToJson();
 
-            // run the simulation
-            string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
-            Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            List<string> args = new List<string>()
+            {
+                "-c", "simulation_result"
+            };
 
-            // reload from Python results
-            List<object> simulationResultPopulated = Pull(new FilterRequest(), actionConfig: config).ToList();
+            (string result, bool success) = ExecutePython(args, json);
 
-            // remove temporary file
-            File.Delete(config.JsonFile.GetFullFileName());
+            if (!success)
+            {
+                BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
+                m_executeSuccess = success;
+                return new List<object>();
+            }
 
-            m_executeSuccess = true;
-            return simulationResultPopulated;
+            string resultJson = result.Split('\n').Last();
+            SimulationResult sr = null;
+
+            try
+            {
+                sr = (SimulationResult)BH.Engine.Serialiser.Convert.FromJson(resultJson);
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, $"Could not deserialise python output into SimulationResult. Python output:\n{result}");
+                m_executeSuccess = false;
+                return new List<object>();
+            }
+
+            return new List<object>() { sr };
         }
     }
 }
