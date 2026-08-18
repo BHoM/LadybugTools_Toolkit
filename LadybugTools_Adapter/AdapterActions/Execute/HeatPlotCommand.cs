@@ -75,7 +75,7 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>()
             {
-                "-command", "plot/heatmap",
+                "-command", "plot/epw_heatmap",
                 "-e", epwFile.Replace('\\', '/'),
             };
 

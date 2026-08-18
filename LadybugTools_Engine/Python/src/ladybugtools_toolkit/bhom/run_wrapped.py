@@ -10,7 +10,7 @@ import matplotlib
 matplotlib.use("Agg") #use a gui-less backend to avoid memory leaking figures
 
 #big import list that covers all methods in bhom/wrapped
-from . import wrapped
+from ladybugtools_toolkit.bhom import wrapped
 from python_toolkit.bhom import wrapped
 
 COMMAND_PARSER = argparse.ArgumentParser(description="argument parser for commands.")

@@ -41,7 +41,7 @@ def collection_metadata(collection: BaseCollection) -> IObject:
         _t = "BH.oM.LadybugTools.CollectionData",
         lowest_value = lowest,
         lowest_index = lowest_index,
-        highest_index = highest,
+        highest_value = highest,
         highest_index = highest_index,
         median_value = median,
         mean_value = mean,

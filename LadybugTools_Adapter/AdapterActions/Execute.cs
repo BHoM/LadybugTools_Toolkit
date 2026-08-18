@@ -105,8 +105,8 @@ namespace BH.Adapter.LadybugTools
                 string tempFileName = System.IO.Path.GetTempFileName();
                 System.IO.File.WriteAllText(tempFileName, json);
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)} -in \"{tempFileName}\"";
-                System.IO.File.Delete(tempFileName);
                 result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+                System.IO.File.Delete(tempFileName);
             }
 
             success = !result.Contains("Traceback (most recent call last):");
