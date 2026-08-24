@@ -70,11 +70,11 @@ namespace BH.Adapter.LadybugTools
                 };
 
                 (string result, bool success) = ExecutePython(args, json);
+                m_executeSuccess = success;
 
                 if (!success)
                 {
                     BH.Engine.Base.Compute.RecordError($"A python error occurred while getting materials. Python output:\n{result}");
-                    m_executeSuccess = success;
                     return new List<object>();
                 }
 
@@ -85,7 +85,7 @@ namespace BH.Adapter.LadybugTools
             List<object> materialObjects = Pull(new FilterRequest(), actionConfig: config).ToList();
 
             m_executeSuccess = true;
-            return materialObjects.Where(m => (m as IEnergyMaterialOpaque).Name.Contains(command.Filter)).ToList();
+            return materialObjects.Where(m => (m as IEnergyMaterialOpaque).Identifier.Contains(command.Filter)).ToList();
         }
     }
 }

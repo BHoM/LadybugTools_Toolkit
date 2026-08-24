@@ -70,7 +70,7 @@ namespace BH.Adapter.LadybugTools
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
                 { "analysis_period", command.AnalysisPeriod },
-                { "cmap", colourMap },
+                { "colour_map", colourMap },
                 { "bins", command.NumberOfDirectionBins },
                 { "save_path", command.OutputLocation.Replace('\\', '/') }
             };
@@ -84,11 +84,11 @@ namespace BH.Adapter.LadybugTools
             };
 
             (string result, bool success) = ExecutePython(args, json);
+            m_executeSuccess = success;
 
             if (!success)
             {
                 BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
-                m_executeSuccess = success;
                 return new List<object>();
             }
 
@@ -96,9 +96,7 @@ namespace BH.Adapter.LadybugTools
 
             try
             {
-                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, new WindroseData());
-                m_executeSuccess = true;
+                PlotInformation info = (PlotInformation)BH.Engine.Serialiser.Convert.FromJson(result);
                 return new List<object>() { info };
             }
             catch (Exception ex)

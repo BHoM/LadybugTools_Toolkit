@@ -69,16 +69,12 @@ namespace BH.Adapter.LadybugTools
 
             List<string> colours = command.BinColours.Select(x => x.ToHexCode()).ToList();
 
-            string hexColours = $"[\"{string.Join("\",\"", colours)}\"]";
-            if (hexColours == "[\"\"]")
-                hexColours = "[]";
-
             string epwFile = System.IO.Path.GetFullPath(command.EPWFile.GetFullFileName());
 
-            Dictionary<string, string> dict = new Dictionary<string, string>()
+            Dictionary<string, object> dict = new Dictionary<string, object>()
             {
-                { "external_comfort", BH.Engine.Serialiser.Convert.ToJson(command.ExternalComfort) },
-                { "bin_colours", hexColours },
+                { "external_comfort", command.ExternalComfort },
+                { "bin_colours", colours },
                 { "save_path", command.OutputLocation.Replace('\\', '/') }
             };
 
@@ -92,11 +88,11 @@ namespace BH.Adapter.LadybugTools
             };
 
             (string result, bool success) = ExecutePython(args, json);
+            m_executeSuccess = success;
 
             if (!success)
             {
                 BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
-                m_executeSuccess = success;
                 return new List<object>();
             }
 
@@ -105,9 +101,8 @@ namespace BH.Adapter.LadybugTools
             try
             {
                 CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, new UTCIData());
-                ExternalComfort ec = BH.Engine.Serialiser.Convert.FromJson((string)obj.CustomData["external_comfort"]) as ExternalComfort;
-                m_executeSuccess = true;
+                PlotInformation info = (PlotInformation)obj.CustomData["info"];
+                ExternalComfort ec = (ExternalComfort)obj.CustomData["external_comfort"];
                 return new List<object>() { info, ec };
             }
             catch (Exception ex)

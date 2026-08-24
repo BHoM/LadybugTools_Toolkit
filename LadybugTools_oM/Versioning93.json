@@ -1,0 +1,10 @@
+{
+  "Property": {
+    "ToNew": {
+      "BH.oM.LadybugTools.AnalysisPeriod.TimeStep": "BH.oM.LadybugTools.AnalysisPeriod.Timestep"
+    },
+    "ToOld": {
+      "BH.oM.LadybugTools.AnalysisPeriod.Timestep": "BH.oM.LadybugTools.AnalysisPeriod.TimeStep"
+    }
+  }
+}

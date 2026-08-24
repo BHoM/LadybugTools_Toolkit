@@ -107,11 +107,11 @@ namespace BH.Adapter.LadybugTools
             };
 
             (string result, bool success) = ExecutePython(args, json);
+            m_executeSuccess = success;
 
             if (!success)
             {
                 BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
-                m_executeSuccess = success;
                 return new List<object>();
             }
 
@@ -119,9 +119,7 @@ namespace BH.Adapter.LadybugTools
 
             try
             {
-                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, new SolarRadiationData());
-                m_executeSuccess = true;
+                PlotInformation info = (PlotInformation)BH.Engine.Serialiser.Convert.FromJson(result);
                 return new List<object>() { info };
             }
             catch (Exception ex)

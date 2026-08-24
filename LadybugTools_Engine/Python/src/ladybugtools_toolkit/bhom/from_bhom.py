@@ -19,7 +19,7 @@ class DataType():
     def from_dict(cls, d) -> dict:
         d["type"] = "DataTypeBase"
         d["data_type"] = d["data__type"]
-        return d #due to Header.from_dict() not handling already deserialised objects, this should just return the correct dictionary instead of the DataType object.
+        return DataTypeBase.from_dict(d)
 
 class AnalysisPeriod():
     @classmethod
@@ -27,18 +27,24 @@ class AnalysisPeriod():
         d["st_hour"] = d["start_hour"]
         d["st_day"] = d["start_day"]
         d["st_month"] = d["start_month"]
-        return d
+        return AnalysisPeriodBase.from_dict(d)
 
 class HourlyContinuousCollection():
     @classmethod
     def from_dict(cls, d) -> dict:
         d["type"] = "HourlyContinuous"
+        #see comment in Header() below for the reason the header is converted to a dict.
+        d["header"] = d["header"].to_dict()
         return HC.from_dict(d)
 
 class Header():
     @classmethod
     def from_dict(cls, d) -> dict:
-        return d
+        #convert parts of header from class to dictionary so that HeaderBase.from_dict() still works (for some reason ladybug hasn't used a JSONDecoder for json decoding...)
+        #this works because the python json decoder works depth first.
+        d["data_type"] = d["data_type"].to_dict()
+        d["analysis_period"] = d["analysis_period"].to_dict()
+        return HeaderBase.from_dict(d)
 
 _TYPES: list[type] = [
     EnergyMaterial,

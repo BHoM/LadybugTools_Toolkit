@@ -71,11 +71,11 @@ namespace BH.Adapter.LadybugTools
                 };
 
                 (string result, bool success) = ExecutePython(args, json);
+                m_executeSuccess = success;
 
                 if (!success)
                 {
                     BH.Engine.Base.Compute.RecordError($"A python error occurred while getting typologies. Python output:\n{result}");
-                    m_executeSuccess = success;
                     return new List<object>();
                 }
 
