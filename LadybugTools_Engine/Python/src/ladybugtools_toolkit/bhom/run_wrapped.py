@@ -10,12 +10,13 @@ import matplotlib
 matplotlib.use("Agg") #use a gui-less backend to avoid memory leaking figures
 
 #big import list that covers all methods in bhom/wrapped
-from ladybugtools_toolkit.bhom import wrapped
 from python_toolkit.bhom import wrapped
+from ladybugtools_toolkit.bhom import wrapped
 
 COMMAND_PARSER = argparse.ArgumentParser(description="argument parser for commands.")
 COMMAND_PARSER.add_argument("-command", "--command")
 COMMAND_PARSER.add_argument("-in", "--input_json")
+COMMAND_PARSER.add_argument("-e", "--epw_file", required=False)
 
 def resolve(data: List[str], epw_folder: Path = Path("C:/epws")) -> str:
     """Parses the given data (that looks like sys.argv[1:]), and gets the command arg which is an identifier for the command which is requested,
@@ -24,11 +25,7 @@ def resolve(data: List[str], epw_folder: Path = Path("C:/epws")) -> str:
     Also if the given epw file doesn't exist, assume that it is a file name and append it to the epw folder as a backup.
     """
     #parse data as args
-    command_parser = argparse.ArgumentParser(description="argument parser for commands.")
-    command_parser.add_argument("-command", "--command")
-    command_parser.add_argument("-in", "--input_json")
-    command_parser.add_argument("-e", "--epw_file", required=False)
-    command_args, unknown_args = command_parser.parse_known_args(data)
+    command_args, unknown_args = COMMAND_PARSER.parse_known_args(data)
 
     if command_args.epw_file is not None:
         #check if the epw file exists, if not prepend the epw_folder and try to run

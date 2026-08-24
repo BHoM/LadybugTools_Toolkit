@@ -101,7 +101,7 @@ namespace BH.Adapter.LadybugTools
             else
             {
                 //if the server was not running or some other error happened, try running the python directly.
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
+                string script = Path.Combine(Engine.Python.Query.DirectoryCode(), m_environment.Name, "src", m_environment.Name.ToLower() , "bhom", "run_wrapped.py");
                 string tempFileName = System.IO.Path.GetTempFileName();
                 System.IO.File.WriteAllText(tempFileName, json);
                 string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)} -in \"{tempFileName}\"";
