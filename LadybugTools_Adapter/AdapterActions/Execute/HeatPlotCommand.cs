@@ -65,6 +65,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", epwFile.Replace('\\', '/') },
                 { "data_type_key", command.EPWKey.ToText() },
                 { "colour_map", colourMap },
                 { "save_path", command.OutputLocation.Replace('\\', '/') }
@@ -75,8 +76,7 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>()
             {
-                "-command", "plot/epw_heatmap",
-                "-e", epwFile.Replace('\\', '/'),
+                "-command", "plot/epw_heatmap"
             };
 
             (string result, bool success) = ExecutePython(args, json);

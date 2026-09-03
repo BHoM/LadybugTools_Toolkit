@@ -78,6 +78,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", epwFile },
                 { "epw_list", epwFileList },
                 { "data_type_key", command.EPWKey.ToText() },
                 { "line", command.PlotTimeseries },
@@ -89,8 +90,7 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>
             {
-                "--command", "plot/epw_comparison",
-                "-e", epwFile
+                "--command", "plot/epw_comparison"
             };
 
             (string result, bool success) = ExecutePython(args, json);

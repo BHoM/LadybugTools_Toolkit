@@ -17,6 +17,10 @@ from python_toolkit.bhom.decorators import bhom_wrapper
 @bhom_wrapper.bhom_callable("plot/epw_diurnal")
 def diurnal(epw_file: str, data_type_key: str="Dry Bulb Temperature", colour: str="#000000", title: str=None, period: str="monthly", save_path: str=None, **kwargs) -> PlotInformation:
     try:
+        locator = kwargs.pop("epw_locator", None)
+        if locator is not None:
+            epw_file = locator(epw_file)
+
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
         epw = EPW(epw_file)
         

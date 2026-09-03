@@ -1,6 +1,7 @@
 """Method to wrap for conversion of EPW to CSV file."""
 # pylint: disable=C0415,E0401,W0703
 import os
+from pathlib import Path
 import traceback
 from ladybug.epw import EPW
 from ladybugtools_toolkit.plot.compare import compare_epw_key_line, compare_epw_key_hist
@@ -12,9 +13,14 @@ from typing import List
 from python_toolkit.bhom.decorators import bhom_wrapper
 
 @bhom_wrapper.bhom_callable("plot/epw_comparison")
-def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, line:bool, save_path:str = None) -> PlotInformation:
+def epw_comparison(epw_file: str, epw_list: List[str], data_type_key: str, line:bool, save_path:str = None, **kwargs) -> PlotInformation:
     """Create a timeseries plot with a line for each epw file for the specified data key and return it in a format readable by the LadybugToolsAdapter."""
     try:
+        locator = kwargs.pop("epw_locator", None)
+        if locator is not None:
+            epw_file = locator(epw_file)
+            epw_list = [locator(e) for e in epw_list]
+
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
         epws = [EPW(epw_file)]
         epws.extend([EPW(f) for f in epw_list])

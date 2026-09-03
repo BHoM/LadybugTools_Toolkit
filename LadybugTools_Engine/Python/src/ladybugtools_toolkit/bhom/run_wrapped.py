@@ -16,27 +16,23 @@ from ladybugtools_toolkit.bhom import wrapped
 COMMAND_PARSER = argparse.ArgumentParser(description="argument parser for commands.")
 COMMAND_PARSER.add_argument("-command", "--command")
 COMMAND_PARSER.add_argument("-in", "--input_json")
-COMMAND_PARSER.add_argument("-e", "--epw_file", required=False)
 
-def resolve(data: List[str], epw_folder: Path = Path("C:/epws")) -> str:
+def resolve(data: List[str], epw_locator: Callable[[str], str] = lambda e: e) -> str:
     """Parses the given data (that looks like sys.argv[1:]), and gets the command arg which is an identifier for the command which is requested,
     and the input json string (or file) to be given to the BHoMJSONDecoder wrapped method.
 
-    Also if the given epw file doesn't exist, assume that it is a file name and append it to the epw folder as a backup.
+    epw_locator: callable directly sent to methods in kwargs so that epws can be "located"
+        i.e. if the parent directory might not be valid for instance in the context of a web server
+        this can replace the parent directory with the expected location for all epw files
+        Defaults to `lambda e: e` (don't change the location)
+
     """
     #parse data as args
     command_args, unknown_args = COMMAND_PARSER.parse_known_args(data)
 
-    if command_args.epw_file is not None:
-        #check if the epw file exists, if not prepend the epw_folder and try to run
-        epw = Path(command_args.epw_file)
-        if not epw.exists():
-            epw = epw_folder / epw.name
-            command_args.epw_file = str(epw)
-
     method = bhom_wrapper.get_registered_method(command_args.command)
 
-    ret = method(epw_file = command_args.epw_file, __input_json__ = command_args.input_json) 
+    ret = method(__input_json__ = command_args.input_json, epw_locator = epw_locator) 
     return ret #gets the function for the requested command, and runs it with arguments parsed with the desired parser.
 
 def deconstruct(data: str) -> List[str]:

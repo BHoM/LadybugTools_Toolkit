@@ -15,8 +15,12 @@ from ...logger import CONSOLE_LOGGER
 from python_toolkit.bhom.decorators import bhom_wrapper
 
 @bhom_wrapper.bhom_callable("plot/directional_solar_radiation", argument_types = { "analysis_period": AnalysisPeriod }, decoder_cls=LBTBHoMJSONDecoder)
-def directional_solar_radiation(epw_file: str, directions: int, tilts: int, irradiance_type: str, analysis_period: AnalysisPeriod, cmap: str, title: str = None, save_path:str = None) -> PlotInformation:
+def directional_solar_radiation(epw_file: str, directions: int, tilts: int, irradiance_type: str, analysis_period: AnalysisPeriod, cmap: str, title: str = None, save_path:str = None, **kwargs) -> PlotInformation:
     try:
+        locator = kwargs.pop("epw_locator", None)
+        if locator is not None:
+            epw_file = locator(epw_file)
+
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
 
         if cmap not in plt.colormaps():

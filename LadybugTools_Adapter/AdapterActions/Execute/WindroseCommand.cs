@@ -69,6 +69,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", epwFile.Replace('\\', '/') },
                 { "analysis_period", command.AnalysisPeriod },
                 { "colour_map", colourMap },
                 { "bins", command.NumberOfDirectionBins },
@@ -79,8 +80,7 @@ namespace BH.Adapter.LadybugTools
 
             List<string> args = new List<string>()
             {
-                "-command", "plot/windrose",
-                "-e", epwFile.Replace('\\', '/')
+                "-command", "plot/windrose"
             };
 
             (string result, bool success) = ExecutePython(args, json);

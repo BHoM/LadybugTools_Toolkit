@@ -62,6 +62,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", command.EPWFile.GetFullFileName().Replace('\\', '/') },
                 { "include_additional", command.IncludeAdditionalCalculated }
             };
 
@@ -69,8 +70,7 @@ namespace BH.Adapter.LadybugTools
 
             List<string> args = new List<string>()
             {
-                "--command", "epw_to_csv",
-                "-e", command.EPWFile.GetFullFileName().Replace('\\', '/'),
+                "--command", "epw_to_csv"
             };
 
             (string result, bool success) = ExecutePython(args, json);

@@ -18,6 +18,10 @@ from python_toolkit.bhom.decorators import bhom_wrapper
 def heatmap(epw_file: str, data_type_key: str, colour_map: str, save_path:str = None, **kwargs) -> PlotInformation:
     """Create a CSV file version of an EPW."""
     try:
+        locator = kwargs.pop("epw_locator", None)
+        if locator is not None:
+            epw_file = locator(epw_file)
+
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
 
         if colour_map not in plt.colormaps():

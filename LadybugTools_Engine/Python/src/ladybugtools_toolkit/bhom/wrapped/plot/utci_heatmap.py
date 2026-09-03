@@ -19,6 +19,10 @@ from python_toolkit.bhom.decorators import bhom_wrapper
 @bhom_wrapper.bhom_callable("plot/utci_heatmap", argument_types = { "external_comfort": ExternalComfort }, encoder_cls=LBTBHoMJSONEncoder, decoder_cls=LBTBHoMJSONDecoder)
 def utci_heatmap(external_comfort: ExternalComfort, bin_colours: list[str], save_path: str = "", **kwargs) -> Dict[str, object]:
     try:
+        locator = kwargs.pop("epw_locator", None)
+        if locator is not None:
+            epw_file = locator(epw_file)
+
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
         custom_bins = UTCI_DEFAULT_CATEGORIES
 

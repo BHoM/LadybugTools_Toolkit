@@ -24,6 +24,10 @@ from python_toolkit.bhom.decorators import bhom_wrapper
 def windrose(epw_file: str, analysis_period: AnalysisPeriod, colour_map: str, bins: int, save_path: str = None, **kwargs) -> PlotInformation:
     """Method to wrap for creating wind roses from epw files."""
     try:
+        locator = kwargs.pop("epw_locator", None)
+        if locator is not None:
+            epw_file = locator(epw_file)
+
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
 
         if colour_map not in plt.colormaps():

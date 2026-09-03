@@ -76,6 +76,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", epwFile.Replace('\\', '/') },
                 { "data_type_key", command.EPWKey.ToText() },
                 { "colour", command.Colour.ToHexCode() },
                 { "title", command.Title },
@@ -88,8 +89,7 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>()
             {
-                "--command", "plot/epw_diurnal",
-                "-e", epwFile.Replace('\\', '/')
+                "--command", "plot/epw_diurnal"
             };
 
             (string result, bool success) = ExecutePython(args, json);

@@ -87,6 +87,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", epwFile.Replace('\\', '/') },
                 { "directions", command.Directions },
                 { "tilts", command.Tilts },
                 { "irradiance_type", command.IrradianceType.ToString() },
@@ -102,8 +103,7 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>()
             {
-                "-command", "plot/directional_solar_radiation",
-                "-e", epwFile
+                "-command", "plot/directional_solar_radiation"
             };
 
             (string result, bool success) = ExecutePython(args, json);

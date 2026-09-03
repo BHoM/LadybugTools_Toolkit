@@ -11,6 +11,11 @@ from python_toolkit.bhom.decorators import bhom_wrapper
 
 @bhom_wrapper.bhom_callable("plot/facade_condensation_risk_chart")
 def facade_condensation_risk_chart(epw_file: str, thresholds: list[float], save_path: str = None, **kwargs) -> PlotInformation:
+
+    locator = kwargs.pop("epw_locator", None)
+    if locator is not None:
+        epw_file = locator(epw_file)
+
     style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
 
     epw = EPW(epw_file)

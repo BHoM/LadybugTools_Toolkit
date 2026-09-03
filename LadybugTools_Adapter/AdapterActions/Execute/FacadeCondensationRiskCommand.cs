@@ -75,6 +75,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", epwFile.Replace('\\', '/') },
                 { "thresholds", thresholds },
                 { "save_path", command.OutputLocation.Replace('\\', '/') }
             };
@@ -84,8 +85,7 @@ namespace BH.Adapter.LadybugTools
             //construct args: insert thresholds as a range as concatenating them into a space delimited string causes the numbers to be wrapped in quotes which breaks the python argument parser
             List<string> args = new List<string>()
             {
-                "-command", commandArg,
-                "-e", epwFile.Replace('\\', '/')
+                "-command", commandArg
             };
 
             // run the process

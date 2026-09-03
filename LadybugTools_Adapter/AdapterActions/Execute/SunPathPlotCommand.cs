@@ -70,6 +70,7 @@ namespace BH.Adapter.LadybugTools
 
             Dictionary<string, object> dict = new Dictionary<string, object>()
             {
+                { "epw_file", epwFile.Replace('\\', '/') },
                 { "size", command.SunSize },
                 { "analysis_period", command.AnalysisPeriod },
                 { "save_path", command.OutputLocation.Replace('\\', '/') }
@@ -80,8 +81,7 @@ namespace BH.Adapter.LadybugTools
             // run the process
             List<string> args = new List<string>()
             {
-                "-command", "plot/sunpath",
-                "-e", epwFile.Replace('\\', '/')
+                "-command", "plot/sunpath"
             };
 
             (string result, bool success) = ExecutePython(args, json);
