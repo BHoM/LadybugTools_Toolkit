@@ -47,7 +47,6 @@ ENERGY_MATERIAL = EnergyMaterial(
     visible_absorptance=0.8,
 )
 
-
 def test_energymaterialvegetation_to_bhom():
     """_"""
 
@@ -125,11 +124,11 @@ def test_analysisperiod_to_bhom():
 
     assert result["_t"] == "BH.oM.LadybugTools.AnalysisPeriod"
     assert result["Type"] == "AnalysisPeriod"
-    assert result["StHour"] == 0
+    assert result["StartHour"] == 0
     assert result["EndHour"] == 23
-    assert result["StDay"] == 1
+    assert result["StartDay"] == 1
     assert result["EndDay"] == 31
-    assert result["StMonth"] == 1
+    assert result["StartMonth"] == 1
     assert result["EndMonth"] == 12
     assert result["IsLeapYear"] is False
     assert result["Timestep"] == 1

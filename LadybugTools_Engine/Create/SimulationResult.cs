@@ -43,7 +43,7 @@ namespace BH.Engine.LadyBugTools
             return new SimulationResult()
             {
                 EpwFile = epwFile,
-                Name = identifier,
+                Identifier = identifier,
                 GroundMaterial = groundMaterial,
                 ShadeMaterial = shadeMaterial
             };

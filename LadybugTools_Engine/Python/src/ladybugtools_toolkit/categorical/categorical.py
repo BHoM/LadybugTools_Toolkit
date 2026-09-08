@@ -22,6 +22,7 @@ from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from python_toolkit.bhom.analytics import bhom_analytics
+from python_toolkit.bhom.bhom_object import BHoMObject
 from python_toolkit.plot.heatmap import heatmap
 from python_toolkit.plot.timeseries import timeseries
 
@@ -30,8 +31,8 @@ from ..helpers import rolling_window, sunrise_sunset, validate_timeseries
 from ..plot.utilities import contrasting_color
 
 
-@dataclass(init=True, repr=True)
-class Categorical:
+@dataclass(init=False, repr=True)
+class Categorical(BHoMObject):
     """A class to hold categorical data.
 
     Args:
@@ -51,7 +52,14 @@ class Categorical:
     colors: tuple[str] = field(default_factory=tuple, repr=True)
     name: str = field(default="GenericCategories")
 
-    def __post_init__(self):
+    def __init__(self, bins = (), bin_names = (), colors = (), name = "GenericCategories", **kwargs):
+        self.bins = bins
+        self.bin_names = bin_names
+        self.colors = colors
+
+        _t = kwargs.pop("_t", "BH.oM.LadybugTools.Categorical")
+        super().__init__(_t, name=name, **kwargs)
+        
         # ensure colors are valid
         if len(self.colors) == 0:
             cycle = tuple(plt.rcParams["axes.prop_cycle"].by_key()["color"])
@@ -811,7 +819,7 @@ class ComfortClass(Enum):
         return d[self]
 
 
-@dataclass(init=True, repr=True)
+@dataclass(init=False, repr=True)
 class CategoricalComfort(Categorical):
     """A class to hold categorical comfort data.
 
@@ -822,12 +830,15 @@ class CategoricalComfort(Categorical):
 
     comfort_classes: tuple[ComfortClass] = field(default_factory=tuple, repr=False)
 
-    def __post_init__(self):
+    def __init__(self, comfort_classes: tuple[ComfortClass] = (), **kwargs):
+        self.comfort_classes = comfort_classes
+
+        super().__init__(**kwargs)
+
         if len(self.comfort_classes) == 0:
             raise ValueError("The comfort classes cannot be empty.")
         if len(self.comfort_classes) != len(self):
             raise ValueError("The number of comfort classes must match the number of bins.")
-        return super().__post_init__()
 
     @bhom_analytics()
     def simplify(self) -> "CategoricalComfort":

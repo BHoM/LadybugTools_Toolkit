@@ -75,7 +75,7 @@ namespace BH.Engine.LadybugTools
                 EndDay = endDay,
                 EndHour = endHour,
                 IsLeapYear = isLeapYear,
-                TimeStep = timestep
+                Timestep = timestep
             };
         }
     }

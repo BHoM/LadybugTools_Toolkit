@@ -39,6 +39,8 @@ namespace BH.oM.LadybugTools
         [DisplayText("Base Unit")]
         [Description(@"The base type of this data type. This is used if Data_Type is set to ""GenericDataType"".")]
         public virtual string BaseUnit { get; set; } = string.Empty;
+
+        public virtual string Type { get; set; } = "DataType";
     }
 }
 

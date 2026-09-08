@@ -40,15 +40,18 @@ from ladybug.stat import STAT
 from ladybug_comfort.collection.solarcal import OutdoorSolarCal, SolarCalParameter
 from lbt_recipes.version import check_openstudio_version
 
+from python_toolkit.bhom.bhom_object import BHoMObject
 from ..bhom.logger import CONSOLE_LOGGER
+from ..bhom.from_bhom import LBTBHoMJSONDecoder
 from ..bhom.to_bhom import (
+    LBTBHoMJSONEncoder,
     hourlycontinuouscollection_to_bhom,
     material_to_bhom,
 )
 from ..honeybee_extension.results import load_sql
 from ..ladybug_extension.datacollection import (
     collection_from_series,
-    collection_to_series,
+    collection_to_series
 )
 from ..ladybug_extension.epw import epw_to_dataframe
 from ..ladybug_extension.epw import equality as epw_equality
@@ -604,9 +607,8 @@ _ATTRIBUTES = [
     "unshaded_mean_radiant_temperature",
 ]
 
-
-@dataclass(init=True, repr=True, eq=True)
-class SimulationResult:
+@dataclass(init=False, repr=True, eq=True)
+class SimulationResult(BHoMObject):
     """_"""
 
     epw_file: Path
@@ -630,11 +632,70 @@ class SimulationResult:
     unshaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None
     unshaded_mean_radiant_temperature: HourlyContinuousCollection = None
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.identifier})"
+    def __init__(
+        self,
+        epw_file: Path | BHoMObject,
+        ground_material: EnergyMaterial | EnergyMaterialVegetation,
+        shade_material: EnergyMaterial | EnergyMaterialVegetation,
+        identifier: str = None,
 
-    def __post_init__(self):
-        """_"""
+        shaded_down_temperature: HourlyContinuousCollection = None,
+        shaded_up_temperature: HourlyContinuousCollection = None,
+
+        unshaded_down_temperature: HourlyContinuousCollection = None,
+        unshaded_up_temperature: HourlyContinuousCollection = None,
+
+        shaded_radiant_temperature: HourlyContinuousCollection = None,
+        shaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        shaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        shaded_mean_radiant_temperature: HourlyContinuousCollection = None,
+
+        unshaded_radiant_temperature: HourlyContinuousCollection = None,
+        unshaded_longwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        unshaded_shortwave_mean_radiant_temperature_delta: HourlyContinuousCollection = None,
+        unshaded_mean_radiant_temperature: HourlyContinuousCollection = None,
+        **kwargs
+    ) -> "SimulationResult":
+
+        if isinstance(epw_file, BHoMObject):
+            if epw_file._t == "BH.oM.Adapter.FileSettings":
+                epw_file = Path(epw_file.directory) / epw_file.file_name
+
+        self.epw_file = epw_file
+        
+        if isinstance(ground_material, dict):
+            ground_material = dict_to_material(ground_material)
+        self.ground_material = ground_material
+
+        if isinstance(shade_material, dict):
+            shade_material = dict_to_material(shade_material)
+        self.shade_material = shade_material
+
+        name = kwargs.pop("name", None)
+
+        if name is not None and name != '' and identifier is None:
+            identifier = name
+
+        self.identifier = identifier
+
+        self.shaded_down_temperature = shaded_down_temperature
+        self.shaded_up_temperature = shaded_up_temperature
+
+        self.unshaded_down_temperature = unshaded_down_temperature
+        self.unshaded_up_temperature = unshaded_up_temperature
+
+        self.shaded_radiant_temperature = shaded_radiant_temperature
+        self.shaded_longwave_mean_radiant_temperature_delta = shaded_longwave_mean_radiant_temperature_delta
+        self.shaded_shortwave_mean_radiant_temperature_delta = shaded_shortwave_mean_radiant_temperature_delta
+        self.shaded_mean_radiant_temperature = shaded_mean_radiant_temperature
+
+        self.unshaded_radiant_temperature = unshaded_radiant_temperature
+        self.unshaded_longwave_mean_radiant_temperature_delta = unshaded_longwave_mean_radiant_temperature_delta
+        self.unshaded_shortwave_mean_radiant_temperature_delta = unshaded_shortwave_mean_radiant_temperature_delta
+        self.unshaded_mean_radiant_temperature = unshaded_mean_radiant_temperature
+
+        _t = kwargs.pop("_t", "BH.oM.LadybugTools.SimulationResult")
+        super().__init__(_t, **kwargs)
 
         # validation
         if not isinstance(self.epw_file, (Path, str)):
@@ -647,6 +708,7 @@ class SimulationResult:
             self.ground_material = self.ground_material.value
         if isinstance(self.shade_material, Materials):
             self.shade_material = self.shade_material.value
+
 
         if not isinstance(
             self.ground_material, (EnergyMaterial, EnergyMaterialVegetation)
@@ -667,6 +729,13 @@ class SimulationResult:
             )
 
         for attr in _ATTRIBUTES:
+            a = getattr(self, attr)
+
+            if isinstance(a, BHoMObject):
+                setattr(self, attr, collection_from_bhom_object(a))
+            elif isinstance(a, dict):
+                setattr(self, attr, HourlyContinuousCollection.from_dict(a))
+
             if not isinstance(
                 getattr(self, attr), (HourlyContinuousCollection, type(None))
             ):
@@ -756,6 +825,16 @@ class SimulationResult:
         for attr in _ATTRIBUTES:
             setattr(self, f"{attr}_series", collection_to_series(getattr(self, attr)))
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.identifier})"
+    
+    def to_json(self):
+        return super().to_json(encoder_class=LBTBHoMJSONEncoder)
+
+    @classmethod
+    def from_json(cls, j):
+        return super().from_json(j, decoder_class=LBTBHoMJSONDecoder)
+
     def to_dict(self) -> dict[str, Any]:
         """Convert this object to a dictionary."""
         ground_material_dict = self.ground_material.to_dict()
@@ -821,16 +900,6 @@ class SimulationResult:
             ],
             unshaded_mean_radiant_temperature=d["unshaded_mean_radiant_temperature"],
         )
-
-    def to_json(self) -> str:
-        """Create a JSON string from this object."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_json(cls, json_string: str) -> "SimulationResult":
-        """Create this object from a JSON string."""
-
-        return cls.from_dict(json.loads(json_string))
 
     def to_file(self, path: Path) -> Path:
         """Write this object to a JSON file."""

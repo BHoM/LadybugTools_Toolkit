@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Adapter;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Data.Requests;
 using BH.oM.LadybugTools;
@@ -48,15 +49,6 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            LadybugConfig config = new LadybugConfig()
-            {
-                JsonFile = new FileSettings()
-                {
-                    FileName = $"LBTBHoM_{Guid.NewGuid()}.json",
-                    Directory = Path.GetTempPath()
-                }
-            };
-
             // construct the base object
             ExternalComfort externalComfort = new ExternalComfort()
             {
@@ -64,24 +56,42 @@ namespace BH.Adapter.LadybugTools
                 Typology = command.Typology,
             };
 
-            // push objects to json file
-            Push(new List<ExternalComfort>() { externalComfort }, actionConfig: config);
+            Dictionary<string, object> dict = new Dictionary<string, object>()
+            {
+                { "external_comfort", externalComfort }
+            };
 
-            // locate the Python file containing the simulation code
-            string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom\\wrapped", "external_comfort.py");
+            string json = dict.ToJson();
 
-            // run the calculation
-            string cmdCommand = $"{m_environment.Executable} {script} -j \"{config.JsonFile.GetFullFileName()}\"";
-            Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
+            List<string> args = new List<string>()
+            {
+                "-c", "external_comfort"
+            };
 
-            // reload from Python results
-            List<object> externalComfortPopulated = Pull(new FilterRequest(), actionConfig: config).ToList();
+            (string result, bool success) = ExecutePython(args, json);
+            m_executeSuccess = success;
 
-            // remove temporary file
-            File.Delete(config.JsonFile.GetFullFileName());
+            if (!success)
+            {
+                BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
+                return new List<object>();
+            }
 
-            m_executeSuccess = true;
-            return externalComfortPopulated;
+            string resultJson = result.Split('\n').Last();
+            ExternalComfort ec = null;
+
+            try
+            {
+                ec = (ExternalComfort)BH.Engine.Serialiser.Convert.FromJson(resultJson);
+            }
+            catch (Exception ex)
+            {
+                BH.Engine.Base.Compute.RecordError(ex, $"Could not deserialise python output into ExternalComfort. Python output:\n{result}");
+                m_executeSuccess = false;
+                return new List<object>();
+            }
+
+            return new List<object>() { ec };
         }
     }
 }

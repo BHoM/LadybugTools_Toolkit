@@ -73,39 +73,42 @@ namespace BH.Adapter.LadybugTools
             else
                 commandArg = "plot/facade_condensation_risk_chart";
 
+            Dictionary<string, object> dict = new Dictionary<string, object>()
+            {
+                { "epw_file", epwFile.Replace('\\', '/') },
+                { "thresholds", thresholds },
+                { "save_path", command.OutputLocation.Replace('\\', '/') }
+            };
+
+            string json = dict.ToJson();
+
             //construct args: insert thresholds as a range as concatenating them into a space delimited string causes the numbers to be wrapped in quotes which breaks the python argument parser
-            List<string> args = new List<string>() { "-command", commandArg, "-e", epwFile.Replace('\\', '/'), "-t", "-p", command.OutputLocation.Replace('\\', '/') };
-            args.InsertRange(args.IndexOf("-t") + 1, thresholds.Select(x => x.ToString()));
+            List<string> args = new List<string>()
+            {
+                "-command", commandArg
+            };
 
             // run the process
-            string result = "";
-            bool success;
+            (string result, bool success) = ExecutePython(args, json);
+            m_executeSuccess = success;
 
-            if (m_httpClient != null)
+            if (!success)
             {
-                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
-                task.Wait();
-                (result, success) = task.Result;
+                BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
+                return new List<object>();
             }
-            else
-            {
-                //if the server was not running or some other error happened, try running the python directly.
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
-                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
-            }
+            result = result.Split('\n').Last();
 
             try
             {
-                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
-                m_executeSuccess = true;
+                PlotInformation info = (PlotInformation)BH.Engine.Serialiser.Convert.FromJson(result);
                 return new List<object>() { info };
             }
             catch (Exception ex)
             {
                 BH.Engine.Base.Compute.RecordError(ex, $"An error occurred when deserialising the output from the script.\n Python output: {result}");
+                m_executeSuccess = false;
                 return new List<object>();
             }
         }

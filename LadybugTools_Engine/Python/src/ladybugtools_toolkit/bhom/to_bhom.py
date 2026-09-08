@@ -6,7 +6,24 @@ from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.epw import EPW, Location
 from ladybug.header import DataTypeBase, Header
 from ladybug_geometry.geometry3d.pointvector import Point3D
+from python_toolkit.bhom.bhom_object import BHoMJSONEncoder
 
+class LBTBHoMJSONEncoder(BHoMJSONEncoder):
+    def serialise_unknown(self, obj):
+        if isinstance(obj, EnergyMaterial) or isinstance(obj, EnergyMaterialVegetation):
+            return material_to_bhom(obj)
+        if isinstance(obj, Point3D):
+            return point3d_to_bhom(obj)
+        if isinstance(obj, AnalysisPeriod):
+            return analysisperiod_to_bhom(obj)
+        if isinstance(obj, DataTypeBase):
+            return datatype_to_bhom(obj)
+        if isinstance(obj, Header):
+            return header_to_bhom(obj)
+        if isinstance(obj, HourlyContinuousCollection):
+            return hourlycontinuouscollection_to_bhom(obj)
+
+        return super().serialise_unknown(obj)
 
 def material_to_bhom(obj: EnergyMaterial | EnergyMaterialVegetation) -> dict:
     """Convert this object into a BHOM deserialisable dictionary."""
@@ -76,11 +93,11 @@ def analysisperiod_to_bhom(obj: AnalysisPeriod) -> dict:
     return {
         "_t": "BH.oM.LadybugTools.AnalysisPeriod",
         "Type": "AnalysisPeriod",
-        "StHour": obj.st_hour,
+        "StartHour": obj.st_hour,
         "EndHour": obj.end_hour,
-        "StDay": obj.st_day,
+        "StartDay": obj.st_day,
         "EndDay": obj.end_day,
-        "StMonth": obj.st_month,
+        "StartMonth": obj.st_month,
         "EndMonth": obj.end_month,
         "IsLeapYear": obj.is_leap_year,
         "Timestep": obj.timestep,

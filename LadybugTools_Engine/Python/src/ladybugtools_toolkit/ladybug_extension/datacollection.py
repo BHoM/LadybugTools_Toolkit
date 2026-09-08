@@ -19,11 +19,11 @@ from ladybug.datacollection import (
 from ladybug.datatype.angle import Angle
 from ladybug.dt import DateTime
 from python_toolkit.bhom.analytics import bhom_analytics
+from python_toolkit.bhom.bhom_object import BHoMObject
 from ..helpers import circular_weighted_mean
 from .analysisperiod import analysis_period_to_datetimes
 from .analysisperiod import describe_analysis_period
 from .header import header_from_string, header_to_string
-
 
 def collection_to_series(collection: BaseCollection, name: str = None) -> pd.Series:
     """Convert a Ladybug hourlyContinuousCollection object into a Pandas Series object.
