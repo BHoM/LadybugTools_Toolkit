@@ -1,4 +1,5 @@
 ﻿import os
+from pathlib import Path
 from typing import Dict
 import matplotlib
 import traceback
@@ -12,13 +13,27 @@ import json
 import matplotlib.pyplot as plt
 from ...logger import CONSOLE_LOGGER
 from python_toolkit.bhom.decorators import bhom_wrapper
+from python_toolkit.bhom.bhom_object import BHoMObject
 
-@bhom_wrapper.bhom_callable("plot/walkability_heatmap", argument_types = { "external_comfort": ExternalComfort }, encoder_cls=LBTBHoMJSONEncoder, decoder_cls=LBTBHoMJSONDecoder)
-def walkability_heatmap(external_comfort: ExternalComfort, save_path: str, **kwargs) -> Dict[str, object]:
+@bhom_wrapper.bhom_callable("plot/walkability_heatmap", argument_types = { "external_comfort": BHoMObject }, encoder_cls=LBTBHoMJSONEncoder, decoder_cls=LBTBHoMJSONDecoder)
+def walkability_heatmap(external_comfort: BHoMObject, save_path: str, **kwargs) -> Dict[str, object]:
     try:
+        # This mess is to allow the epw file locator to work before external comfort is calculated
+        # (as calculation is done on instantiation, the object needs to remain uninstantiated until the epw file is located)
+        epw_file = external_comfort.simulation_result.epw_file
+
+        if isinstance(epw_file, BHoMObject):
+            if epw_file._t == "BH.oM.Adapter.FileSettings":
+                epw_file = Path(epw_file.directory) / epw_file.file_name
+
         locator = kwargs.pop("epw_locator", None)
         if locator is not None:
             epw_file = locator(epw_file)
+
+        external_comfort.simulation_result.epw_file = epw_file
+
+        external_comfort = ExternalComfort._from_bhom_object(external_comfort)
+        # End mess
 
         style = os.environ.get("BHOM_style_context", "python_toolkit.bhom")
 
