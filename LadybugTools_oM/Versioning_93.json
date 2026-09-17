@@ -1,10 +1,12 @@
 {
   "Property": {
     "ToNew": {
-      "BH.oM.LadybugTools.AnalysisPeriod.TimeStep": "BH.oM.LadybugTools.AnalysisPeriod.Timestep"
+      "BH.oM.LadybugTools.AnalysisPeriod.TimeStep": "BH.oM.LadybugTools.AnalysisPeriod.Timestep",
+      "BH.oM.LadybugTools.Typology.Name": "BH.oM.LadybugTools.Typology.Identifier"
     },
     "ToOld": {
-      "BH.oM.LadybugTools.AnalysisPeriod.Timestep": "BH.oM.LadybugTools.AnalysisPeriod.TimeStep"
+      "BH.oM.LadybugTools.AnalysisPeriod.Timestep": "BH.oM.LadybugTools.AnalysisPeriod.TimeStep",
+      "BH.oM.LadybugTools.Typology.Identifier": "BH.oM.LadybugTools.Typology.Name"
     }
   }
 }

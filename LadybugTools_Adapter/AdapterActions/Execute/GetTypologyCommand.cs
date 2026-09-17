@@ -86,7 +86,7 @@ namespace BH.Adapter.LadybugTools
             List<object> typologyObjects = Pull(new FilterRequest(), actionConfig: config).ToList();
 
             m_executeSuccess = true;
-            return typologyObjects.Where(m => (m as Typology).Name.Contains(command.Filter)).ToList();
+            return typologyObjects.Where(m => (m as Typology).Identifier.Contains(command.Filter)).ToList();
         }
     }
 }
