@@ -116,7 +116,7 @@ namespace BH.Adapter.LadybugTools
 
             return new Typology()
 {
-                Name = identifier,
+                Identifier = identifier,
                 Shelters = shelters,
                 EvaporativeCoolingEffect = evaporativeCoolingEffect,
                 TargetWindSpeed = targetWindSpeed,
@@ -127,7 +127,7 @@ namespace BH.Adapter.LadybugTools
 
         public static string FromTypology(oM.LadybugTools.Typology typology)
     {
-            string identifier = typology.Name;
+            string identifier = typology.Identifier;
             string shelters = "[" + string.Join(", ", typology.Shelters.Select(s => FromShelter(s)).ToList()) + "]";
             string evaporativeCoolingEffect = "[" + string.Join(", ", typology.EvaporativeCoolingEffect) + "]";
             string targetWindSpeed = "[" + string.Join(", ", typology.TargetWindSpeed.Select(x => x.ToString()).Select(x => x == "" ? x = "null": x)) + "]";
