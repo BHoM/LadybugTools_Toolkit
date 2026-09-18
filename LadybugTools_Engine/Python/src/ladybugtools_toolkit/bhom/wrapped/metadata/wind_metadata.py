@@ -1,6 +1,7 @@
 ﻿from ladybugtools_toolkit.wind import Wind
+from python_toolkit.bhom.bhom_object import IObject
 
-def wind_metadata(wind_object: Wind, directions: int=36, ignore_calm: bool=True, threshold: float = 1e-10) -> dict:
+def wind_metadata(wind_object: Wind, directions: int=36, ignore_calm: bool=True, threshold: float = 1e-10) -> IObject:
         """Provides a dictionary containing metadata of this wind object.
 
         Args:
@@ -31,11 +32,12 @@ def wind_metadata(wind_object: Wind, directions: int=36, ignore_calm: bool=True,
         prevailing_wind_speed = prevailing_wind_speeds[0]
         prevailing_direction = prevailing_directions[0]
         
-        return {
-            "95percentile": ws.quantile(0.95),
-            "50percentile": ws.quantile(0.50),
-            "calm_percent": wind_object.calm(),
-            "prevailing_direction": prevailing_direction,
-            "prevailing_95percentile": prevailing_wind_speed.quantile(0.95),
-            "prevailing_50percentile": prevailing_wind_speed.quantile(0.5)
-        }
+        return IObject(
+            _t = "BH.oM.LadybugTools.WindroseData",
+            percentile95 = ws.quantile(0.95),
+            percentile50 = ws.quantile(0.50),
+            ratio_of_calm_hours = wind_object.calm(),
+            prevailing_direction = prevailing_direction,
+            prevailing_percentile95 = prevailing_wind_speed.quantile(0.95),
+            prevailing_percentile50 = prevailing_wind_speed.quantile(0.5)
+        )

@@ -32,7 +32,7 @@ namespace BH.oM.LadybugTools
     public class EnergyMaterialVegetation : BHoMObject, IEnergyMaterialOpaque
     {
         [Description("The name of this EnergyMaterialVegetation.")]
-        public override string Name { get; set; } = string.Empty;
+        public virtual string Identifier { get; set; } = string.Empty;
 
         [Description("Thickness of material (m).")]
         [Length]
@@ -83,6 +83,8 @@ namespace BH.oM.LadybugTools
         [DisplayText("Minimum Stomatal Resistance")]
         [Description("A number between 50 and 300 for the resistance of the plants to moisture transport [s/m]. Plants with low values of stomatal resistance will result in higher evapotranspiration rates than plants with high resistance.")]
         public virtual double MinimumStomatalResistance { get; set; }
+
+        public virtual string Type { get; set; } = "EnergyMaterialVegetation";
     }
 }
 

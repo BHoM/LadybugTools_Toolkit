@@ -29,6 +29,8 @@ namespace BH.oM.LadybugTools
     [Description("An interface for opaque energy materials.")]
     public interface IEnergyMaterialOpaque : ILadybugTools
     {
+        [Description("Unique identifier for this material.")]
+        string Identifier { get; set; }
     }
 }
 

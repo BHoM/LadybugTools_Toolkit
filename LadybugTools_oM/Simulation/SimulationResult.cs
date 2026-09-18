@@ -43,7 +43,7 @@ namespace BH.oM.LadybugTools
         public virtual IEnergyMaterialOpaque ShadeMaterial { get; set; }
 
         [Description("The identifier used to distinguish existing results for this object.")]
-        public override string Name { get; set; }
+        public virtual string Identifier { get; set; }
 
         // simulated properties
 
@@ -95,12 +95,12 @@ namespace BH.oM.LadybugTools
         [Description("The Unshaded Mean Radiant Temperature used in the processing of this object")]
         public virtual HourlyContinuousCollection UnshadedMeanRadiantTemperature { get; } = null;
 
-        public SimulationResult(FileSettings epwFile = null, IEnergyMaterialOpaque groundMaterial = null, IEnergyMaterialOpaque shadeMaterial = null, string name = null, HourlyContinuousCollection shadedDownTemperature = null, HourlyContinuousCollection shadedUpTemperature = null, HourlyContinuousCollection shadedRadiantTemperature = null, HourlyContinuousCollection shadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedMeanRadiantTemperature = null, HourlyContinuousCollection unshadedDownTemperature = null, HourlyContinuousCollection unshadedUpTemperature = null, HourlyContinuousCollection unshadedRadiantTemperature = null, HourlyContinuousCollection unshadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedMeanRadiantTemperature = null)
+        public SimulationResult(FileSettings epwFile = null, IEnergyMaterialOpaque groundMaterial = null, IEnergyMaterialOpaque shadeMaterial = null, string identifier = null, HourlyContinuousCollection shadedDownTemperature = null, HourlyContinuousCollection shadedUpTemperature = null, HourlyContinuousCollection shadedRadiantTemperature = null, HourlyContinuousCollection shadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection shadedMeanRadiantTemperature = null, HourlyContinuousCollection unshadedDownTemperature = null, HourlyContinuousCollection unshadedUpTemperature = null, HourlyContinuousCollection unshadedRadiantTemperature = null, HourlyContinuousCollection unshadedLongwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedShortwaveMeanRadiantTemperatureDelta = null, HourlyContinuousCollection unshadedMeanRadiantTemperature = null)
         {
             EpwFile = epwFile;
             GroundMaterial = groundMaterial;
             ShadeMaterial = shadeMaterial;
-            Name = name;
+            Identifier = identifier;
             ShadedDownTemperature = shadedDownTemperature;
             ShadedUpTemperature = shadedUpTemperature;
             ShadedRadiantTemperature = shadedRadiantTemperature;

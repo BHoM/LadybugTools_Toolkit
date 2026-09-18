@@ -120,7 +120,7 @@ namespace BH.Adapter.LadybugTools
 
             return new oM.LadybugTools.EnergyMaterial()
             {
-                Name = name,
+                Identifier = name,
                 Thickness = thickness,
                 Conductivity = conductivity,
                 Density = density,
@@ -137,7 +137,7 @@ namespace BH.Adapter.LadybugTools
             return new Dictionary<string, object>()
             {
                 { "type", "EnergyMaterial" },
-                { "identifier", energyMaterial.Name },
+                { "identifier", energyMaterial.Identifier },
                 { "thickness", energyMaterial.Thickness },
                 { "conductivity", energyMaterial.Conductivity },
                 { "density", energyMaterial.Density },

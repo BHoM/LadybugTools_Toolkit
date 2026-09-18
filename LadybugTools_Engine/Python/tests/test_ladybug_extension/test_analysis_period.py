@@ -9,7 +9,6 @@ from ladybugtools_toolkit.ladybug_extension.analysisperiod import (
     describe_analysis_period,
 )
 
-
 def test_from_datetimes():
     """_"""
     datetimes = [

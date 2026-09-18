@@ -15,12 +15,14 @@ from matplotlib.figure import Figure
 from matplotlib.colors import LinearSegmentedColormap
 
 from ..bhom.logger import CONSOLE_LOGGER
-from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom
+from ..bhom.to_bhom import hourlycontinuouscollection_to_bhom, LBTBHoMJSONEncoder
+from ..bhom.from_bhom import LBTBHoMJSONDecoder
 from ..categorical.categories import UTCI_DEFAULT_CATEGORIES, Categorical
 from ..helpers import convert_keys_to_snake_case
 from ..ladybug_extension.analysisperiod import describe_analysis_period
 from ..ladybug_extension.datacollection import collection_to_series
 from python_toolkit.plot.heatmap import heatmap
+from python_toolkit.bhom.bhom_object import BHoMObject
 from ..plot._utci import utci_day_comfort_metrics, utci_heatmap_histogram
 from ..plot.colormaps import (
     DBT_COLORMAP,
@@ -44,8 +46,8 @@ _ATTRIBUTES = [
 ]
 
 
-@dataclass(init=True, repr=True, eq=True)
-class ExternalComfort:
+@dataclass(init=False, repr=True, eq=True)
+class ExternalComfort(BHoMObject):
     """_"""
 
     simulation_result: SimulationResult
@@ -57,8 +59,34 @@ class ExternalComfort:
     mean_radiant_temperature: HourlyContinuousCollection = None
     universal_thermal_climate_index: HourlyContinuousCollection = None
 
-    def __post_init__(self):
-        """_"""
+    def __init__(
+        self,
+        simulation_result: SimulationResult | BHoMObject,
+        typology: Typology | BHoMObject,
+        dry_bulb_temperature: HourlyContinuousCollection = None,
+        relative_humidity: HourlyContinuousCollection = None,
+        wind_speed: HourlyContinuousCollection = None,
+        mean_radiant_temperature: HourlyContinuousCollection = None,
+        universal_thermal_climate_index: HourlyContinuousCollection = None,
+        **kwargs
+    ) -> "ExternalComfort":
+        if type(simulation_result) is BHoMObject:
+            simulation_result = SimulationResult._from_bhom_object(simulation_result)
+
+        if type(typology) is BHoMObject:
+            typology = Typology._from_bhom_object(typology)
+
+        self.simulation_result = simulation_result
+        self.typology = typology
+
+        self.dry_bulb_temperature = dry_bulb_temperature
+        self.relative_humidity = relative_humidity
+        self.wind_speed = wind_speed
+        self.mean_radiant_temperature = mean_radiant_temperature
+        self.universal_thermal_climate_index = universal_thermal_climate_index
+
+        _t = kwargs.pop("_t", "BH.oM.LadybugTools.ExternalComfort")
+        super().__init__(_t, **kwargs)
 
         # validation
         if not isinstance(self.simulation_result, SimulationResult):
@@ -68,15 +96,23 @@ class ExternalComfort:
 
         if isinstance(self.typology, Typologies):
             self.typology = self.typology.value
+
         if not isinstance(self.typology, Typology):
             raise ValueError("typology must be an instance of Typology.")
 
         for attr in _ATTRIBUTES:
+            a = getattr(self, attr)
+
+            if isinstance(a, BHoMObject):
+                setattr(self, attr, collection_from_bhom_object(a))
+            elif isinstance(a, dict):
+                setattr(self, attr, HourlyContinuousCollection.from_dict(a))
+
             if not isinstance(
                 getattr(self, attr), (HourlyContinuousCollection, type(None))
             ):
                 raise ValueError(
-                    f"{attr} must be an instance of HourlyContinuousCollection or None."
+                    f"{attr} must be either an HourlyContinuousCollection, or None."
                 )
 
         CONSOLE_LOGGER.info(
@@ -123,6 +159,13 @@ class ExternalComfort:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.simulation_result}, {self.typology})"
 
+    def to_json(self):
+        return super().to_json(encoder_class=LBTBHoMJSONEncoder)
+
+    @classmethod
+    def from_json(cls, j):
+        return super().from_json(j, decoder_class=LBTBHoMJSONDecoder)
+
     def to_dict(self) -> str:
         """Convert this object to a dictionary."""
         attr_dict = {}
@@ -167,16 +210,6 @@ class ExternalComfort:
             mean_radiant_temperature=d["mean_radiant_temperature"],
             universal_thermal_climate_index=d["universal_thermal_climate_index"],
         )
-
-    def to_json(self) -> str:
-        """Convert this object to a JSON string."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_json(cls, json_string: str) -> "SimulationResult":
-        """Create this object from a JSON string."""
-
-        return cls.from_dict(json.loads(json_string))
 
     def to_file(self, path: Path) -> Path:
         """Write this object to a JSON file."""

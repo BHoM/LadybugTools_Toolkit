@@ -21,6 +21,7 @@
  */
 
 using BH.Engine.Adapter;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.LadybugTools;
 using System;
@@ -59,28 +60,20 @@ namespace BH.Adapter.LadybugTools
                 return null;
             }
 
-            List<string> args = new List<string>() { "--command", "epw_to_csv", "-e", command.EPWFile.GetFullFileName().Replace('\\', '/'), "-a", command.IncludeAdditionalCalculated.ToString() };
-
-            string result = "";
-            bool success = true;
-
-            if (m_httpClient != null)
+            Dictionary<string, object> dict = new Dictionary<string, object>()
             {
-                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
-                task.Wait();
-                (result, success) = task.Result; //in this case, result is the text of the csv file.
-            }
-            else
+                { "epw_file", command.EPWFile.GetFullFileName().Replace('\\', '/') },
+                { "include_additional", command.IncludeAdditionalCalculated }
+            };
+
+            string json = dict.ToJson();
+
+            List<string> args = new List<string>()
             {
-                //if the server was not running or some other error happened, try running the python directly.
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
-                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+                "--command", "epw_to_csv"
+            };
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true);
-            }
-
-            //as the file output is hard to verify by itself, check that no errors got output to stderr log
-            success &= !result.Contains("Traceback (most recent call last):");
+            (string result, bool success) = ExecutePython(args, json);
 
             if (!success)
             {
