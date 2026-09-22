@@ -13,6 +13,8 @@ from lbt_recipes.settings import RecipeSettings
 from PIL import Image, ImageEnhance
 from python_toolkit.bhom.analytics import bhom_analytics
 
+from ..helpers import resolve_queenbee_path
+
 
 @bhom_analytics()
 def fisheye_sky(
@@ -65,7 +67,7 @@ def fisheye_sky(
     project_folder = recipe.run(
         settings=recipe_settings,
         radiance_check=True,
-        queenbee_path=r"C:\Program Files\ladybug_tools\python\Scripts\queenbee.exe",
+        queenbee_path=resolve_queenbee_path(),
     )
     result = recipe.output_value_by_name("results", project_folder)
 
