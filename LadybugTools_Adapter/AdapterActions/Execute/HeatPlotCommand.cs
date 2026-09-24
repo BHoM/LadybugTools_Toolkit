@@ -22,6 +22,7 @@
 
 using BH.Engine.Adapter;
 using BH.Engine.Base;
+using BH.Engine.Serialiser;
 using BH.oM.Adapter;
 using BH.oM.Base;
 using BH.oM.LadybugTools;
@@ -62,37 +63,42 @@ namespace BH.Adapter.LadybugTools
             if (colourMap.ColourMapValidity())
                 colourMap = colourMap.ToColourMap().FromColourMap();
 
+            Dictionary<string, object> dict = new Dictionary<string, object>()
+            {
+                { "epw_file", epwFile.Replace('\\', '/') },
+                { "data_type_key", command.EPWKey.ToText() },
+                { "colour_map", colourMap },
+                { "save_path", command.OutputLocation.Replace('\\', '/') }
+            };
+
+            string json = dict.ToJson();
+
             // run the process
-            List<string> args = new List<string>() { "-command", "plot/heatmap", "-e", epwFile.Replace('\\', '/'), "-dtk", command.EPWKey.ToText(), "-cmap", colourMap, "-p", command.OutputLocation.Replace('\\', '/') };
-
-            string result = "";
-            bool success;
-
-            if (m_httpClient != null)
+            List<string> args = new List<string>()
             {
-                Task<(string, bool)> task = Compute.SendHttp(m_httpClient, args);
-                task.Wait();
-                (result, success) = task.Result;
-            }
-            else
-            {
-                //if the server was not running or some other error happened, try running the python directly.
-                string script = Path.Combine(Engine.LadybugTools.Query.PythonCodeDirectory(), "LadybugTools_Toolkit\\src\\ladybugtools_toolkit\\bhom", "run_wrapped.py");
-                string cmdCommand = $"{m_environment.Executable} {script} {args.Select(x => x.Contains(' ') || string.IsNullOrEmpty(x) ? '"' + x + '"' : x).Aggregate((a, b) => a + " " + b)}";
+                "-command", "plot/epw_heatmap"
+            };
 
-                result = Engine.Python.Compute.RunCommandStdout(command: cmdCommand, hideWindows: true).Split('\n').Last();
+            (string result, bool success) = ExecutePython(args, json);
+            m_executeSuccess = success;
+
+            if (!success)
+            {
+                BH.Engine.Base.Compute.RecordError($"A python error occurred while running the command `{command.GetType().Name}`. Python output:\n{result}");
+                return new List<object>();
             }
+
+            result = result.Split('\n').Last();
 
             try
             {
-                CustomObject obj = (CustomObject)BH.Engine.Serialiser.Convert.FromJson(result);
-                PlotInformation info = Convert.ToPlotInformation(obj, new CollectionData());
-                m_executeSuccess = true;
+                PlotInformation info = (PlotInformation)BH.Engine.Serialiser.Convert.FromJson(result);
                 return new List<object>() { info };
             }
             catch (Exception ex)
             {
                 BH.Engine.Base.Compute.RecordError(ex, $"An error occurred when deserialising the output from the script.\n Python output: {result}");
+                m_executeSuccess = false;
                 return new List<object>();
             }
         }

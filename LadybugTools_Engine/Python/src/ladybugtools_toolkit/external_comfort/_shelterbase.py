@@ -2,7 +2,7 @@
 # pylint: disable=E0401
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 from dataclasses import dataclass
 
 # pylint: enable=E0401
@@ -29,23 +29,44 @@ from mpl_toolkits import mplot3d
 
 
 from python_toolkit.bhom.analytics import bhom_analytics
-from ..bhom.to_bhom import point3d_to_bhom
+from python_toolkit.bhom.bhom_object import BHoMObject, IObject
+from ..bhom.to_bhom import LBTBHoMJSONEncoder, point3d_to_bhom
+from ..bhom.from_bhom import LBTBHoMJSONDecoder
 from ..ladybug_extension.epw import sun_position_list
 from ..helpers import convert_keys_to_snake_case
 
 SENSOR_LOCATION = Point3D(0, 0, 1.2)
 
 
-@dataclass(init=True, eq=True)
-class Shelter:
+@dataclass(init=False, eq=True)
+class Shelter(BHoMObject):
     """_"""
 
     vertices: tuple[Point3D]
     wind_porosity: tuple[float] = (0,) * 8760
     radiation_porosity: tuple[float] = (0,) * 8760
 
-    def __post_init__(self):
-        """_"""
+    def __init__(self,
+        vertices: tuple[Point3D],
+        wind_porosity: tuple[float] = None,
+        radiation_porosity: tuple[float] = None,
+        **kwargs
+    ) -> "Shelter":
+        self.vertices = list(vertices)
+
+        for i, item in enumerate(self.vertices):
+            if isinstance(item, dict):
+                self.vertices[i] = Point3D.from_dict(item)
+            elif not isinstance(item, Point3D):
+                raise ValueError("All vertices must be Point3D objects, dictionaries, or BHoM IObjects that can be converted to Point3D.")
+
+        self.vertices = tuple(self.vertices)
+
+        self.wind_porosity = (0,) * 8760 if wind_porosity is None else wind_porosity
+        self.radiation_porosity = (0,) * 8760 if radiation_porosity is None else radiation_porosity
+
+        _t = kwargs.pop("_t", "BH.oM.LadybugTools.Shelter")
+        super().__init__(_t, **kwargs)
 
         # validation
         if len(self.wind_porosity) != 8760:
@@ -81,9 +102,6 @@ class Shelter:
         if len(self.vertices) < 3:
             raise ValueError("A shelter must have at least 3 vertices.")
 
-        if not all(isinstance(item, Point3D) for item in self.vertices):
-            raise ValueError("All vertices must be Point3D objects.")
-
         _plane = Plane.from_three_points(*self.vertices[:3])
         for vertex in self.vertices[3:]:
             if not np.isclose(a=_plane.distance_to_point(point=vertex), b=0):
@@ -98,7 +116,15 @@ class Shelter:
             f"avg_radiation_porosity={self.average_radiation_porosity:0.2f}"
             ")"
         )
+    
+    def to_json(self):
+        return super().to_json(encoder_class=LBTBHoMJSONEncoder)
+    
+    @classmethod
+    def from_json(cls, j):
+        return super().from_json(j, decoder_class=LBTBHoMJSONDecoder)
 
+    #TODO: maybe these methods aren't needed with the BHoMObject class implemented
     def to_dict(self) -> str:
         """Convert this object to a dictionary."""
         point_dicts = []
@@ -129,16 +155,6 @@ class Shelter:
             wind_porosity=d["wind_porosity"],
             radiation_porosity=d["radiation_porosity"],
         )
-
-    def to_json(self) -> str:
-        """Convert this object to a JSON string."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_json(cls, json_string: str) -> "Shelter":
-        """Create this object from a JSON string."""
-
-        return cls.from_dict(json.loads(json_string))
 
     def to_file(self, path: Path) -> Path:
         """Convert this object to a JSON file."""

@@ -33,7 +33,7 @@ namespace BH.oM.LadybugTools
     public class Typology : BHoMObject, ILadybugTools
     {
         [Description("The name of this Typology.")]
-        public override string Name { get; set; } = string.Empty;
+        public virtual string Identifier { get; set; } = string.Empty;
 
         [Description("The shelters for this Typology.")]
         public virtual List<Shelter> Shelters { get; set; } = new List<Shelter>();

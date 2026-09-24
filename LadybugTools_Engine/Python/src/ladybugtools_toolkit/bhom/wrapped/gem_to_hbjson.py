@@ -1,26 +1,15 @@
 """Method to wrap for conversion of IES GEM to HBJSON file."""
 # pylint: disable=C0415,E0401,W0703
-import argparse
-import sys
 import traceback
 from pathlib import Path
 import tempfile
 import json
 from honeybee_ies.reader import model_from_ies
 from ..logger import CONSOLE_LOGGER
+from python_toolkit.bhom.decorators import bhom_wrapper
 
-PARSER = argparse.ArgumentParser(
-    description=("Given a GEM file path, convert to a HBJSON file.")
-)
-PARSER.add_argument(
-    "-g",
-    "--gem_file",
-    help="The GEM file to convert to HBJSON.",
-    type=str,
-    required=True,
-)
-
-def gem_to_hbjson(gem_file: str) -> None:
+@bhom_wrapper.bhom_callable("gem_to_hbjson")
+def gem_to_hbjson(gem_file: str, **kwargs) -> None:
     """Create a HBJSON file from an IES GEM file."""
     try:
         file_path = None
@@ -46,8 +35,3 @@ def gem_to_hbjson(gem_file: str) -> None:
     except Exception:
         CONSOLE_LOGGER.error("HBJSON file could not be created.", exc_info=1)
         return traceback.format_exc()
-
-
-if __name__ == "__main__":
-    args = PARSER.parse_args()
-    gem_to_hbjson(args.gem_file)

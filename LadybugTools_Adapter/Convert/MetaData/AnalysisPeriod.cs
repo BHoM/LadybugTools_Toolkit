@@ -122,7 +122,7 @@ namespace BH.Adapter.LadybugTools
                 EndDay = endDay,
                 EndHour = endHour,
                 IsLeapYear = isLeapYear,
-                TimeStep = timeStep
+                Timestep = timeStep
             };
         }
 
@@ -138,7 +138,7 @@ namespace BH.Adapter.LadybugTools
                 { "end_day", analysisPeriod.EndDay },
                 { "end_hour", analysisPeriod.EndHour },
                 { "is_leap_year", analysisPeriod.IsLeapYear },
-                { "timestep", analysisPeriod.TimeStep }
+                { "timestep", analysisPeriod.Timestep }
             };
         }
     }

@@ -42,13 +42,14 @@ from .ladybug_extension.analysisperiod import (
     describe_analysis_period,
 )
 from python_toolkit.plot.timeseries import timeseries
+from python_toolkit.bhom.bhom_object import BHoMObject
 from .plot.utilities import contrasting_color, format_polar_plot
 
 # pylint: enable=E0401
 
 
-@dataclass(init=True, eq=True, repr=True)
-class Wind:
+@dataclass(eq=True, repr=True)
+class Wind(BHoMObject):
     """An object containing historic, time-indexed wind data.
 
     Args:
@@ -64,14 +65,22 @@ class Wind:
         source (str, optional):
             A source string to describe where the input data comes from. Defaults to None.
     """
-
     wind_speeds: list[float]
     wind_directions: list[float]
     datetimes: list[datetime] | pd.DatetimeIndex
     height_above_ground: float = 10.0
     source: str = None
 
-    def __post_init__(self):
+    def __init__(self, wind_speeds: list[float], wind_directions: list[float], datetimes: list[datetime] | pd.DatetimeIndex, height_above_ground: float = 10.0, source: str = None, **kwargs):
+        self.wind_speeds = wind_speeds
+        self.wind_directions = wind_directions
+        self.datetimes = datetimes
+        self.height_above_ground = height_above_ground
+        self.source = source
+
+        _t = kwargs.pop("_t", "BH.oM.LadybugTools.Wind")
+        super().__init__(_t, **kwargs)
+
         if self.height_above_ground < 0.1:
             raise ValueError("Height above ground must be >= 0.1m.")
 
@@ -149,16 +158,6 @@ class Wind:
             height_above_ground=d["height_above_ground"],
             source=d["source"],
         )
-
-    def to_json(self) -> str:
-        """Convert this object to a JSON string."""
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_json(cls, json_string: str) -> "Wind":
-        """Create this object from a JSON string."""
-
-        return cls.from_dict(json.loads(json_string))
 
     def to_file(self, path: Path) -> Path:
         """Convert this object to a JSON file."""
