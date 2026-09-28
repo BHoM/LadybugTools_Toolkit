@@ -23,6 +23,7 @@ from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ...bhom.logger import CONSOLE_LOGGER
+from ...helpers import resolve_queenbee_path
 from ...ladybug_extension.analysisperiod import describe_analysis_period
 from ..model import HbModelGeometry
 from ..results import load_ill, load_npy, load_res
@@ -268,7 +269,7 @@ class HoneybeeRadiance:
             folder=self.output_directory.as_posix(), reload_old=reload_old
         )
 
-        results_folder = recipe.run(settings)
+        results_folder = recipe.run(settings, queenbee_path=resolve_queenbee_path())
 
         if delete_tempfiles:
             for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
@@ -490,7 +491,7 @@ class HoneybeeRadiance:
             folder=self.output_directory.as_posix(), reload_old=reload_old
         )
 
-        results_folder = recipe.run(settings)
+        results_folder = recipe.run(settings, queenbee_path=resolve_queenbee_path())
 
         if delete_tempfiles:
             for fp in (Path(results_folder) / f"{folder_name}/calcs").glob("**/*.ill"):
@@ -593,7 +594,7 @@ class HoneybeeRadiance:
             folder=self.output_directory.as_posix(), reload_old=reload_old
         )
 
-        results_folder = recipe.run(settings)
+        results_folder = recipe.run(settings, queenbee_path=resolve_queenbee_path())
 
         if delete_tempfiles:
             for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
@@ -697,7 +698,7 @@ class HoneybeeRadiance:
             folder=self.output_directory.as_posix(), reload_old=reload_old
         )
 
-        results_folder = recipe.run(settings)
+        results_folder = recipe.run(settings, queenbee_path=resolve_queenbee_path())
 
         if delete_tempfiles:
             for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(
@@ -800,7 +801,7 @@ class HoneybeeRadiance:
             folder=simulation_directory.as_posix(), reload_old=reload_old
         )
 
-        results_folder = recipe.run(settings)
+        results_folder = recipe.run(settings, queenbee_path=resolve_queenbee_path())
 
         if delete_tempfiles:
             for fp in (Path(results_folder) / f"{folder_name}/initial_results").glob(

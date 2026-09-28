@@ -8,6 +8,8 @@ import io
 import json
 import math
 import re
+import shutil
+import sys
 import urllib.request
 import warnings
 from datetime import datetime, timedelta
@@ -51,6 +53,25 @@ from python_toolkit.helpers import (
 )
 
 # pylint: enable=E0401
+
+
+def resolve_queenbee_path() -> str | None:
+    """Resolve the queenbee executable, bypassing honeybee.config.folders.
+
+    honeybee.config.folders.python_scripts_path double-appends "Scripts"
+    when sys.executable already lives in a venv's Scripts/ folder (as is
+    the case for this environment), which points lbt_recipes at a
+    non-existent path and makes every Recipe.run() call fail with
+    FileNotFoundError. Resolve the real executable explicitly instead.
+    """
+    on_path = shutil.which("queenbee")
+    if on_path:
+        return on_path
+    sibling = Path(sys.executable).parent / "queenbee.exe"
+    if sibling.is_file():
+        return sibling.as_posix()
+    return None
+
 
 @bhom_analytics()
 def default_hour_analysis_periods() -> list[AnalysisPeriod]:
