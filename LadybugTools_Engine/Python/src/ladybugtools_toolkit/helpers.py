@@ -29,7 +29,7 @@ from ladybug.skymodel import (calc_horizontal_infrared, calc_sky_temperature,
                               zhang_huang_solar_split)
 from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d import Vector2D
-from meteostat import Hourly, Point
+from meteostat import hourly, Point
 from python_toolkit.bhom.analytics import bhom_analytics
 from .bhom.logger import CONSOLE_LOGGER
 from .ladybug_extension.dt import lb_datetime_from_datetime
@@ -905,7 +905,7 @@ def scrape_meteostat(
         raise ValueError("The end_date must be a datetime object or string.")
 
     location = Point(latitude, longitude, altitude)
-    data = Hourly(location, start_date, end_date).fetch()
+    data = hourly(location, start_date, end_date).fetch()
 
     if len(data) == 0:
         raise ValueError("No data was returned from Meteostat.")
