@@ -1,5 +1,5 @@
 ﻿#The bhom_python_toolkit image must exist in the docker image container, see https://github.com/BHoM/Python_Toolkit.
-FROM bhom_python_toolkit:latest
+FROM bhom_python_toolkit_3_13:latest
 
 #Install ladybugtools_toolkit packages.
 COPY . /LadybugTools_Toolkit
@@ -11,9 +11,9 @@ RUN apt-get update \
     && apt-get install wget -y
 
 #Install openstudio and dependencies.
-RUN wget https://github.com/NREL/OpenStudio/releases/download/v3.10.0/OpenStudio-3.10.0+86d7e215a1-Ubuntu-22.04-x86_64.deb \
-    && dpkg-deb -R OpenStudio-3.10.0+86d7e215a1-Ubuntu-22.04-x86_64.deb . \
-    && rm OpenStudio-3.10.0+86d7e215a1-Ubuntu-22.04-x86_64.deb \
+RUN wget https://github.com/NatLabRockies/OpenStudio/releases/download/v3.11.0/OpenStudio-3.11.0+241b8abb4d-Ubuntu-22.04-x86_64.deb \
+    && dpkg-deb -R OpenStudio-3.11.0+241b8abb4d-Ubuntu-22.04-x86_64.deb . \
+    && rm OpenStudio-3.11.0+241b8abb4d-Ubuntu-22.04-x86_64.deb \
     && apt install libgomp1 libx11-6 -y
 
 #install radiance
