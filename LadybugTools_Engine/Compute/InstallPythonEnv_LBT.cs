@@ -59,8 +59,11 @@ namespace BH.Engine.LadybugTools
             env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName()));
 
             // create requirements from referenced executable
-            string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
-            env.InstallRequirements(requirementsTxt);
+            /* NOTE: following commented lines was original method before we started just copying the direct requirements to our pyproject.toml 
+             * 
+             * string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
+             * env.InstallRequirements(requirementsTxt);
+             */
 
             return env;
         }

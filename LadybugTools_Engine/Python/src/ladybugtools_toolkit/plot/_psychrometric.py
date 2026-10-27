@@ -128,9 +128,9 @@ class PsychrometricPolygons:
 
     strategies: list[PassiveStrategy] = field(init=True, default_factory=list)
     strategy_parameters: PassiveStrategyParameters = field(
-        init=True, default=PassiveStrategyParameters()
+        init=True, default_factory=PassiveStrategyParameters
     )
-    pmv_parameter: PMVParameter = field(init=True, default=PMVParameter())
+    pmv_parameter: PMVParameter = field(init=True, default_factory=PMVParameter)
     mean_radiant_temperature: float = field(init=True, default=None)
     air_speed: float = field(init=True, default=0.1)
     metabolic_rate: float = field(init=True, default=1.1)
