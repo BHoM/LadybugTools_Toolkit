@@ -86,7 +86,7 @@ namespace BH.Engine.LadybugTools
 
             BH.Engine.Base.Compute.RecordNote($"The folder '{userLbtFolder}' was found, and as this can cause issues with referenceing Radiance and OpenStudio, the ladybug config has been explicitly pointed to the installation in Program Files.");
 
-            string command = $"{Python.Modify.AddQuotesIfRequired(System.IO.Path.Combine(Python.Query.VirtualEnvironmentDirectory(Query.ToolkitName()), "Scripts", "ladybug.exe"))} set-config ladybug-tools_folder {targetFolder}";
+            string command = $"{Python.Modify.AddQuotesIfRequired(System.IO.Path.Combine(Python.Query.VirtualEnvironmentDirectory(Query.ToolkitName()), "Scripts", "ladybug.exe"))} set-config ladybug-tools-folder {targetFolder}";
 
             string stdOut = Python.Compute.RunCommandStdout(command);
 
