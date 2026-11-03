@@ -97,7 +97,7 @@ def evaporative_cooling_potential_epw(epw: EPW, ax: plt.Axes = None, **kwargs) -
         dbt=collection_to_series(epw.dry_bulb_temperature),
         dpt=collection_to_series(epw.dew_point_temperature),
         ax=ax,
-        title=kwargs.pop("title", Path(epw.file_path).name)
+        title=kwargs.pop("title", Path(epw.file_path).name),
         **kwargs
     )
 

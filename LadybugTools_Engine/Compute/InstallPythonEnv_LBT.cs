@@ -49,7 +49,11 @@ namespace BH.Engine.LadybugTools
             // check if environment already exists. If it does, and no reinstall requested, load it
             bool exists = Python.Query.VirtualEnvironmentExists(envName: Query.ToolkitName(), pythonVersion: pythonVersion);
             if (run && exists && !reinstall)
-                return Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: true);
+            {
+                PythonEnvironment existing = Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: true);
+                FixLadybugConfig(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles), "ladybug_tools"));
+                return existing;
+            }
 
             // create environment from scratch
             PythonEnvironment env = Python.Compute.VirtualEnvironment(version: pythonVersion, name: Query.ToolkitName(), reload: false);
@@ -59,14 +63,34 @@ namespace BH.Engine.LadybugTools
             env.InstallPackageLocal(Path.Combine(Python.Query.DirectoryCode(), Query.ToolkitName()));
 
             // create requirements from referenced executable
-            string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
-            env.InstallRequirements(requirementsTxt);
+            /* NOTE: following commented lines was original method before we started just copying the direct requirements to our pyproject.toml 
+             * 
+             * string requirementsTxt = Python.Compute.RequirementsTxt(referencedExecutable, Path.Combine(Python.Query.DirectoryEnvironments(), $"requirements_{Query.ToolkitName()}.txt"));
+             * env.InstallRequirements(requirementsTxt);
+             */
+
+            FixLadybugConfig(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles), "ladybug_tools"));
 
             return env;
         }
+
+        /// <summary>
+        /// Fix for if user home directory contains ladybug_tools (perhaps from old installation). This will break environments where users rely on that folder overriding the ladybug folder in program files.
+        /// </summary>
+        /// <param name="targetFolder"></param>
+        private static void FixLadybugConfig(string targetFolder)
+        {
+            string userLbtFolder = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), "ladybug_tools");
+            if (!Directory.Exists(userLbtFolder))
+                return;
+
+            BH.Engine.Base.Compute.RecordNote($"The folder '{userLbtFolder}' was found, and as this can cause issues with referenceing Radiance and OpenStudio, the ladybug config has been explicitly pointed to the installation in Program Files.");
+
+            string command = $"{Python.Modify.AddQuotesIfRequired(System.IO.Path.Combine(Python.Query.VirtualEnvironmentDirectory(Query.ToolkitName()), "Scripts", "ladybug.exe"))} set-config ladybug-tools-folder {Python.Modify.AddQuotesIfRequired(targetFolder)}";
+
+            string stdOut = Python.Compute.RunCommandStdout(command);
+
+            BH.Engine.Base.Compute.RecordNote($"Set explicit ladybug config path. stdOut:\n{stdOut}");
+        }
     }
 }
-
-
-
-
