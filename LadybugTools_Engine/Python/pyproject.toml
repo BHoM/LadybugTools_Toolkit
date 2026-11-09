@@ -27,7 +27,7 @@ dependencies = [
 	"annotated-types==0.8.0",
 	"attrs==26.1.0",
 	"backports.zstd==1.7.0",
-	"brotli==1.2.0",
+	"brotli==1.2.1",
 	"click==8.1.7",
 	"click-plugins==1.1.1.2",
 	"colorama==0.4.6",
