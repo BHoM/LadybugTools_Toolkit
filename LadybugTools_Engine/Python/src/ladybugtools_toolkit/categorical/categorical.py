@@ -188,8 +188,7 @@ class Categorical(BHoMObject):
         colors = [to_rgba(i) for i in colors]
 
         cmap = ListedColormap(colors=colors, name=self.name)
-        cmap.set_over(self.colors[-1])
-        cmap.set_under(self.colors[0])
+        cmap.with_extremes(over=self.colors[-1], under=self.colors[0])
         return cmap
 
     @property
