@@ -85,7 +85,7 @@ dependencies = [
 	"lbt-recipes==0.28.9",
 	"lockfile==0.12.2",
 	"loguru==0.7.3",
-	"luigi==3.3.0",
+	"luigi==3.6.0",
 	"matplotlib==3.11.1",
 	"multivolumefile==0.2.3",
 	"numpy==2.1.0",
