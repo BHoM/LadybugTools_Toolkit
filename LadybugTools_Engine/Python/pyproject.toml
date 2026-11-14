@@ -115,7 +115,7 @@ dependencies = [
 	"six==1.17.0",
 	"tenacity==8.5.0",
 	"texttable==1.7.0",
-	"tornado==6.6",
+	"tornado==6.6.1",
 	"typing-inspection==0.4.4",
 	"typing_extensions==4.16.0",
 	"uwg==5.8.13",
